@@ -109,6 +109,14 @@ dependencies {
     implementation 'com.google.maps.android:maps-ktx:3.3.0' // KTX for the Maps SDK for Android library
     implementation 'com.google.maps.android:maps-utils-ktx:3.3.0' // KTX for the Maps SDK for Android Utility Library
 
+    // Import the BoM for the Firebase platform
+    implementation platform('com.google.firebase:firebase-bom:29.3.0')
+
+    // Declare the dependencies for the Remote Config and Analytics libraries
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation 'com.google.firebase:firebase-config-ktx'
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.20"
     implementation 'androidx.core:core-ktx:1.9.0-alpha02'
     implementation 'androidx.appcompat:appcompat:1.4.1'

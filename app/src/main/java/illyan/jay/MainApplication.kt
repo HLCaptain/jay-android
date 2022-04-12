@@ -4,6 +4,8 @@ import android.app.Application
 import co.zsmb.rainbowcake.config.Loggers
 import co.zsmb.rainbowcake.config.rainbowCake
 import co.zsmb.rainbowcake.timber.TIMBER
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.ktx.remoteConfig
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
@@ -18,5 +20,9 @@ class MainApplication : Application() {
         }
 
         Timber.plant(Timber.DebugTree())
+
+        Firebase.remoteConfig.fetch(10).addOnCompleteListener {
+            Firebase.remoteConfig.activate()
+        }
     }
 }
