@@ -52,8 +52,9 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel>() {
         if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
             Timber.d("Closing app on onBackPressed")
             finish()
+        } else {
+            super.onBackPressed()
         }
-        super.onBackPressed()
     }
 
     override fun onNavigateUp(): Boolean {
