@@ -65,9 +65,9 @@ class LoginFragment : RainbowCakeFragmentVB<LoginViewState, LoginViewModel, Frag
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        Timber.d("Called onResume!")
+    override fun onStart() {
+        super.onStart()
+        Timber.d("Called onStart!")
 
         viewModel.refresh()
     }
