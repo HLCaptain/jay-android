@@ -7,9 +7,10 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val homePresenter: HomePresenter
-) : RainbowCakeViewModel<HomeViewState>(Loading) {
+) : RainbowCakeViewModel<HomeViewState>(Initial) {
 
     fun load() = execute {
-        viewState = HomeReady
+        viewState = Loading
+        viewState = Ready
     }
 }

@@ -13,11 +13,32 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/homeItems"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:alignContent="flex_start"
+        app:alignItems="flex_start"
+        app:flexWrap="wrap"
+        app:showDivider="beginning|middle"
+        android:layout_marginBottom="@dimen/home_items_division_medium"
+        android:layout_marginRight="@dimen/home_items_division_medium"
+        app:dividerDrawable="@drawable/home_items_divider">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/serviceToggleFragment"
+            app:layout_flexGrow="1"
+            android:name="illyan.jay.ui.toggle.service.ServiceToggleFragment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </com.google.android.flexbox.FlexboxLayout>
+
     <Button
         android:id="@+id/signOutButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:text="@string/log_out"/>
+        android:text="@string/log_out"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

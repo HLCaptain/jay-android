@@ -5,17 +5,21 @@
     app:startDestination="@id/loginFragment">
 
     <fragment
+        android:id="@+id/mainNavFragment"
+        android:name="illyan.jay.ui.main_nav.MainNavFragment"
+        android:label="MainNavFragment" />
+    <fragment
         android:id="@+id/loginFragment"
         android:name="illyan.jay.ui.login.LoginFragment"
         android:label="LoginFragment" >
         <action
-            android:id="@+id/action_loginFragment_to_nav_graph_main"
-            app:destination="@id/nav_graph_main"
+            android:id="@+id/action_loginFragment_to_mainNavFragment"
+            app:destination="@id/mainNavFragment"
             app:enterAnim="@anim/nav_default_enter_anim"
             app:exitAnim="@anim/nav_default_exit_anim"
             app:launchSingleTop="true"
             app:popEnterAnim="@anim/nav_default_pop_enter_anim"
-            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"
+            app:popUpToInclusive="true" />
     </fragment>
-    <include app:graph="@navigation/nav_graph_main" />
 </navigation>

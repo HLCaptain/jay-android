@@ -2,6 +2,8 @@ package illyan.jay
 
 sealed class MainViewState
 
-object MainStart : MainViewState()
+object Initial : MainViewState()
 
-data class MainReady(val isLoggedIn: Boolean = false) : MainViewState()
+object LoggedIn : MainViewState()
+
+object LoggedOut : MainViewState()

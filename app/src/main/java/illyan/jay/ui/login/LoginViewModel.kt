@@ -18,19 +18,19 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginPresenter: LoginPresenter
-) : RainbowCakeViewModel<LoginViewState>(Loading) {
+) : RainbowCakeViewModel<LoginViewState>(Initial) {
 
     fun refresh() {
         viewState = Loading
         execute {
-            viewState = LoginReady(loginPresenter.isUserLoggedIn())
+            viewState = if (loginPresenter.isUserLoggedIn()) LoggedIn else LoggedOut
         }
     }
 
     fun load() {
-        viewState = LoginReady(loginPresenter.isUserLoggedIn())
+        viewState = if (loginPresenter.isUserLoggedIn()) LoggedIn else LoggedOut
         loginPresenter.addAuthStateListener {
-            viewState = LoginReady(it)
+            viewState = if (it) LoggedIn else LoggedOut
         }
     }
 

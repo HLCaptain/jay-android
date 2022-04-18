@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph_session"
+    app:startDestination="@id/sessionsFragment">
+
+    <fragment
+        android:id="@+id/sessionsFragment"
+        android:name="illyan.jay.ui.sessions.list.SessionsFragment"
+        android:label="SessionsFragment" >
+        <action
+            android:id="@+id/action_sessionsFragment_to_sessionInfoFragment"
+            app:destination="@id/sessionInfoFragment">
+            <argument
+                android:name="sessionId"
+                android:defaultValue="-1"
+                app:argType="integer" />
+        </action>
+        <action
+            android:id="@+id/action_sessionsFragment_to_sessionMapFragment"
+            app:destination="@id/sessionMapFragment">
+            <argument
+                android:name="sessionId"
+                android:defaultValue="-1"
+                app:argType="integer" />
+        </action>
+    </fragment>
+    <fragment
+        android:id="@+id/sessionInfoFragment"
+        android:name="illyan.jay.ui.sessions.session_info.SessionInfoFragment"
+        android:label="sessionInfoFragment">
+        <argument
+            android:name="sessionId"
+            app:argType="integer" />
+        <action
+            android:id="@+id/action_sessionInfoFragment_to_sessionMapFragment"
+            app:destination="@id/sessionMapFragment" >
+            <argument
+                android:name="sessionId"
+                android:defaultValue="-1"
+                app:argType="integer" />
+        </action>
+    </fragment>
+    <fragment
+        android:id="@+id/sessionMapFragment"
+        android:name="illyan.jay.ui.sessions.map.SessionMapFragment"
+        android:label="SessionMapFragment">
+        <argument
+            android:name="sessionId"
+            app:argType="integer" />
+    </fragment>
+</navigation>

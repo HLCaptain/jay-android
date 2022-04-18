@@ -7,12 +7,12 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val mainPresenter: MainPresenter
-) : RainbowCakeViewModel<MainViewState>(MainStart) {
+) : RainbowCakeViewModel<MainViewState>(Initial) {
 
     fun load() = execute {
-        viewState = MainReady(mainPresenter.isUserLoggedIn())
+        viewState = if (mainPresenter.isUserLoggedIn()) LoggedIn else LoggedOut
         mainPresenter.addAuthStateListener {
-            viewState = MainReady(it)
+            viewState = if (it) LoggedIn else LoggedOut
         }
     }
 }

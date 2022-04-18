@@ -20,17 +20,12 @@ import com.google.firebase.remoteconfig.ktx.get
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.databinding.FragmentLoginBinding
-import illyan.jay.ui.fragment.RainbowCakeFragmentVB
-import timber.log.Timber
+import illyan.jay.ui.custom.RainbowCakeFragment
 
 @AndroidEntryPoint
-class LoginFragment : RainbowCakeFragmentVB<LoginViewState, LoginViewModel, FragmentLoginBinding>() {
+class LoginFragment : RainbowCakeFragment<LoginViewState, LoginViewModel, FragmentLoginBinding>() {
     override fun provideViewModel() = getViewModelFromFactory()
-    override fun provideViewBinding(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): FragmentLoginBinding = FragmentLoginBinding.inflate(inflater, container, false)
+    override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentLoginBinding = FragmentLoginBinding::inflate
 
     private val googleSignInLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -67,29 +62,30 @@ class LoginFragment : RainbowCakeFragmentVB<LoginViewState, LoginViewModel, Frag
 
     override fun onStart() {
         super.onStart()
-        Timber.d("Called onStart!")
 
         viewModel.refresh()
     }
 
     override fun render(viewState: LoginViewState) {
+        val nav = findNavController()
         when(viewState) {
+            is Initial -> {
+                binding.loginStatus.text = "Initializing"
+            }
             is Loading -> {
                 binding.loginStatus.text = "Loading"
             }
-            is LoginReady -> {
-                val nav = findNavController()
-                if (viewState.isLoggedIn) {
-                    binding.loginStatus.text = "Logged in!"
-                    val action = LoginFragmentDirections.actionLoginFragmentToNavGraphMain()
-                    nav.popBackStack(nav.graph.startDestinationId, false)
-                    nav.navigate(action)
-                } else {
-                    binding.loginStatus.text = "Logged out!"
-                }
-            }
             is LoggingIn -> {
                 binding.loginStatus.text = "Logging in!"
+            }
+            is LoggedIn -> {
+                binding.loginStatus.text = "Logged in!"
+                val action = LoginFragmentDirections.actionLoginFragmentToMainNavFragment()
+                nav.popBackStack(nav.graph.startDestinationId, false)
+                nav.navigate(action)
+            }
+            is LoggedOut -> {
+                binding.loginStatus.text = "Logged out!"
             }
         }.exhaustive
     }

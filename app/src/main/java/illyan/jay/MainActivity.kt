@@ -1,12 +1,16 @@
 package illyan.jay
 
+import android.content.Intent
 import android.os.Bundle
+import androidx.navigation.NavController
 import androidx.navigation.findNavController
+import androidx.navigation.ui.setupActionBarWithNavController
 import co.zsmb.rainbowcake.base.RainbowCakeActivity
 import co.zsmb.rainbowcake.extensions.exhaustive
 import co.zsmb.rainbowcake.hilt.getViewModelFromFactory
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.databinding.ActivityMainBinding
+import illyan.jay.service.JayService
 import timber.log.Timber
 
 @AndroidEntryPoint
@@ -14,6 +18,7 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel>() {
     override fun provideViewModel() = getViewModelFromFactory()
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var navControllerDelegate: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,45 +32,50 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel>() {
     }
 
     override fun render(viewState: MainViewState) {
+        val nav = binding.loginNavHostFragment.findNavController()
         when(viewState) {
-            is MainStart -> {
+            is Initial -> {
                 // show spalsh screen?
             }
-            is MainReady -> {
-                val nav = binding.loginNavHostFragment.findNavController()
-                if (viewState.isLoggedIn) {
-                    Timber.d("Logged in!")
-                } else {
-                    Timber.d("Logged out!")
-                    if (nav.currentDestination?.id != nav.graph.startDestinationId) {
-                        nav.popBackStack(nav.graph.startDestinationId, false)
-                    }
-                    Unit
+            is LoggedIn -> {
+                Timber.d("Logged in!")
+            }
+            is LoggedOut -> {
+                Timber.d("Logged out!")
+                stopService(Intent(this, JayService::class.java))
+                if (nav.currentDestination?.id != nav.graph.startDestinationId) {
+                    nav.popBackStack(nav.graph.startDestinationId, false)
                 }
+                Unit
             }
         }.exhaustive
     }
 
     override fun onBackPressed() {
-        Timber.d("Back pressed")
         val nav = binding.loginNavHostFragment.findNavController()
-        if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
-            Timber.d("Closing app on onBackPressed")
-            finish()
-        } else {
+        if (navControllerDelegate.currentDestination?.id != navControllerDelegate.graph.startDestinationId) {
             super.onBackPressed()
+        } else {
+            if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId)  {
+                finish()
+            }
         }
     }
 
     override fun onNavigateUp(): Boolean {
-        Timber.d("Navigating up")
         val nav = binding.loginNavHostFragment.findNavController()
-        if (nav.previousBackStackEntry?.destination?.id != nav.graph.startDestinationId) {
+        if (navControllerDelegate.currentDestination?.id != navControllerDelegate.graph.startDestinationId) {
             return super.onNavigateUp()
         } else {
-            Timber.d("Closing app on onNavigateUp")
-            finish()
+            if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId)  {
+                finish()
+            }
         }
         return false
+    }
+
+    fun setNavController(navController: NavController) {
+        navControllerDelegate = navController
+        setupActionBarWithNavController(navControllerDelegate)
     }
 }

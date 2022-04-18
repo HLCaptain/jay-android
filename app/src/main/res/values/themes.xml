@@ -1,6 +1,25 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.Jay" parent="Theme.Material3.DayNight">
-
+        <!-- Primary colors. -->
+        <item name="colorPrimary">@color/primaryColor</item>
+        <item name="colorPrimaryVariant">@color/primaryDarkColor</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorPrimaryContainer">@color/primaryLightColor</item>
+        <item name="colorOnPrimaryContainer">@color/primaryDarkColor</item>
+        <item name="colorPrimaryDark">@color/primaryDarkColor</item>
+        <item name="colorAccent">@color/primaryColor</item>
+        <!-- Secondary colors. -->
+        <item name="colorSecondary">@color/secondaryColor</item>
+        <item name="colorSecondaryVariant">@color/secondaryDarkColor</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/primaryLightColor</item>
+        <item name="colorOnSecondaryContainer">@color/primaryVeryDarkColor</item>
+        <item name="colorSurface">@color/primaryVeryLightColor</item>
+        <item name="cardBackgroundColor">@color/primaryLightColor</item>
+        <!-- Text colors. -->
+        <!-- Error colors. -->
+        <item name="colorError">@color/errorColor</item>
+        <item name="colorErrorContainer">@color/errorLightColor</item>
     </style>
 </resources>

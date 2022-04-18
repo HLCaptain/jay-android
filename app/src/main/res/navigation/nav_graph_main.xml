@@ -2,10 +2,18 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph_main"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/homeNavFragment">
 
     <fragment
-        android:id="@+id/homeFragment"
-        android:name="illyan.jay.ui.home.HomeFragment"
-        android:label="HomeFragment" />
+        android:id="@+id/sessionsNavFragment"
+        android:name="illyan.jay.ui.sessions_nav.SessionsNavFragment"
+        android:label="SessionsNavFragment" />
+    <fragment
+        android:id="@+id/homeNavFragment"
+        android:name="illyan.jay.ui.home_nav.HomeNavFragment"
+        android:label="HomeNavFragment" />
+    <fragment
+        android:id="@+id/realtimeMapNavFragment"
+        android:name="illyan.jay.ui.realtime_map_nav.RealtimeMapNavFragment"
+        android:label="RealtimeMapNavFragment" />
 </navigation>

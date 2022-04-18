@@ -14,42 +14,42 @@ import com.google.firebase.remoteconfig.ktx.get
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.databinding.FragmentHomeBinding
-import illyan.jay.ui.fragment.RainbowCakeFragmentVB
+import illyan.jay.ui.custom.RainbowCakeFragment
 
 @AndroidEntryPoint
-class HomeFragment : RainbowCakeFragmentVB<HomeViewState, HomeViewModel, FragmentHomeBinding>() {
-    override fun provideViewModel() = getViewModelFromFactory()
-    override fun provideViewBinding(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): FragmentHomeBinding = FragmentHomeBinding.inflate(inflater, container, false)
+class HomeFragment : RainbowCakeFragment<HomeViewState, HomeViewModel, FragmentHomeBinding>() {
+	override fun provideViewModel() = getViewModelFromFactory()
+	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentHomeBinding =
+		FragmentHomeBinding::inflate
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        viewModel.load()
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
+		binding.signOutButton.setOnClickListener {
+			Firebase.auth.signOut()
+			GoogleSignIn.getClient(
+				requireActivity(),
+				GoogleSignInOptions
+					.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+					.requestIdToken(Firebase.remoteConfig["default_web_client_id"].asString())
+					.requestEmail()
+					.build()
+			).signOut()
+		}
 
-        binding.signOutButton.setOnClickListener {
-            Firebase.auth.signOut()
-            GoogleSignIn.getClient(
-                requireActivity(),
-                GoogleSignInOptions
-                    .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestIdToken(Firebase.remoteConfig["default_web_client_id"].asString())
-                    .requestEmail()
-                    .build()
-            ).signOut()
-        }
-    }
+		viewModel.load()
+	}
 
-    override fun render(viewState: HomeViewState) {
-        when(viewState) {
-            is Loading -> {
-                binding.homeText.text = "Loading..."
-            }
-            is HomeReady -> {
-                binding.homeText.text = Firebase.remoteConfig["welcome_message"].asString()
-            }
-        }.exhaustive
-    }
+	override fun render(viewState: HomeViewState) {
+		when (viewState) {
+			is Initial -> {
+				binding.homeText.text = "Initializing..."
+			}
+			is Loading -> {
+				binding.homeText.text = "Loading..."
+			}
+			is Ready -> {
+				binding.homeText.text = Firebase.remoteConfig["welcome_message"].asString()
+			}
+		}.exhaustive
+	}
 }

@@ -1,10 +1,22 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!--?xml version="1.0" encoding="UTF-8"?-->
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+  <color name="primaryColor">#44bbff</color>
+  <color name="primaryLightColor">#aaddff</color>
+  <color name="primaryDarkColor">#2266bb</color>
+  <color name="primaryVeryLightColor">#ddeeff</color>
+  <color name="primaryVeryDarkColor">#001621</color>
+  <color name="secondaryColor">#ff4081</color>
+  <color name="secondaryLightColor">#ff79b0</color>
+  <color name="secondaryDarkColor">#c60055</color>
+  <color name="primaryTextColor">#000000</color>
+  <color name="secondaryTextColor">#000000</color>
+  <color name="allowColor">#69f0ae</color>
+  <color name="allowLightColor">#9fffe0</color>
+  <color name="allowDarkColor">#2bbd7e</color>
+  <color name="errorColor">@color/secondaryColor</color>
+  <color name="errorLightColor">@color/secondaryLightColor</color>
+  <color name="errorDarkColor">@color/secondaryDarkColor</color>
+  <color name="recordingColor">@color/secondaryLightColor</color>
+  <color name="black">#000000</color>
+  <color name="white">#FFFFFF</color>
 </resources>
