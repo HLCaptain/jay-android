@@ -52,6 +52,7 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel>() {
     }
 
     override fun onBackPressed() {
+        Timber.d("onBackPressed called")
         val nav = binding.loginNavHostFragment.findNavController()
         if (navControllerDelegate.currentDestination?.id != navControllerDelegate.graph.startDestinationId) {
             super.onBackPressed()
@@ -63,11 +64,25 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel>() {
     }
 
     override fun onNavigateUp(): Boolean {
+        Timber.d("onNavigateUp called")
         val nav = binding.loginNavHostFragment.findNavController()
         if (navControllerDelegate.currentDestination?.id != navControllerDelegate.graph.startDestinationId) {
             return super.onNavigateUp()
         } else {
-            if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId)  {
+            if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
+                finish()
+            }
+        }
+        return false
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        Timber.d("onSupportNavigateUp called")
+        val nav = binding.loginNavHostFragment.findNavController()
+        if (navControllerDelegate.currentDestination?.id != navControllerDelegate.graph.startDestinationId) {
+            return navControllerDelegate.navigateUp()
+        } else {
+            if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
                 finish()
             }
         }
