@@ -9,7 +9,7 @@ class MainViewModel @Inject constructor(
     private val mainPresenter: MainPresenter
 ) : RainbowCakeViewModel<MainViewState>(Initial) {
 
-    fun load() = execute {
+    fun load() = executeNonBlocking {
         viewState = if (mainPresenter.isUserLoggedIn()) LoggedIn else LoggedOut
         mainPresenter.addAuthStateListener {
             viewState = if (it) LoggedIn else LoggedOut

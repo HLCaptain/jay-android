@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import illyan.jay.data.disk.model.RoomSession
 
 @Entity(
     tableName = "acceleration",
@@ -17,8 +16,8 @@ import illyan.jay.data.disk.model.RoomSession
 )
 data class RoomAcceleration(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val sessionId: Int,
+    val id: Long = 0,
+    val sessionId: Long,
     val time: Long, // in millis
     val accuracy: Int, // enum
     val x: Float,

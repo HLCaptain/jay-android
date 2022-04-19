@@ -12,7 +12,7 @@ import javax.inject.Inject
 class SessionMapPresenter @Inject constructor(
 	private val locationInteractor: LocationInteractor
 ) {
-	fun getLocations(sessionId: Int) = locationInteractor.getLocations(sessionId)
+	fun getLocations(sessionId: Long) = locationInteractor.getLocations(sessionId)
 		.flowOn(Dispatchers.IO)
 		.map { it.map(DomainLocation::toUiModel) }
 }

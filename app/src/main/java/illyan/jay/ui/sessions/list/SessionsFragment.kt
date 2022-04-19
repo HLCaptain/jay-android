@@ -11,16 +11,12 @@ import co.zsmb.rainbowcake.hilt.getViewModelFromFactory
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.databinding.FragmentSessionsBinding
 import illyan.jay.ui.custom.RainbowCakeFragment
-import illyan.jay.ui.sessions.list.model.UiSession
-import illyan.jay.util.ItemEventListener
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class SessionsFragment : RainbowCakeFragment<SessionsViewState, SessionsViewModel, FragmentSessionsBinding>() {
     override fun provideViewModel() = getViewModelFromFactory()
     override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentSessionsBinding = FragmentSessionsBinding::inflate
 
-    // TODO: make another class xyz : ItemEventListener which has an onMapClickListener function
     private var itemEventListener: SessionItemEventListener = SessionItemEventListener()
     private lateinit var adapter: SessionsAdapter
 

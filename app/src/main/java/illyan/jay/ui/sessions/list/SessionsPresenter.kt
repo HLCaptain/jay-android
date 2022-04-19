@@ -1,8 +1,6 @@
 package illyan.jay.ui.sessions.list
 
 import co.zsmb.rainbowcake.withIOContext
-import com.google.android.gms.maps.model.LatLng
-import illyan.jay.data.disk.model.RoomLocation
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainLocation
@@ -24,7 +22,7 @@ class SessionsPresenter @Inject constructor(
 			.flowOn(Dispatchers.IO)
 	}
 
-	suspend fun getLocations(sessionId: Int) = withIOContext {
+	suspend fun getLocations(sessionId: Long) = withIOContext {
 		locationInteractor.getLocations(sessionId)
 			.map { it.map(DomainLocation::toUiModel) }
 			.flowOn(Dispatchers.IO)

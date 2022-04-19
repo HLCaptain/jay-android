@@ -15,7 +15,7 @@ class AccelerationSensorEventListener @Inject constructor(
 ) : SessionSensorEventListener(sessionInteractor) {
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
-            ongoingSessionIds.toList().forEach { sessionId ->
+            ongoingSessionIds.forEach { sessionId ->
                 scope.launch(Dispatchers.IO) {
                     accelerationInteractor.saveAcceleration(it.toDomainAcceleration(sessionId))
                 }

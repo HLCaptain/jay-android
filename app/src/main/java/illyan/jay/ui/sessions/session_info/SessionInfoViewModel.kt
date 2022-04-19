@@ -9,7 +9,7 @@ class SessionInfoViewModel @Inject constructor(
     private val sessionInfoPresenter: SessionInfoPresenter
 ) : RainbowCakeViewModel<SessionInfoViewState>(Initial) {
 
-    fun loadSession(id: Int) = execute {
+    fun loadSession(id: Long) = executeNonBlocking {
         viewState = Loading
         sessionInfoPresenter.getSession(id).collect { session ->
             session?.let {

@@ -105,7 +105,6 @@ class JayService @Inject constructor(
     override fun onDestroy() {
         stopSensors()
 
-        // TODO: change int to long in ids, because it could cause problems with huge datasets
 	    scope.launch(Dispatchers.IO) { sessionInteractor.stopOngoingSessions() }
         job.complete()
         isRunning = false

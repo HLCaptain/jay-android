@@ -4,10 +4,10 @@ import com.google.android.gms.maps.model.LatLng
 import java.util.*
 
 data class DomainLocation(
-    val id: Int = -1,
+    val id: Long = -1,
     val latLng: LatLng,
     val speed: Float,
-    val sessionId: Int,
+    val sessionId: Long,
     val time: Date,
     val accuracy: Float,
     val bearing: Float,

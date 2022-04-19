@@ -3,7 +3,6 @@ package illyan.jay.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -11,7 +10,6 @@ class ServiceStateReceiver @Inject constructor(
 
 ) : BroadcastReceiver() {
 
-    // TODO: call invoke on the listeners for every state change, receive broadcasted messages from service
     val serviceStateListeners = mutableListOf<(Boolean, String) -> Unit>()
 
     override fun onReceive(context: Context?, intent: Intent?) {

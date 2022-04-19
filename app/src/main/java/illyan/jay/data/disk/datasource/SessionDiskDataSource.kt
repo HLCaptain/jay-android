@@ -17,7 +17,7 @@ class SessionDiskDataSource @Inject constructor(
 	private val sessionDao: SessionDao
 ) {
 	fun getSessions() = sessionDao.getSessions().map { it.map(RoomSession::toDomainModel) }
-	fun getSession(id: Int) = sessionDao.getSession(id).map { it?.toDomainModel() }
+	fun getSession(id: Long) = sessionDao.getSession(id).map { it?.toDomainModel() }
 	fun getOngoingSessions() =
 		sessionDao.getOngoingSessions().map { it.map(RoomSession::toDomainModel) }
 
@@ -29,9 +29,11 @@ class SessionDiskDataSource @Inject constructor(
 	}
 
 
-	fun saveSession(session: DomainSession) = sessionDao.insertSession(session.toRoomModel())
+	fun saveSession(session: DomainSession) = sessionDao.updateSession(session.toRoomModel())
+	fun saveSessions(sessions: List<DomainSession>) =
+		sessionDao.updateSession(sessions.map(DomainSession::toRoomModel))
 
-	fun stopSession(session: DomainSession): Long {
+	fun stopSession(session: DomainSession): Int {
 		session.endTime = Date.from(Instant.now())
 		return saveSession(session)
 	}

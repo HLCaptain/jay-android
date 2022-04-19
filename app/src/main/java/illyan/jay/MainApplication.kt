@@ -21,8 +21,8 @@ class MainApplication : Application() {
 
         Timber.plant(Timber.DebugTree())
 
-        Firebase.remoteConfig.fetch(10).addOnCompleteListener {
-            Firebase.remoteConfig.activate()
+        Firebase.remoteConfig.fetch(3600).addOnCompleteListener {
+	        Firebase.remoteConfig.activate()
         }
     }
 }

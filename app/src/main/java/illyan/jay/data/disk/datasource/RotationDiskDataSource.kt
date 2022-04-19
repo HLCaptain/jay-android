@@ -15,8 +15,8 @@ class RotationDiskDataSource @Inject constructor(
     private val rotationDao: RotationDao
 ) {
     fun getRotations(session: DomainSession) = getRotations(session.id)
-    fun getRotations(sessionId: Int) =
-        rotationDao.getRotations(sessionId).map { it.map(RoomRotation::toDomainModel) }
+	fun getRotations(sessionId: Long) =
+		rotationDao.getRotations(sessionId).map { it.map(RoomRotation::toDomainModel) }
 
     fun saveRotation(rotation: DomainRotation) =
         rotationDao.insertRotation(rotation.toRoomModel())

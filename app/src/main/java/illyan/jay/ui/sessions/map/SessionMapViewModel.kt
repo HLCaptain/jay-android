@@ -9,7 +9,7 @@ class SessionMapViewModel @Inject constructor(
 	private val sessionMapPresenter: SessionMapPresenter
 ) : RainbowCakeViewModel<SessionMapViewState>(Initial) {
 
-	fun loadPath(sessionId: Int) = executeNonBlocking {
+	fun loadPath(sessionId: Long) = executeNonBlocking {
 		viewState = Loading
 		var firstLoaded = true
 

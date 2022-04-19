@@ -5,9 +5,9 @@ import com.google.android.gms.maps.model.LatLng
 import java.util.*
 
 data class UiLocation(
-	val id: Int = -1,
+	val id: Long = -1,
 	val latLng: LatLng,
-	val sessionId: Int,
+	val sessionId: Long,
 	val time: Date,
 	val color: Color
 )

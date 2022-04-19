@@ -15,14 +15,17 @@ interface LocationDao {
     @Update
     fun updateLocation(location: RoomLocation): Int
 
+    @Update
+    fun updateLocation(location: List<RoomLocation>): Int
+
     @Delete
     fun deleteLocation(location: RoomLocation)
 
     @Query("SELECT * FROM location WHERE id = :id")
-    fun getLocation(id: Int): RoomLocation?
+    fun getLocation(id: Long): RoomLocation?
 
     @Query("SELECT * FROM location WHERE sessionId = :sessionId")
-    fun getLocations(sessionId: Int): Flow<List<RoomLocation>>
+    fun getLocations(sessionId: Long): Flow<List<RoomLocation>>
 
     @Delete
     fun deleteLocations(locations: List<RoomLocation>)
@@ -31,8 +34,8 @@ interface LocationDao {
     fun deleteLocations()
 
     @Query("DELETE FROM location WHERE sessionId = :sessionId")
-    fun deleteLocations(sessionId: Int)
+    fun deleteLocations(sessionId: Long)
 
     @Query("SELECT * FROM location WHERE sessionId = :sessionId ORDER BY id DESC LIMIT :limit")
-    fun getLocations(sessionId: Int, limit: Int): Flow<List<RoomLocation>>
+    fun getLocations(sessionId: Long, limit: Long): Flow<List<RoomLocation>>
 }

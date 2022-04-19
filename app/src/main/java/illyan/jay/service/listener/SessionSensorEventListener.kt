@@ -5,15 +5,20 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import co.zsmb.rainbowcake.withIOContext
 import illyan.jay.domain.interactor.SessionInteractor
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 
 abstract class SessionSensorEventListener(
 	private val sessionInteractor: SessionInteractor
 ) : SensorEventListener {
 
 	protected val scope = CoroutineScope(Dispatchers.IO)
-	protected val ongoingSessionIds = mutableListOf<Int>()
+	private val _ongoingSessionIds = mutableListOf<Long>()
+
+	// Needed to guarantee safety from ConcurrentModificationException
+	protected val ongoingSessionIds get() = _ongoingSessionIds.toList()
 
 	init {
 		scope.launch {
@@ -25,8 +30,8 @@ abstract class SessionSensorEventListener(
 		sessionInteractor.getOngoingSessionIds()
 			.flowOn(Dispatchers.IO)
 			.collect {
-				ongoingSessionIds.clear()
-				ongoingSessionIds.addAll(it)
+				_ongoingSessionIds.clear()
+				_ongoingSessionIds.addAll(it)
 			}
 	}
 

@@ -15,7 +15,7 @@ class AccelerationDiskDataSource @Inject constructor(
     private val accelerationDao: AccelerationDao
 ) {
     fun getAccelerations(session: DomainSession) = getAccelerations(session.id)
-    fun getAccelerations(sessionId: Int) =
+    fun getAccelerations(sessionId: Long) =
         accelerationDao.getAccelerations(sessionId)
             .map { it.map(RoomAcceleration::toDomainModel) }
 

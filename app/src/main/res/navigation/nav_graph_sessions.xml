@@ -13,16 +13,16 @@
             app:destination="@id/sessionInfoFragment">
             <argument
                 android:name="sessionId"
-                android:defaultValue="-1"
-                app:argType="integer" />
+                android:defaultValue="-1L"
+                app:argType="long" />
         </action>
         <action
             android:id="@+id/action_sessionsFragment_to_sessionMapFragment"
             app:destination="@id/sessionMapFragment">
             <argument
                 android:name="sessionId"
-                android:defaultValue="-1"
-                app:argType="integer" />
+                android:defaultValue="-1L"
+                app:argType="long" />
         </action>
     </fragment>
     <fragment
@@ -31,14 +31,14 @@
         android:label="sessionInfoFragment">
         <argument
             android:name="sessionId"
-            app:argType="integer" />
+            app:argType="long" />
         <action
             android:id="@+id/action_sessionInfoFragment_to_sessionMapFragment"
             app:destination="@id/sessionMapFragment" >
             <argument
                 android:name="sessionId"
-                android:defaultValue="-1"
-                app:argType="integer" />
+                android:defaultValue="-1L"
+                app:argType="long" />
         </action>
     </fragment>
     <fragment
@@ -47,6 +47,6 @@
         android:label="SessionMapFragment">
         <argument
             android:name="sessionId"
-            app:argType="integer" />
+            app:argType="long" />
     </fragment>
 </navigation>

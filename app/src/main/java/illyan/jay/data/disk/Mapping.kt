@@ -59,17 +59,17 @@ fun DomainLocation.toRoomModel() = RoomLocation(
     verticalAccuracy = verticalAccuracy
 )
 
-fun Location.toDomainModel(sessionId: Int) = DomainLocation(
-    latLng = LatLng(latitude, longitude),
-    speed = speed,
-    time = Date.from(Instant.ofEpochMilli(time)),
-    sessionId = sessionId,
-    accuracy = accuracy,
-    bearing = bearing,
-    bearingAccuracy = bearingAccuracyDegrees,
-    altitude = altitude,
-    speedAccuracy = speedAccuracyMetersPerSecond,
-    verticalAccuracy = verticalAccuracyMeters
+fun Location.toDomainModel(sessionId: Long) = DomainLocation(
+	latLng = LatLng(latitude, longitude),
+	speed = speed,
+	time = Date.from(Instant.ofEpochMilli(time)),
+	sessionId = sessionId,
+	accuracy = accuracy,
+	bearing = bearing,
+	bearingAccuracy = bearingAccuracyDegrees,
+	altitude = altitude,
+	speedAccuracy = speedAccuracyMetersPerSecond,
+	verticalAccuracy = verticalAccuracyMeters
 )
 
 // Rotation
@@ -114,20 +114,20 @@ fun DomainAcceleration.toRoomModel() = RoomAcceleration(
 )
 
 // Sensors
-fun SensorEvent.toDomainRotation(sessionId: Int) = DomainRotation(
-    sessionId = sessionId,
-    time = Date.from(Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp))),
-    accuracy = accuracy,
-    x = values[0],
-    y = values[1],
-    z = values[2]
+fun SensorEvent.toDomainRotation(sessionId: Long) = DomainRotation(
+	sessionId = sessionId,
+	time = Date.from(Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp))),
+	accuracy = accuracy,
+	x = values[0],
+	y = values[1],
+	z = values[2]
 )
 
-fun SensorEvent.toDomainAcceleration(sessionId: Int) = DomainAcceleration(
-    sessionId = sessionId,
-    time = Date.from(Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp))),
-    accuracy = accuracy,
-    x = values[0],
-    y = values[1],
-    z = values[2]
+fun SensorEvent.toDomainAcceleration(sessionId: Long) = DomainAcceleration(
+	sessionId = sessionId,
+	time = Date.from(Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp))),
+	accuracy = accuracy,
+	x = values[0],
+	y = values[1],
+	z = values[2]
 )

@@ -19,15 +19,18 @@ import illyan.jay.databinding.FragmentSessionMapBinding
 import illyan.jay.ui.custom.RainbowCakeFragment
 
 @AndroidEntryPoint
-class SessionMapFragment : RainbowCakeFragment<SessionMapViewState, SessionMapViewModel, FragmentSessionMapBinding>(), OnMapReadyCallback {
+class SessionMapFragment :
+	RainbowCakeFragment<SessionMapViewState, SessionMapViewModel, FragmentSessionMapBinding>(),
+	OnMapReadyCallback {
 	override fun provideViewModel() = getViewModelFromFactory()
-	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentSessionMapBinding = FragmentSessionMapBinding::inflate
+	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentSessionMapBinding =
+		FragmentSessionMapBinding::inflate
 
 	private val args: SessionMapFragmentArgs by navArgs()
 	private var map: GoogleMap? = null
 
 	override fun render(viewState: SessionMapViewState) {
-		when(viewState) {
+		when (viewState) {
 			is Initial -> {
 
 			}
@@ -35,11 +38,22 @@ class SessionMapFragment : RainbowCakeFragment<SessionMapViewState, SessionMapVi
 
 			}
 			is Ready -> {
-				// TODO: rework state handling for maps
-				// TODO: use colors, etc.
 				map?.let {
 					it.clear()
-					it.addPolyline { addAll(viewState.locations.map { location -> location.latLng }) }
+					viewState.locations.forEachIndexed { index, location ->
+						it.addPolyline {
+							if (index != viewState.locations.lastIndex) {
+								addAll(
+									mutableListOf(
+										location.latLng,
+										viewState.locations[index + 1].latLng
+									)
+								)
+								color(location.color.toArgb())
+							}
+						}
+					}
+
 					if (viewState.locations.isNotEmpty()) {
 						var southWest = viewState.locations.first().latLng
 						var northEast = viewState.locations.first().latLng
@@ -57,7 +71,10 @@ class SessionMapFragment : RainbowCakeFragment<SessionMapViewState, SessionMapVi
 								northEast = LatLng(location.latLng.latitude, northEast.longitude)
 							}
 						}
-						if (!it.projection.visibleRegion.latLngBounds.contains(southWest) || !it.projection.visibleRegion.latLngBounds.contains(northEast) || viewState.firstLoaded) {
+						if (!it.projection.visibleRegion.latLngBounds.contains(southWest) || !it.projection.visibleRegion.latLngBounds.contains(
+								northEast
+							) || viewState.firstLoaded
+						) {
 							it.animateCamera(
 								CameraUpdateFactory.newLatLngBounds(
 									LatLngBounds(

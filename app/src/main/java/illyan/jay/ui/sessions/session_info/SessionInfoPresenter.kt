@@ -10,8 +10,8 @@ import javax.inject.Inject
 class SessionInfoPresenter @Inject constructor(
     private val sessionInteractor: SessionInteractor
 ) {
-    suspend fun getSession(id: Int) = withIOContext {
-        return@withIOContext sessionInteractor.getSession(id).map { it?.toUiModel() }
+    suspend fun getSession(id: Long) = withIOContext {
+	    return@withIOContext sessionInteractor.getSession(id).map { it?.toUiModel() }
     }
 }
 

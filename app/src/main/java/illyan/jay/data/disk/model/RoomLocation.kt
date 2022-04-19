@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import illyan.jay.data.disk.model.RoomSession
 
 @Entity(
     tableName = "location",
@@ -17,8 +16,8 @@ import illyan.jay.data.disk.model.RoomSession
 )
 data class RoomLocation(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val sessionId: Int,
+    val id: Long = 0,
+    val sessionId: Long,
     val latitude: Double,
     val longitude: Double,
     val accuracy: Float,

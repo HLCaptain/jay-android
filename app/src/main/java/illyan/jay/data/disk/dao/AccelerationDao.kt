@@ -15,14 +15,17 @@ interface AccelerationDao {
     @Update
     fun updateAcceleration(acceleration: RoomAcceleration): Int
 
+    @Update
+    fun updateAcceleration(acceleration: List<RoomAcceleration>): Int
+
     @Delete
     fun deleteAcceleration(acceleration: RoomAcceleration)
 
     @Query("SELECT * FROM acceleration WHERE id = :id")
-    fun getAcceleration(id: Int): RoomAcceleration?
+    fun getAcceleration(id: Long): RoomAcceleration?
 
     @Query("SELECT * FROM acceleration WHERE sessionId = :sessionId")
-    fun getAccelerations(sessionId: Int): Flow<List<RoomAcceleration>>
+    fun getAccelerations(sessionId: Long): Flow<List<RoomAcceleration>>
 
     @Delete
     fun deleteAccelerations(accelerations: List<RoomAcceleration>)
@@ -31,5 +34,5 @@ interface AccelerationDao {
     fun deleteAccelerations()
 
     @Query("DELETE FROM acceleration WHERE sessionId = :sessionId")
-    fun deleteAccelerations(sessionId: Int)
+    fun deleteAccelerations(sessionId: Long)
 }

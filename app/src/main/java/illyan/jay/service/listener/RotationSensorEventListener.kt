@@ -16,10 +16,10 @@ class RotationSensorEventListener @Inject constructor(
 
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
-            ongoingSessionIds.toList().forEach { sessionId ->
-                scope.launch(Dispatchers.IO) {
-                    rotationInteractor.saveRotation(it.toDomainRotation(sessionId))
-                }
+            ongoingSessionIds.forEach { sessionId ->
+	            scope.launch(Dispatchers.IO) {
+		            rotationInteractor.saveRotation(it.toDomainRotation(sessionId))
+	            }
             }
         }
     }

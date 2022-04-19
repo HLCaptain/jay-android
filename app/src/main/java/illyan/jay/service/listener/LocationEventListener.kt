@@ -27,7 +27,7 @@ class LocationEventListener @Inject constructor(
 					super.onLocationResult(locationResult)
 					scope.launch(Dispatchers.IO) {
 						// Saving locations for every ongoing session
-						ongoingSessionIds.toList().forEach { sessionId ->
+						ongoingSessionIds.forEach { sessionId ->
 							val newLocation = locationResult.lastLocation.toDomainModel(sessionId)
 							// Updating distances for each location
 							locationInteractor.getLocations(sessionId, 1)
@@ -67,8 +67,8 @@ class LocationEventListener @Inject constructor(
 	var locationRequest = LocationRequest
 		.create()
 		.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-		.setInterval(200)
-		.setSmallestDisplacement(1f)
+		.setInterval(LocationInteractor.LOCATION_REQUEST_INTERVAL_FREQUENT)
+		.setSmallestDisplacement(LocationInteractor.LOCATION_REQUEST_DISPLACEMENT_DEFAULT)
 
 	init {
 		locationCallback = object : LocationCallback() {}

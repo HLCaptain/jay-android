@@ -13,9 +13,11 @@ import javax.inject.Singleton
 class LocationDiskDataSource @Inject constructor(
     private val locationDao: LocationDao
 ) {
-    fun getLocations(sessionId: Int, limit: Int) = locationDao.getLocations(sessionId, limit)
-        .map { it.map(RoomLocation::toDomainModel) }
-    fun getLocations(sessionId: Int) = locationDao.getLocations(sessionId)
-        .map { it.map(RoomLocation::toDomainModel) }
-    fun saveLocation(location: DomainLocation) = locationDao.insertLocation(location.toRoomModel())
+    fun getLocations(sessionId: Long, limit: Long) = locationDao.getLocations(sessionId, limit)
+	    .map { it.map(RoomLocation::toDomainModel) }
+
+	fun getLocations(sessionId: Long) = locationDao.getLocations(sessionId)
+		.map { it.map(RoomLocation::toDomainModel) }
+
+	fun saveLocation(location: DomainLocation) = locationDao.insertLocation(location.toRoomModel())
 }
