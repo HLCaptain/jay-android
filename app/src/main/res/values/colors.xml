@@ -1,22 +1,31 @@
+<!--
+  ~ Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+  ~ Jay is a driver behaviour analytics app.
+  ~ This file is part of Jay.
+  ~ Jay is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+  ~ Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+  ~ You should have received a copy of the GNU General Public License along with Jay. If not, see <https://www.gnu.org/licenses/>.
+  -->
+
 <!--?xml version="1.0" encoding="UTF-8"?-->
 <resources>
-  <color name="primaryColor">#44bbff</color>
-  <color name="primaryLightColor">#aaddff</color>
-  <color name="primaryDarkColor">#2266bb</color>
-  <color name="primaryVeryLightColor">#ddeeff</color>
-  <color name="primaryVeryDarkColor">#001621</color>
-  <color name="secondaryColor">#ff4081</color>
-  <color name="secondaryLightColor">#ff79b0</color>
-  <color name="secondaryDarkColor">#c60055</color>
-  <color name="primaryTextColor">#000000</color>
-  <color name="secondaryTextColor">#000000</color>
-  <color name="allowColor">#69f0ae</color>
-  <color name="allowLightColor">#9fffe0</color>
-  <color name="allowDarkColor">#2bbd7e</color>
-  <color name="errorColor">@color/secondaryColor</color>
-  <color name="errorLightColor">@color/secondaryLightColor</color>
-  <color name="errorDarkColor">@color/secondaryDarkColor</color>
-  <color name="recordingColor">@color/secondaryLightColor</color>
-  <color name="black">#000000</color>
-  <color name="white">#FFFFFF</color>
+    <color name="primaryColor">#44bbff</color>
+    <color name="primaryLightColor">#aaddff</color>
+    <color name="primaryDarkColor">#2266bb</color>
+    <color name="primaryVeryLightColor">#ddeeff</color>
+    <color name="primaryVeryDarkColor">#001621</color>
+    <color name="secondaryColor">#ff4081</color>
+    <color name="secondaryLightColor">#ff79b0</color>
+    <color name="secondaryDarkColor">#c60055</color>
+    <color name="primaryTextColor">#000000</color>
+    <color name="secondaryTextColor">#000000</color>
+    <color name="allowColor">#69f0ae</color>
+    <color name="allowLightColor">#9fffe0</color>
+    <color name="allowDarkColor">#2bbd7e</color>
+    <color name="errorColor">@color/secondaryColor</color>
+    <color name="errorLightColor">@color/secondaryLightColor</color>
+    <color name="errorDarkColor">@color/secondaryDarkColor</color>
+    <color name="recordingColor">@color/secondaryLightColor</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
 </resources>

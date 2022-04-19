@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Jay is a driver behaviour analytics app.
+ * This file is part of Jay.
+ * Jay is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with Jay. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.data.disk
 
 import androidx.room.Database
@@ -13,25 +22,25 @@ import illyan.jay.data.disk.model.RoomRotation
 import illyan.jay.data.disk.model.RoomSession
 
 @Database(
-    entities = [
-        RoomSession::class,
-        RoomLocation::class,
-        RoomAcceleration::class,
-        RoomRotation::class
-    ],
-    version = 6,
-    exportSchema = false
+	entities = [
+		RoomSession::class,
+		RoomLocation::class,
+		RoomAcceleration::class,
+		RoomRotation::class
+	],
+	version = 6,
+	exportSchema = false
 )
 @TypeConverters(
-    RoomConverter::class
+	RoomConverter::class
 )
 abstract class JayDatabase : RoomDatabase() {
-    abstract fun sessionDao(): SessionDao
-    abstract fun locationDao(): LocationDao
-    abstract fun accelerationDao(): AccelerationDao
-    abstract fun rotationDao(): RotationDao
+	abstract fun sessionDao(): SessionDao
+	abstract fun locationDao(): LocationDao
+	abstract fun accelerationDao(): AccelerationDao
+	abstract fun rotationDao(): RotationDao
 
-    companion object {
-        const val DB_NAME = "jay.db"
-    }
+	companion object {
+		const val DB_NAME = "jay.db"
+	}
 }

@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Jay is a driver behaviour analytics app.
+ * This file is part of Jay.
+ * Jay is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with Jay. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.data.disk
 
 import android.hardware.SensorEvent
@@ -17,46 +26,46 @@ import java.util.*
 
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
-    id = id,
-    startTime = Date.from(Instant.ofEpochMilli(startTime)),
-    endTime = endTime?.let { Date.from(Instant.ofEpochMilli(it)) },
-    distance = distance
+	id = id,
+	startTime = Date.from(Instant.ofEpochMilli(startTime)),
+	endTime = endTime?.let { Date.from(Instant.ofEpochMilli(it)) },
+	distance = distance
 )
 
 fun DomainSession.toRoomModel() = RoomSession(
-    id = id,
-    startTime = startTime.time,
-    endTime = endTime?.time,
-    distance = distance
+	id = id,
+	startTime = startTime.time,
+	endTime = endTime?.time,
+	distance = distance
 )
 
 // Location
 fun RoomLocation.toDomainModel() = DomainLocation(
-    id = id,
-    latLng = LatLng(latitude, longitude),
-    speed = speed,
-    sessionId = sessionId,
-    time = Date.from(Instant.ofEpochMilli(time)),
-    accuracy = accuracy,
-    bearing = bearing,
-    bearingAccuracy = bearingAccuracy,
-    altitude = altitude,
-    speedAccuracy = speedAccuracy,
-    verticalAccuracy = verticalAccuracy
+	id = id,
+	latLng = LatLng(latitude, longitude),
+	speed = speed,
+	sessionId = sessionId,
+	time = Date.from(Instant.ofEpochMilli(time)),
+	accuracy = accuracy,
+	bearing = bearing,
+	bearingAccuracy = bearingAccuracy,
+	altitude = altitude,
+	speedAccuracy = speedAccuracy,
+	verticalAccuracy = verticalAccuracy
 )
 
 fun DomainLocation.toRoomModel() = RoomLocation(
-    latitude = latLng.latitude,
-    longitude = latLng.longitude,
-    speed = speed,
-    sessionId = sessionId,
-    time = time.time,
-    accuracy = accuracy,
-    bearing = bearing,
-    bearingAccuracy = bearingAccuracy,
-    altitude = altitude,
-    speedAccuracy = speedAccuracy,
-    verticalAccuracy = verticalAccuracy
+	latitude = latLng.latitude,
+	longitude = latLng.longitude,
+	speed = speed,
+	sessionId = sessionId,
+	time = time.time,
+	accuracy = accuracy,
+	bearing = bearing,
+	bearingAccuracy = bearingAccuracy,
+	altitude = altitude,
+	speedAccuracy = speedAccuracy,
+	verticalAccuracy = verticalAccuracy
 )
 
 fun Location.toDomainModel(sessionId: Long) = DomainLocation(
@@ -74,43 +83,43 @@ fun Location.toDomainModel(sessionId: Long) = DomainLocation(
 
 // Rotation
 fun RoomRotation.toDomainModel() = DomainRotation(
-    id = id,
-    time = Date.from(Instant.ofEpochMilli(time)),
-    sessionId = sessionId,
-    accuracy = accuracy,
-    x = x,
-    y = y,
-    z = z
+	id = id,
+	time = Date.from(Instant.ofEpochMilli(time)),
+	sessionId = sessionId,
+	accuracy = accuracy,
+	x = x,
+	y = y,
+	z = z
 )
 
 fun DomainRotation.toRoomModel() = RoomRotation(
-    time = time.time,
-    sessionId = sessionId,
-    accuracy = accuracy,
-    x = x,
-    y = y,
-    z = z
+	time = time.time,
+	sessionId = sessionId,
+	accuracy = accuracy,
+	x = x,
+	y = y,
+	z = z
 )
 
 // Acceleration
 fun RoomAcceleration.toDomainModel() = DomainAcceleration(
-    id = id,
-    time = Date.from(Instant.ofEpochMilli(time)),
-    sessionId = sessionId,
-    accuracy = accuracy,
-    x = x,
-    y = y,
-    z = z
+	id = id,
+	time = Date.from(Instant.ofEpochMilli(time)),
+	sessionId = sessionId,
+	accuracy = accuracy,
+	x = x,
+	y = y,
+	z = z
 )
 
 fun DomainAcceleration.toRoomModel() = RoomAcceleration(
-    id = id,
-    time = time.time,
-    sessionId = sessionId,
-    accuracy = accuracy,
-    x = x,
-    y = y,
-    z = z
+	id = id,
+	time = time.time,
+	sessionId = sessionId,
+	accuracy = accuracy,
+	x = x,
+	y = y,
+	z = z
 )
 
 // Sensors

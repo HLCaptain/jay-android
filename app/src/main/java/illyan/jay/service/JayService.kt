@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Jay is a driver behaviour analytics app.
+ * This file is part of Jay.
+ * Jay is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with Jay. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.service
 
 import android.content.Intent
@@ -10,6 +19,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.R
 import illyan.jay.domain.interactor.SensorInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.service.listener.AccelerationSensorEventListener
 import illyan.jay.service.listener.LocationEventListener
 import illyan.jay.service.listener.RotationSensorEventListener
 import kotlinx.coroutines.CoroutineScope
@@ -23,14 +33,16 @@ class JayService @Inject constructor(
 
 ) : BaseService() {
 
-    @Inject lateinit var accelerationSensorEventListener: RotationSensorEventListener
-    @Inject lateinit var rotationSensorEventListener: RotationSensorEventListener
+    @Inject
+    lateinit var accelerationSensorEventListener: AccelerationSensorEventListener
+    @Inject
+    lateinit var rotationSensorEventListener: RotationSensorEventListener
     @Inject lateinit var locationEventListener: LocationEventListener
     @Inject lateinit var sensorInteractor: SensorInteractor
-	@Inject lateinit var sessionInteractor: SessionInteractor
+    @Inject lateinit var sessionInteractor: SessionInteractor
     lateinit var icon: IconCompat
 
-	private var sessionId = -1L
+    private var sessionId = -1L
 
     companion object {
         private const val NOTIFICATION_ID = 333
@@ -105,7 +117,7 @@ class JayService @Inject constructor(
     override fun onDestroy() {
         stopSensors()
 
-	    scope.launch(Dispatchers.IO) { sessionInteractor.stopOngoingSessions() }
+        scope.launch(Dispatchers.IO) { sessionInteractor.stopOngoingSessions() }
         job.complete()
         isRunning = false
         super.onDestroy()
