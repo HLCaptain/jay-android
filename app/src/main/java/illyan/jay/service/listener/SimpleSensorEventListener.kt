@@ -11,19 +11,20 @@ package illyan.jay.service.listener
 
 import android.hardware.Sensor
 import android.hardware.SensorEvent
-import android.hardware.SensorEventCallback
 import android.hardware.SensorEventListener
 
+/**
+ * Simple sensor event listener.
+ * You are free to set each callback functions.
+ *
+ * @property onSensorChangedCallback this method is invoked upon calling onSensorChanged.
+ * @property onAccuracyChangedCallback this method is invoked upon calling onAccuracyCanged.
+ * @constructor Create empty Simple sensor event listener
+ */
 class SimpleSensorEventListener(
 	private var onSensorChangedCallback: (event: SensorEvent?) -> Unit = { _: SensorEvent? -> },
 	private val onAccuracyChangedCallback: (sensor: Sensor?, accuracy: Int) -> Unit = { _: Sensor?, _: Int -> }
 ) : SensorEventListener {
-
-	constructor(
-		sensorEventCallback: SensorEventCallback
-	) : this() {
-		onSensorChangedCallback = sensorEventCallback::onSensorChanged
-	}
 
 	override fun onSensorChanged(event: SensorEvent?) {
 		onSensorChangedCallback.invoke(event)

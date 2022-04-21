@@ -19,6 +19,17 @@ import illyan.jay.service.ServiceStateReceiver
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Service interactor handles service interactions, such as
+ * starting-stopping services and notifying receivers
+ * on service state changes.
+ *
+ * @property serviceStateReceiver receives state updates
+ * from services from the LocalBroadcastManager.
+ * @property context needed to register the ServiceStateReceiver
+ * on the LocalBroadcastManager.
+ * @constructor Create empty Service interactor
+ */
 @Singleton
 class ServiceInteractor @Inject constructor(
 	private val serviceStateReceiver: ServiceStateReceiver,
@@ -32,14 +43,29 @@ class ServiceInteractor @Inject constructor(
 		)
 	}
 
+	/**
+	 * Add service state listener.
+	 *
+	 * @param listener gets called when a service's status is changed.
+	 * @receiver receives the name of the service and that the service is running or not.
+	 */
 	fun addServiceStateListener(listener: (isRunning: Boolean, name: String) -> Unit) {
 		serviceStateReceiver.serviceStateListeners.add(listener)
 	}
 
+	/**
+	 * Remove service state listener.
+	 *
+	 * @param listener unsubscribing from state changes.
+	 * @receiver receives the name of the service and that the service is running or not.
+	 */
 	fun removeServiceStateListener(listener: (isRunning: Boolean, name: String) -> Unit) {
 		serviceStateReceiver.serviceStateListeners.remove(listener)
 	}
 
+	/**
+	 * Stop Jay service.
+	 */
 	fun stopJayService() {
 		if (isJayServiceRunning()) context.stopService(
 			Intent(
@@ -49,6 +75,9 @@ class ServiceInteractor @Inject constructor(
 		)
 	}
 
+	/**
+	 * Start Jay service in the Foreground.
+	 */
 	fun startJayService() {
 		if (!isJayServiceRunning()) context.startForegroundService(
 			Intent(
@@ -65,5 +94,10 @@ class ServiceInteractor @Inject constructor(
 //        return false
 //    }
 
+	/**
+	 * Gets whether Jay service is running or not.
+	 *
+	 * @return true if Jay is running in the foreground, otherwise false.
+	 */
 	fun isJayServiceRunning() = JayService.isRunning
 }

@@ -24,9 +24,11 @@ import permissions.dispatcher.RuntimePermissions
 
 @AndroidEntryPoint
 @RuntimePermissions
-class ServiceToggleFragment : RainbowCakeFragment<ServiceToggleViewState, ServiceToggleViewModel, FragmentServiceToggleBinding>() {
+class ServiceToggleFragment :
+	RainbowCakeFragment<ServiceToggleViewState, ServiceToggleViewModel, FragmentServiceToggleBinding>() {
 	override fun provideViewModel() = getViewModelFromFactory()
-	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentServiceToggleBinding = FragmentServiceToggleBinding::inflate
+	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentServiceToggleBinding =
+		FragmentServiceToggleBinding::inflate
 
 	companion object {
 		const val INITIAL = 0
@@ -35,23 +37,8 @@ class ServiceToggleFragment : RainbowCakeFragment<ServiceToggleViewState, Servic
 		const val OFF = 2
 	}
 
-	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-		super.onViewCreated(view, savedInstanceState)
-
-		viewModel.load()
-		binding.serviceLoadingCard.setOnClickListener {
-			toggleServiceWithPermissionCheck()
-		}
-		binding.serviceOnCard.setOnClickListener {
-			toggleServiceWithPermissionCheck()
-		}
-		binding.serviceOffCard.setOnClickListener {
-			toggleServiceWithPermissionCheck()
-		}
-	}
-
 	override fun render(viewState: ServiceToggleViewState) {
-		when(viewState) {
+		when (viewState) {
 			is Initial -> {
 				binding.serviceToggleCardFlipper.displayedChild = INITIAL
 			}
@@ -65,6 +52,14 @@ class ServiceToggleFragment : RainbowCakeFragment<ServiceToggleViewState, Servic
 				binding.serviceToggleCardFlipper.displayedChild = OFF
 			}
 		}.exhaustive
+	}
+
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
+		viewModel.load()
+		binding.serviceLoadingCard.setOnClickListener { toggleServiceWithPermissionCheck() }
+		binding.serviceOnCard.setOnClickListener { toggleServiceWithPermissionCheck() }
+		binding.serviceOffCard.setOnClickListener { toggleServiceWithPermissionCheck() }
 	}
 
 	@NeedsPermission(

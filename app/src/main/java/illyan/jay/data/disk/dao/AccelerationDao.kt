@@ -18,6 +18,9 @@ interface AccelerationDao {
     @Insert
     fun insertAcceleration(acceleration: RoomAcceleration): Long
 
+    @Insert
+    fun insertAccelerations(accelerations: List<RoomAcceleration>)
+
     @Query("SELECT * FROM acceleration")
     fun getAccelerations(): Flow<List<RoomAcceleration>>
 
@@ -25,7 +28,7 @@ interface AccelerationDao {
     fun updateAcceleration(acceleration: RoomAcceleration): Int
 
     @Update
-    fun updateAcceleration(acceleration: List<RoomAcceleration>): Int
+    fun updateAccelerations(acceleration: List<RoomAcceleration>): Int
 
     @Delete
     fun deleteAcceleration(acceleration: RoomAcceleration)

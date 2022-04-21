@@ -11,6 +11,16 @@ package illyan.jay.domain.model
 
 import java.util.*
 
+/**
+ * Domain session used for general data handling
+ * between DataSources, Interactors and Presenters.
+ *
+ * @property id
+ * @property startTime
+ * @property endTime
+ * @property distance
+ * @constructor Create empty Domain session
+ */
 data class DomainSession(
 	val id: Long = -1,
 	val startTime: Date,

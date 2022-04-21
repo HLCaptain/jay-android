@@ -12,6 +12,23 @@ package illyan.jay.domain.model
 import com.google.android.gms.maps.model.LatLng
 import java.util.*
 
+/**
+ * Domain location used for general data handling
+ * between DataSources, Interactors and Presenters.
+ *
+ * @property id
+ * @property latLng
+ * @property speed
+ * @property sessionId
+ * @property time
+ * @property accuracy
+ * @property bearing
+ * @property bearingAccuracy
+ * @property altitude
+ * @property speedAccuracy
+ * @property verticalAccuracy
+ * @constructor Create empty Domain location
+ */
 data class DomainLocation(
 	val id: Long = -1,
 	val latLng: LatLng,

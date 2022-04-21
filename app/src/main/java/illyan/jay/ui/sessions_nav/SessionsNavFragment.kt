@@ -20,21 +20,31 @@ import illyan.jay.databinding.FragmentSessionsNavBinding
 import illyan.jay.ui.custom.RainbowCakeFragment
 
 @AndroidEntryPoint
-class SessionsNavFragment : RainbowCakeFragment<SessionsNavViewState, SessionsNavViewModel, FragmentSessionsNavBinding>() {
-    override fun provideViewModel() = getViewModelFromFactory()
-    override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentSessionsNavBinding = FragmentSessionsNavBinding::inflate
+class SessionsNavFragment :
+	RainbowCakeFragment<SessionsNavViewState, SessionsNavViewModel, FragmentSessionsNavBinding>() {
+	override fun provideViewModel() = getViewModelFromFactory()
+	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentSessionsNavBinding =
+		FragmentSessionsNavBinding::inflate
 
-    override fun render(viewState: SessionsNavViewState) {
-        when(viewState) {
-            is Initial -> {
-                (requireActivity() as MainActivity).setNavController(binding.sessionsNavHost.findNavController())
-            }
-            is Loading -> {
+	override fun render(viewState: SessionsNavViewState) {
+		when (viewState) {
+			is Initial -> {
 
-            }
-            is Ready -> {
+			}
+			is Loading -> {
 
-            }
-        }.exhaustive
-    }
+			}
+			is Ready -> {
+
+			}
+		}.exhaustive
+	}
+
+	/**
+	 * Bind navController here for the smoothest transition!
+	 */
+	override fun onStart() {
+		super.onStart()
+		(requireActivity() as MainActivity).setNavController(binding.sessionsNavHost.findNavController())
+	}
 }

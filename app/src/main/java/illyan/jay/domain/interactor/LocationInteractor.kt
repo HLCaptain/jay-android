@@ -14,10 +14,18 @@ import illyan.jay.domain.model.DomainLocation
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Location interactor is a layer which aims to be the intermediary
+ * between a higher level logic and lower level data source.
+ *
+ * @property locationDiskDataSource local datasource
+ * @constructor Create empty Location interactor
+ */
 @Singleton
 class LocationInteractor @Inject constructor(
 	private var locationDiskDataSource: LocationDiskDataSource
 ) {
+
 	companion object {
 		const val LOCATION_REQUEST_INTERVAL_REALTIME = 200L
 		const val LOCATION_REQUEST_INTERVAL_FREQUENT = 500L
@@ -29,9 +37,48 @@ class LocationInteractor @Inject constructor(
 		const val LOCATION_REQUEST_DISPLACEMENT_LEAST_ACCURATE = 8f
 	}
 
-	fun getLocations(sessionId: Long, limit: Long) =
-		locationDiskDataSource.getLocations(sessionId, limit)
+	/**
+	 * Get latest (most up to date) locations as a Flow for a particular session.
+	 *
+	 * @param sessionId particular session's ID, which is the
+	 * foreign key of location data returned.
+	 * @param limit number of latest location data returned in order from
+	 * the freshest location to older location data.
+	 *
+	 * @return location data flow for a particular session in order from
+	 * the freshest location to older location data.
+	 */
+	fun getLatestLocations(sessionId: Long, limit: Long) =
+		locationDiskDataSource.getLatestLocations(sessionId, limit)
 
+	/**
+	 * Get locations' data as a Flow for a particular session.
+	 *
+	 * @param sessionId particular session's ID, which is the
+	 * foreign key of location data returned.
+	 *
+	 * @return location data flow for a particular session.
+	 */
 	fun getLocations(sessionId: Long) = locationDiskDataSource.getLocations(sessionId)
+
+	/**
+	 * Save location's data to Room database.
+	 * Should be linked to a session to be accessible later on.
+	 *
+	 * @param location location data saved onto the Room database.
+	 *
+	 * @return number of locations updated.
+	 */
 	fun saveLocation(location: DomainLocation) = locationDiskDataSource.saveLocation(location)
+
+	/**
+	 * Save locations' data to Room database.
+	 * Should be linked to a session to be accessible later on.
+	 *
+	 * @param locations list of location data saved onto the Room database.
+	 *
+	 * @return number of locations updated.
+	 */
+	fun saveLocations(locations: List<DomainLocation>) =
+		locationDiskDataSource.saveLocations(locations)
 }

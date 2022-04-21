@@ -14,25 +14,36 @@ import android.hardware.SensorEvent
 import illyan.jay.data.disk.toDomainAcceleration
 import illyan.jay.domain.interactor.AccelerationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.domain.model.DomainAcceleration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * Acceleration sensor event listener.
+ * On registration, it becomes active and saves data
+ * via AccelerationInteractor.
+ *
+ * @property accelerationInteractor saves data onto this interactor.
+ * @param sessionInteractor using the session interactor to properly save
+ * acceleration sensor data for each individual session.
+ * @constructor Create empty Acceleration event listener
+ */
 class AccelerationSensorEventListener @Inject constructor(
-    private val accelerationInteractor: AccelerationInteractor,
-    sessionInteractor: SessionInteractor
+	private val accelerationInteractor: AccelerationInteractor,
+	sessionInteractor: SessionInteractor
 ) : SessionSensorEventListener(sessionInteractor) {
-    override fun onSensorChanged(event: SensorEvent?) {
-        event?.let {
-            ongoingSessionIds.forEach { sessionId ->
-                scope.launch(Dispatchers.IO) {
-                    accelerationInteractor.saveAcceleration(it.toDomainAcceleration(sessionId))
-                }
-            }
-        }
-    }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+	override fun onSensorChanged(event: SensorEvent?) {
+		event?.let {
+			val accelerations = mutableListOf<DomainAcceleration>()
+			ongoingSessionIds.forEach { sessionId ->
+				accelerations += it.toDomainAcceleration(sessionId)
+			}
+			// Saving data for each session
+			scope.launch(Dispatchers.IO) { accelerationInteractor.saveAccelerations(accelerations) }
+		}
+	}
 
-    }
+	override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 }

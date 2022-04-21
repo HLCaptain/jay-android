@@ -39,6 +39,7 @@ class HomeFragment : RainbowCakeFragment<HomeViewState, HomeViewModel, FragmentH
 				requireActivity(),
 				GoogleSignInOptions
 					.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+					// Using Firebase.remoteConfig to easily propagate private keys via network.
 					.requestIdToken(Firebase.remoteConfig["default_web_client_id"].asString())
 					.requestEmail()
 					.build()
@@ -57,6 +58,7 @@ class HomeFragment : RainbowCakeFragment<HomeViewState, HomeViewModel, FragmentH
 				binding.homeText.text = "Loading..."
 			}
 			is Ready -> {
+				// Testing Firebase.remoteConfig to setup a customized text over the network.
 				binding.homeText.text = Firebase.remoteConfig["welcome_message"].asString()
 			}
 		}.exhaustive

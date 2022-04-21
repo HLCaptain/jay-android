@@ -15,8 +15,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SessionDao {
-	@Insert(onConflict = OnConflictStrategy.REPLACE)
+	@Insert
 	fun insertSession(session: RoomSession): Long
+
+	@Insert
+	fun insertSessions(sessions: RoomSession)
 
 	@Query("SELECT * FROM session")
 	fun getSessions(): Flow<List<RoomSession>>
@@ -28,7 +31,7 @@ interface SessionDao {
 	fun updateSession(session: RoomSession): Int
 
 	@Update
-	fun updateSession(sessions: List<RoomSession>): Int
+	fun updateSessions(sessions: List<RoomSession>): Int
 
 	@Delete
 	fun deleteSession(session: RoomSession)

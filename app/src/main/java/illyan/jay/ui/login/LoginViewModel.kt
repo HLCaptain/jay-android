@@ -29,11 +29,17 @@ class LoginViewModel @Inject constructor(
 	private val loginPresenter: LoginPresenter
 ) : RainbowCakeViewModel<LoginViewState>(Initial) {
 
+	/**
+	 * Refreshing login state.
+	 */
 	fun refresh() = executeNonBlocking {
 		viewState = Loading
 		viewState = if (loginPresenter.isUserLoggedIn()) LoggedIn else LoggedOut
 	}
 
+	/**
+	 * Loading up login state. Registering a listener to monitor the changes.
+	 */
 	fun load() = executeNonBlocking {
 		viewState = if (loginPresenter.isUserLoggedIn()) LoggedIn else LoggedOut
 		loginPresenter.addAuthStateListener {
@@ -45,6 +51,12 @@ class LoginViewModel @Inject constructor(
 		viewState = LoggingIn
 	}
 
+	/**
+	 * Handle Google sign in result.
+	 *
+	 * @param activity needed to sign in via Firebase.
+	 * @param completedTask task to get the Google sign in account from.
+	 */
 	fun handleGoogleSignInResult(
 		activity: Activity,
 		completedTask: Task<GoogleSignInAccount>
@@ -72,6 +84,14 @@ class LoginViewModel @Inject constructor(
 		}
 	}
 
+	/**
+	 * Firebase authentication with credential.
+	 * Tries to authenticate using Firebase services.
+	 *
+	 * @param activity needed to add a listener on completion.
+	 * Can be used to notify user about sign in request's result.
+	 * @param credential used to authenticate the user at sign in.
+	 */
 	private fun firebaseAuthWithCredential(activity: Activity, credential: AuthCredential) =
 		executeNonBlocking {
 			Firebase.auth.signInWithCredential(credential)

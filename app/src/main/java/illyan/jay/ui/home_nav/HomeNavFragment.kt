@@ -29,7 +29,7 @@ class HomeNavFragment :
 	override fun render(viewState: HomeNavViewState) {
 		when (viewState) {
 			is Initial -> {
-				(requireActivity() as MainActivity).setNavController(binding.homeNavHost.findNavController())
+
 			}
 			is Loading -> {
 
@@ -38,5 +38,13 @@ class HomeNavFragment :
 
 			}
 		}.exhaustive
+	}
+
+	/**
+	 * Bind navController here for the smoothest transition!
+	 */
+	override fun onStart() {
+		super.onStart()
+		(requireActivity() as MainActivity).setNavController(binding.homeNavHost.findNavController())
 	}
 }

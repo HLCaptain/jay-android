@@ -9,6 +9,7 @@
 
 package illyan.jay.ui.realtime_map
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -26,8 +27,11 @@ import com.google.maps.android.SphericalUtil
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.databinding.FragmentRealtimeMapBinding
 import illyan.jay.ui.custom.RainbowCakeFragment
+import permissions.dispatcher.NeedsPermission
+import permissions.dispatcher.RuntimePermissions
 
 @AndroidEntryPoint
+@RuntimePermissions
 class RealtimeMapFragment :
 	RainbowCakeFragment<RealtimeMapViewState, RealtimeMapViewModel, FragmentRealtimeMapBinding>(),
 	OnMapReadyCallback {
@@ -82,11 +86,19 @@ class RealtimeMapFragment :
 
 	override fun onMapReady(p0: GoogleMap) {
 		map = p0
-		viewModel.load()
+		loadMapWithPermissionCheck()
 	}
 
 	override fun onPause() {
 		viewModel.unload()
 		super.onPause()
+	}
+
+	@NeedsPermission(
+		Manifest.permission.FOREGROUND_SERVICE,
+		Manifest.permission.ACCESS_FINE_LOCATION
+	)
+	fun loadMap() {
+		viewModel.load()
 	}
 }

@@ -18,7 +18,12 @@ import co.zsmb.rainbowcake.base.RainbowCakeFragment
 import co.zsmb.rainbowcake.base.RainbowCakeViewModel
 
 /**
- * Same as RainbowCakeFragment, but uses ViewBinding for view inflation.
+ * Same as RainbowCakeFragment<VS, VM>, but uses ViewBinding for view inflation.
+ *
+ * @param VS ViewState class.
+ * @param VM ViewModel class, which takes VS as a template parameter.
+ * @param VB ViewBinding inflater class.
+ * @constructor Create empty Rainbow cake fragment
  */
 abstract class RainbowCakeFragment<
         VS : Any,
@@ -37,5 +42,10 @@ abstract class RainbowCakeFragment<
         return binding.root
     }
 
+    /**
+     * Provide view binding inflater.
+     *
+     * @return inflater function with proper parameters.
+     */
     protected abstract fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> VB
 }

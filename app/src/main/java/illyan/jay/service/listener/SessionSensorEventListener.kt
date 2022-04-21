@@ -19,14 +19,30 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
+/**
+ * Session sensor event listener
+ *
+ * @property sessionInteractor
+ * @constructor Create empty Session sensor event listener
+ */
 abstract class SessionSensorEventListener(
 	private val sessionInteractor: SessionInteractor
 ) : SensorEventListener {
 
+	/**
+	 * Dispatchers.IO scope used to sync ongoing session IDs.
+	 */
 	protected val scope = CoroutineScope(Dispatchers.IO)
+
+	/**
+	 * IDs of ongoing sessions. Needed to be private to ensure safety
+	 * from ConcurrentModificationExceptions.
+	 */
 	private val _ongoingSessionIds = mutableListOf<Long>()
 
-	// Needed to guarantee safety from ConcurrentModificationException
+	/**
+	 * Needed to guarantee safety from ConcurrentModificationExceptions.
+	 */
 	protected val ongoingSessionIds get() = _ongoingSessionIds.toList()
 
 	init {
@@ -35,6 +51,9 @@ abstract class SessionSensorEventListener(
 		}
 	}
 
+	/**
+	 * Load ongoing session IDs with IO context on a non UI thread.
+	 */
 	private suspend fun loadOngoingSessionIds() = withIOContext {
 		sessionInteractor.getOngoingSessionIds()
 			.flowOn(Dispatchers.IO)

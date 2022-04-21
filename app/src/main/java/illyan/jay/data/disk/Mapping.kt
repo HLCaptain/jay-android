@@ -113,7 +113,6 @@ fun RoomAcceleration.toDomainModel() = DomainAcceleration(
 )
 
 fun DomainAcceleration.toRoomModel() = RoomAcceleration(
-	id = id,
 	time = time.time,
 	sessionId = sessionId,
 	accuracy = accuracy,

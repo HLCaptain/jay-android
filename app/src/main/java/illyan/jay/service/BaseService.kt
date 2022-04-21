@@ -18,7 +18,17 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import illyan.jay.MainActivity
 import timber.log.Timber
 
+/**
+ * Base (foreground) service class which provide some basic
+ * state broadcasting behaviours.
+ * Also provides a way for Foreground Services to
+ * update notifications as needed.
+ * OnBind returns null as a default.
+ *
+ * @constructor Create empty Base service
+ */
 abstract class BaseService : Service() {
+
     companion object {
         const val KEY_SERVICE_STATE_CHANGE = "KEY_SERVICE_STATE_CHANGE"
         const val KEY_SERVICE_NAME = "KEY_SERVICE_NAME"
@@ -26,6 +36,12 @@ abstract class BaseService : Service() {
         const val SERVICE_STOPPED = "SERVICE_STOPPED"
     }
 
+    /**
+     * Broadcast service state change.
+     *
+     * @param name name of the service.
+     * @param state state of the service.
+     */
     private fun broadcastStateChange(
         name: String,
         state: String
@@ -38,6 +54,12 @@ abstract class BaseService : Service() {
         LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
     }
 
+    /**
+     * On bind always returns null, because the service is a foreground service.
+     *
+     * @param intent
+     * @return null
+     */
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
@@ -52,6 +74,16 @@ abstract class BaseService : Service() {
         super.onDestroy()
     }
 
+    /**
+     * Create notification
+     *
+     * @param title
+     * @param text
+     * @param channelId
+     * @param notificationId
+     * @param icon
+     * @return
+     */
     fun createNotification(
         title: String,
         text: String,
@@ -81,6 +113,15 @@ abstract class BaseService : Service() {
             .build()
     }
 
+    /**
+     * Update notification
+     *
+     * @param title
+     * @param text
+     * @param channelId
+     * @param notificationId
+     * @param icon
+     */
     fun updateNotification(
         title: String,
         text: String,

@@ -77,7 +77,7 @@ dependencies {
     implementation 'com.jakewharton.timber:timber:5.0.1'
 
     // Jetpack components
-    def lifecycle_version = "2.5.0-alpha06"
+    def lifecycle_version = "2.5.0-beta01"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
 
@@ -87,7 +87,7 @@ dependencies {
     kapt "com.github.permissions-dispatcher:permissionsdispatcher-processor:$permission_dispatcher_version"
 
     // Navigation
-    def navigation_component_version = "2.5.0-alpha04"
+    def navigation_component_version = "2.5.0-beta01"
     implementation "androidx.navigation:navigation-fragment-ktx:$navigation_component_version"
     implementation "androidx.navigation:navigation-ui-ktx:$navigation_component_version"
     implementation "androidx.navigation:navigation-dynamic-features-fragment:$navigation_component_version"

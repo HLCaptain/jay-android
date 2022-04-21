@@ -25,6 +25,13 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DiskModule {
 
+	/**
+	 * Providing Jay database
+	 * Do not call this method,
+	 * this is only for Hilt to inject dependency in other classes.
+	 *
+	 * @param context needed to build the database.
+	 */
 	@Provides
 	@Singleton
 	fun provideDatabase(@ApplicationContext context: Context) = Room
@@ -36,21 +43,48 @@ object DiskModule {
 				Timber.i("${db.path} v${db.version} created")
 			}
 		})
-		.enableMultiInstanceInvalidation()
 		.build()
 
+	/**
+	 * Provide acceleration dao
+	 * Do not call this method,
+	 * this is only for Hilt to inject dependency in other classes.
+	 *
+	 * @param db Jay's local SQLite database
+	 */
 	@Provides
 	@Singleton
 	fun provideAccelerationDao(db: JayDatabase) = db.accelerationDao()
 
+	/**
+	 * Provide location dao
+	 * Do not call this method,
+	 * this is only for Hilt to inject dependency in other classes.
+	 *
+	 * @param db Jay's local SQLite database
+	 */
 	@Provides
 	@Singleton
 	fun provideLocationDao(db: JayDatabase) = db.locationDao()
 
+	/**
+	 * Provide rotation dao
+	 * Do not call this method,
+	 * this is only for Hilt to inject dependency in other classes.
+	 *
+	 * @param db Jay's local SQLite database
+	 */
 	@Provides
 	@Singleton
 	fun provideRotationDao(db: JayDatabase) = db.rotationDao()
 
+	/**
+	 * Provide session dao
+	 * Do not call this method,
+	 * this is only for Hilt to inject dependency in other classes.
+	 *
+	 * @param db Jay's local SQLite database
+	 */
 	@Provides
 	@Singleton
 	fun provideSessionDao(db: JayDatabase) = db.sessionDao()

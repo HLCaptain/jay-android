@@ -11,7 +11,19 @@ package illyan.jay.domain.model
 
 import java.util.*
 
-
+/**
+ * Domain acceleration used for general data handling
+ * between DataSources, Interactors and Presenters.
+ *
+ * @property id
+ * @property sessionId
+ * @property time
+ * @property accuracy
+ * @property x
+ * @property y
+ * @property z
+ * @constructor Create empty Domain acceleration
+ */
 data class DomainAcceleration(
 	val id: Long = -1,
 	val sessionId: Long,

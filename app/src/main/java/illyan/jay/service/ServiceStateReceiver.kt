@@ -15,30 +15,38 @@ import android.content.Intent
 import timber.log.Timber
 import javax.inject.Inject
 
+/**
+ * Service state receiver listens to service state changes
+ * if registered as a Broadcast Receiver.
+ * On message received, it notifies each listener which
+ * subscribed to the state of each service.
+ *
+ * @constructor Create empty Service state receiver
+ */
 class ServiceStateReceiver @Inject constructor(
 
 ) : BroadcastReceiver() {
 
-    val serviceStateListeners = mutableListOf<(Boolean, String) -> Unit>()
+	val serviceStateListeners = mutableListOf<(Boolean, String) -> Unit>()
 
-    override fun onReceive(context: Context?, intent: Intent?) {
-        intent?.let {
-            when(it.action) {
-                // When the service changed states
-                BaseService.KEY_SERVICE_STATE_CHANGE -> {
-                    val name = it.getStringExtra(BaseService.KEY_SERVICE_NAME).toString()
-                    val state = it.getStringExtra(BaseService.KEY_SERVICE_STATE_CHANGE)
-                    Timber.i("Service $name state = $state")
-                    when(state) {
-                        BaseService.SERVICE_RUNNING -> {
-                            serviceStateListeners.forEach { listener -> listener.invoke(true, name) }
-                        }
-                        BaseService.SERVICE_STOPPED -> {
-                            serviceStateListeners.forEach { listener -> listener.invoke(false, name) }
-                        }
-                    }
-                }
-            }
-        }
-    }
+	override fun onReceive(context: Context?, intent: Intent?) {
+		intent?.let {
+			when(it.action) {
+				// When the service changed states
+				BaseService.KEY_SERVICE_STATE_CHANGE -> {
+					val name = it.getStringExtra(BaseService.KEY_SERVICE_NAME).toString()
+					val state = it.getStringExtra(BaseService.KEY_SERVICE_STATE_CHANGE)
+					Timber.i("Service $name state = $state")
+					when(state) {
+						BaseService.SERVICE_RUNNING -> {
+							serviceStateListeners.forEach { listener -> listener.invoke(true, name) }
+						}
+						BaseService.SERVICE_STOPPED -> {
+							serviceStateListeners.forEach { listener -> listener.invoke(false, name) }
+						}
+					}
+				}
+			}
+		}
+	}
 }

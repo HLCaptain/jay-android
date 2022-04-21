@@ -18,6 +18,9 @@ interface RotationDao {
 	@Insert
 	fun insertRotation(rotation: RoomRotation): Long
 
+	@Insert
+	fun insertRotations(rotations: List<RoomRotation>)
+
 	@Query("SELECT * FROM rotation")
 	fun getRotations(): Flow<List<RoomRotation>>
 
@@ -25,7 +28,7 @@ interface RotationDao {
 	fun updateRotation(rotation: RoomRotation): Int
 
 	@Update
-	fun updateRotation(rotation: List<RoomRotation>): Int
+	fun updateRotations(rotation: List<RoomRotation>): Int
 
 	@Delete
 	fun deleteRotation(rotation: RoomRotation)

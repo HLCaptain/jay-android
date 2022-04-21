@@ -23,12 +23,8 @@ import illyan.jay.ui.custom.RainbowCakeFragment
 class SessionInfoFragment : RainbowCakeFragment<SessionInfoViewState, SessionInfoViewModel, FragmentSessionInfoBinding>() {
 	override fun provideViewModel() = getViewModelFromFactory()
 	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentSessionInfoBinding = FragmentSessionInfoBinding::inflate
-	private val args: SessionInfoFragmentArgs by navArgs()
 
-	override fun onCreate(savedInstanceState: Bundle?) {
-		super.onCreate(savedInstanceState)
-		viewModel.loadSession(args.sessionId)
-	}
+	private val args: SessionInfoFragmentArgs by navArgs()
 
 	override fun render(viewState: SessionInfoViewState) {
 		when(viewState) {
@@ -45,5 +41,10 @@ class SessionInfoFragment : RainbowCakeFragment<SessionInfoViewState, SessionInf
 
 			}
 		}.exhaustive
+	}
+
+	override fun onCreate(savedInstanceState: Bundle?) {
+		super.onCreate(savedInstanceState)
+		viewModel.loadSession(args.sessionId)
 	}
 }

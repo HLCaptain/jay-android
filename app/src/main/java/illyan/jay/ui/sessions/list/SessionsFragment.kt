@@ -29,14 +29,8 @@ class SessionsFragment : RainbowCakeFragment<SessionsViewState, SessionsViewMode
 	private var itemEventListener: SessionItemEventListener = SessionItemEventListener()
 	private lateinit var adapter: SessionsAdapter
 
-	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-		super.onViewCreated(view, savedInstanceState)
-		loadRecycler()
-		viewModel.load()
-	}
-
 	override fun render(viewState: SessionsViewState) {
-		when(viewState) {
+		when (viewState) {
 			is Initial -> {
 
 			}
@@ -49,13 +43,21 @@ class SessionsFragment : RainbowCakeFragment<SessionsViewState, SessionsViewMode
 		}.exhaustive
 	}
 
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
+		loadRecycler()
+		viewModel.load()
+	}
+
 	private fun loadRecycler() {
 		itemEventListener.setOnItemClickListener {
-			val action = SessionsFragmentDirections.actionSessionsFragmentToSessionInfoFragment(it.id)
+			val action =
+				SessionsFragmentDirections.actionSessionsFragmentToSessionInfoFragment(it.id)
 			findNavController().navigate(action)
 		}
 		itemEventListener.setOnMapClickListener {
-			val action = SessionsFragmentDirections.actionSessionsFragmentToSessionMapFragment(it.id)
+			val action =
+				SessionsFragmentDirections.actionSessionsFragmentToSessionMapFragment(it.id)
 			findNavController().navigate(action)
 		}
 		itemEventListener.setOnItemLongClickListener { true }

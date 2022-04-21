@@ -23,10 +23,11 @@ import illyan.jay.ui.custom.RainbowCakeFragment
 class RealtimeMapNavFragment : RainbowCakeFragment<RealtimeMapNavViewState, RealtimeMapNavViewModel, FragmentRealtimeMapNavBinding>() {
 	override fun provideViewModel() = getViewModelFromFactory()
 	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentRealtimeMapNavBinding = FragmentRealtimeMapNavBinding::inflate
+
 	override fun render(viewState: RealtimeMapNavViewState) {
-		when(viewState) {
+		when (viewState) {
 			is Initial -> {
-				(requireActivity() as MainActivity).setNavController(binding.realtimeMapNavHost.findNavController())
+
 			}
 			is Loading -> {
 
@@ -35,5 +36,13 @@ class RealtimeMapNavFragment : RainbowCakeFragment<RealtimeMapNavViewState, Real
 
 			}
 		}.exhaustive
+	}
+
+	/**
+	 * Bind navController here for the smoothest transition!
+	 */
+	override fun onStart() {
+		super.onStart()
+		(requireActivity() as MainActivity).setNavController(binding.realtimeMapNavHost.findNavController())
 	}
 }

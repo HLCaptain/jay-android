@@ -80,16 +80,13 @@ class SessionMapFragment :
 								northEast = LatLng(location.latLng.latitude, northEast.longitude)
 							}
 						}
-						if (!it.projection.visibleRegion.latLngBounds.contains(southWest) || !it.projection.visibleRegion.latLngBounds.contains(
-								northEast
-							) || viewState.firstLoaded
+						if (!it.projection.visibleRegion.latLngBounds.contains(southWest)
+							|| !it.projection.visibleRegion.latLngBounds.contains(northEast)
+							|| viewState.firstLoaded
 						) {
 							it.animateCamera(
 								CameraUpdateFactory.newLatLngBounds(
-									LatLngBounds(
-										southWest,
-										northEast
-									),
+									LatLngBounds(southWest, northEast),
 									160
 								)
 							)

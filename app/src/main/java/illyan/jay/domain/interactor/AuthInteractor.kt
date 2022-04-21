@@ -15,10 +15,28 @@ import com.google.firebase.ktx.Firebase
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Auth interactor is an abstraction layer between higher level logic
+ * and lower level implementation.
+ * Based on Firebase's Authentication system.
+ *
+ * @constructor Create empty Auth interactor
+ */
 @Singleton
 class AuthInteractor @Inject constructor() {
+	/**
+	 * Gets if the user is logged in or not.
+	 *
+	 * @return true if the current user is not null, otherwise returns false.
+	 */
 	fun isUserLoggedIn(): Boolean = Firebase.auth.currentUser != null
 
+	/**
+	 * Add authentication state listener
+	 *
+	 * @param listener listener to add to state changes.
+	 * @receiver receives a copy of current FirebaseAuth object as a state.
+	 */
 	fun addAuthStateListener(listener: (FirebaseAuth) -> Unit) {
 		Firebase.auth.addAuthStateListener {
 			listener(it)

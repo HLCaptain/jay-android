@@ -18,15 +18,60 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Location disk data source using Room to communicate with the SQLite database.
+ *
+ * @property locationDao used to insert, update, delete and query commands using Room.
+ * @constructor Create empty Location disk data source
+ */
 @Singleton
 class LocationDiskDataSource @Inject constructor(
 	private val locationDao: LocationDao
 ) {
-	fun getLocations(sessionId: Long, limit: Long) = locationDao.getLocations(sessionId, limit)
-		.map { it.map(RoomLocation::toDomainModel) }
+	/**
+	 * Get latest (most up to date) locations as a Flow for a particular session.
+	 *
+	 * @param sessionId particular session's ID, which is the
+	 * foreign key of the location data returned.
+	 * @param limit number of latest location data returned in order from
+	 * the freshest location to older location data.
+	 *
+	 * @return location data flow for a particular session in order from
+	 * the freshest location to older location data.
+	 */
+	fun getLatestLocations(sessionId: Long, limit: Long) =
+		locationDao.getLatestLocations(sessionId, limit)
+			.map { it.map(RoomLocation::toDomainModel) }
 
+	/**
+	 * Get locations' data as a Flow for a particular session.
+	 *
+	 * @param sessionId particular session's ID, which is the
+	 * foreign key of location data returned.
+	 *
+	 * @return location data flow for a particular session.
+	 */
 	fun getLocations(sessionId: Long) = locationDao.getLocations(sessionId)
 		.map { it.map(RoomLocation::toDomainModel) }
 
+	/**
+	 * Save location's data to Room database.
+	 * Should be linked to a session to be accessible later on.
+	 *
+	 * @param location location data saved onto the Room database.
+	 *
+	 * @return number of locations updated.
+	 */
 	fun saveLocation(location: DomainLocation) = locationDao.insertLocation(location.toRoomModel())
+
+	/**
+	 * Save locations' data to Room database.
+	 * Should be linked to a session to be accessible later on.
+	 *
+	 * @param locations list of location data saved onto the Room database.
+	 *
+	 * @return number of locations updated.
+	 */
+	fun saveLocations(locations: List<DomainLocation>) =
+		locationDao.insertLocations(locations.map(DomainLocation::toRoomModel))
 }

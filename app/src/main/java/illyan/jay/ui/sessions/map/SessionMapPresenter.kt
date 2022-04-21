@@ -31,5 +31,5 @@ private fun DomainLocation.toUiModel() = UiLocation(
 	latLng = latLng,
 	sessionId = sessionId,
 	time = time,
-	color = Color.valueOf(Color.CYAN)
+	color = Color.valueOf(Color.MAGENTA)
 )

@@ -18,16 +18,52 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import javax.inject.Inject
 
+/**
+ * Sensor data source helps registering SensorEventListeners to sensor events.
+ * Also can register LocationCallbacks to location updates.
+ *
+ * @property sensorManager enables listening to sensor events.
+ * @property fusedLocationProviderClient enables listening to location events
+ * and setting location request options.
+ * @constructor Create empty Sensor data source
+ */
 class SensorDataSource @Inject constructor(
 	private val sensorManager: SensorManager,
 	private val fusedLocationProviderClient: FusedLocationProviderClient
 ) {
+	/**
+	 * Register sensor listener.
+	 *
+	 * @param listener a SensorEventListener object.
+	 * @param type of sensors requested.
+	 * @param delay requested delay to fire an event.
+	 * This might fluctuate based on device usage.
+	 *
+	 * @return true if the sensor is supported and successfully enabled.
+	 */
 	fun registerSensorListener(
 		listener: SensorEventListener,
 		type: Int,
 		delay: Int
 	) = sensorManager.registerListener(listener, sensorManager.getDefaultSensor(type), delay)
 
+	/**
+	 * Unregister sensor listener.
+	 *
+	 * @param listener listener to unregister/unsubscribe from updates.
+	 */
+	fun unregisterSensorListener(listener: SensorEventListener) =
+		sensorManager.unregisterListener(listener)
+
+	/**
+	 * Update sensor listener.
+	 *
+	 * @param newListener new listener to register/subscribe to updates.
+	 * @param oldListener old listener to unregister/unsubscribe from updates.
+	 * @param type  requested delay to fire an event.
+	 * @param delay requested delay to fire an event.
+	 * This might fluctuate based on device usage.
+	 */
 	fun updateSensorListener(
 		newListener: SensorEventListener,
 		oldListener: SensorEventListener,
@@ -38,9 +74,12 @@ class SensorDataSource @Inject constructor(
 		registerSensorListener(newListener, type, delay)
 	}
 
-	fun unregisterSensorListener(listener: SensorEventListener) =
-		sensorManager.unregisterListener(listener)
-
+	/**
+	 * Request location updates.
+	 *
+	 * @param request data object which determines the quality of service.
+	 * @param callback method to call when there is a new location update.
+	 */
 	@SuppressLint("MissingPermission")
 	fun requestLocationUpdates(
 		request: LocationRequest,
@@ -49,6 +88,11 @@ class SensorDataSource @Inject constructor(
 		.requestLocationUpdates(request, callback, Looper.getMainLooper())
 
 
+	/**
+	 * Remove location updates.
+	 *
+	 * @param callback method to remove from new location updates.
+	 */
 	fun removeLocationUpdates(callback: LocationCallback) =
 		fusedLocationProviderClient.removeLocationUpdates(callback)
 }

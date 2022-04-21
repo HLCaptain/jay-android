@@ -19,14 +19,57 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+
+/**
+ * Rotation disk data source using Room to communicate with the SQLite database.
+ *
+ * @property rotationDao used to insert, update, delete and query commands using Room.
+ * @constructor Create empty Rotation disk data source
+ */
 @Singleton
 class RotationDiskDataSource @Inject constructor(
 	private val rotationDao: RotationDao
 ) {
+	/**
+	 * Get rotations' data as a Flow for a particular session.
+	 *
+	 * @param session particular session, whose ID is the
+	 * foreign key of rotation data returned.
+	 *
+	 * @return rotation data for a particular session.
+	 */
 	fun getRotations(session: DomainSession) = getRotations(session.id)
+
+	/**
+	 * Get rotations' data as a Flow for a particular session.
+	 *
+	 * @param sessionId particular session's ID, which is the
+	 * foreign key of rotation data returned.
+	 *
+	 * @return rotation data flow for a particular session.
+	 */
 	fun getRotations(sessionId: Long) =
 		rotationDao.getRotations(sessionId).map { it.map(RoomRotation::toDomainModel) }
 
+	/**
+	 * Save rotation's data to Room database.
+	 * Should be linked to a session to be accessible later on.
+	 *
+	 * @param rotation rotation data saved onto the Room database.
+	 *
+	 * @return number of rotations updated.
+	 */
 	fun saveRotation(rotation: DomainRotation) =
 		rotationDao.insertRotation(rotation.toRoomModel())
+
+	/**
+	 * Save rotation's data to Room database.
+	 * Should be linked to a session to be accessible later on.
+	 *
+	 * @param rotations list of rotation data saved onto the Room database.
+	 *
+	 * @return number of rotations updated.
+	 */
+	fun saveRotations(rotations: List<DomainRotation>) =
+		rotationDao.insertRotations(rotations.map(DomainRotation::toRoomModel))
 }

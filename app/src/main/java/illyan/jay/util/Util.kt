@@ -12,7 +12,14 @@ package illyan.jay.util
 import android.os.SystemClock
 import java.time.Instant
 
-fun sensorTimestampToAbsoluteTime(timestamp: Long): Long {
-	return Instant.now()
-		.toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1000000L
-}
+/**
+ * Sensor timestamp to absolute time.
+ * Converts a SensorEvent's timestamp Long value to another Long value which
+ * counts from Instant.EPOCH instead of system reboot time.
+ *
+ * @param timestamp timestamp counted from system reboot converted into
+ * counted from Instant.EPOCH.
+ * @return timestamp counted from Instant.EPOCH.
+ */
+fun sensorTimestampToAbsoluteTime(timestamp: Long) = Instant.now()
+	.toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1000000L

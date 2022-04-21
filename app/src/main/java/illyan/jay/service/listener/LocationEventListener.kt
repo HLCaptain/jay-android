@@ -17,6 +17,8 @@ import com.google.maps.android.SphericalUtil
 import illyan.jay.data.disk.toDomainModel
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.domain.model.DomainLocation
+import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -24,11 +26,27 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * Location event listener .
+ * On registration, it becomes active and saves data
+ * via LocationInteractor and SessionInteractor.
+ *
+ * @property locationInteractor saves data onto this interactor.
+ * @property sessionInteractor using the session interactor to properly save
+ * location data for each individual session.
+ * @constructor Create empty Location event listener
+ */
 class LocationEventListener @Inject constructor(
 	private val locationInteractor: LocationInteractor,
 	private val sessionInteractor: SessionInteractor
 ) : SessionSensorEventListener(sessionInteractor) {
 
+	/**
+	 * Used to be registered to get location updates.
+	 * Saves location data for every ongoing session.
+	 * Property can be set for testing purposes (ie. logging)
+	 * and still save the data via SessionInteractor and LocationInteractor.
+	 */
 	var locationCallback: LocationCallback = object : LocationCallback() {}
 		set(value) {
 			field = object : LocationCallback() {
@@ -36,10 +54,12 @@ class LocationEventListener @Inject constructor(
 					super.onLocationResult(locationResult)
 					scope.launch(Dispatchers.IO) {
 						// Saving locations for every ongoing session
+						val locations = mutableListOf<DomainLocation>()
+						val sessions = mutableListOf<DomainSession>()
 						ongoingSessionIds.forEach { sessionId ->
 							val newLocation = locationResult.lastLocation.toDomainModel(sessionId)
 							// Updating distances for each location
-							locationInteractor.getLocations(sessionId, 1)
+							locationInteractor.getLatestLocations(sessionId, 1)
 								.flowOn(Dispatchers.IO)
 								.map { it.firstOrNull() }
 								.first { location ->
@@ -55,15 +75,18 @@ class LocationEventListener @Inject constructor(
 														newLocation.latLng
 													)
 													// Saving the session with the new distance
-													sessionInteractor.saveSession(session)
+													sessions += session
 												}
 												true
 											}
 									}
 									true
 								}
-							locationInteractor.saveLocation(newLocation)
+							locations += newLocation
 						}
+						// Saving data with only one query.
+						locationInteractor.saveLocations(locations)
+						sessionInteractor.saveSessions(sessions)
 					}
 					value.onLocationResult(locationResult)
 				}
@@ -73,6 +96,9 @@ class LocationEventListener @Inject constructor(
 			}
 		}
 
+	/**
+	 * Default location request for use to register updates on LocationCallback.
+	 */
 	var locationRequest = LocationRequest
 		.create()
 		.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)

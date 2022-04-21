@@ -16,7 +16,6 @@ import androidx.core.graphics.drawable.IconCompat
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import dagger.hilt.android.AndroidEntryPoint
-import illyan.jay.R
 import illyan.jay.domain.interactor.SensorInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.service.listener.AccelerationSensorEventListener
@@ -28,6 +27,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * Jay service used to collect data from all kinds of sensors.
+ *
+ * @constructor Create empty Jay service
+ */
 @AndroidEntryPoint
 class JayService @Inject constructor(
 
@@ -37,11 +41,14 @@ class JayService @Inject constructor(
     lateinit var accelerationSensorEventListener: AccelerationSensorEventListener
     @Inject
     lateinit var rotationSensorEventListener: RotationSensorEventListener
-    @Inject lateinit var locationEventListener: LocationEventListener
-    @Inject lateinit var sensorInteractor: SensorInteractor
-    @Inject lateinit var sessionInteractor: SessionInteractor
+    @Inject
+    lateinit var locationEventListener: LocationEventListener
+    @Inject
+    lateinit var sensorInteractor: SensorInteractor
+    @Inject
+    lateinit var sessionInteractor: SessionInteractor
+    @Inject
     lateinit var icon: IconCompat
-
     private var sessionId = -1L
 
     companion object {
@@ -51,7 +58,6 @@ class JayService @Inject constructor(
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        icon = IconCompat.createWithResource(applicationContext, R.drawable.ic_launcher_foreground)
         startForeground(
             NOTIFICATION_ID,
             super.createNotification(
@@ -63,11 +69,11 @@ class JayService @Inject constructor(
             )
         )
 
+        // Starting sensors right after starting the sessions. Not necessary, but no harm.
         scope.launch(Dispatchers.IO) {
             sessionId = sessionInteractor.startSession()
-        }
+        }.invokeOnCompletion { startSensors() }
 
-        startSensors()
         return START_STICKY_COMPATIBILITY
     }
 

@@ -14,10 +14,30 @@ import illyan.jay.domain.model.DomainAcceleration
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Acceleration interactor is a layer which aims to be the intermediary
+ * between a higher level logic and lower level data source.
+ *
+ * @property accelerationDiskDataSource local datasource
+ * @constructor Create empty Acceleration interactor
+ */
 @Singleton
 class AccelerationInteractor @Inject constructor(
 	private val accelerationDiskDataSource: AccelerationDiskDataSource
 ) {
+	/**
+	 * Save an acceleration data instance.
+	 *
+	 * @param acceleration acceleration data to be saved.
+	 */
 	fun saveAcceleration(acceleration: DomainAcceleration) =
 		accelerationDiskDataSource.saveAcceleration(acceleration)
+
+	/**
+	 * Save multiple acceleration data instances.
+	 *
+	 * @param accelerations multiple accelerations to be saved.
+	 */
+	fun saveAccelerations(accelerations: List<DomainAcceleration>) =
+		accelerationDiskDataSource.saveAccelerations(accelerations)
 }

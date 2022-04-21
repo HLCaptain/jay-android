@@ -13,11 +13,22 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 
 /**
- * ViewHolder using ViewBinding to bind its view and Data classes to restrict information given.
+ * ViewHolder using ViewBinding to bind its view and
+ * Data classes to restrict information given.
+ *
+ * @param VB ViewBinding class.
+ * @param Item data class, which carries information for the UI.
+ * @property binding binding of the view.
+ * @constructor Create empty View holder
  */
 abstract class ViewHolder<VB : ViewBinding, Item : Any>(
     private val binding: VB
 ) : RecyclerView.ViewHolder(binding.root) {
+
+    /**
+     * Item must change from null to a bound (not null) state.
+     * It calls itemChanged when that happens.
+     */
     var item: Item? = null
         set(value) {
             value?.let {
@@ -26,5 +37,11 @@ abstract class ViewHolder<VB : ViewBinding, Item : Any>(
             }
         }
 
+    /**
+     * Gets called when the item is changed.
+     * Great opportunity to bind your view to the new item.
+     *
+     * @param newItem item's new value.
+     */
     protected abstract fun itemChanged(newItem: Item)
 }

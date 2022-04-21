@@ -11,7 +11,6 @@ package illyan.jay.data.disk
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 import illyan.jay.data.disk.dao.AccelerationDao
 import illyan.jay.data.disk.dao.LocationDao
 import illyan.jay.data.disk.dao.RotationDao
@@ -21,6 +20,12 @@ import illyan.jay.data.disk.model.RoomLocation
 import illyan.jay.data.disk.model.RoomRotation
 import illyan.jay.data.disk.model.RoomSession
 
+/**
+ * Jay abstract database class annotated for generated code
+ * to create SQLite implementations.
+ *
+ * @constructor Create empty Jay database
+ */
 @Database(
 	entities = [
 		RoomSession::class,
@@ -28,16 +33,38 @@ import illyan.jay.data.disk.model.RoomSession
 		RoomAcceleration::class,
 		RoomRotation::class
 	],
-	version = 6,
+	version = 7,
 	exportSchema = false
 )
-@TypeConverters(
-	RoomConverter::class
-)
 abstract class JayDatabase : RoomDatabase() {
+	/**
+	 * Room's generated code implements this method.
+	 * Session Dao helps with managing sessions, which are essentially
+	 * an interval of time spent collecting data.
+	 *
+	 * @return SessionDao
+	 */
 	abstract fun sessionDao(): SessionDao
+
+	/**
+	 * Room's generated code implements this method.
+	 *
+	 * @return LocationDao
+	 */
 	abstract fun locationDao(): LocationDao
+
+	/**
+	 * Room's generated code implements this method.
+	 *
+	 * @return AccelerationDao
+	 */
 	abstract fun accelerationDao(): AccelerationDao
+
+	/**
+	 * Room's generated code implements this method.
+	 *
+	 * @return RotationDao
+	 */
 	abstract fun rotationDao(): RotationDao
 
 	companion object {
