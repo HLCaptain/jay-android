@@ -70,7 +70,7 @@ class JayService @Inject constructor(
         )
 
         // Starting sensors right after starting the sessions. Not necessary, but no harm.
-        scope.launch(Dispatchers.IO) {
+        scope.launch {
             sessionId = sessionInteractor.startSession()
         }.invokeOnCompletion { startSensors() }
 
@@ -123,7 +123,7 @@ class JayService @Inject constructor(
     override fun onDestroy() {
         stopSensors()
 
-        scope.launch(Dispatchers.IO) { sessionInteractor.stopOngoingSessions() }
+        scope.launch { sessionInteractor.stopOngoingSessions() }
         job.complete()
         isRunning = false
         super.onDestroy()

@@ -29,13 +29,13 @@ class HomeNavFragment :
 	override fun render(viewState: HomeNavViewState) {
 		when (viewState) {
 			is Initial -> {
-
+				// Show initial loading widgets in app
 			}
 			is Loading -> {
-
+				// Maybe show a loading indicator
 			}
 			is Ready -> {
-
+				// Show ViewState data
 			}
 		}.exhaustive
 	}

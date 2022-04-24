@@ -21,7 +21,7 @@ class ServiceToggleViewModel @Inject constructor(
 	fun load() = executeNonBlocking {
 		viewState = Loading
 		viewState = if (serviceTogglePresenter.isJayServiceRunning()) On else Off
-		serviceTogglePresenter.addJayServiceStateListener { isRunning, name ->
+		serviceTogglePresenter.addJayServiceStateListener { isRunning, _ ->
 			viewState = if (isRunning) On else Off
 		}
 	}

@@ -29,16 +29,16 @@ class SessionInfoFragment : RainbowCakeFragment<SessionInfoViewState, SessionInf
 	override fun render(viewState: SessionInfoViewState) {
 		when(viewState) {
 			is Initial -> {
-
+				// Show initial loading of data, animation perhaps
 			}
 			is Loading -> {
-
+				// Loading data in
 			}
 			is Ready -> {
-
+				// Display the data
 			}
 			is NotFound -> {
-
+				// Show an error-like screen
 			}
 		}.exhaustive
 	}

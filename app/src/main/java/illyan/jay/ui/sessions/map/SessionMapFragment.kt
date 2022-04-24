@@ -20,12 +20,12 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.ktx.addPolyline
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.databinding.FragmentSessionMapBinding
 import illyan.jay.ui.custom.RainbowCakeFragment
+import illyan.jay.ui.sessions.map.model.UiLocation
 
 @AndroidEntryPoint
 class SessionMapFragment :
@@ -41,10 +41,10 @@ class SessionMapFragment :
 	override fun render(viewState: SessionMapViewState) {
 		when (viewState) {
 			is Initial -> {
-
+				// Show splash screen of some kind
 			}
 			is Loading -> {
-
+				// Show loading indicator
 			}
 			is Ready -> {
 				map?.let {
@@ -62,31 +62,15 @@ class SessionMapFragment :
 							}
 						}
 					}
-
 					if (viewState.locations.isNotEmpty()) {
-						var southWest = viewState.locations.first().latLng
-						var northEast = viewState.locations.first().latLng
-						viewState.locations.forEach { location ->
-							if (southWest.longitude > location.latLng.longitude) {
-								southWest = LatLng(southWest.latitude, location.latLng.longitude)
-							}
-							if (southWest.latitude > location.latLng.latitude) {
-								southWest = LatLng(location.latLng.latitude, southWest.longitude)
-							}
-							if (northEast.longitude < location.latLng.longitude) {
-								northEast = LatLng(northEast.latitude, location.latLng.longitude)
-							}
-							if (northEast.latitude < location.latLng.latitude) {
-								northEast = LatLng(location.latLng.latitude, northEast.longitude)
-							}
-						}
-						if (!it.projection.visibleRegion.latLngBounds.contains(southWest)
-							|| !it.projection.visibleRegion.latLngBounds.contains(northEast)
+						val latLngBounds = getPathBounds(viewState.locations)
+						if (!it.projection.visibleRegion.latLngBounds.contains(latLngBounds.southwest)
+							|| !it.projection.visibleRegion.latLngBounds.contains(latLngBounds.northeast)
 							|| viewState.firstLoaded
 						) {
 							it.animateCamera(
 								CameraUpdateFactory.newLatLngBounds(
-									LatLngBounds(southWest, northEast),
+									LatLngBounds(latLngBounds.southwest, latLngBounds.northeast),
 									160
 								)
 							)
@@ -96,6 +80,15 @@ class SessionMapFragment :
 				Unit
 			}
 		}.exhaustive
+	}
+
+	private fun getPathBounds(locations: List<UiLocation>): LatLngBounds {
+		var latLngBounds = LatLngBounds(
+			locations.first().latLng,
+			locations.first().latLng
+		)
+		locations.forEach { latLngBounds = latLngBounds.including(it.latLng) }
+		return latLngBounds
 	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

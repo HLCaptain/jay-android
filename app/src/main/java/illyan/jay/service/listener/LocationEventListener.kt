@@ -52,7 +52,7 @@ class LocationEventListener @Inject constructor(
 			field = object : LocationCallback() {
 				override fun onLocationResult(locationResult: LocationResult) {
 					super.onLocationResult(locationResult)
-					scope.launch(Dispatchers.IO) {
+					scope.launch {
 						// Saving locations for every ongoing session
 						val locations = mutableListOf<DomainLocation>()
 						val sessions = mutableListOf<DomainSession>()

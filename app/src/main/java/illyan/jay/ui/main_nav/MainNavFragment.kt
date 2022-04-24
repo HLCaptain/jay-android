@@ -13,7 +13,6 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
-import co.zsmb.rainbowcake.extensions.exhaustive
 import co.zsmb.rainbowcake.hilt.getViewModelFromFactory
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.MainActivity
@@ -26,17 +25,7 @@ class MainNavFragment : RainbowCakeFragment<MainNavViewState, MainNavViewModel, 
 	override fun provideViewBindingInflater(): (LayoutInflater, ViewGroup?, Boolean) -> FragmentMainNavBinding = FragmentMainNavBinding::inflate
 
 	override fun render(viewState: MainNavViewState) {
-		when (viewState) {
-			is Initial -> {
-
-			}
-			is Loading -> {
-
-			}
-			is Ready -> {
-
-			}
-		}.exhaustive
+		// Not listening to any viewState changes right now.
 	}
 
 	override fun onStart() {

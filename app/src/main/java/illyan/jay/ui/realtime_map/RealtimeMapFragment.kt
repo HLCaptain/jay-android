@@ -46,10 +46,10 @@ class RealtimeMapFragment :
 	override fun render(viewState: RealtimeMapViewState) {
 		when (viewState) {
 			is Initial -> {
-
+				// Show an splash screen screen
 			}
 			is Loading -> {
-
+				// Show a loading indicator
 			}
 			is Ready -> {
 				map?.let {

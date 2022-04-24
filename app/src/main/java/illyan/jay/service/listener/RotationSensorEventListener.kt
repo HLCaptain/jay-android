@@ -9,13 +9,11 @@
 
 package illyan.jay.service.listener
 
-import android.hardware.Sensor
 import android.hardware.SensorEvent
 import illyan.jay.data.disk.toDomainRotation
 import illyan.jay.domain.interactor.RotationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainRotation
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,11 +38,7 @@ class RotationSensorEventListener @Inject constructor(
 			ongoingSessionIds.forEach { sessionId ->
 				rotations += it.toDomainRotation(sessionId)
 			}
-			scope.launch(Dispatchers.IO) { rotationInteractor.saveRotations(rotations) }
+			scope.launch { rotationInteractor.saveRotations(rotations) }
 		}
-	}
-
-	override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-
 	}
 }

@@ -32,10 +32,10 @@ class SessionsFragment : RainbowCakeFragment<SessionsViewState, SessionsViewMode
 	override fun render(viewState: SessionsViewState) {
 		when (viewState) {
 			is Initial -> {
-
+				// Show loading of data and animation.
 			}
 			is Loading -> {
-
+				// Show loading indicator.
 			}
 			is Ready -> {
 				adapter.submitList(viewState.sessions)

@@ -9,13 +9,11 @@
 
 package illyan.jay.service.listener
 
-import android.hardware.Sensor
 import android.hardware.SensorEvent
 import illyan.jay.data.disk.toDomainAcceleration
 import illyan.jay.domain.interactor.AccelerationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainAcceleration
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -41,11 +39,7 @@ class AccelerationSensorEventListener @Inject constructor(
 				accelerations += it.toDomainAcceleration(sessionId)
 			}
 			// Saving data for each session
-			scope.launch(Dispatchers.IO) { accelerationInteractor.saveAccelerations(accelerations) }
+			scope.launch { accelerationInteractor.saveAccelerations(accelerations) }
 		}
-	}
-
-	override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-		// Saved data does not change when accuracy is changed.
 	}
 }

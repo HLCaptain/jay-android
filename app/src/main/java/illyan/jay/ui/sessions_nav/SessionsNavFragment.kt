@@ -12,7 +12,6 @@ package illyan.jay.ui.sessions_nav
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.navigation.findNavController
-import co.zsmb.rainbowcake.extensions.exhaustive
 import co.zsmb.rainbowcake.hilt.getViewModelFromFactory
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.MainActivity
@@ -27,17 +26,7 @@ class SessionsNavFragment :
 		FragmentSessionsNavBinding::inflate
 
 	override fun render(viewState: SessionsNavViewState) {
-		when (viewState) {
-			is Initial -> {
-
-			}
-			is Loading -> {
-
-			}
-			is Ready -> {
-
-			}
-		}.exhaustive
+		// Not listening to any viewState changes right now.
 	}
 
 	/**

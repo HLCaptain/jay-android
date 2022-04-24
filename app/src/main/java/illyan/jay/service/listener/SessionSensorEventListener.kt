@@ -63,6 +63,12 @@ abstract class SessionSensorEventListener(
 			}
 	}
 
-	override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-	override fun onSensorChanged(event: SensorEvent?) {}
+	override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+		// Saved data does not change when accuracy is changed.
+		// Accuracy data is provided by the SensorEvent
+	}
+
+	override fun onSensorChanged(event: SensorEvent?) {
+		// This method will probably be implemented in descendant classes.
+	}
 }
