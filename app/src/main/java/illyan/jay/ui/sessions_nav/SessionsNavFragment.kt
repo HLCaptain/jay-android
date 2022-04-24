@@ -45,6 +45,11 @@ class SessionsNavFragment :
 	 */
 	override fun onStart() {
 		super.onStart()
-		(requireActivity() as MainActivity).setNavController(binding.sessionsNavHost.findNavController())
+		(requireActivity() as MainActivity).addNavController(binding.sessionsNavHost.findNavController())
+	}
+
+	override fun onStop() {
+		(requireActivity() as MainActivity).popNavController()
+		super.onStop()
 	}
 }

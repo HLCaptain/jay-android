@@ -25,7 +25,9 @@
     <color name="errorColor">@color/secondaryColor</color>
     <color name="errorLightColor">@color/secondaryLightColor</color>
     <color name="errorDarkColor">@color/secondaryDarkColor</color>
-    <color name="recordingColor">@color/secondaryLightColor</color>
+    <color name="recordingColor">@color/secondaryColor</color>
+    <color name="loadingColor">@color/secondaryLightColor</color>
+    <color name="offColor">@color/primaryColor</color>
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
 </resources>

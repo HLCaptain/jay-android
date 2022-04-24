@@ -40,11 +40,13 @@ class HomeNavFragment :
 		}.exhaustive
 	}
 
-	/**
-	 * Bind navController here for the smoothest transition!
-	 */
 	override fun onStart() {
 		super.onStart()
-		(requireActivity() as MainActivity).setNavController(binding.homeNavHost.findNavController())
+		(requireActivity() as MainActivity).addNavController(binding.homeNavHost.findNavController())
+	}
+
+	override fun onStop() {
+		(requireActivity() as MainActivity).popNavController()
+		super.onStop()
 	}
 }

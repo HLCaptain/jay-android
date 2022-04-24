@@ -43,6 +43,11 @@ class RealtimeMapNavFragment : RainbowCakeFragment<RealtimeMapNavViewState, Real
 	 */
 	override fun onStart() {
 		super.onStart()
-		(requireActivity() as MainActivity).setNavController(binding.realtimeMapNavHost.findNavController())
+		(requireActivity() as MainActivity).addNavController(binding.realtimeMapNavHost.findNavController())
+	}
+
+	override fun onStop() {
+		(requireActivity() as MainActivity).popNavController()
+		super.onStop()
 	}
 }

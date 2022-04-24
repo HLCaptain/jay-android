@@ -45,5 +45,7 @@ class AccelerationSensorEventListener @Inject constructor(
 		}
 	}
 
-	override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+	override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+		// Saved data does not change when accuracy is changed.
+	}
 }

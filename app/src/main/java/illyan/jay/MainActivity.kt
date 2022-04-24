@@ -27,7 +27,7 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	override fun provideViewModel() = getViewModelFromFactory()
 	override fun provideViewBinding() = ActivityMainBinding.inflate(layoutInflater)
 
-	private lateinit var navControllerDelegate: NavController
+	private val navControllerDelegateStack = ArrayDeque<NavController>()
 
 	override fun render(viewState: MainViewState) {
 		when (viewState) {
@@ -56,8 +56,8 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 
 	override fun onBackPressed() {
 		Timber.d("onBackPressed called")
-		Timber.d("navControllerDelegate.graph = ${navControllerDelegate.graph.displayName}")
-		if (navControllerDelegate.currentDestination?.id == navControllerDelegate.graph.startDestinationId) {
+		Timber.d("navControllerDelegate.graph = ${navControllerDelegateStack.last().graph.displayName}")
+		if (navControllerDelegateStack.last().currentDestination?.id == navControllerDelegateStack.last().graph.startDestinationId) {
 			finish()
 		} else {
 			super.onBackPressed()
@@ -67,8 +67,8 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	override fun onNavigateUp(): Boolean {
 		Timber.d("onNavigateUp called")
 		val nav = binding.loginNavHostFragment.findNavController()
-		if (navControllerDelegate.currentDestination?.id != navControllerDelegate.graph.startDestinationId) {
-			return navControllerDelegate.navigateUp()
+		if (navControllerDelegateStack.last().currentDestination?.id != navControllerDelegateStack.last().graph.startDestinationId) {
+			return navControllerDelegateStack.last().navigateUp()
 		} else {
 			if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
 				finish()
@@ -80,8 +80,8 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	override fun onSupportNavigateUp(): Boolean {
 		Timber.d("onSupportNavigateUp called")
 		val nav = binding.loginNavHostFragment.findNavController()
-		if (navControllerDelegate.currentDestination?.id != navControllerDelegate.graph.startDestinationId) {
-			return navControllerDelegate.navigateUp()
+		if (navControllerDelegateStack.last().currentDestination?.id != navControllerDelegateStack.last().graph.startDestinationId) {
+			return navControllerDelegateStack.last().navigateUp()
 		} else {
 			if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
 				finish()
@@ -90,11 +90,41 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 		return super.onSupportNavigateUp()
 	}
 
-	fun setNavController(navController: NavController) {
-		navControllerDelegate = navController
-		setupActionBarWithNavController(
-			navControllerDelegate,
-			AppBarConfiguration(navControllerDelegate.graph)
-		)
+	/**
+	 * Add navigation controller to the delegate stack.
+	 *
+	 * @param navController navController becomes the active controller in the navigation graph
+	 * and will be used to determine if the app should finish or navigate back further.
+	 *
+	 * @param doSetActionBar sets action bar with new navController if true.
+	 */
+	fun addNavController(navController: NavController, doSetActionBar: Boolean = true) {
+		navControllerDelegateStack.addLast(navController)
+		Timber.d("Adding navController with graph = ${navControllerDelegateStack.last().graph.displayName}")
+		if (doSetActionBar) {
+			setupActionBarWithNavController(
+				navControllerDelegateStack.last(),
+				AppBarConfiguration(navControllerDelegateStack.last().graph)
+			)
+		}
+	}
+
+	/**
+	 * Pop a navController on the delegate stack.
+	 * The navController before the popped one becomes the active controller.
+	 *
+	 * @param doSetActionBar sets up the action bar with the last navController
+	 * after the pop if true and the stack is not empty.
+	 */
+	fun popNavController(doSetActionBar: Boolean = false): NavController {
+		Timber.d("Pop navController with graph = ${navControllerDelegateStack.last().graph.displayName}")
+		val removedLast = navControllerDelegateStack.removeLast()
+		if (navControllerDelegateStack.isNotEmpty() && doSetActionBar) {
+			setupActionBarWithNavController(
+				navControllerDelegateStack.last(),
+				AppBarConfiguration(navControllerDelegateStack.last().graph)
+			)
+		}
+		return removedLast
 	}
 }

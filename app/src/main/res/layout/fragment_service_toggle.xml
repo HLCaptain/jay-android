@@ -22,7 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             style="?attr/materialCardViewElevatedStyle"
-            app:cardBackgroundColor="?cardBackgroundColor">
+            app:cardBackgroundColor="@color/loadingColor">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
@@ -74,7 +74,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             style="?attr/materialCardViewFilledStyle"
-            app:cardBackgroundColor="?colorOnError">
+            app:cardBackgroundColor="@color/offColor">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"

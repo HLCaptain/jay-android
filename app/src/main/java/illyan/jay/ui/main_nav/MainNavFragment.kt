@@ -16,6 +16,7 @@ import androidx.navigation.ui.setupWithNavController
 import co.zsmb.rainbowcake.extensions.exhaustive
 import co.zsmb.rainbowcake.hilt.getViewModelFromFactory
 import dagger.hilt.android.AndroidEntryPoint
+import illyan.jay.MainActivity
 import illyan.jay.databinding.FragmentMainNavBinding
 import illyan.jay.ui.custom.RainbowCakeFragment
 
@@ -38,12 +39,15 @@ class MainNavFragment : RainbowCakeFragment<MainNavViewState, MainNavViewModel, 
 		}.exhaustive
 	}
 
-	/**
-	 * Not setting navController in MainActivity, because it will be overridden either way.
-	 *
-	 */
 	override fun onStart() {
 		super.onStart()
-		binding.bottomNavigationMain.setupWithNavController(binding.mainNavHost.findNavController())
+		val navController = binding.mainNavHost.findNavController()
+		binding.bottomNavigationMain.setupWithNavController(navController)
+		(requireActivity() as MainActivity).addNavController(navController, false)
+	}
+
+	override fun onStop() {
+		(requireActivity() as MainActivity).popNavController(true)
+		super.onStop()
 	}
 }
