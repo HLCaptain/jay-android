@@ -11,8 +11,8 @@ package illyan.jay
 
 import android.content.Intent
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import co.zsmb.rainbowcake.extensions.exhaustive
 import co.zsmb.rainbowcake.hilt.getViewModelFromFactory
@@ -38,26 +38,28 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 				Timber.d("Logged in!")
 			}
 			is LoggedOut -> {
-				val nav = binding.loginNavHostFragment.findNavController()
 				Timber.d("Logged out!")
 				stopService(Intent(this, JayService::class.java))
-				if (nav.currentDestination?.id != nav.graph.startDestinationId) {
-					nav.popBackStack(nav.graph.startDestinationId, false)
-				}
-				Unit
+				// Resetting to the Login screen if needed.
+				val nav = binding.loginNavHostFragment.findNavController()
+				nav.popBackStack(nav.graph.startDestinationId, false)
+				supportActionBar?.title = nav.graph.findStartDestination().label
 			}
 		}.exhaustive
 	}
 
-	override fun onResume() {
-		super.onResume()
+	override fun onStart() {
+		super.onStart()
+		// NavController is loaded in onStart, that is why we load the viewModel now.
+		// It may drop an exception for not finding the navController we need,
+		// if we call this load method earlier.
 		viewModel.load()
 	}
 
 	override fun onBackPressed() {
 		Timber.d("onBackPressed called")
-		Timber.d("navControllerDelegate.graph = ${navControllerDelegateStack.last().graph.displayName}")
-		if (navControllerDelegateStack.last().currentDestination?.id == navControllerDelegateStack.last().graph.startDestinationId) {
+		Timber.d("navControllerDelegate.graph = ${navControllerDelegateStack.lastOrNull()?.graph?.displayName}")
+		if (navControllerDelegateStack.lastOrNull()?.currentDestination?.id == navControllerDelegateStack.lastOrNull()?.graph?.startDestinationId) {
 			finish()
 		} else {
 			super.onBackPressed()
@@ -102,10 +104,7 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 		navControllerDelegateStack.addLast(navController)
 		Timber.d("Adding navController with graph = ${navControllerDelegateStack.last().graph.displayName}")
 		if (doSetActionBar) {
-			setupActionBarWithNavController(
-				navControllerDelegateStack.last(),
-				AppBarConfiguration(navControllerDelegateStack.last().graph)
-			)
+			setupActionBarWithNavController(navControllerDelegateStack.last())
 		}
 	}
 
@@ -120,10 +119,7 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 		Timber.d("Pop navController with graph = ${navControllerDelegateStack.last().graph.displayName}")
 		val removedLast = navControllerDelegateStack.removeLast()
 		if (navControllerDelegateStack.isNotEmpty() && doSetActionBar) {
-			setupActionBarWithNavController(
-				navControllerDelegateStack.last(),
-				AppBarConfiguration(navControllerDelegateStack.last().graph)
-			)
+			setupActionBarWithNavController(navControllerDelegateStack.last())
 		}
 		return removedLast
 	}

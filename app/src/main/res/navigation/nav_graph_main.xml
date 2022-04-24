@@ -15,13 +15,13 @@
     <fragment
         android:id="@+id/sessionsNavFragment"
         android:name="illyan.jay.ui.sessions_nav.SessionsNavFragment"
-        android:label="SessionsNavFragment" />
+        android:label="Sessions" />
     <fragment
         android:id="@+id/homeNavFragment"
         android:name="illyan.jay.ui.home_nav.HomeNavFragment"
-        android:label="HomeNavFragment" />
+        android:label="Home" />
     <fragment
         android:id="@+id/realtimeMapNavFragment"
         android:name="illyan.jay.ui.realtime_map_nav.RealtimeMapNavFragment"
-        android:label="RealtimeMapNavFragment" />
+        android:label="Map" />
 </navigation>

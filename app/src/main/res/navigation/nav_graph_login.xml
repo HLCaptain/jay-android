@@ -15,11 +15,11 @@
     <fragment
         android:id="@+id/mainNavFragment"
         android:name="illyan.jay.ui.main_nav.MainNavFragment"
-        android:label="MainNavFragment" />
+        android:label="Main" />
     <fragment
         android:id="@+id/loginFragment"
         android:name="illyan.jay.ui.login.LoginFragment"
-        android:label="LoginFragment" >
+        android:label="Login">
         <action
             android:id="@+id/action_loginFragment_to_mainNavFragment"
             app:destination="@id/mainNavFragment"

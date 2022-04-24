@@ -15,7 +15,7 @@
     <fragment
         android:id="@+id/sessionsFragment"
         android:name="illyan.jay.ui.sessions.list.SessionsFragment"
-        android:label="SessionsFragment" >
+        android:label="Sessions">
         <action
             android:id="@+id/action_sessionsFragment_to_sessionInfoFragment"
             app:destination="@id/sessionInfoFragment">
@@ -36,13 +36,13 @@
     <fragment
         android:id="@+id/sessionInfoFragment"
         android:name="illyan.jay.ui.sessions.session_info.SessionInfoFragment"
-        android:label="sessionInfoFragment">
+        android:label="Session">
         <argument
             android:name="sessionId"
             app:argType="long" />
         <action
             android:id="@+id/action_sessionInfoFragment_to_sessionMapFragment"
-            app:destination="@id/sessionMapFragment" >
+            app:destination="@id/sessionMapFragment">
             <argument
                 android:name="sessionId"
                 android:defaultValue="-1L"
@@ -52,7 +52,7 @@
     <fragment
         android:id="@+id/sessionMapFragment"
         android:name="illyan.jay.ui.sessions.map.SessionMapFragment"
-        android:label="SessionMapFragment">
+        android:label="Path">
         <argument
             android:name="sessionId"
             app:argType="long" />

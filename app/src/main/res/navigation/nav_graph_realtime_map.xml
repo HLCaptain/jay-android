@@ -14,5 +14,5 @@
     <fragment
         android:id="@+id/realtimeMapFragment"
         android:name="illyan.jay.ui.realtime_map.RealtimeMapFragment"
-        android:label="RealtimeMapFragment" />
+        android:label="Map" />
 </navigation>
