@@ -20,11 +20,15 @@ class SessionMapViewModel @Inject constructor(
 
 	fun loadPath(sessionId: Long) = executeNonBlocking {
 		viewState = Loading
-		var firstLoaded = true
+		var doAnimateCamera = true
 
 		sessionMapPresenter.getLocations(sessionId).collect {
-			viewState = Ready(it, firstLoaded)
-			firstLoaded = false
+			if (it.isNotEmpty()) {
+				viewState = Ready(it, doAnimateCamera)
+				doAnimateCamera = false
+			} else {
+				doAnimateCamera = true
+			}
 		}
 	}
 }

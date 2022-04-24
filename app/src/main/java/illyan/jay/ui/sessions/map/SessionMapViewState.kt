@@ -15,4 +15,5 @@ sealed class SessionMapViewState
 
 object Initial : SessionMapViewState()
 object Loading : SessionMapViewState()
-data class Ready(val locations: List<UiLocation>, val firstLoaded: Boolean) : SessionMapViewState()
+data class Ready(val locations: List<UiLocation>, val doAnimateCamera: Boolean) :
+	SessionMapViewState()

@@ -58,6 +58,8 @@ class LoginFragment : RainbowCakeFragment<LoginViewState, LoginViewModel, Fragme
 				binding.loginStatus.text = "Loading"
 			}
 			is LoggingIn -> {
+				// Show a loading indicator in the background.
+				// Block any buttons which can interfere with the state.
 				binding.loginStatus.text = "Logging in!"
 			}
 			is LoggedIn -> {

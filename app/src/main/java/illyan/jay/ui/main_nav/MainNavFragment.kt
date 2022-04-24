@@ -32,6 +32,8 @@ class MainNavFragment : RainbowCakeFragment<MainNavViewState, MainNavViewModel, 
 		super.onStart()
 		val navController = binding.mainNavHost.findNavController()
 		binding.bottomNavigationMain.setupWithNavController(navController)
+		// We are not setting the action bar, because we know, we will navigate on a fragment
+		// immediately, because we set up the bottom navigation bar with the navController.
 		(requireActivity() as MainActivity).addNavController(navController, false)
 	}
 

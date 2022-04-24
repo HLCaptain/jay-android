@@ -66,7 +66,7 @@ class SessionMapFragment :
 						val latLngBounds = getPathBounds(viewState.locations)
 						if (!it.projection.visibleRegion.latLngBounds.contains(latLngBounds.southwest)
 							|| !it.projection.visibleRegion.latLngBounds.contains(latLngBounds.northeast)
-							|| viewState.firstLoaded
+							|| viewState.doAnimateCamera
 						) {
 							it.animateCamera(
 								CameraUpdateFactory.newLatLngBounds(
@@ -82,6 +82,14 @@ class SessionMapFragment :
 		}.exhaustive
 	}
 
+	/**
+	 * Get LatLng bounds for a path.
+	 *
+	 * @param locations list which contains the locations for the path.
+	 * Each location will be in the bounds.
+	 *
+	 * @return the bounds which will contain all location in the path.
+	 */
 	private fun getPathBounds(locations: List<UiLocation>): LatLngBounds {
 		var latLngBounds = LatLngBounds(
 			locations.first().latLng,
