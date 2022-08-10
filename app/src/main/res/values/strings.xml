@@ -29,4 +29,5 @@
     <string name="service_loading">Loading</string>
     <string name="service_is_recording_data">Recording</string>
     <string name="service_is_not_recording_data">Off</string>
+    <string name="delete_sessions">Delete sessions</string>
 </resources>

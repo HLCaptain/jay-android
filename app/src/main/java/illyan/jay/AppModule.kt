@@ -12,6 +12,7 @@ package illyan.jay
 import android.content.Context
 import android.hardware.SensorManager
 import androidx.core.graphics.drawable.IconCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationServices
 import dagger.Module
 import dagger.Provides
@@ -40,4 +41,9 @@ object AppModule {
 	@Singleton
 	fun provideIcon(@ApplicationContext context: Context) =
 		IconCompat.createWithResource(context, R.drawable.ic_launcher_foreground)
+
+	@Provides
+	@Singleton
+	fun provideLocalBroadcastManager(@ApplicationContext context: Context) =
+		LocalBroadcastManager.getInstance(context)
 }

@@ -57,19 +57,19 @@ class RotationDiskDataSource @Inject constructor(
 	 *
 	 * @param rotation rotation data saved onto the Room database.
 	 *
-	 * @return number of rotations updated.
+	 * @return id of the saved rotation.
 	 */
 	fun saveRotation(rotation: DomainRotation) =
-		rotationDao.insertRotation(rotation.toRoomModel())
+		rotationDao.upsertRotation(rotation.toRoomModel())
 
 	/**
 	 * Save rotation's data to Room database.
 	 * Should be linked to a session to be accessible later on.
 	 *
 	 * @param rotations list of rotation data saved onto the Room database.
-	 *
-	 * @return number of rotations updated.
 	 */
 	fun saveRotations(rotations: List<DomainRotation>) =
-		rotationDao.insertRotations(rotations.map(DomainRotation::toRoomModel))
+		rotationDao.upsertRotations(rotations.map(DomainRotation::toRoomModel))
+
+	fun deleteRotationsForSession(sessionId: Long) = rotationDao.deleteRotationsForSession(sessionId)
 }

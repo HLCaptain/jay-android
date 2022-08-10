@@ -26,18 +26,19 @@ import javax.inject.Singleton
  *
  * @property serviceStateReceiver receives state updates
  * from services from the LocalBroadcastManager.
- * @property context needed to register the ServiceStateReceiver
- * on the LocalBroadcastManager.
+ * @property context starts and stops services.
+ * @param localBroadcastManager needed to register the ServiceStateReceiver.
  * @constructor Create empty Service interactor
  */
 @Singleton
 class ServiceInteractor @Inject constructor(
 	private val serviceStateReceiver: ServiceStateReceiver,
-	private val context: Context
+	localBroadcastManager: LocalBroadcastManager,
+	private val context: Context,
 ) {
 
 	init {
-		LocalBroadcastManager.getInstance(context).registerReceiver(
+		localBroadcastManager.registerReceiver(
 			serviceStateReceiver,
 			IntentFilter(BaseService.KEY_SERVICE_STATE_CHANGE)
 		)
@@ -66,26 +67,16 @@ class ServiceInteractor @Inject constructor(
 	/**
 	 * Stop Jay service.
 	 */
-	fun stopJayService() {
-		if (isJayServiceRunning()) context.stopService(
-			Intent(
-				context,
-				JayService::class.java
-			)
-		)
-	}
+	fun stopJayService() = if (isJayServiceRunning()) {
+		context.stopService(Intent(context, JayService::class.java))
+	} else false
 
 	/**
 	 * Start Jay service in the Foreground.
 	 */
-	fun startJayService() {
-		if (!isJayServiceRunning()) context.startForegroundService(
-			Intent(
-				context,
-				JayService::class.java
-			)
-		)
-	}
+	fun startJayService() = if (!isJayServiceRunning()) {
+		context.startForegroundService(Intent(context, JayService::class.java))
+	} else null
 
 	// Ping pong example https://stackoverflow.com/a/39579191/16720445
 	// Promising example: https://stackoverflow.com/questions/66742265/the-correct-way-to-determine-if-service-is-running

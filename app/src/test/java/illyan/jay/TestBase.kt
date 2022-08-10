@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  * Jay is a driver behaviour analytics app.
  * This file is part of Jay.
  * Jay is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -9,17 +9,14 @@
 
 package illyan.jay
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInfo
+import java.util.logging.Logger
 
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-class ExampleUnitTest {
-    @Test
-    fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
-    }
+open class TestBase {
+	protected val logger = Logger.getLogger(this::class.simpleName.toString())
+	@BeforeEach
+	fun initTest(testInfo: TestInfo) {
+		logger.info("Test name: ${testInfo.displayName}")
+	}
 }

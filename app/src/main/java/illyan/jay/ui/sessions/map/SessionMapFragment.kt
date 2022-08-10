@@ -9,6 +9,8 @@
 
 package illyan.jay.ui.sessions.map
 
+import android.graphics.Color
+import android.graphics.ColorSpace
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -58,7 +60,7 @@ class SessionMapFragment :
 										viewState.locations[index + 1].latLng
 									)
 								)
-								color(location.color.toArgb())
+								color(Color.valueOf(location.argb, ColorSpace.get(location.colorSpace)).toArgb())
 							}
 						}
 					}

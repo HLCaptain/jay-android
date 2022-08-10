@@ -93,7 +93,7 @@ class JayService @Inject constructor(
                 super.onLocationResult(p0)
                 updateNotification(
                     "Current location",
-                    "Lat: ${p0.lastLocation.latitude} Lng: ${p0.lastLocation.longitude}",
+                    "Lat: ${p0.lastLocation?.latitude} Lng: ${p0.lastLocation?.longitude}",
                     CHANNEL_ID,
                     NOTIFICATION_ID,
                     icon

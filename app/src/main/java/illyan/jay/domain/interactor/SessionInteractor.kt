@@ -9,6 +9,9 @@
 
 package illyan.jay.domain.interactor
 
+import illyan.jay.data.disk.datasource.AccelerationDiskDataSource
+import illyan.jay.data.disk.datasource.LocationDiskDataSource
+import illyan.jay.data.disk.datasource.RotationDiskDataSource
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
 import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.flow.first
@@ -24,7 +27,10 @@ import javax.inject.Singleton
  */
 @Singleton
 class SessionInteractor @Inject constructor(
-	private val sessionDiskDataSource: SessionDiskDataSource
+	private val sessionDiskDataSource: SessionDiskDataSource,
+	private val accelerationDiskDataSource: AccelerationDiskDataSource,
+	private val rotationDiskDataSource: RotationDiskDataSource,
+	private val locationDiskDataSource: LocationDiskDataSource
 ) {
 	/**
 	 * Get a particular session by its ID.
@@ -63,7 +69,7 @@ class SessionInteractor @Inject constructor(
 	 *
 	 * @param session updates the data of the session with the same ID.
 	 *
-	 * @return number of sessions updated.
+	 * @return id of session updated.
 	 */
 	fun saveSession(session: DomainSession) = sessionDiskDataSource.saveSession(session)
 
@@ -71,8 +77,6 @@ class SessionInteractor @Inject constructor(
 	 * Save multiple sessions.
 	 *
 	 * @param sessions updates the data of the sessions with the same ID.
-	 *
-	 * @return number of sessions updated.
 	 */
 	fun saveSessions(sessions: List<DomainSession>) = sessionDiskDataSource.saveSessions(sessions)
 
@@ -90,21 +94,34 @@ class SessionInteractor @Inject constructor(
 	 *
 	 * @param session needed to be stopped.
 	 *
-	 * @return number of sessions stopped.
+	 * @return id of session stopped.
 	 */
 	fun stopSession(session: DomainSession) = sessionDiskDataSource.stopSession(session)
 
 	/**
 	 * Stop all ongoing sessions.
-	 *
-	 * @return number of sessions stopped.
 	 */
-	suspend fun stopOngoingSessions(): Int {
-		var sessionsStopped = 0
+	suspend fun stopOngoingSessions() {
 		getOngoingSessions().first {
-			sessionsStopped = sessionDiskDataSource.stopSessions(it)
+			sessionDiskDataSource.stopSessions(it)
 			true
 		}
-		return sessionsStopped
+	}
+
+	/**
+	 * Delete stopped sessions, whom have
+	 * their endTime properties not null.
+	 */
+	suspend fun deleteStoppedSessions() {
+		sessionDiskDataSource.getSessions().first {
+			val stoppedSessions = it.filter { session -> session.endTime != null }
+			stoppedSessions.forEach { session ->
+				accelerationDiskDataSource.deleteAccelerationsForSession(session.id)
+				rotationDiskDataSource.deleteRotationsForSession(session.id)
+				locationDiskDataSource.deleteLocationForSession(session.id)
+			}
+			sessionDiskDataSource.deleteSessions(stoppedSessions)
+			true
+		}
 	}
 }

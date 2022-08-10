@@ -9,6 +9,7 @@
 
 package illyan.jay.ui.sessions.list
 
+import co.zsmb.rainbowcake.withIOContext
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainLocation
@@ -31,9 +32,12 @@ class SessionsPresenter @Inject constructor(
 	fun getLocations(sessionId: Long) = locationInteractor.getLocations(sessionId)
 		.map { it.map(DomainLocation::toUiModel) }
 		.flowOn(Dispatchers.IO)
+
+	suspend fun deleteStoppedSessions() = withIOContext { sessionInteractor.deleteStoppedSessions() }
 }
 
 private fun DomainLocation.toUiModel() = UiLocation(
+	id = id,
 	latLng = latLng,
 	speed = speed,
 	sessionId = sessionId,

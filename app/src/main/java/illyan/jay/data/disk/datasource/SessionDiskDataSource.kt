@@ -81,48 +81,45 @@ class SessionDiskDataSource @Inject constructor(
 	 *
 	 * @param session updates the data of the session with the same ID.
 	 *
-	 * @return number of sessions updated.
+	 * @return id of session updated.
 	 */
-	fun saveSession(session: DomainSession) = sessionDao.updateSession(session.toRoomModel())
+	fun saveSession(session: DomainSession) = sessionDao.upsertSession(session.toRoomModel())
 
 	/**
 	 * Save multiple sessions in the database.
 	 *
 	 * @param sessions updates the data of the sessions with the same ID.
-	 *
-	 * @return number of sessions updated.
 	 */
 	fun saveSessions(sessions: List<DomainSession>) =
-		sessionDao.updateSessions(sessions.map(DomainSession::toRoomModel))
+		sessionDao.upsertSessions(sessions.map(DomainSession::toRoomModel))
 
 	/**
 	 * Stop a session.
-	 * Sets an end date for the session and saves it into the database.
+	 * Sets an end date if not yet set for the session and saves it into the database.
 	 *
 	 * @param session setting its endTime to now,
 	 * then saving the modified value to the database.
 	 *
-	 * @return number of sessions stopped.
+	 * @return id of the stopped session.
 	 */
-	fun stopSession(session: DomainSession): Int {
-		session.endTime = Date.from(Instant.now())
+	fun stopSession(session: DomainSession): Long {
+		if (session.endTime == null) session.endTime = Date.from(Instant.now())
 		return saveSession(session)
 	}
 
 	/**
 	 * Stop multiple sessions.
-	 * Sets an end date for the session and saves it into the database.
+	 * Sets an end date if not yet set for the session and saves it into the database.
 	 *
 	 * @param sessions setting sessions' endTime to now,
 	 * then saving the modified values to the database.
-	 *
-	 * @return number of sessions stopped.
 	 */
-	fun stopSessions(sessions: List<DomainSession>): Int {
+	fun stopSessions(sessions: List<DomainSession>) {
 		val endTime = Date.from(Instant.now())
-		sessions.forEach {
-			it.endTime = endTime
-		}
-		return saveSessions(sessions)
+		sessions.forEach { if (it.endTime == null) it.endTime = endTime }
+		saveSessions(sessions)
 	}
+
+	fun deleteSessions(sessions: List<DomainSession>) =
+		sessionDao.deleteSessions(sessions.map(DomainSession::toRoomModel))
 }

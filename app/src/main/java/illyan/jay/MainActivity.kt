@@ -57,8 +57,6 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	}
 
 	override fun onBackPressed() {
-		Timber.d("onBackPressed called")
-		Timber.d("navControllerDelegate.graph = ${navControllerDelegateStack.lastOrNull()?.graph?.displayName}")
 		if (navControllerDelegateStack.lastOrNull()?.currentDestination?.id == navControllerDelegateStack.lastOrNull()?.graph?.startDestinationId) {
 			finish()
 		} else {
@@ -67,7 +65,6 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	}
 
 	override fun onNavigateUp(): Boolean {
-		Timber.d("onNavigateUp called")
 		val nav = binding.loginNavHostFragment.findNavController()
 		if (navControllerDelegateStack.last().currentDestination?.id != navControllerDelegateStack.last().graph.startDestinationId) {
 			return navControllerDelegateStack.last().navigateUp()
@@ -80,7 +77,6 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	}
 
 	override fun onSupportNavigateUp(): Boolean {
-		Timber.d("onSupportNavigateUp called")
 		val nav = binding.loginNavHostFragment.findNavController()
 		if (navControllerDelegateStack.last().currentDestination?.id != navControllerDelegateStack.last().graph.startDestinationId) {
 			return navControllerDelegateStack.last().navigateUp()
@@ -102,7 +98,6 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	 */
 	fun addNavController(navController: NavController, doSetActionBar: Boolean = true) {
 		navControllerDelegateStack.addLast(navController)
-		Timber.d("Adding navController with graph = ${navControllerDelegateStack.last().graph.displayName}")
 		if (doSetActionBar) {
 			setupActionBarWithNavController(navControllerDelegateStack.last())
 		}
@@ -116,7 +111,6 @@ class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityM
 	 * after the pop if true and the stack is not empty.
 	 */
 	fun popNavController(doSetActionBar: Boolean = false): NavController {
-		Timber.d("Pop navController with graph = ${navControllerDelegateStack.last().graph.displayName}")
 		val removedLast = navControllerDelegateStack.removeLast()
 		if (navControllerDelegateStack.isNotEmpty() && doSetActionBar) {
 			setupActionBarWithNavController(navControllerDelegateStack.last())

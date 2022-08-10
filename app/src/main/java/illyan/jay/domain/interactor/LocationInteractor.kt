@@ -67,7 +67,7 @@ class LocationInteractor @Inject constructor(
 	 *
 	 * @param location location data saved onto the Room database.
 	 *
-	 * @return number of locations updated.
+	 * @return id of location updated.
 	 */
 	fun saveLocation(location: DomainLocation) = locationDiskDataSource.saveLocation(location)
 
@@ -76,8 +76,6 @@ class LocationInteractor @Inject constructor(
 	 * Should be linked to a session to be accessible later on.
 	 *
 	 * @param locations list of location data saved onto the Room database.
-	 *
-	 * @return number of locations updated.
 	 */
 	fun saveLocations(locations: List<DomainLocation>) =
 		locationDiskDataSource.saveLocations(locations)

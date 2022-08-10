@@ -9,10 +9,7 @@
 
 package illyan.jay.service.listener
 
-import com.google.android.gms.location.LocationAvailability
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.*
 import com.google.maps.android.SphericalUtil
 import illyan.jay.data.disk.toDomainModel
 import illyan.jay.domain.interactor.LocationInteractor
@@ -57,32 +54,34 @@ class LocationEventListener @Inject constructor(
 						val locations = mutableListOf<DomainLocation>()
 						val sessions = mutableListOf<DomainSession>()
 						ongoingSessionIds.forEach { sessionId ->
-							val newLocation = locationResult.lastLocation.toDomainModel(sessionId)
-							// Updating distances for each location
-							locationInteractor.getLatestLocations(sessionId, 1)
-								.flowOn(Dispatchers.IO)
-								.map { it.firstOrNull() }
-								.first { location ->
-									location?.let { lastLocation ->
-										// Need session to calculate new distance value from the old one
-										sessionInteractor.getSession(sessionId)
-											.flowOn(Dispatchers.IO)
-											.first {
-												it?.let { session ->
-													// Updating distances
-													session.distance += SphericalUtil.computeDistanceBetween(
-														lastLocation.latLng,
-														newLocation.latLng
-													)
-													// Saving the session with the new distance
-													sessions += session
+							locationResult.lastLocation?.let { lastLocation ->
+								val newLocation = lastLocation.toDomainModel(sessionId)
+								// Updating distances for each location
+								locationInteractor.getLatestLocations(sessionId, 1)
+									.flowOn(Dispatchers.IO)
+									.map { it.firstOrNull() }
+									.first { location ->
+										location?.let { lastLocation ->
+											// Need session to calculate new distance value from the old one
+											sessionInteractor.getSession(sessionId)
+												.flowOn(Dispatchers.IO)
+												.first {
+													it?.let { session ->
+														// Updating distances
+														session.distance += SphericalUtil.computeDistanceBetween(
+															lastLocation.latLng,
+															newLocation.latLng
+														)
+														// Saving the session with the new distance
+														sessions += session
+													}
+													true
 												}
-												true
-											}
+										}
+										true
 									}
-									true
-								}
-							locations += newLocation
+								locations += newLocation
+							}
 						}
 						// Saving data with only one query.
 						locationInteractor.saveLocations(locations)
@@ -101,7 +100,7 @@ class LocationEventListener @Inject constructor(
 	 */
 	var locationRequest = LocationRequest
 		.create()
-		.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+		.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
 		.setInterval(LocationInteractor.LOCATION_REQUEST_INTERVAL_FREQUENT)
 		.setSmallestDisplacement(LocationInteractor.LOCATION_REQUEST_DISPLACEMENT_DEFAULT)
 

@@ -60,18 +60,18 @@ class LocationDiskDataSource @Inject constructor(
 	 *
 	 * @param location location data saved onto the Room database.
 	 *
-	 * @return number of locations updated.
+	 * @return id of the saved location.
 	 */
-	fun saveLocation(location: DomainLocation) = locationDao.insertLocation(location.toRoomModel())
+	fun saveLocation(location: DomainLocation) = locationDao.upsertLocation(location.toRoomModel())
 
 	/**
 	 * Save locations' data to Room database.
 	 * Should be linked to a session to be accessible later on.
 	 *
 	 * @param locations list of location data saved onto the Room database.
-	 *
-	 * @return number of locations updated.
 	 */
 	fun saveLocations(locations: List<DomainLocation>) =
-		locationDao.insertLocations(locations.map(DomainLocation::toRoomModel))
+		locationDao.upsertLocations(locations.map(DomainLocation::toRoomModel))
+
+	fun deleteLocationForSession(sessionId: Long) = locationDao.deleteLocationsForSession(sessionId)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  * Jay is a driver behaviour analytics app.
  * This file is part of Jay.
  * Jay is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -7,6 +7,11 @@
  * You should have received a copy of the GNU General Public License along with Jay. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.sessions_nav
+package illyan.jay.util
 
-class SessionsNavPresenter
+object Color {
+	val MAGENTA = floatArrayOf(1f, 0f, 1f, 1f)
+	val RED = floatArrayOf(1f, 0f, 0f, 1f)
+	val GREEN = floatArrayOf(0f, 1f, 0f, 1f)
+	val BLUE = floatArrayOf(0f, 0f, 1f, 1f)
+}

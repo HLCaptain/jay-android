@@ -29,4 +29,5 @@ private fun DomainSession.toUiModel() = UiSession(
 	id = id,
 	startTime = startTime,
 	endTime = endTime,
+	distance = distance
 )

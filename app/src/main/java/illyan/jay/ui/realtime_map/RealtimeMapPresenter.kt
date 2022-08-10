@@ -13,6 +13,7 @@ import android.location.Location
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import illyan.jay.domain.interactor.SensorInteractor
 import illyan.jay.ui.realtime_map.model.UiLocation
@@ -24,7 +25,7 @@ class RealtimeMapPresenter @Inject constructor(
 
 	private val locationRequest = LocationRequest
 		.create()
-		.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+		.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
 		.setInterval(200)
 		.setSmallestDisplacement(1f)
 
@@ -34,7 +35,7 @@ class RealtimeMapPresenter @Inject constructor(
 		locationCallback = object : LocationCallback() {
 			override fun onLocationResult(p0: LocationResult) {
 				super.onLocationResult(p0)
-				listener.invoke(p0.lastLocation.toUiLocation())
+				p0.lastLocation?.let { listener.invoke(it.toUiLocation()) }
 			}
 		}
 		sensorInteractor.requestLocationUpdates(

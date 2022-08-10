@@ -29,6 +29,8 @@ class RotationInteractor @Inject constructor(
 	 * Save a rotation data instance.
 	 *
 	 * @param rotation rotation data to be saved.
+	 *
+	 * @return id of rotation updated.
 	 */
 	fun saveRotation(rotation: DomainRotation) = rotationDiskDataSource.saveRotation(rotation)
 

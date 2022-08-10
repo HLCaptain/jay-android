@@ -46,6 +46,7 @@ class SessionsFragment : RainbowCakeFragment<SessionsViewState, SessionsViewMode
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
 		loadRecycler()
+		binding.deleteSessionsButton.setOnClickListener { viewModel.deleteStoppedSessions() }
 		viewModel.load()
 	}
 
