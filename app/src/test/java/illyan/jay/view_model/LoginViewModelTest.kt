@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.view_model
 
 import android.app.Activity
@@ -14,17 +32,28 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import illyan.jay.ui.login.*
-import io.mockk.*
+import illyan.jay.ui.login.Initial
+import illyan.jay.ui.login.Loading
+import illyan.jay.ui.login.LoggedIn
+import illyan.jay.ui.login.LoggedOut
+import illyan.jay.ui.login.LoggingIn
+import illyan.jay.ui.login.LoginPresenter
+import illyan.jay.ui.login.LoginViewModel
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.verify
+import io.mockk.verifyOrder
+import io.mockk.verifySequence
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Test
 import org.junit.Before
+import org.junit.Test
 import timber.log.Timber
 
 @ExperimentalCoroutinesApi
-class LoginViewModelTest: ViewModelTest() {
+class LoginViewModelTest : ViewModelTest() {
     private lateinit var mockPresenter: LoginPresenter
     private lateinit var viewModel: LoginViewModel
     private lateinit var mockTree: Timber.Tree
@@ -153,7 +182,7 @@ class LoginViewModelTest: ViewModelTest() {
         val mockCredential: AuthCredential = mockk()
 
         val mockAuthResultTask: Task<AuthResult> = mockk()
-        every { mockAuthResultTask.addOnCompleteListener(mockActivity, any() ) } answers {
+        every { mockAuthResultTask.addOnCompleteListener(mockActivity, any()) } answers {
             secondArg<OnCompleteListener<AuthResult>>().onComplete(mockAuthResultTask)
             mockAuthResultTask
         }
@@ -195,7 +224,7 @@ class LoginViewModelTest: ViewModelTest() {
         val mockCredential: AuthCredential = mockk()
 
         val mockAuthResultTask: Task<AuthResult> = mockk()
-        every { mockAuthResultTask.addOnCompleteListener(mockActivity, any() ) } answers {
+        every { mockAuthResultTask.addOnCompleteListener(mockActivity, any()) } answers {
             secondArg<OnCompleteListener<AuthResult>>().onComplete(mockAuthResultTask)
             mockAuthResultTask
         }
@@ -214,7 +243,12 @@ class LoginViewModelTest: ViewModelTest() {
         verify(exactly = 1) { GoogleAuthProvider.getCredential("MOCK_TOKEN", null) }
         verify(exactly = 1) { Firebase.auth.signInWithCredential(mockCredential) }
         verify(exactly = 1) { mockAuthResultTask.addOnCompleteListener(mockActivity, any()) }
-        verify(exactly = 1) { mockTree.e(t = mockException, message = "signInWithCredential:failure") }
+        verify(exactly = 1) {
+            mockTree.e(
+                t = mockException,
+                message = "signInWithCredential:failure"
+            )
+        }
 
         verifyOrder {
             GoogleAuthProvider.getCredential("MOCK_TOKEN", null)
