@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+  ~
   ~ Jay is a driver behaviour analytics app.
+  ~
   ~ This file is part of Jay.
-  ~ Jay is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-  ~ Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-  ~ You should have received a copy of the GNU General Public License along with Jay. If not, see <https://www.gnu.org/licenses/>.
+  ~
+  ~ Jay is free software: you can redistribute it and/or modify it under the
+  ~ terms of the GNU General Public License as published by the Free Software
+  ~ Foundation, either version 3 of the License, or (at your option) any later version.
+  ~ Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+  ~ A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License along with Jay.
+  ~ If not, see <https://www.gnu.org/licenses/>.
   -->
 
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -35,99 +44,116 @@
                 android:text="@string/lorem_ipsum_short"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="200dp"
+                app:layout_constraintEnd_toStartOf="@+id/viewInMapButton"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/sessionTitle">
+
                 <androidx.appcompat.widget.LinearLayoutCompat
                     android:layout_width="64dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
                     android:orientation="vertical"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginHorizontal="4dp">
+                    app:layout_constraintStart_toStartOf="parent">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/duration" />
+
                     <androidx.appcompat.widget.LinearLayoutCompat
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
+
                         <TextView
                             android:id="@+id/sessionDuration"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/lorem_ipsum_short" />
+
                         <TextView
-                            android:layout_marginStart="4dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/unit_minute_short"/>
+                            android:layout_marginStart="4dp"
+                            android:text="@string/unit_minute_short" />
                     </androidx.appcompat.widget.LinearLayoutCompat>
                 </androidx.appcompat.widget.LinearLayoutCompat>
+
                 <androidx.appcompat.widget.LinearLayoutCompat
                     android:layout_width="64dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
                     android:orientation="vertical"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginHorizontal="4dp">
+                    app:layout_constraintStart_toStartOf="parent">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/distance" />
+
                     <androidx.appcompat.widget.LinearLayoutCompat
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
+
                         <TextView
                             android:id="@+id/sessionDistance"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/lorem_ipsum_short" />
+
                         <TextView
-                            android:layout_marginStart="4dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
                             android:text="@string/unit_km" />
                     </androidx.appcompat.widget.LinearLayoutCompat>
                 </androidx.appcompat.widget.LinearLayoutCompat>
+
                 <androidx.appcompat.widget.LinearLayoutCompat
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
                     android:orientation="vertical"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginHorizontal="4dp">
+                    app:layout_constraintStart_toStartOf="parent">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/session_start" />
+
                     <TextView
                         android:id="@+id/sessionStart"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/lorem_ipsum_short"
+                        android:maxWidth="92dp"
                         android:minWidth="64dp"
-                        android:maxWidth="92dp"/>
+                        android:text="@string/lorem_ipsum_short" />
                 </androidx.appcompat.widget.LinearLayoutCompat>
+
                 <androidx.appcompat.widget.LinearLayoutCompat
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
                     android:orientation="vertical"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:layout_marginHorizontal="4dp">
+                    app:layout_constraintStart_toStartOf="parent">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/session_end" />
+
                     <TextView
                         android:id="@+id/sessionEnd"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/in_progress"
                         android:maxWidth="96dp"
-                        android:minWidth="64dp"/>
+                        android:minWidth="64dp"
+                        android:text="@string/in_progress" />
                 </androidx.appcompat.widget.LinearLayoutCompat>
             </androidx.appcompat.widget.LinearLayoutCompat>
 
