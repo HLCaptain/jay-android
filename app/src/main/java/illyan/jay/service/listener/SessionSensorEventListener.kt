@@ -21,12 +21,12 @@ package illyan.jay.service.listener
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
-import co.zsmb.rainbowcake.withIOContext
 import illyan.jay.domain.interactor.SessionInteractor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Session sensor event listener
@@ -63,7 +63,7 @@ abstract class SessionSensorEventListener(
     /**
      * Load ongoing session IDs with IO context on a non UI thread.
      */
-    private suspend fun loadOngoingSessionIds() = withIOContext {
+    private suspend fun loadOngoingSessionIds() = withContext(Dispatchers.IO) {
         sessionInteractor.getOngoingSessionIds()
             .flowOn(Dispatchers.IO)
             .collect {
