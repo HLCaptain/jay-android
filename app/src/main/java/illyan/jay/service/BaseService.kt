@@ -41,14 +41,6 @@ import timber.log.Timber
  * @constructor Create empty Base service
  */
 abstract class BaseService : Service() {
-
-    companion object {
-        const val KEY_SERVICE_STATE_CHANGE = "KEY_SERVICE_STATE_CHANGE"
-        const val KEY_SERVICE_NAME = "KEY_SERVICE_NAME"
-        const val SERVICE_RUNNING = "SERVICE_RUNNING"
-        const val SERVICE_STOPPED = "SERVICE_STOPPED"
-    }
-
     /**
      * Broadcast service state change.
      *
@@ -157,5 +149,12 @@ abstract class BaseService : Service() {
             NotificationManager::class.java
         )
         manager.createNotificationChannel(serviceChannel)
+    }
+
+    companion object {
+        const val KEY_SERVICE_STATE_CHANGE = "KEY_SERVICE_STATE_CHANGE"
+        const val KEY_SERVICE_NAME = "KEY_SERVICE_NAME"
+        const val SERVICE_RUNNING = "SERVICE_RUNNING"
+        const val SERVICE_STOPPED = "SERVICE_STOPPED"
     }
 }

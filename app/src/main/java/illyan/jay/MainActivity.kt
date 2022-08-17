@@ -9,7 +9,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import illyan.jay.ui.map.MapboxMap
+import com.ramcosta.composedestinations.DestinationsNavHost
+import illyan.jay.ui.home.NavGraphs
 import illyan.jay.ui.theme.JayTheme
 
 class MainActivity : ComponentActivity() {
@@ -32,5 +33,5 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun MainScreen() {
-    MapboxMap(lat = 47.481491, lng = 19.056219, zoom = 12.0)
+    DestinationsNavHost(navGraph = NavGraphs.home)
 }

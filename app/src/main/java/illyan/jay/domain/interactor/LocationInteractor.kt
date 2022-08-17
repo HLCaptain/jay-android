@@ -34,18 +34,6 @@ import javax.inject.Singleton
 class LocationInteractor @Inject constructor(
     private var locationDiskDataSource: LocationDiskDataSource
 ) {
-
-    companion object {
-        const val LOCATION_REQUEST_INTERVAL_REALTIME = 200L
-        const val LOCATION_REQUEST_INTERVAL_FREQUENT = 500L
-        const val LOCATION_REQUEST_INTERVAL_DEFAULT = 2000L
-        const val LOCATION_REQUEST_INTERVAL_SPARSE = 4000L
-
-        const val LOCATION_REQUEST_DISPLACEMENT_MOST_ACCURATE = 1f
-        const val LOCATION_REQUEST_DISPLACEMENT_DEFAULT = 4f
-        const val LOCATION_REQUEST_DISPLACEMENT_LEAST_ACCURATE = 8f
-    }
-
     /**
      * Get latest (most up to date) locations as a Flow for a particular session.
      *
@@ -88,4 +76,15 @@ class LocationInteractor @Inject constructor(
      */
     fun saveLocations(locations: List<DomainLocation>) =
         locationDiskDataSource.saveLocations(locations)
+
+    companion object {
+        const val LOCATION_REQUEST_INTERVAL_REALTIME = 200L
+        const val LOCATION_REQUEST_INTERVAL_FREQUENT = 500L
+        const val LOCATION_REQUEST_INTERVAL_DEFAULT = 2000L
+        const val LOCATION_REQUEST_INTERVAL_SPARSE = 4000L
+
+        const val LOCATION_REQUEST_DISPLACEMENT_MOST_ACCURATE = 1f
+        const val LOCATION_REQUEST_DISPLACEMENT_DEFAULT = 4f
+        const val LOCATION_REQUEST_DISPLACEMENT_LEAST_ACCURATE = 8f
+    }
 }

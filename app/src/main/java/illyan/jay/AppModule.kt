@@ -49,7 +49,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideIcon(@ApplicationContext context: Context) =
-        IconCompat.createWithResource(context, R.drawable.ic_jay_icon_v3_round)
+        IconCompat.createWithResource(context, R.drawable.ic_jay_marker_icon_v3_round)
 
     @Provides
     @Singleton
