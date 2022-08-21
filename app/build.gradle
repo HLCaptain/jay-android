@@ -109,9 +109,13 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
+
     // Material design icons
     implementation "androidx.compose.material:material-icons-core:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
+
+    // Layouts
+    implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
 
     // Mapbox
     implementation "com.mapbox.maps:android:10.7.0"

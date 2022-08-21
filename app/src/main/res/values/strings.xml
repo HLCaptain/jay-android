@@ -20,4 +20,9 @@
     <string name="app_name">Jay</string>
     <string name="app_description_brief">Driver behaviour analytics app</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="search">Search</string>
+    <string name="where_to">Where to?</string>
+    <string name="avatar_profile_picture">Avatar profile picture</string>
+    <string name="delete_text">Delete text</string>
+    <string name="search_marker_icon">Search marker icon</string>
 </resources>
