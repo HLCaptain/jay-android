@@ -19,6 +19,34 @@ A few technologies and features that is ported or will be present:
 - Static code analysis via [SonarCloud]
 - Testing with a Kotlin native mocking library [MockK]
 
+## Run the project 🏃💨
+
+You need to do ⚠ 2 ⚠ things after cloning the repository!
+
+### Get your [Firebase] integration 🔥
+
+You need to modify the package of the project, because
+[Firebase] ***WILL NOT*** let you add Jay as an Android project, because I already have a project
+with this package. You might as well change the name of it, but it's optional.
+
+After you added the Android project, then you should follow the instructions [Firebase] gave you (
+download `google-services.json`).
+
+### Initialize [Mapbox] 🗺
+
+You will need a [Mapbox account] in order to get the private and public keys to get it up and
+running.
+
+Follow the [Mapbox Initialization] guide for further information. I placed both of my keys in
+the `«USER_HOME»/.gradle/gradle.properties` file.
+
+### ⚠ ⚠ ⚠ DON'T FORGET ⚠ ⚠ ⚠
+
+Never add `google-services.json` and `«USER_HOME»/.gradle/gradle.properties`
+into your forked repository and I would recommend keeping your `string.xml` file squeaky clean
+🧹🧽🧼 as well
+(don't place any keys, either public or private or confidential information there).
+
 ## License
 
 ```text
@@ -62,3 +90,7 @@ If not, see <https://www.gnu.org/licenses/>.
 [RainbowCake]: https://rainbowcake.dev/
 
 [MVVM]: https://developer.android.com/topic/architecture
+
+[Mapbox Initialization]: https://docs.mapbox.com/android/maps/guides/install/
+
+[Mapbox Account]: https://account.mapbox.com/auth/signup/
