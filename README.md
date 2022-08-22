@@ -44,7 +44,7 @@ keys to get it up and running.
 Follow the [Mapbox install] guide for further information.
 I placed both of my keys in the `«USER_HOME»/.gradle/gradle.properties` file.
 
-### Set up SonarCloud properly
+### Set up [SonarCloud] properly
 
 Don't forget to change your properties in the project
 level `build.gradle` file.
