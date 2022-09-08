@@ -21,9 +21,9 @@ package illyan.jay.data.disk.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import illyan.jay.data.disk.model.RoomAcceleration
 import kotlinx.coroutines.flow.Flow
 
@@ -35,10 +35,10 @@ interface AccelerationDao {
     @Insert
     fun insertAccelerations(accelerations: List<RoomAcceleration>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertAcceleration(acceleration: RoomAcceleration): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertAccelerations(accelerations: List<RoomAcceleration>)
 
     @Update

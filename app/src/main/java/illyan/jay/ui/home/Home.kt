@@ -24,21 +24,27 @@
 
 package illyan.jay.ui.home
 
+import android.content.Context
+import android.content.Intent
+import android.os.Parcelable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -62,6 +68,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,6 +83,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -88,11 +96,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
 import illyan.jay.ui.map.MapboxMap
+import illyan.jay.ui.search.SearchKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -167,10 +178,34 @@ fun calculateCornerRadius(
     }
 }
 
+inline fun <reified T : Parcelable> LocalBroadcastManager.sendBroadcast(message: T, key: String) {
+    val intent = Intent()
+    intent.putExtra(key, message)
+    sendBroadcast(intent)
+}
+
+fun LocalBroadcastManager.sendBroadcast(message: String, key: String) {
+    val intent = Intent()
+    intent.putExtra(key, message)
+    sendBroadcast(intent)
+}
+
 @HomeNavGraph(start = true)
 @Destination
 @Composable
 fun HomeScreen() {
+    val systemUiController = rememberSystemUiController()
+    val useDarkIcons = !isSystemInDarkTheme()
+    DisposableEffect(systemUiController, useDarkIcons) {
+        // Update all of the system bar colors to be transparent
+        // and use dark icons if we're in light theme
+        systemUiController.setSystemBarsColor(
+            color = Color.Transparent,
+            darkIcons = useDarkIcons
+        )
+        // setStatusBarColor() and setNavigationBarColor() also exist
+        onDispose {}
+    }
     ConstraintLayout {
         val (searchBar, scaffold) = createRefs()
         val scaffoldState = rememberBottomSheetScaffoldState()
@@ -218,14 +253,16 @@ fun HomeScreen() {
             }
         )
         BottomSheetScaffold(
-            modifier = Modifier.constrainAs(scaffold) {
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            },
+            modifier = Modifier
+                .constrainAs(scaffold) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                },
             sheetContent = {
                 MenuScreen(
+                    modifier = Modifier,
                     isTextFieldFocused = isTextFieldFocused,
                     onBottomSheetFractionChange = {
                         roundDp = calculateCornerRadius(
@@ -266,6 +303,7 @@ fun BottomSearchBar(
     modifier: Modifier = Modifier,
     onDrag: (Float) -> Unit = {},
     bottomSheetState: BottomSheetState? = null,
+    context: Context = LocalContext.current,
     onTextFieldFocusChanged: (FocusState) -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -295,8 +333,11 @@ fun BottomSearchBar(
         orientation = Orientation.Vertical,
         state = rememberDraggableState { onDrag(it) }
     )
+    val offset = 48.dp
     ElevatedCard(
-        modifier = modifier.then(draggable),
+        modifier = modifier
+            .then(draggable)
+            .offset(y = offset),
         shape = RoundedCornerShape(
             topStart = RoundedCornerRadius,
             topEnd = RoundedCornerRadius
@@ -306,94 +347,106 @@ fun BottomSearchBar(
         interactionSource = interactionSource,
         elevation = cardElevation
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(SearchBarHeight),
-            horizontalArrangement = Arrangement.spacedBy(SearchBarSpaceBetween)
-        ) {
-            IconButton(
-                onClick = { focusRequester.requestFocus() },
-                modifier = Modifier.padding(SearchMarkerPaddingValues)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_jay_marker_icon_v3_round),
-                    contentDescription = stringResource(R.string.search_marker_icon),
-                    modifier = Modifier.size(RoundedCornerRadius * 2)
-                )
-            }
-            val colors = TextFieldDefaults.textFieldColors(
-                containerColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                errorIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                textColor = Color.Black,
-                focusedLabelColor = Color.DarkGray,
-                unfocusedLabelColor = Color.LightGray
-            )
-            var searchPlaceText by remember { mutableStateOf("") }
-            TextField(
+        Column {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(SearchFieldPaddingValues)
-                    .then(draggable)
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { onTextFieldFocusChanged(it) },
-                value = searchPlaceText,
-                onValueChange = { searchPlaceText = it },
-                label = { Text(stringResource(R.string.search)) },
-                placeholder = { Text(stringResource(R.string.where_to)) },
-                colors = colors,
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done,
-                    keyboardType = KeyboardType.Text
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { focusRequester.freeFocus() }
-                ),
-                interactionSource = interactionSource,
-                trailingIcon = {
-                    if (searchPlaceText.isNotBlank()) {
-                        IconButton(onClick = { searchPlaceText = "" }) {
-                            Icon(
-                                imageVector = Icons.Filled.Cancel,
-                                contentDescription = stringResource(R.string.delete_text),
-                                tint = Color.LightGray
-                            )
+                    .fillMaxWidth()
+                    .height(SearchBarHeight),
+                horizontalArrangement = Arrangement.spacedBy(SearchBarSpaceBetween)
+            ) {
+                IconButton(
+                    onClick = { focusRequester.requestFocus() },
+                    modifier = Modifier.padding(SearchMarkerPaddingValues)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_jay_marker_icon_v3_round),
+                        contentDescription = stringResource(R.string.search_marker_icon),
+                        modifier = Modifier.size(RoundedCornerRadius * 2)
+                    )
+                }
+                val colors = TextFieldDefaults.textFieldColors(
+                    containerColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    errorIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    textColor = Color.Black,
+                    focusedLabelColor = Color.DarkGray,
+                    unfocusedLabelColor = Color.LightGray
+                )
+                var searchPlaceText by remember { mutableStateOf("") }
+                TextField(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(SearchFieldPaddingValues)
+                        .then(draggable)
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { onTextFieldFocusChanged(it) },
+                    value = searchPlaceText,
+                    onValueChange = {
+                        searchPlaceText = it
+                        LocalBroadcastManager.getInstance(context)
+                            .sendBroadcast(searchPlaceText, SearchKey)
+                    },
+                    label = { Text(stringResource(R.string.search)) },
+                    placeholder = { Text(stringResource(R.string.where_to)) },
+                    colors = colors,
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Text
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusRequester.freeFocus() },
+                        onGo = {
+                            focusRequester.freeFocus()
+                            // TODO: search?
+                        }
+                    ),
+                    interactionSource = interactionSource,
+                    trailingIcon = {
+                        if (searchPlaceText.isNotBlank()) {
+                            IconButton(onClick = { searchPlaceText = "" }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Cancel,
+                                    contentDescription = stringResource(R.string.delete_text),
+                                    tint = Color.LightGray
+                                )
+                            }
                         }
                     }
-                }
-            )
-            IconButton(
-                onClick = { },
-                modifier = Modifier.padding(AvatarPaddingValues),
-                interactionSource = interactionSource
-            ) {
-                Image(
-                    // Placeholder icon for now
-                    painter = painterResource(R.drawable.ic_illyan_avatar_filled),
-                    contentDescription = stringResource(R.string.avatar_profile_picture),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(RoundedCornerRadius * 2)
-                        .clip(CircleShape)
-                        .background(Color.LightGray)
                 )
+                IconButton(
+                    onClick = { },
+                    modifier = Modifier.padding(AvatarPaddingValues),
+                    interactionSource = interactionSource
+                ) {
+                    Image(
+                        // Placeholder icon for now
+                        painter = painterResource(R.drawable.ic_illyan_avatar_filled),
+                        contentDescription = stringResource(R.string.avatar_profile_picture),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(RoundedCornerRadius * 2)
+                            .clip(CircleShape)
+                            .background(Color.LightGray)
+                    )
+                }
             }
+            Spacer(modifier = Modifier.height(offset))
         }
     }
 }
 
 @Composable
 fun MenuScreen(
+    modifier: Modifier = Modifier,
     isTextFieldFocused: Boolean = false,
     onBottomSheetFractionChange: (Float) -> Unit = {}
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = 1f
     Column(
-        modifier = Modifier.fillMaxHeight(
+        modifier = modifier.fillMaxHeight(
             fraction = if (isTextFieldFocused) {
                 onBottomSheetFractionChange(fullScreenFraction)
                 fullScreenFraction

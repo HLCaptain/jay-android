@@ -21,9 +21,9 @@ package illyan.jay.data.disk.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import illyan.jay.data.disk.model.RoomRotation
 import kotlinx.coroutines.flow.Flow
 
@@ -35,10 +35,10 @@ interface RotationDao {
     @Insert
     fun insertRotations(rotations: List<RoomRotation>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertRotation(rotation: RoomRotation): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertRotations(rotations: List<RoomRotation>)
 
     @Update

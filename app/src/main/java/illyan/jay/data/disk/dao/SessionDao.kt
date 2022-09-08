@@ -21,9 +21,9 @@ package illyan.jay.data.disk.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import illyan.jay.data.disk.model.RoomSession
 import kotlinx.coroutines.flow.Flow
 
@@ -35,10 +35,10 @@ interface SessionDao {
     @Insert
     fun insertSessions(sessions: List<RoomSession>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertSession(session: RoomSession): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertSessions(sessions: List<RoomSession>)
 
     @Update

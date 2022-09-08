@@ -21,9 +21,9 @@ package illyan.jay.data.disk.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import illyan.jay.data.disk.model.RoomLocation
 import kotlinx.coroutines.flow.Flow
 
@@ -35,10 +35,10 @@ interface LocationDao {
     @Insert
     fun insertLocations(locations: List<RoomLocation>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertLocation(location: RoomLocation): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     fun upsertLocations(locations: List<RoomLocation>)
 
     @Update

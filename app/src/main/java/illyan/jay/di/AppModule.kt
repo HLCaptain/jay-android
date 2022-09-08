@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay
+package illyan.jay.di
 
 import android.content.Context
 import android.hardware.SensorManager
@@ -28,6 +28,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import illyan.jay.R
 import javax.inject.Singleton
 
 @Module
