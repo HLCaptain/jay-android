@@ -135,6 +135,7 @@ val AvatarPaddingValues = PaddingValues(
     end = 8.dp
 )
 const val BottomSheetPartialExpendedFraction = 0.5f
+const val BottomSheetPartialMaxFraction = 1f
 
 fun BottomSheetState.isExpending() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded
@@ -164,23 +165,30 @@ fun onSearchBarDrag(
 }
 
 fun calculateCornerRadius(
+    isSearching: Boolean = false,
     bottomSheetState: BottomSheetState,
     maxCornerRadius: Dp = RoundedCornerRadius,
     minCornerRadius: Dp = 0.dp,
     threshold: Float = BottomSheetPartialExpendedFraction,
     fraction: Float = 0f
 ): Dp {
-    return if (
-        bottomSheetState.isCollapsed ||
-        bottomSheetState.isCollapsing()
-    ) {
-        maxCornerRadius
+    return if (isSearching) {
+        minCornerRadius
     } else {
-        lerp(
-            maxCornerRadius,
-            minCornerRadius,
-            (1f - (1f - fraction) / threshold).coerceIn(0f, 1f)
-        ).coerceAtLeast(0.dp)
+        if (
+            bottomSheetState.isCollapsed ||
+            bottomSheetState.isCollapsing()
+        ) {
+            maxCornerRadius
+        } else {
+            val max = BottomSheetPartialMaxFraction
+            val min = 0f
+            lerp(
+                maxCornerRadius,
+                minCornerRadius,
+                (max - (max - fraction) / threshold).coerceIn(min, max)
+            ).coerceAtLeast(0.dp)
+        }
     }
 }
 
@@ -249,9 +257,9 @@ fun HomeScreen() {
             bottomSheetState = bottomSheetState,
             onTextFieldFocusChanged = {
                 isTextFieldFocused = it.hasFocus || it.isFocused
-                coroutineScope.launch {
-                    // When searching, show search results on bottom sheet
-                    if (isTextFieldFocused) {
+                if (isTextFieldFocused) {
+                    coroutineScope.launch {
+                        // When searching, show search results on bottom sheet
                         bottomSheetState.expand()
                     }
                 }
@@ -271,6 +279,7 @@ fun HomeScreen() {
                     isSearching = isTextFieldFocused,
                     onBottomSheetFractionChange = {
                         roundDp = calculateCornerRadius(
+                            isSearching = isTextFieldFocused,
                             bottomSheetState = bottomSheetState,
                             maxCornerRadius = RoundedCornerRadius,
                             minCornerRadius = 0.dp,
@@ -439,7 +448,7 @@ fun BottomSearchBar(
                     }
                 )
                 IconButton(
-                    onClick = { },
+                    onClick = { /* TODO: show login dialog/screen */ },
                     modifier = Modifier.padding(AvatarPaddingValues),
                     interactionSource = interactionSource
                 ) {
@@ -467,7 +476,7 @@ fun BottomSheetScreen(
     onBottomSheetFractionChange: (Float) -> Unit = {}
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
-    val fullScreenFraction = 1f
+    val fullScreenFraction = BottomSheetPartialMaxFraction
     Column(
         modifier = modifier.fillMaxHeight(
             fraction = if (isSearching) {
