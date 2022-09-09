@@ -26,7 +26,9 @@ package illyan.jay.ui.home
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -35,11 +37,13 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -48,6 +52,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -68,7 +73,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -103,7 +108,8 @@ import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
 import illyan.jay.ui.map.MapboxMap
-import illyan.jay.ui.search.SearchKey
+import illyan.jay.ui.menu.MenuScreen
+import illyan.jay.ui.search.SearchScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -196,7 +202,7 @@ fun LocalBroadcastManager.sendBroadcast(message: String, key: String) {
 fun HomeScreen() {
     val systemUiController = rememberSystemUiController()
     val useDarkIcons = !isSystemInDarkTheme()
-    DisposableEffect(systemUiController, useDarkIcons) {
+    LaunchedEffect(systemUiController, useDarkIcons) {
         // Update all of the system bar colors to be transparent
         // and use dark icons if we're in light theme
         systemUiController.setSystemBarsColor(
@@ -204,7 +210,6 @@ fun HomeScreen() {
             darkIcons = useDarkIcons
         )
         // setStatusBarColor() and setNavigationBarColor() also exist
-        onDispose {}
     }
     ConstraintLayout {
         val (searchBar, scaffold) = createRefs()
@@ -261,9 +266,9 @@ fun HomeScreen() {
                     end.linkTo(parent.end)
                 },
             sheetContent = {
-                MenuScreen(
-                    modifier = Modifier,
-                    isTextFieldFocused = isTextFieldFocused,
+                BottomSheetScreen(
+                    modifier = Modifier.imePadding(),
+                    isSearching = isTextFieldFocused,
                     onBottomSheetFractionChange = {
                         roundDp = calculateCornerRadius(
                             bottomSheetState = bottomSheetState,
@@ -297,7 +302,15 @@ fun HomeScreen() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(
+    name = "Light mode",
+    showBackground = true
+)
+@Preview(
+    name = "Dark mode",
+    showBackground = true,
+    uiMode = UI_MODE_NIGHT_YES
+)
 @Composable
 fun BottomSearchBar(
     modifier: Modifier = Modifier,
@@ -333,10 +346,16 @@ fun BottomSearchBar(
         orientation = Orientation.Vertical,
         state = rememberDraggableState { onDrag(it) }
     )
+    var searchFieldFocusState by remember { mutableStateOf<FocusState?>(null) }
+    // We should help gestures when not searching
+    // or bottomSheet is collapsed or collapsing
+    val shouldHelpGestures = searchFieldFocusState?.isFocused == false ||
+        bottomSheetState?.isCollapsing() == true ||
+        bottomSheetState?.isCollapsed == true
     val offset = 48.dp
     ElevatedCard(
         modifier = modifier
-            .then(draggable)
+            .then(if (shouldHelpGestures) draggable else Modifier)
             .offset(y = offset),
         shape = RoundedCornerShape(
             topStart = RoundedCornerRadius,
@@ -351,6 +370,7 @@ fun BottomSearchBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .then(draggable)
                     .height(SearchBarHeight),
                 horizontalArrangement = Arrangement.spacedBy(SearchBarSpaceBetween)
             ) {
@@ -381,18 +401,21 @@ fun BottomSearchBar(
                         .padding(SearchFieldPaddingValues)
                         .then(draggable)
                         .focusRequester(focusRequester)
-                        .onFocusChanged { onTextFieldFocusChanged(it) },
+                        .onFocusChanged {
+                            searchFieldFocusState = it
+                            onTextFieldFocusChanged(it)
+                        },
                     value = searchPlaceText,
                     onValueChange = {
                         searchPlaceText = it
                         LocalBroadcastManager.getInstance(context)
-                            .sendBroadcast(searchPlaceText, SearchKey)
+                            .sendBroadcast(searchPlaceText, Intent.ACTION_SEARCH)
                     },
                     label = { Text(stringResource(R.string.search)) },
                     placeholder = { Text(stringResource(R.string.where_to)) },
                     colors = colors,
                     keyboardOptions = KeyboardOptions(
-                        imeAction = ImeAction.Done,
+                        imeAction = ImeAction.Search,
                         keyboardType = KeyboardType.Text
                     ),
                     keyboardActions = KeyboardActions(
@@ -438,16 +461,16 @@ fun BottomSearchBar(
 }
 
 @Composable
-fun MenuScreen(
+fun BottomSheetScreen(
     modifier: Modifier = Modifier,
-    isTextFieldFocused: Boolean = false,
+    isSearching: Boolean = false,
     onBottomSheetFractionChange: (Float) -> Unit = {}
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = 1f
     Column(
         modifier = modifier.fillMaxHeight(
-            fraction = if (isTextFieldFocused) {
+            fraction = if (isSearching) {
                 onBottomSheetFractionChange(fullScreenFraction)
                 fullScreenFraction
             } else {
@@ -456,6 +479,41 @@ fun MenuScreen(
             }
         )
     ) {
-        // TODO: Place DestinationsNavHost here
+        if (!isSearching) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(24.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.LightGray)
+                )
+            }
+        }
+        Crossfade(targetState = isSearching) {
+            when (it) {
+                true -> {
+                    SearchScreen(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .navigationBarsPadding()
+                            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+                    )
+                }
+                false -> {
+                    MenuScreen(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .navigationBarsPadding()
+                            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+                    )
+                }
+            }
+        }
     }
 }

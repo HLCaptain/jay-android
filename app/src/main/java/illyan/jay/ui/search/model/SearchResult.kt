@@ -16,31 +16,9 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.menu
+package illyan.jay.ui.search.model
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.NavGraph
-import com.ramcosta.composedestinations.annotation.RootNavGraph
-
-@RootNavGraph
-@NavGraph
-annotation class MenuNavGraph(
-    val start: Boolean = false
+data class SearchResult(
+    val title: String,
+    val description: String
 )
-
-@MenuNavGraph(start = true)
-@Destination
-@Composable
-fun MenuScreen(
-    modifier: Modifier = Modifier
-) {
-    // Display a LazyStaggeredGrid
-}
-
-@Composable
-fun MenuItemCard() {
-    // Navigate to appropriate screen in whatever
-    // DestinationsNavHost (be it the root, or a child of root)
-}
