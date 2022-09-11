@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.ui.map
 
 import android.content.Context
@@ -5,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -13,11 +30,11 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapView
-import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
+import com.mapbox.maps.plugin.gestures.gestures
+import com.mapbox.maps.plugin.logo.logo
 import illyan.jay.BuildConfig
-import kotlinx.coroutines.launch
 
 @Composable
 fun MapboxMap(
@@ -26,16 +43,20 @@ fun MapboxMap(
     lat: Double = 47.481491,
     lng: Double = 19.056219,
     zoom: Double = 12.0,
-    styleUri: String = Style.OUTDOORS
+    styleUri: String = Style.OUTDOORS,
+    onMapLoaded: (MapView) -> Unit = {}
 ) {
     val opt = MapInitOptions(
         context,
-        plugins = emptyList(),
         resourceOptions = ResourceOptions.Builder()
             .accessToken(BuildConfig.MapboxAccessToken)
             .build()
     )
-    val map = remember { MapView(context, opt) }
+    val map = remember {
+        val mapLoaded = MapView(context, opt)
+        onMapLoaded(mapLoaded)
+        mapLoaded
+    }
     MapboxMapContainer(
         modifier = modifier,
         map = map,
@@ -59,35 +80,27 @@ private fun MapboxMapContainer(
     LaunchedEffect(map, isMapInitialized) {
         if (!isMapInitialized) {
             val mapboxMap = map.getMapboxMap()
-            mapboxMap.loadStyleUri(styleUri) {
-                mapboxMap.centerTo(lat = lat, lng = lng, zoom = zoom)
-                setMapInitialized(true)
-            }
+            mapboxMap.loadStyleUri(styleUri)
+            mapboxMap.setCamera(
+                CameraOptions.Builder()
+                    .center(Point.fromLngLat(lng, lat))
+                    .zoom(zoom)
+                    .build()
+            )
+            setMapInitialized(true)
         }
     }
-
-    val coroutineScope = rememberCoroutineScope()
     AndroidView(
         modifier = modifier,
         factory = { map }
     ) {
-        coroutineScope.launch {
-            it.getMapboxMap().centerTo(lat = lat, lng = lng, zoom = zoom)
-        }
+        it.gestures.scrollEnabled = true
+        it.logo.enabled = false
+        it.getMapboxMap().setCamera(
+            CameraOptions.Builder()
+                .center(Point.fromLngLat(lng, lat))
+                .zoom(zoom)
+                .build()
+        )
     }
-}
-
-fun MapboxMap.centerTo(
-    lat: Double,
-    lng: Double,
-    zoom: Double
-) {
-    val point = Point.fromLngLat(lng, lat)
-
-    val camera = CameraOptions.Builder()
-        .center(point)
-        .zoom(zoom)
-        .build()
-
-    setCamera(camera)
 }

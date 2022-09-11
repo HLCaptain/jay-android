@@ -28,7 +28,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -70,6 +69,7 @@ import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -103,13 +103,16 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.mapbox.maps.MapView
+import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
+import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.map.MapboxMap
-import illyan.jay.ui.menu.MenuScreen
-import illyan.jay.ui.search.SearchScreen
+import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
+import illyan.jay.ui.theme.Neutral95
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -136,6 +139,8 @@ val AvatarPaddingValues = PaddingValues(
 )
 const val BottomSheetPartialExpendedFraction = 0.5f
 const val BottomSheetPartialMaxFraction = 1f
+
+lateinit var mapView: MapView
 
 fun BottomSheetState.isExpending() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded
@@ -192,15 +197,37 @@ fun calculateCornerRadius(
     }
 }
 
-inline fun <reified T : Parcelable> LocalBroadcastManager.sendBroadcast(message: T, key: String) {
+inline fun <reified T : Parcelable> LocalBroadcastManager.sendBroadcast(
+    message: T,
+    key: String,
+    action: String
+) {
+    Timber.d(
+        "Sending broadcast!\n" +
+            "Message: $message\n" +
+            "Key: $key\n" +
+            "Action: $action"
+    )
     val intent = Intent()
     intent.putExtra(key, message)
+    intent.action = action
     sendBroadcast(intent)
 }
 
-fun LocalBroadcastManager.sendBroadcast(message: String, key: String) {
+fun LocalBroadcastManager.sendBroadcast(
+    message: String,
+    key: String,
+    action: String
+) {
+    Timber.d(
+        "Sending broadcast!\n" +
+            "Message: $message\n" +
+            "Key: $key\n" +
+            "Action: $action"
+    )
     val intent = Intent()
     intent.putExtra(key, message)
+    intent.action = action
     sendBroadcast(intent)
 }
 
@@ -222,8 +249,8 @@ fun HomeScreen() {
     ConstraintLayout {
         val (searchBar, scaffold) = createRefs()
         val scaffoldState = rememberBottomSheetScaffoldState()
-        val coroutineScope = rememberCoroutineScope()
         val bottomSheetState = scaffoldState.bottomSheetState
+        val coroutineScope = rememberCoroutineScope()
         var isTextFieldFocused by remember { mutableStateOf(false) }
         var roundDp by remember { mutableStateOf(RoundedCornerRadius) }
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
@@ -302,9 +329,11 @@ fun HomeScreen() {
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius / 2f)
             ) {
                 MapboxMap( // Budapest University of Technology and Economics
+                    modifier = Modifier.fillMaxSize(),
                     lat = 47.481491,
                     lng = 19.056219,
-                    zoom = 12.0
+                    zoom = 12.0,
+                    onMapLoaded = { mapView = it }
                 )
             }
         }
@@ -418,7 +447,11 @@ fun BottomSearchBar(
                     onValueChange = {
                         searchPlaceText = it
                         LocalBroadcastManager.getInstance(context)
-                            .sendBroadcast(searchPlaceText, Intent.ACTION_SEARCH)
+                            .sendBroadcast(
+                                searchPlaceText,
+                                KeySearchQuery,
+                                Intent.ACTION_SEARCH
+                            )
                     },
                     label = { Text(stringResource(R.string.search)) },
                     placeholder = { Text(stringResource(R.string.where_to)) },
@@ -460,7 +493,7 @@ fun BottomSearchBar(
                         modifier = Modifier
                             .size(RoundedCornerRadius * 2)
                             .clip(CircleShape)
-                            .background(Color.LightGray)
+                            .background(Neutral95)
                     )
                 }
             }
@@ -477,52 +510,57 @@ fun BottomSheetScreen(
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = BottomSheetPartialMaxFraction
-    Column(
-        modifier = modifier.fillMaxHeight(
-            fraction = if (isSearching) {
-                onBottomSheetFractionChange(fullScreenFraction)
-                fullScreenFraction
-            } else {
-                onBottomSheetFractionChange(halfWayFraction)
-                halfWayFraction
-            }
-        )
-    ) {
-        if (!isSearching) {
-            Row(
+    if (!isSearching) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(24.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.LightGray)
+                    .width(24.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.LightGray)
+            )
+        }
+    }
+    if (isSearching) {
+        onBottomSheetFractionChange(fullScreenFraction)
+    } else {
+        onBottomSheetFractionChange(halfWayFraction)
+    }
+    // TODO: enable searchbar and other screens to set their
+    //  own bottomSheetState heights with their heights
+    Surface(
+        modifier = modifier
+    ) {
+        DestinationsNavHost(
+            navGraph = NavGraphs.search,
+            modifier = Modifier
+                .fillMaxHeight(
+                    fraction = if (isSearching) {
+                        fullScreenFraction
+                    } else {
+                        0f
+                    }
                 )
-            }
-        }
-        Crossfade(targetState = isSearching) {
-            when (it) {
-                true -> {
-                    SearchScreen(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .navigationBarsPadding()
-                            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-                    )
-                }
-                false -> {
-                    MenuScreen(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .navigationBarsPadding()
-                            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-                    )
-                }
-            }
-        }
+                .navigationBarsPadding()
+                .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+        )
+        DestinationsNavHost(
+            navGraph = NavGraphs.menu,
+            modifier = Modifier
+                .fillMaxHeight(
+                    fraction = if (isSearching) {
+                        0f
+                    } else {
+                        halfWayFraction
+                    }
+                )
+                .navigationBarsPadding()
+                .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+        )
     }
 }

@@ -16,64 +16,55 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.search
+package illyan.jay.ui.menu
 
-import android.content.Intent
 import android.content.IntentFilter
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.service.BaseReceiver
-import illyan.jay.ui.search.model.SearchResult
+import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
-class SearchViewModel @Inject constructor(
+class MenuViewModel @Inject constructor(
     private val localBroadcastManager: LocalBroadcastManager
 ) : ViewModel() {
-    var searchQuery by mutableStateOf("")
+    // TODO: make some items worth storing, or delete this later if not used
+    var menuItems = mutableStateListOf<String>()
         private set
 
-    var searchResults = mutableStateListOf<SearchResult>()
-        private set
+    var onReceived: (Place) -> Unit = {}
 
-    private val receiver: BaseReceiver = BaseReceiver {
-        searchQuery = it.getStringExtra(KeySearchQuery) ?: ""
+    private val receiver: BaseReceiver = BaseReceiver { intent ->
+        intent.getParcelableExtra(KeyPlaceQuery, Place::class.java)?.let {
+            onReceived(it)
+        }
     }
 
-    fun load() {
+    fun load(
+        onReceived: (Place) -> Unit
+    ) {
+        this.onReceived = onReceived
         localBroadcastManager.registerReceiver(
             receiver,
             IntentFilter.create(
-                Intent.ACTION_SEARCH,
+                ACTION_QUERY_PLACE,
                 "text/*"
             )
         )
-        fillResults()
-    }
-
-    private fun fillResults() {
-        searchResults.clear()
-        for (index in 0..100) {
-            searchResults.add(
-                SearchResult(
-                    "Title of $index",
-                    "Description of index $index"
-                )
-            )
-        }
+        Timber.d("Registered $ACTION_QUERY_PLACE receiver!")
     }
 
     fun dispose() {
         localBroadcastManager.unregisterReceiver(receiver)
+        Timber.d("Menu broadcast receiver disposed!")
     }
 
     companion object {
-        const val KeyPlaceQuery = "KEY_PLACE_QUERY"
-        const val KeySearchQuery = "KEY_SEARCH_QUERY"
+        const val ACTION_QUERY_PLACE = "illyan.jay.action.QUERY_PLACE"
     }
 }

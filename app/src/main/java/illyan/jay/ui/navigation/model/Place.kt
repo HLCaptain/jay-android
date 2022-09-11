@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,20 +16,13 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.service
+package illyan.jay.ui.navigation.model
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import timber.log.Timber
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
-class BaseReceiver(
-    private val callback: (Intent) -> Unit = {}
-) : BroadcastReceiver() {
-    override fun onReceive(context: Context?, intent: Intent?) {
-        intent?.let {
-            Timber.d("Received intent with ${it.action}")
-            callback(intent)
-        }
-    }
-}
+@Parcelize
+data class Place(
+    val longitude: Double,
+    val latitude: Double
+) : Parcelable

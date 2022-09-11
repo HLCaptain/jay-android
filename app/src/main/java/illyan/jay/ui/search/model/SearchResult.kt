@@ -19,6 +19,6 @@
 package illyan.jay.ui.search.model
 
 data class SearchResult(
-    val title: String,
-    val description: String
+    val title: String = "Default title",
+    val description: String = "This is a default description"
 )
