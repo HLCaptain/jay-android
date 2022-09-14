@@ -30,6 +30,7 @@ import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -47,6 +48,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -71,7 +73,6 @@ import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -153,6 +154,7 @@ const val BottomSheetPartialMaxFraction = 1f
 
 lateinit var mapView: MapView
 lateinit var sheetState: BottomSheetState
+var isSearching: Boolean = false
 
 fun BottomSheetState.isExpending() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded
@@ -273,6 +275,7 @@ fun HomeScreen(
         val softwareKeyboardController = LocalSoftwareKeyboardController.current
         val sheetCollapsing = bottomSheetState.isCollapsing()
         BackPressHandler {
+            Timber.d("Handling back press!")
             // If searching and back is pressed, close the sheet instead of the app
             if (isTextFieldFocused) {
                 coroutineScope.launch {
@@ -321,6 +324,7 @@ fun HomeScreen(
             bottomSheetState = bottomSheetState,
             onTextFieldFocusChanged = {
                 isTextFieldFocused = it.hasFocus || it.isFocused
+                isSearching = isTextFieldFocused
                 if (isTextFieldFocused) {
                     coroutineScope.launch {
                         // When searching, show search results on bottom sheet
@@ -596,33 +600,36 @@ fun BottomSheetScreen(
         }
         // TODO: enable searchbar and other screens to set their
         //  own bottomSheetState heights with their heights
-        Surface(
+        ConstraintLayout(
             modifier = modifier
         ) {
+            val (menu) = createRefs()
             DestinationsNavHost(
                 navGraph = NavGraphs.menu,
                 modifier = Modifier
-//                    .fillMaxHeight(
-//                        fraction = if (isSearching) {
-//                            0f
-//                        } else {
-//                            halfWayFraction
-//                        }
-//                    )
+                    .heightIn(
+                        min = 0.dp,
+                        max = 400.dp
+                    )
                     .animateContentSize { _, _ -> }
                     .navigationBarsPadding()
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+                    .constrainAs(menu) {
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                    }
+            )
+            val searchFraction by animateFloatAsState(
+                targetValue = if (isSearching) {
+                    fullScreenFraction
+                } else {
+                    0f
+                }
             )
             DestinationsNavHost(
                 navGraph = NavGraphs.search,
                 modifier = Modifier
-                    .fillMaxHeight(
-                        fraction = if (isSearching) {
-                            fullScreenFraction
-                        } else {
-                            0f
-                        }
-                    )
+                    .fillMaxHeight(fraction = searchFraction)
                     .animateContentSize { _, _ -> }
                     .navigationBarsPadding()
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius)

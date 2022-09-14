@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -39,10 +40,14 @@ import com.mapbox.maps.plugin.animation.flyTo
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
+import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.navigation.model.Place
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterialApi::class)
 @MenuNavGraph
@@ -54,6 +59,20 @@ fun NavigationScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: NavigationViewModel = hiltViewModel()
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    BackPressHandler {
+        Timber.d("Handling back press in Navigation!")
+        // If searching and back is pressed, close the sheet instead of the app
+        if (isSearching) {
+            coroutineScope.launch {
+                // This call will automatically unfocus the textfield
+                // because BottomSearchBar listens on sheet changes.
+                sheetState.collapse()
+            }
+        } else {
+            destinationsNavigator.navigateUp()
+        }
+    }
     val screenHeight = LocalConfiguration.current.screenHeightDp.toDouble()
     DisposableEffect(key1 = true) {
         viewModel.load(place)
