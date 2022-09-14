@@ -24,6 +24,7 @@
 
 package illyan.jay.ui.home
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -113,11 +114,14 @@ import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
+import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.theme.Neutral95
 import kotlinx.coroutines.CoroutineScope
@@ -243,7 +247,8 @@ fun LocalBroadcastManager.sendBroadcast(
 @Destination
 @Composable
 fun HomeScreen(
-    context: Context = LocalContext.current
+    context: Context = LocalContext.current,
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
 ) {
     val systemUiController = rememberSystemUiController()
     val useDarkIcons = !isSystemInDarkTheme()
@@ -267,6 +272,18 @@ fun HomeScreen(
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
         val softwareKeyboardController = LocalSoftwareKeyboardController.current
         val sheetCollapsing = bottomSheetState.isCollapsing()
+        BackPressHandler {
+            // If searching and back is pressed, close the sheet instead of the app
+            if (isTextFieldFocused) {
+                coroutineScope.launch {
+                    // This call will automatically unfocus the textfield
+                    // because BottomSearchBar listens on sheet changes.
+                    bottomSheetState.collapse()
+                }
+            } else {
+                (context as Activity).moveTaskToBack(false)
+            }
+        }
         LaunchedEffect(key1 = sheetCollapsing) {
             if (sheetCollapsing) {
                 // Close the keyboard when closing the bottom sheet

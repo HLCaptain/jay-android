@@ -94,6 +94,7 @@ dependencies {
     implementation "androidx.core:core-ktx:1.9.0"
     implementation "androidx.collection:collection-ktx:1.2.0" // The Collection extensions contain utility functions for working with Android's memory-efficient collection libraries, including ArrayMap, LongSparseArray, LruCache, and others.
     implementation "androidx.appcompat:appcompat:1.5.1"
+    implementation "androidx.activity:activity-ktx:1.6.0-rc02"
     implementation "com.google.android.material:material:1.6.1"
 
     // Compose

@@ -41,14 +41,18 @@ class NavigationViewModel @Inject constructor(
     var place by mutableStateOf(ButeK)
         private set
 
+    var isNewPlace by mutableStateOf(true)
+
     private val receiver: BaseReceiver = BaseReceiver { intent ->
         if (Build.VERSION.SDK_INT >= 33) {
             intent.getParcelableExtra(SearchViewModel.KeyPlaceQuery, Place::class.java)?.let {
                 place = it
+                isNewPlace = true
             }
         } else {
             intent.getParcelableExtra<Place>(SearchViewModel.KeyPlaceQuery)?.let {
                 place = it
+                isNewPlace = true
             }
         }
     }
@@ -57,6 +61,7 @@ class NavigationViewModel @Inject constructor(
         place: Place
     ) {
         this.place = place
+        isNewPlace = true
         localBroadcastManager.registerReceiver(
             receiver,
             IntentFilter(MenuViewModel.ACTION_QUERY_PLACE)

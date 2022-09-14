@@ -18,9 +18,13 @@
 
 package illyan.jay.ui.menu
 
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
+import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -245,6 +249,34 @@ fun BackPressHandler(
 
         onDispose {
             backCallback.remove()
+        }
+    }
+}
+
+@RequiresApi(33)
+@Composable
+fun BackPressHandler(
+    onBackInvokedDispatcher: OnBackInvokedDispatcher,
+    onBackPressed: () -> Unit
+) {
+    val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
+
+    val backCallback = remember {
+        OnBackInvokedCallback {
+            Timber.d("Intercepted back press >= API 33!")
+            currentOnBackPressed()
+        }
+    }
+
+    DisposableEffect(key1 = onBackInvokedDispatcher) {
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(
+            PRIORITY_DEFAULT,
+            backCallback
+        )
+
+        onDispose {
+            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
+
         }
     }
 }

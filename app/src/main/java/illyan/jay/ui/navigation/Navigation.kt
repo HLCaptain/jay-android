@@ -55,18 +55,20 @@ fun NavigationScreen(
     viewModel: NavigationViewModel = hiltViewModel()
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp.toDouble()
-    // TODO: check with viewmodel for new broadcast receiver places and
-    //  swap this launchedeffect to something else
     DisposableEffect(key1 = true) {
         viewModel.load(place)
         onDispose { viewModel.dispose() }
     }
-    var firstOnLaunch by remember { mutableStateOf(true) }
+    var sheetHeightNotSet by remember { mutableStateOf(true) }
     LaunchedEffect(
         key1 = sheetState.isAnimationRunning,
-        key2 = viewModel.place
+        key2 = viewModel.place,
     ) {
-        if (!sheetState.isAnimationRunning && !firstOnLaunch) {
+        if (!sheetState.isAnimationRunning &&
+            !sheetHeightNotSet &&
+            viewModel.isNewPlace
+        ) {
+            viewModel.isNewPlace = false
             mapView.getMapboxMap().flyTo(
                 CameraOptions.Builder()
                     .center(
@@ -88,7 +90,7 @@ fun NavigationScreen(
                     .build()
             )
         }
-        firstOnLaunch = false
+        sheetHeightNotSet = false
     }
     Text(
         modifier = Modifier.height(200.dp),

@@ -18,7 +18,7 @@
 
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.Jay" parent="Theme.Material3.DayNight">
+    <style name="Theme.Jay" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary colors. -->
         <!--        <item name="colorPrimary">@color/primaryColor</item>-->
         <!--        <item name="colorPrimaryVariant">@color/primaryDarkColor</item>-->
