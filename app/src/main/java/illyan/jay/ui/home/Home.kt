@@ -271,8 +271,8 @@ fun HomeScreen(
             if (sheetCollapsing) {
                 // Close the keyboard when closing the bottom sheet
                 if (isTextFieldFocused) {
-                    // If searching right now, expand bottom sheet state after search
-                    // screen is closed.
+                    // If searching right now, expand bottom sheet
+                    // state after search screen is closed.
                     bottomSheetState.expand()
                 }
                 softwareKeyboardController?.hide()
