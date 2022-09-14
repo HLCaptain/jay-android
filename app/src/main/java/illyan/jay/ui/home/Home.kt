@@ -265,9 +265,18 @@ fun HomeScreen(
         var isTextFieldFocused by remember { mutableStateOf(false) }
         var roundDp by remember { mutableStateOf(RoundedCornerRadius) }
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
-        // Close the keyboard when closing the bottom sheet
-        if (bottomSheetState.isCollapsing()) {
-            LocalSoftwareKeyboardController.current?.hide()
+        val softwareKeyboardController = LocalSoftwareKeyboardController.current
+        val sheetCollapsing = bottomSheetState.isCollapsing()
+        LaunchedEffect(key1 = sheetCollapsing) {
+            if (sheetCollapsing) {
+                // Close the keyboard when closing the bottom sheet
+                if (isTextFieldFocused) {
+                    // If searching right now, expand bottom sheet state after search
+                    // screen is closed.
+                    bottomSheetState.expand()
+                }
+                softwareKeyboardController?.hide()
+            }
         }
         // When the bottom sheet reaches its target state, reset onDrag trigger
         if (bottomSheetState.targetValue == bottomSheetState.currentValue) {
@@ -402,8 +411,9 @@ fun BottomSearchBar(
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    LaunchedEffect(key1 = bottomSheetState?.isCollapsing()) {
-        if (bottomSheetState?.isCollapsing() == true) {
+    val sheetCollapsing = bottomSheetState?.isCollapsing() ?: false
+    LaunchedEffect(key1 = sheetCollapsing) {
+        if (sheetCollapsing) {
             launch {
                 focusRequester.freeFocus()
                 focusManager.clearFocus()
