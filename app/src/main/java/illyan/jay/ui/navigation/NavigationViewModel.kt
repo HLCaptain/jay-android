@@ -18,7 +18,54 @@
 
 package illyan.jay.ui.navigation
 
+import android.content.IntentFilter
+import android.os.Build
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.service.BaseReceiver
+import illyan.jay.ui.map.ButeK
+import illyan.jay.ui.menu.MenuViewModel
+import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.search.SearchViewModel
+import timber.log.Timber
 import javax.inject.Inject
 
-class NavigationViewModel @Inject constructor() : ViewModel()
+@HiltViewModel
+class NavigationViewModel @Inject constructor(
+    private val localBroadcastManager: LocalBroadcastManager
+) : ViewModel() {
+    var place by mutableStateOf(ButeK)
+        private set
+
+    private val receiver: BaseReceiver = BaseReceiver { intent ->
+        if (Build.VERSION.SDK_INT >= 33) {
+            intent.getParcelableExtra(SearchViewModel.KeyPlaceQuery, Place::class.java)?.let {
+                place = it
+            }
+        } else {
+            intent.getParcelableExtra<Place>(SearchViewModel.KeyPlaceQuery)?.let {
+                place = it
+            }
+        }
+    }
+
+    fun load(
+        place: Place
+    ) {
+        this.place = place
+        localBroadcastManager.registerReceiver(
+            receiver,
+            IntentFilter(MenuViewModel.ACTION_QUERY_PLACE)
+        )
+        Timber.d("Registered ${MenuViewModel.ACTION_QUERY_PLACE} receiver!")
+    }
+
+    fun dispose() {
+        localBroadcastManager.unregisterReceiver(receiver)
+        Timber.d("Navigation broadcast receiver disposed!")
+    }
+}

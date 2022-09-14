@@ -27,8 +27,7 @@
         android:name=".MainApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.Jay"
-        android:enableOnBackInvokedCallback="true">
+        android:theme="@style/Theme.Jay">
 
         <activity
             android:name=".MainActivity"

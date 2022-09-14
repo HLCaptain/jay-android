@@ -136,7 +136,7 @@ dependencies {
     implementation 'com.jakewharton.timber:timber:5.0.1'
 
     // Navigation
-    def compose_nav_version = '1.7.19-beta'
+    def compose_nav_version = '1.7.20-beta'
     implementation "io.github.raamcosta.compose-destinations:animations-core:$compose_nav_version"
     ksp "io.github.raamcosta.compose-destinations:ksp:$compose_nav_version"
 

@@ -19,15 +19,22 @@
 package illyan.jay.ui.map
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.ResourceOptions
@@ -35,16 +42,23 @@ import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.logo.logo
 import illyan.jay.BuildConfig
+import illyan.jay.ui.navigation.model.Place
+
+val ButeK = Place(
+    latitude = 47.481491,
+    longitude = 19.056219
+)
 
 @Composable
 fun MapboxMap(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    lat: Double = 47.481491,
-    lng: Double = 19.056219,
+    lat: Double = ButeK.latitude,
+    lng: Double = ButeK.longitude,
     zoom: Double = 12.0,
     styleUri: String = Style.OUTDOORS,
-    onMapLoaded: (MapView) -> Unit = {}
+    onMapLoaded: (MapView) -> Unit = {},
+    centerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val opt = MapInitOptions(
         context,
@@ -63,7 +77,8 @@ fun MapboxMap(
         lat = lat,
         lng = lng,
         zoom = zoom,
-        styleUri = styleUri
+        styleUri = styleUri,
+        centerPadding = centerPadding
     )
 }
 
@@ -74,7 +89,8 @@ private fun MapboxMapContainer(
     lat: Double,
     lng: Double,
     zoom: Double,
-    styleUri: String
+    styleUri: String,
+    centerPadding: PaddingValues
 ) {
     val (isMapInitialized, setMapInitialized) = remember(map) { mutableStateOf(false) }
     LaunchedEffect(map, isMapInitialized) {
@@ -85,6 +101,7 @@ private fun MapboxMapContainer(
                 CameraOptions.Builder()
                     .center(Point.fromLngLat(lng, lat))
                     .zoom(zoom)
+                    .padding(centerPadding)
                     .build()
             )
             setMapInitialized(true)
@@ -103,4 +120,31 @@ private fun MapboxMapContainer(
                 .build()
         )
     }
+}
+
+fun CameraOptions.Builder.padding(
+    paddingValues: PaddingValues,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr
+): CameraOptions.Builder {
+    return padding(
+        EdgeInsets(
+            paddingValues.calculateTopPadding().value.toDouble(),
+            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble(),
+            paddingValues.calculateBottomPadding().value.toDouble(),
+            paddingValues.calculateRightPadding(layoutDirection).value.toDouble()
+        )
+    )
+}
+
+// https://www.geeksforgeeks.org/how-to-convert-a-vector-to-bitmap-in-android/
+fun getBitmapFromVectorDrawable(context: Context, drawableId: Int): Bitmap {
+    val drawable = ContextCompat.getDrawable(context, drawableId)
+    val bitmap = Bitmap.createBitmap(
+        drawable!!.intrinsicWidth,
+        drawable.intrinsicHeight, Bitmap.Config.ARGB_8888
+    )
+    val canvas = Canvas(bitmap)
+    drawable.setBounds(0, 0, canvas.width, canvas.height)
+    drawable.draw(canvas)
+    return bitmap
 }

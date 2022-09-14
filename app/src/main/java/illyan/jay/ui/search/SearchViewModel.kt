@@ -48,10 +48,7 @@ class SearchViewModel @Inject constructor(
     fun load() {
         localBroadcastManager.registerReceiver(
             receiver,
-            IntentFilter.create(
-                Intent.ACTION_SEARCH,
-                "text/*"
-            )
+            IntentFilter(Intent.ACTION_SEARCH)
         )
         fillResults()
     }

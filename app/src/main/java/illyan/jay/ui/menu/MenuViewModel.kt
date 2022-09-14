@@ -19,6 +19,7 @@
 package illyan.jay.ui.menu
 
 import android.content.IntentFilter
+import android.os.Build
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -40,8 +41,14 @@ class MenuViewModel @Inject constructor(
     var onReceived: (Place) -> Unit = {}
 
     private val receiver: BaseReceiver = BaseReceiver { intent ->
-        intent.getParcelableExtra(KeyPlaceQuery, Place::class.java)?.let {
-            onReceived(it)
+        if (Build.VERSION.SDK_INT >= 33) {
+            intent.getParcelableExtra(KeyPlaceQuery, Place::class.java)?.let {
+                onReceived(it)
+            }
+        } else {
+            intent.getParcelableExtra<Place>(KeyPlaceQuery)?.let {
+                onReceived(it)
+            }
         }
     }
 
@@ -51,10 +58,7 @@ class MenuViewModel @Inject constructor(
         this.onReceived = onReceived
         localBroadcastManager.registerReceiver(
             receiver,
-            IntentFilter.create(
-                ACTION_QUERY_PLACE,
-                "text/*"
-            )
+            IntentFilter(ACTION_QUERY_PLACE)
         )
         Timber.d("Registered $ACTION_QUERY_PLACE receiver!")
     }

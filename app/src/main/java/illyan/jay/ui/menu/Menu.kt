@@ -18,11 +18,16 @@
 
 package illyan.jay.ui.menu
 
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -37,6 +42,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,10 +63,13 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.destinations.MenuListDestination
 import illyan.jay.ui.destinations.NavigationScreenDestination
+import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.sendBroadcast
+import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.menu.MenuViewModel.Companion.ACTION_QUERY_PLACE
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
+import timber.log.Timber
 
 @RootNavGraph
 @NavGraph
@@ -66,7 +77,7 @@ annotation class MenuNavGraph(
     val start: Boolean = false
 )
 
-val MenuPadding = 12.dp
+val MenuItemPadding = 6.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @MenuNavGraph(start = true)
@@ -88,7 +99,7 @@ fun MenuScreen(
     DestinationsNavHost(
         modifier = modifier,
         navGraph = NavGraphs.menu,
-        startRoute = MenuListDestination
+        startRoute = MenuListDestination,
     )
 }
 
@@ -99,18 +110,21 @@ fun MenuScreen(
 fun MenuList(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
 ) {
-// Display a LazyStaggeredGrid
     val gridState = rememberLazyStaggeredGridState()
     val context = LocalContext.current
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
     LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Adaptive(192.dp),
+        columns = StaggeredGridCells.Adaptive(160.dp),
         modifier = Modifier
-            .fillMaxSize()
+            .heightIn(
+                min = 128.dp,
+                max = 384.dp
+            )
             .padding(
-                start = MenuPadding,
-                end = MenuPadding,
-                top = MenuPadding
+                start = MenuItemPadding,
+                end = MenuItemPadding,
+                top = MenuItemPadding,
+                bottom = RoundedCornerRadius
             )
             .clip(
                 RoundedCornerShape(
@@ -124,13 +138,13 @@ fun MenuList(
         // TODO: fill up list with content
         item {
             MenuItemCard(
-                modifier = Modifier.padding(6.dp),
+                modifier = Modifier.padding(MenuItemPadding),
                 title = "Navigate to BME",
                 onClick = {
                     localBroadcastManager.sendBroadcast(
                         Place(
-                            latitude = 47.481484,
-                            longitude = 19.0555793
+                            latitude = ButeK.latitude,
+                            longitude = ButeK.longitude
                         ),
                         KeyPlaceQuery,
                         ACTION_QUERY_PLACE
@@ -140,29 +154,30 @@ fun MenuList(
         }
         item {
             MenuItemCard(
-                modifier = Modifier.padding(6.dp),
+                modifier = Modifier.padding(MenuItemPadding),
                 title = "This is a title with longer text"
             )
         }
         item {
             MenuItemCard(
-                modifier = Modifier.padding(6.dp),
+                modifier = Modifier.padding(MenuItemPadding),
                 title = "Lol, this is a menu item, which is really cool"
             )
         }
         item {
             MenuItemCard(
-                modifier = Modifier.padding(6.dp),
+                modifier = Modifier.padding(MenuItemPadding),
                 title = "Nice"
             )
         }
         item {
             MenuItemCard(
-                modifier = Modifier.padding(6.dp),
+                modifier = Modifier.padding(MenuItemPadding),
                 title = "Bruh, press this menu item or dont, I dont care, but hey, have a great day"
             )
         }
     }
+    Column(modifier = Modifier.height(RoundedCornerRadius)) {}
 }
 
 @Preview(showBackground = true)
@@ -204,6 +219,32 @@ fun MenuItemCard(
                 text = title,
                 style = MaterialTheme.typography.titleMedium
             )
+        }
+    }
+}
+
+@Composable
+fun BackPressHandler(
+    backPressedDispatcher: OnBackPressedDispatcher? =
+        LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher,
+    onBackPressed: () -> Unit
+) {
+    val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
+
+    val backCallback = remember {
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                Timber.d("Intercepted back press!")
+                currentOnBackPressed()
+            }
+        }
+    }
+
+    DisposableEffect(key1 = backPressedDispatcher) {
+        backPressedDispatcher?.addCallback(backCallback)
+
+        onDispose {
+            backCallback.remove()
         }
     }
 }

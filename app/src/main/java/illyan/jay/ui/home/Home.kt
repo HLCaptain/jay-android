@@ -28,6 +28,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -103,14 +104,20 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
+import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.theme.Neutral95
 import kotlinx.coroutines.CoroutineScope
@@ -141,6 +148,7 @@ const val BottomSheetPartialExpendedFraction = 0.5f
 const val BottomSheetPartialMaxFraction = 1f
 
 lateinit var mapView: MapView
+lateinit var sheetState: BottomSheetState
 
 fun BottomSheetState.isExpending() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded
@@ -204,9 +212,9 @@ inline fun <reified T : Parcelable> LocalBroadcastManager.sendBroadcast(
 ) {
     Timber.d(
         "Sending broadcast!\n" +
-            "Message: $message\n" +
-            "Key: $key\n" +
-            "Action: $action"
+                "Message: $message\n" +
+                "Key: $key\n" +
+                "Action: $action"
     )
     val intent = Intent()
     intent.putExtra(key, message)
@@ -221,9 +229,9 @@ fun LocalBroadcastManager.sendBroadcast(
 ) {
     Timber.d(
         "Sending broadcast!\n" +
-            "Message: $message\n" +
-            "Key: $key\n" +
-            "Action: $action"
+                "Message: $message\n" +
+                "Key: $key\n" +
+                "Action: $action"
     )
     val intent = Intent()
     intent.putExtra(key, message)
@@ -234,7 +242,9 @@ fun LocalBroadcastManager.sendBroadcast(
 @HomeNavGraph(start = true)
 @Destination
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    context: Context = LocalContext.current
+) {
     val systemUiController = rememberSystemUiController()
     val useDarkIcons = !isSystemInDarkTheme()
     LaunchedEffect(systemUiController, useDarkIcons) {
@@ -250,6 +260,7 @@ fun HomeScreen() {
         val (searchBar, scaffold) = createRefs()
         val scaffoldState = rememberBottomSheetScaffoldState()
         val bottomSheetState = scaffoldState.bottomSheetState
+        sheetState = bottomSheetState
         val coroutineScope = rememberCoroutineScope()
         var isTextFieldFocused by remember { mutableStateOf(false) }
         var roundDp by remember { mutableStateOf(RoundedCornerRadius) }
@@ -330,10 +341,30 @@ fun HomeScreen() {
             ) {
                 MapboxMap( // Budapest University of Technology and Economics
                     modifier = Modifier.fillMaxSize(),
-                    lat = 47.481491,
-                    lng = 19.056219,
+                    lat = ButeK.latitude,
+                    lng = ButeK.longitude,
                     zoom = 12.0,
-                    onMapLoaded = { mapView = it }
+                    onMapLoaded = {
+                        mapView = it
+                        val pointAnnotationManager = it.annotations.createPointAnnotationManager()
+                        val pointAnnotationOptions = PointAnnotationOptions()
+                            // Define a geographic coordinate.
+                            .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
+                            // Specify the bitmap you assigned to the point annotation
+                            // The bitmap will be added to map style automatically.
+                            .withIconImage(
+                                getBitmapFromVectorDrawable(
+                                    context,
+                                    R.drawable.ic_jay_marker_icon_v3_round
+                                )
+                            )
+                        // Add the resulting pointAnnotation to the map.
+                        pointAnnotationManager.create(pointAnnotationOptions)
+                    },
+                    styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
+                    centerPadding = PaddingValues(
+                        bottom = SearchBarHeight
+                    )
                 )
             }
         }
@@ -357,7 +388,6 @@ fun BottomSearchBar(
     context: Context = LocalContext.current,
     onTextFieldFocusChanged: (FocusState) -> Unit = {}
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val cardColors = CardDefaults.elevatedCardColors(
         containerColor = Color.White
     )
@@ -372,12 +402,15 @@ fun BottomSearchBar(
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    if (bottomSheetState?.isCollapsing() == true) {
-        coroutineScope.launch {
-            focusRequester.freeFocus()
-            focusManager.clearFocus()
+    LaunchedEffect(key1 = bottomSheetState?.isCollapsing()) {
+        if (bottomSheetState?.isCollapsing() == true) {
+            launch {
+                focusRequester.freeFocus()
+                focusManager.clearFocus()
+            }
         }
     }
+
     val interactionSource = remember { MutableInteractionSource() }
     val draggable = Modifier.draggable(
         interactionSource = interactionSource,
@@ -388,8 +421,8 @@ fun BottomSearchBar(
     // We should help gestures when not searching
     // or bottomSheet is collapsed or collapsing
     val shouldHelpGestures = searchFieldFocusState?.isFocused == false ||
-        bottomSheetState?.isCollapsing() == true ||
-        bottomSheetState?.isCollapsed == true
+            bottomSheetState?.isCollapsing() == true ||
+            bottomSheetState?.isCollapsed == true
     val offset = 48.dp
     ElevatedCard(
         modifier = modifier
@@ -510,57 +543,63 @@ fun BottomSheetScreen(
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = BottomSheetPartialMaxFraction
-    if (!isSearching) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(24.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color.LightGray)
-            )
-        }
-    }
-    if (isSearching) {
-        onBottomSheetFractionChange(fullScreenFraction)
-    } else {
-        onBottomSheetFractionChange(halfWayFraction)
-    }
-    // TODO: enable searchbar and other screens to set their
-    //  own bottomSheetState heights with their heights
-    Surface(
+    ConstraintLayout(
         modifier = modifier
     ) {
-        DestinationsNavHost(
-            navGraph = NavGraphs.search,
-            modifier = Modifier
-                .fillMaxHeight(
-                    fraction = if (isSearching) {
-                        fullScreenFraction
-                    } else {
-                        0f
-                    }
+        if (!isSearching) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(24.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.LightGray)
                 )
-                .navigationBarsPadding()
-                .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-        )
-        DestinationsNavHost(
-            navGraph = NavGraphs.menu,
-            modifier = Modifier
-                .fillMaxHeight(
-                    fraction = if (isSearching) {
-                        0f
-                    } else {
-                        halfWayFraction
-                    }
-                )
-                .navigationBarsPadding()
-                .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-        )
+            }
+        }
+        if (isSearching) {
+            onBottomSheetFractionChange(fullScreenFraction)
+        } else {
+            onBottomSheetFractionChange(halfWayFraction)
+        }
+        // TODO: enable searchbar and other screens to set their
+        //  own bottomSheetState heights with their heights
+        Surface(
+            modifier = modifier
+        ) {
+            DestinationsNavHost(
+                navGraph = NavGraphs.menu,
+                modifier = Modifier
+//                    .fillMaxHeight(
+//                        fraction = if (isSearching) {
+//                            0f
+//                        } else {
+//                            halfWayFraction
+//                        }
+//                    )
+                    .animateContentSize { _, _ -> }
+                    .navigationBarsPadding()
+                    .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+            )
+            DestinationsNavHost(
+                navGraph = NavGraphs.search,
+                modifier = Modifier
+                    .fillMaxHeight(
+                        fraction = if (isSearching) {
+                            fullScreenFraction
+                        } else {
+                            0f
+                        }
+                    )
+                    .animateContentSize { _, _ -> }
+                    .navigationBarsPadding()
+                    .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+            )
+        }
     }
 }

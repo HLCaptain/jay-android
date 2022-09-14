@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LocalCafe
-import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -58,6 +57,7 @@ import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.sendBroadcast
+import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.menu.MenuViewModel.Companion.ACTION_QUERY_PLACE
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
@@ -84,8 +84,6 @@ fun SearchScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
-    val scaffoldState = rememberBottomSheetScaffoldState()
-    val bottomSheetState = scaffoldState.bottomSheetState
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
@@ -148,8 +146,8 @@ fun SearchScreen(
                             focusManager.clearFocus()
                             localBroadcastManager.sendBroadcast(
                                 Place(
-                                    latitude = 47.481484,
-                                    longitude = 19.0555793
+                                    latitude = ButeK.latitude,
+                                    longitude = ButeK.longitude
                                 ),
                                 KeyPlaceQuery,
                                 ACTION_QUERY_PLACE
