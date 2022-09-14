@@ -30,6 +30,8 @@ import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -274,15 +276,12 @@ fun HomeScreen(
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
         val softwareKeyboardController = LocalSoftwareKeyboardController.current
         val sheetCollapsing = bottomSheetState.isCollapsing()
+        val focusManager = LocalFocusManager.current
         BackPressHandler {
             Timber.d("Handling back press!")
-            // If searching and back is pressed, close the sheet instead of the app
             if (isTextFieldFocused) {
-                coroutineScope.launch {
-                    // This call will automatically unfocus the textfield
-                    // because BottomSearchBar listens on sheet changes.
-                    bottomSheetState.collapse()
-                }
+                // Remove the focus from the textfield
+                focusManager.clearFocus()
             } else {
                 (context as Activity).moveTaskToBack(false)
             }
@@ -603,7 +602,7 @@ fun BottomSheetScreen(
         ConstraintLayout(
             modifier = modifier
         ) {
-            val (menu) = createRefs()
+            val (menu, search) = createRefs()
             DestinationsNavHost(
                 navGraph = NavGraphs.menu,
                 modifier = Modifier
@@ -624,7 +623,11 @@ fun BottomSheetScreen(
                     fullScreenFraction
                 } else {
                     0f
-                }
+                },
+                animationSpec = TweenSpec(
+                    durationMillis = 1000,
+                    easing = LinearOutSlowInEasing
+                )
             )
             DestinationsNavHost(
                 navGraph = NavGraphs.search,
@@ -633,6 +636,9 @@ fun BottomSheetScreen(
                     .animateContentSize { _, _ -> }
                     .navigationBarsPadding()
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+                    .constrainAs(search) {
+                        bottom.linkTo(parent.bottom)
+                    }
             )
         }
     }
