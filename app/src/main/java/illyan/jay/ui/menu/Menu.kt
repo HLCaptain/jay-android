@@ -34,13 +34,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Expand
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -148,6 +152,7 @@ fun MenuList(
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
                 title = "Navigate to BME",
+                icon = Icons.Rounded.Navigation,
                 onClick = {
                     localBroadcastManager.sendBroadcast(
                         Place(
@@ -157,7 +162,8 @@ fun MenuList(
                         KeyPlaceQuery,
                         ACTION_QUERY_PLACE
                     )
-                }
+                },
+                color = Color.Cyan
             )
         }
         item {
@@ -187,7 +193,9 @@ fun MenuList(
         item {
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
-                title = "Make the menu bigger"
+                title = "Make the menu bigger",
+                color = Color.Magenta,
+                icon = Icons.Rounded.Expand
             ) {
                 menuShouldBeBigger = !menuShouldBeBigger
             }
@@ -204,29 +212,38 @@ fun MenuList(
 fun MenuItemCard(
     modifier: Modifier = Modifier,
     title: String = "Menu Item Title",
-    icon: ImageVector = Icons.Rounded.Navigation,
+    icon: ImageVector? = null,
+    color: Color = MaterialTheme.colorScheme.primaryContainer,
     onClick: () -> Unit = {}
 ) {
     // Navigate to appropriate screen in whatever
+    val cardColors = CardDefaults.cardColors(
+        containerColor = color
+    )
     Card(
         modifier = modifier,
-        onClick = onClick
+        onClick = onClick,
+        colors = cardColors
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(
-                modifier = Modifier.padding(
-                    start = 12.dp,
-                    end = 4.dp,
-                    top = 12.dp,
-                    bottom = 12.dp
-                ),
-                imageVector = icon,
-                contentDescription = "Menu Item Icon"
-            )
+            if (icon != null) {
+                Icon(
+                    modifier = Modifier.padding(
+                        start = 12.dp,
+                        end = 4.dp,
+                        top = 12.dp,
+                        bottom = 12.dp
+                    ),
+                    imageVector = icon,
+                    contentDescription = "Menu Item Icon"
+                )
+            } else {
+                Spacer(modifier = Modifier.width(12.dp))
+            }
             Text(
                 modifier = Modifier.padding(
                     start = 4.dp,
