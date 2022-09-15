@@ -25,10 +25,11 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -47,8 +48,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -117,6 +120,7 @@ fun MenuList(
     val gridState = rememberLazyStaggeredGridState()
     val context = LocalContext.current
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
+    var menuShouldBeBigger by remember { mutableStateOf(false) }
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
         modifier = Modifier
@@ -180,8 +184,18 @@ fun MenuList(
                 title = "Bruh, press this menu item or dont, I dont care, but hey, have a great day"
             )
         }
+        item {
+            MenuItemCard(
+                modifier = Modifier.padding(MenuItemPadding),
+                title = "Make the menu bigger"
+            ) {
+                menuShouldBeBigger = !menuShouldBeBigger
+            }
+        }
     }
-    Column(modifier = Modifier.height(RoundedCornerRadius)) {}
+    Spacer(modifier = Modifier.height(RoundedCornerRadius))
+    val spacerHeight by animateDpAsState(targetValue = if (menuShouldBeBigger) 800.dp else 0.dp)
+    Spacer(modifier = Modifier.height(spacerHeight))
 }
 
 @Preview(showBackground = true)

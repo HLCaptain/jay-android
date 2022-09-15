@@ -30,8 +30,6 @@ import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -550,7 +548,7 @@ fun BottomSearchBar(
                 ) {
                     Image(
                         // Placeholder icon for now
-                        painter = painterResource(R.drawable.ic_illyan_avatar_filled),
+                        painter = painterResource(R.drawable.ic_illyan_avatar_color),
                         contentDescription = stringResource(R.string.avatar_profile_picture),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -597,8 +595,8 @@ fun BottomSheetScreen(
         } else {
             onBottomSheetFractionChange(halfWayFraction)
         }
-        // TODO: enable searchbar and other screens to set their
-        //  own bottomSheetState heights with their heights
+        val menuMaxHeight = 600.dp
+        val menuMinHeight = 100.dp
         ConstraintLayout(
             modifier = modifier
         ) {
@@ -607,14 +605,13 @@ fun BottomSheetScreen(
                 navGraph = NavGraphs.menu,
                 modifier = Modifier
                     .heightIn(
-                        min = 0.dp,
-                        max = 400.dp
+                        min = menuMinHeight,
+                        max = menuMaxHeight
                     )
                     .animateContentSize { _, _ -> }
                     .navigationBarsPadding()
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius)
                     .constrainAs(menu) {
-                        top.linkTo(parent.top)
                         bottom.linkTo(parent.bottom)
                     }
             )
@@ -623,11 +620,7 @@ fun BottomSheetScreen(
                     fullScreenFraction
                 } else {
                     0f
-                },
-                animationSpec = TweenSpec(
-                    durationMillis = 1000,
-                    easing = LinearOutSlowInEasing
-                )
+                }
             )
             DestinationsNavHost(
                 navGraph = NavGraphs.search,
