@@ -129,6 +129,7 @@ import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.menu.BackPressHandler
+import illyan.jay.ui.search.SearchViewModel.Companion.ActionSelectFirst
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.theme.Neutral95
 import kotlinx.coroutines.CoroutineScope
@@ -552,10 +553,13 @@ fun BottomSearchBar(
                         keyboardType = KeyboardType.Text
                     ),
                     keyboardActions = KeyboardActions(
-                        onDone = { focusRequester.freeFocus() },
-                        onGo = {
-                            focusRequester.freeFocus()
-                            // TODO: search? select first item in list?
+                        onDone = { focusManager.clearFocus() },
+                        onGo = { focusManager.clearFocus() },
+                        onSearch = {
+                            focusManager.clearFocus()
+                            val intent = Intent()
+                            intent.action = ActionSelectFirst
+                            LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
                         }
                     ),
                     interactionSource = interactionSource,

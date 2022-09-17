@@ -26,28 +26,47 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.mapbox.search.CompletionCallback
 import com.mapbox.search.ResponseInfo
 import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchOptions
+import com.mapbox.search.SearchSelectionCallback
 import com.mapbox.search.SearchSuggestionsCallback
+import com.mapbox.search.record.FavoriteRecord
+import com.mapbox.search.record.FavoritesDataProvider
+import com.mapbox.search.record.HistoryDataProvider
+import com.mapbox.search.record.HistoryRecord
+import com.mapbox.search.record.IndexableRecord
+import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.service.BaseReceiver
+import illyan.jay.ui.home.sendBroadcast
+import illyan.jay.ui.menu.MenuViewModel
+import illyan.jay.ui.navigation.model.Place
 import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val localBroadcastManager: LocalBroadcastManager,
-    private val searchEngine: SearchEngine
+    private val searchEngine: SearchEngine,
+    private val historyDataProvider: HistoryDataProvider,
+    private val favoritesDataProvider: FavoritesDataProvider
 ) : ViewModel() {
     var searchQuery by mutableStateOf("")
+        private set
+
+    var historyRecords = mutableStateListOf<HistoryRecord>()
+        private set
+
+    var favoriteRecords = mutableStateListOf<FavoriteRecord>()
         private set
 
     var searchSuggestions = mutableStateListOf<SearchSuggestion>()
         private set
 
-    private val receiver: BaseReceiver = BaseReceiver {
+    private val queryReceiver: BaseReceiver = BaseReceiver {
         searchQuery = it.getStringExtra(KeySearchQuery) ?: ""
         searchEngine.search(
             searchQuery,
@@ -71,19 +90,146 @@ class SearchViewModel @Inject constructor(
         )
     }
 
+    private val navigationCallReceiver = BaseReceiver {
+        searchSuggestions.firstOrNull()?.let {
+            navigateTo(it)
+            return@BaseReceiver
+        }
+        favoriteRecords.firstOrNull()?.let {
+            navigateTo(it)
+            return@BaseReceiver
+        }
+        historyRecords.firstOrNull()?.let {
+            navigateTo(it)
+            return@BaseReceiver
+        }
+    }
+
+    private val searchSelectionCallback = object : SearchSelectionCallback {
+        override fun onCategoryResult(
+            suggestion: SearchSuggestion,
+            results: List<SearchResult>,
+            responseInfo: ResponseInfo
+        ) {
+            results.firstOrNull()?.let { navigateTo(it) }
+        }
+
+        override fun onError(e: Exception) {
+            Timber.d("Error occured while getting search result!")
+            e.printStackTrace()
+        }
+
+        override fun onResult(
+            suggestion: SearchSuggestion,
+            result: SearchResult,
+            responseInfo: ResponseInfo
+        ) {
+            navigateTo(result)
+        }
+
+        override fun onSuggestions(
+            suggestions: List<SearchSuggestion>,
+            responseInfo: ResponseInfo
+        ) {
+            // Not needed
+        }
+    }
+
     fun load() {
+        loadFavorites()
+        loadHistory()
+        loadReceiver()
+    }
+
+    private fun loadFavorites() {
+        favoritesDataProvider.getAll(
+            object : CompletionCallback<List<FavoriteRecord>> {
+                override fun onComplete(result: List<FavoriteRecord>) {
+                    favoriteRecords.clear()
+                    favoriteRecords.addAll(result.takeLast(4))
+                }
+
+                override fun onError(e: Exception) {
+                    Timber.d("Error occured while getting favorite records!")
+                }
+            }
+        )
+    }
+
+    private fun loadHistory() {
+        historyDataProvider.getAll(
+            object : CompletionCallback<List<HistoryRecord>> {
+                override fun onComplete(result: List<HistoryRecord>) {
+                    historyRecords.clear()
+                    historyRecords.addAll(result.sortedBy { it.timestamp }.takeLast(4))
+                }
+
+                override fun onError(e: Exception) {
+                    Timber.d("Error occured while getting history records!")
+                }
+            }
+        )
+    }
+
+    private fun loadReceiver() {
         localBroadcastManager.registerReceiver(
-            receiver,
+            queryReceiver,
             IntentFilter(Intent.ACTION_SEARCH)
+        )
+        localBroadcastManager.registerReceiver(
+            navigationCallReceiver,
+            IntentFilter(ActionSelectFirst)
+        )
+    }
+
+    fun navigateTo(searchSuggestion: SearchSuggestion) {
+        searchEngine.select(
+            searchSuggestion,
+            searchSelectionCallback
+        )
+    }
+
+    fun navigateTo(searchResult: SearchResult) {
+        searchResult.coordinate?.let {
+            navigateTo(
+                Place(
+                    longitude = it.longitude(),
+                    latitude = it.latitude()
+                )
+            )
+        }
+    }
+
+    fun navigateTo(record: IndexableRecord) {
+        record.coordinate?.let {
+            navigateTo(
+                Place(
+                    longitude = it.longitude(),
+                    latitude = it.latitude()
+                )
+            )
+        }
+    }
+
+    private fun navigateTo(place: Place) {
+        localBroadcastManager.sendBroadcast(
+            Place(
+                latitude = place.latitude,
+                longitude = place.longitude
+            ),
+            KeyPlaceQuery,
+            MenuViewModel.ACTION_QUERY_PLACE
         )
     }
 
     fun dispose() {
-        localBroadcastManager.unregisterReceiver(receiver)
+        localBroadcastManager.unregisterReceiver(queryReceiver)
+        localBroadcastManager.unregisterReceiver(navigationCallReceiver)
     }
 
     companion object {
         const val KeyPlaceQuery = "KEY_PLACE_QUERY"
         const val KeySearchQuery = "KEY_SEARCH_QUERY"
+        const val ActionSelectFirst = "ACTION_SELECT_FIRST"
     }
 }

@@ -24,7 +24,6 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationServices
 import com.mapbox.search.MapboxSearchSdk
-import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchEngineSettings
 import dagger.Module
 import dagger.Provides
@@ -63,8 +62,18 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSearchEngine(): SearchEngine =
+    fun provideSearchEngine() =
         MapboxSearchSdk.createSearchEngineWithBuiltInDataProviders(
             SearchEngineSettings(accessToken = BuildConfig.MapboxSdkRegistryToken)
         )
+
+    @Provides
+    @Singleton
+    fun provideHistoryDataProvider() =
+        MapboxSearchSdk.serviceProvider.historyDataProvider()
+
+    @Provides
+    @Singleton
+    fun provideFavoritesDataProvider() =
+        MapboxSearchSdk.serviceProvider.favoritesDataProvider()
 }
