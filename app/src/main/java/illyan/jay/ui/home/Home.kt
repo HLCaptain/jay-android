@@ -29,8 +29,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -84,6 +87,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
@@ -158,11 +162,17 @@ lateinit var mapView: MapView
 lateinit var sheetState: BottomSheetState
 var isSearching: Boolean = false
 
-fun BottomSheetState.isExpending() =
+fun BottomSheetState.isExpanding() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded
 
 fun BottomSheetState.isCollapsing() =
     isAnimationRunning && targetValue == BottomSheetValue.Collapsed
+
+fun BottomSheetState.isExpendedOrWillBe() =
+    isExpanding() || isExpanded
+
+fun BottomSheetState.isCollapsedOrWillBe() =
+    isCollapsing() || isCollapsed
 
 fun onSearchBarDrag(
     coroutineScope: CoroutineScope,
@@ -197,8 +207,7 @@ fun calculateCornerRadius(
         minCornerRadius
     } else {
         if (
-            bottomSheetState.isCollapsed ||
-            bottomSheetState.isCollapsing()
+            bottomSheetState.isCollapsedOrWillBe()
         ) {
             maxCornerRadius
         } else {
@@ -435,7 +444,8 @@ fun BottomSearchBar(
     onDrag: (Float) -> Unit = {},
     bottomSheetState: BottomSheetState? = null,
     context: Context = LocalContext.current,
-    onTextFieldFocusChanged: (FocusState) -> Unit = {}
+    onTextFieldFocusChanged: (FocusState) -> Unit = {},
+    onDragAreaOffset: Dp = 48.dp
 ) {
     val cardColors = CardDefaults.elevatedCardColors(
         containerColor = Color.White
@@ -469,15 +479,13 @@ fun BottomSearchBar(
     )
     var searchFieldFocusState by remember { mutableStateOf<FocusState?>(null) }
     // We should help gestures when not searching
-    // or bottomSheet is collapsed or collapsing
-    val shouldHelpGestures = searchFieldFocusState?.isFocused == false ||
-        bottomSheetState?.isCollapsing() == true ||
-        bottomSheetState?.isCollapsed == true
-    val offset = 48.dp
+    // and bottomSheet is collapsed or collapsing
+    val shouldHelpGestures = searchFieldFocusState?.isFocused == false &&
+        bottomSheetState?.isCollapsedOrWillBe() == true
     ElevatedCard(
         modifier = modifier
             .then(if (shouldHelpGestures) draggable else Modifier)
-            .offset(y = offset),
+            .offset(y = onDragAreaOffset),
         shape = RoundedCornerShape(
             topStart = RoundedCornerRadius,
             topEnd = RoundedCornerRadius
@@ -585,7 +593,7 @@ fun BottomSearchBar(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(offset))
+            Spacer(modifier = Modifier.height(onDragAreaOffset))
         }
     }
 }
@@ -625,38 +633,99 @@ fun BottomSheetScreen(
         ConstraintLayout(
             modifier = modifier
         ) {
-            val menuMaxHeight = 600.dp
-            val menuMinHeight = 100.dp
             val (menu, search) = createRefs()
-            AnimatedVisibility(visible = !isSearching) {
-                DestinationsNavHost(
-                    navGraph = NavGraphs.menu,
-                    modifier = Modifier
-                        .heightIn(
-                            min = menuMinHeight,
-                            max = menuMaxHeight
-                        )
-                        .animateContentSize { _, _ -> }
-                        .navigationBarsPadding()
-                        .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-                        .constrainAs(menu) {
-                            bottom.linkTo(parent.bottom)
-                        }
-                )
-            }
-            AnimatedVisibility(visible = isSearching) {
-                DestinationsNavHost(
-                    navGraph = NavGraphs.search,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .animateContentSize { _, _ -> }
-                        .navigationBarsPadding()
-                        .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-                        .constrainAs(search) {
-                            bottom.linkTo(parent.bottom)
-                        }
-                )
-            }
+            MenuNavHost(
+                modifier = Modifier.constrainAs(menu) {
+                    bottom.linkTo(parent.bottom)
+                },
+                isSearching = isSearching
+            )
+            SearchNavHost(
+                modifier = Modifier.constrainAs(search) {
+                    bottom.linkTo(parent.bottom)
+                },
+                isSearching = isSearching
+            )
         }
     }
+}
+
+@Composable
+private fun MenuNavHost(
+    modifier: Modifier = Modifier,
+    isSearching: Boolean
+) {
+    val menuAlpha by animateFloatAsState(
+        targetValue = if (isSearching) {
+            0f
+        } else {
+            1f
+        },
+        animationSpec = SpringSpec(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessVeryLow
+        )
+    )
+    val stiffness by animateFloatAsState(
+        targetValue = if (isSearching) {
+            Spring.StiffnessVeryLow
+        } else {
+            Spring.StiffnessLow
+        }
+    )
+    val menuMaxHeight by animateDpAsState(
+        targetValue = if (isSearching) {
+            0.dp
+        } else {
+            600.dp
+        },
+        animationSpec = SpringSpec(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = stiffness
+        )
+    )
+    DestinationsNavHost(
+        navGraph = NavGraphs.menu,
+        modifier = modifier
+            .heightIn(max = menuMaxHeight)
+            .animateContentSize { _, _ -> }
+            .alpha(alpha = menuAlpha)
+            .navigationBarsPadding()
+            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+    )
+}
+
+@Composable
+private fun SearchNavHost(
+    modifier: Modifier = Modifier,
+    isSearching: Boolean,
+    fullScreenFraction: Float = BottomSheetPartialMaxFraction
+) {
+    val searchAlpha by animateFloatAsState(
+        targetValue = if (isSearching) {
+            1f
+        } else {
+            0f
+        },
+        animationSpec = SpringSpec(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessVeryLow
+        )
+    )
+    val searchFraction by animateFloatAsState(
+        targetValue = if (isSearching) {
+            fullScreenFraction
+        } else {
+            0f
+        }
+    )
+    DestinationsNavHost(
+        navGraph = NavGraphs.search,
+        modifier = modifier
+            .fillMaxHeight(fraction = searchFraction)
+            .animateContentSize { _, _ -> }
+            .alpha(alpha = searchAlpha)
+            .navigationBarsPadding()
+            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+    )
 }
