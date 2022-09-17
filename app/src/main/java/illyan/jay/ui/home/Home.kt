@@ -29,8 +29,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -85,6 +85,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
@@ -94,6 +95,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -218,9 +220,9 @@ inline fun <reified T : Parcelable> LocalBroadcastManager.sendBroadcast(
 ) {
     Timber.d(
         "Sending broadcast!\n" +
-                "Message: $message\n" +
-                "Key: $key\n" +
-                "Action: $action"
+            "Message: $message\n" +
+            "Key: $key\n" +
+            "Action: $action"
     )
     val intent = Intent()
     intent.putExtra(key, message)
@@ -235,9 +237,9 @@ fun LocalBroadcastManager.sendBroadcast(
 ) {
     Timber.d(
         "Sending broadcast!\n" +
-                "Message: $message\n" +
-                "Key: $key\n" +
-                "Action: $action"
+            "Message: $message\n" +
+            "Key: $key\n" +
+            "Action: $action"
     )
     val intent = Intent()
     intent.putExtra(key, message)
@@ -276,24 +278,14 @@ fun HomeScreen(
         val sheetCollapsing = bottomSheetState.isCollapsing()
         val focusManager = LocalFocusManager.current
         BackPressHandler {
-            Timber.d("Handling back press!")
-            if (isTextFieldFocused) {
-                // Remove the focus from the textfield
-                focusManager.clearFocus()
-            } else {
-                (context as Activity).moveTaskToBack(false)
-            }
+            onHomeBackPress(isTextFieldFocused, focusManager, context)
         }
         LaunchedEffect(key1 = sheetCollapsing) {
-            if (sheetCollapsing) {
-                // Close the keyboard when closing the bottom sheet
-                if (isTextFieldFocused) {
-                    // If searching right now, expand bottom sheet
-                    // state after search screen is closed.
-                    bottomSheetState.expand()
-                }
-                softwareKeyboardController?.hide()
-            }
+            onSheetStateChanged(
+                isTextFieldFocused,
+                bottomSheetState,
+                softwareKeyboardController
+            )
         }
         // When the bottom sheet reaches its target state, reset onDrag trigger
         if (bottomSheetState.targetValue == bottomSheetState.currentValue) {
@@ -398,6 +390,36 @@ fun HomeScreen(
     }
 }
 
+private fun onHomeBackPress(
+    isTextFieldFocused: Boolean,
+    focusManager: FocusManager,
+    context: Context
+) {
+    Timber.d("Handling back press from Home!")
+    if (isTextFieldFocused) {
+        // Remove the focus from the textfield
+        focusManager.clearFocus()
+    } else {
+        (context as Activity).moveTaskToBack(false)
+    }
+}
+
+private suspend fun onSheetStateChanged(
+    isTextFieldFocused: Boolean,
+    bottomSheetState: BottomSheetState,
+    softwareKeyboardController: SoftwareKeyboardController?
+) {
+    if (bottomSheetState.isCollapsing()) {
+        // Close the keyboard when closing the bottom sheet
+        if (isTextFieldFocused) {
+            // If searching right now, expand bottom sheet
+            // state after search screen is closed.
+            bottomSheetState.expand()
+        }
+        softwareKeyboardController?.hide()
+    }
+}
+
 @Preview(
     name = "Light mode",
     showBackground = true
@@ -449,8 +471,8 @@ fun BottomSearchBar(
     // We should help gestures when not searching
     // or bottomSheet is collapsed or collapsing
     val shouldHelpGestures = searchFieldFocusState?.isFocused == false ||
-            bottomSheetState?.isCollapsing() == true ||
-            bottomSheetState?.isCollapsed == true
+        bottomSheetState?.isCollapsing() == true ||
+        bottomSheetState?.isCollapsed == true
     val offset = 48.dp
     ElevatedCard(
         modifier = modifier
@@ -525,13 +547,18 @@ fun BottomSearchBar(
                         onDone = { focusRequester.freeFocus() },
                         onGo = {
                             focusRequester.freeFocus()
-                            // TODO: search?
+                            // TODO: search? select first item in list?
                         }
                     ),
                     interactionSource = interactionSource,
                     trailingIcon = {
                         if (searchPlaceText.isNotBlank()) {
-                            IconButton(onClick = { searchPlaceText = "" }) {
+                            IconButton(
+                                onClick = {
+                                    searchPlaceText = ""
+                                    focusRequester.requestFocus()
+                                }
+                            ) {
                                 Icon(
                                     imageVector = Icons.Filled.Cancel,
                                     contentDescription = stringResource(R.string.delete_text),
@@ -595,44 +622,41 @@ fun BottomSheetScreen(
         } else {
             onBottomSheetFractionChange(halfWayFraction)
         }
-        val menuMaxHeight = 600.dp
-        val menuMinHeight = 100.dp
         ConstraintLayout(
             modifier = modifier
         ) {
+            val menuMaxHeight = 600.dp
+            val menuMinHeight = 100.dp
             val (menu, search) = createRefs()
-            DestinationsNavHost(
-                navGraph = NavGraphs.menu,
-                modifier = Modifier
-                    .heightIn(
-                        min = menuMinHeight,
-                        max = menuMaxHeight
-                    )
-                    .animateContentSize { _, _ -> }
-                    .navigationBarsPadding()
-                    .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-                    .constrainAs(menu) {
-                        bottom.linkTo(parent.bottom)
-                    }
-            )
-            val searchFraction by animateFloatAsState(
-                targetValue = if (isSearching) {
-                    fullScreenFraction
-                } else {
-                    0f
-                }
-            )
-            DestinationsNavHost(
-                navGraph = NavGraphs.search,
-                modifier = Modifier
-                    .fillMaxHeight(fraction = searchFraction)
-                    .animateContentSize { _, _ -> }
-                    .navigationBarsPadding()
-                    .padding(bottom = SearchBarHeight - RoundedCornerRadius)
-                    .constrainAs(search) {
-                        bottom.linkTo(parent.bottom)
-                    }
-            )
+            AnimatedVisibility(visible = !isSearching) {
+                DestinationsNavHost(
+                    navGraph = NavGraphs.menu,
+                    modifier = Modifier
+                        .heightIn(
+                            min = menuMinHeight,
+                            max = menuMaxHeight
+                        )
+                        .animateContentSize { _, _ -> }
+                        .navigationBarsPadding()
+                        .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+                        .constrainAs(menu) {
+                            bottom.linkTo(parent.bottom)
+                        }
+                )
+            }
+            AnimatedVisibility(visible = isSearching) {
+                DestinationsNavHost(
+                    navGraph = NavGraphs.search,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .animateContentSize { _, _ -> }
+                        .navigationBarsPadding()
+                        .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+                        .constrainAs(search) {
+                            bottom.linkTo(parent.bottom)
+                        }
+                )
+            }
         }
     }
 }

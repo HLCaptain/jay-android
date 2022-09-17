@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material3.Card
@@ -52,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.mapbox.search.result.SearchSuggestion
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -61,7 +61,6 @@ import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.menu.MenuViewModel.Companion.ACTION_QUERY_PLACE
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
-import illyan.jay.ui.search.model.SearchResult
 import illyan.jay.ui.theme.Neutral90
 import illyan.jay.ui.theme.Neutral95
 
@@ -76,7 +75,6 @@ val SearchItemsCornerRadius = 24.dp
 val DividerStartPadding = 56.dp
 val DividerThickness = 1.dp
 
-@OptIn(ExperimentalMaterialApi::class)
 @SearchNavGraph(start = true)
 @Destination
 @Composable
@@ -101,13 +99,13 @@ fun SearchScreen(
             bottom = RoundedCornerRadius + SearchPadding
         )
     ) {
-        itemsIndexed(viewModel.searchResults) { index, item ->
+        itemsIndexed(viewModel.searchSuggestions) { index, item ->
             val roundedCornerTop = if (index == 0) {
                 SearchItemsCornerRadius
             } else {
                 0.dp
             }
-            val roundedCornerBottom = if (index == viewModel.searchResults.lastIndex) {
+            val roundedCornerBottom = if (index == viewModel.searchSuggestions.lastIndex) {
                 SearchItemsCornerRadius
             } else {
                 0.dp
@@ -139,7 +137,7 @@ fun SearchScreen(
                     )
                 }
                 Column {
-                    SearchResultCard(
+                    SearchSuggestionCard(
                         modifier = Modifier.fillMaxWidth(),
                         result = item,
                         onClick = {
@@ -167,9 +165,9 @@ fun SearchScreen(
 @Preview(showBackground = true)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchResultCard(
+fun SearchSuggestionCard(
     modifier: Modifier = Modifier,
-    result: SearchResult = SearchResult(),
+    result: SearchSuggestion? = null,
     onClick: () -> Unit = {}
 ) {
     val cardColors = CardDefaults.elevatedCardColors(
@@ -200,11 +198,11 @@ fun SearchResultCard(
                     .padding(4.dp)
             ) {
                 Text(
-                    text = result.title,
+                    text = result?.name ?: "Suggestion Title",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = result.description,
+                    text = result?.descriptionText ?: "Suggestion description",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.DarkGray
                 )

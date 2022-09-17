@@ -26,23 +26,49 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.mapbox.search.ResponseInfo
+import com.mapbox.search.SearchEngine
+import com.mapbox.search.SearchOptions
+import com.mapbox.search.SearchSuggestionsCallback
+import com.mapbox.search.result.SearchSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.service.BaseReceiver
-import illyan.jay.ui.search.model.SearchResult
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val localBroadcastManager: LocalBroadcastManager
+    private val localBroadcastManager: LocalBroadcastManager,
+    private val searchEngine: SearchEngine
 ) : ViewModel() {
     var searchQuery by mutableStateOf("")
         private set
 
-    var searchResults = mutableStateListOf<SearchResult>()
+    var searchSuggestions = mutableStateListOf<SearchSuggestion>()
         private set
 
     private val receiver: BaseReceiver = BaseReceiver {
         searchQuery = it.getStringExtra(KeySearchQuery) ?: ""
+        searchEngine.search(
+            searchQuery,
+            SearchOptions(
+                limit = 8
+            ),
+            object : SearchSuggestionsCallback {
+                override fun onSuggestions(
+                    suggestions: List<SearchSuggestion>,
+                    responseInfo: ResponseInfo
+                ) {
+                    searchSuggestions.clear()
+                    searchSuggestions.addAll(suggestions)
+                }
+
+                override fun onError(e: Exception) {
+                    Timber.d("Error message: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+        )
     }
 
     fun load() {
@@ -50,19 +76,6 @@ class SearchViewModel @Inject constructor(
             receiver,
             IntentFilter(Intent.ACTION_SEARCH)
         )
-        fillResults()
-    }
-
-    private fun fillResults() {
-        searchResults.clear()
-        for (index in 0..100) {
-            searchResults.add(
-                SearchResult(
-                    "Title of $index",
-                    "Description of index $index"
-                )
-            )
-        }
     }
 
     fun dispose() {

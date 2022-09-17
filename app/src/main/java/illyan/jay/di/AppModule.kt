@@ -23,11 +23,15 @@ import android.hardware.SensorManager
 import androidx.core.graphics.drawable.IconCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationServices
+import com.mapbox.search.MapboxSearchSdk
+import com.mapbox.search.SearchEngine
+import com.mapbox.search.SearchEngineSettings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import illyan.jay.BuildConfig
 import illyan.jay.R
 import javax.inject.Singleton
 
@@ -56,4 +60,11 @@ object AppModule {
     @Singleton
     fun provideLocalBroadcastManager(@ApplicationContext context: Context) =
         LocalBroadcastManager.getInstance(context)
+
+    @Provides
+    @Singleton
+    fun provideSearchEngine(): SearchEngine =
+        MapboxSearchSdk.createSearchEngineWithBuiltInDataProviders(
+            SearchEngineSettings(accessToken = BuildConfig.MapboxSdkRegistryToken)
+        )
 }
