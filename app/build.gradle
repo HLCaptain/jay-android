@@ -90,6 +90,10 @@ android {
             }
         }
     }
+    lint {
+        // If set to true (default), stops the build if errors are found.
+        abortOnError false
+    }
 }
 
 dependencies {
