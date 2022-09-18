@@ -37,6 +37,7 @@ import com.mapbox.search.record.FavoritesDataProvider
 import com.mapbox.search.record.HistoryDataProvider
 import com.mapbox.search.record.HistoryRecord
 import com.mapbox.search.record.IndexableRecord
+import com.mapbox.search.record.LocalDataProvider
 import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,8 +45,8 @@ import illyan.jay.service.BaseReceiver
 import illyan.jay.ui.home.sendBroadcast
 import illyan.jay.ui.menu.MenuViewModel
 import illyan.jay.ui.navigation.model.Place
-import timber.log.Timber
 import javax.inject.Inject
+import timber.log.Timber
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -105,6 +106,44 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    private val historyDataChangedListener =
+        object : LocalDataProvider.OnDataChangedListener<HistoryRecord> {
+            override fun onDataChanged(newData: List<HistoryRecord>) {
+                historyRecords.clear()
+                historyRecords.addAll(newData.sortedByDescending { it.timestamp }.take(4))
+            }
+        }
+
+    private val favoritesDataChangedListener =
+        object : LocalDataProvider.OnDataChangedListener<FavoriteRecord> {
+            override fun onDataChanged(newData: List<FavoriteRecord>) {
+                favoriteRecords.clear()
+                favoriteRecords.addAll(newData.takeLast(4))
+            }
+        }
+
+    private val dataProviderRegistrationListener =
+        object : CompletionCallback<Unit> {
+            override fun onComplete(result: Unit) {
+                Timber.d("Registered data provider for the search engine!")
+            }
+
+            override fun onError(e: Exception) {
+                Timber.d("Could not registered data provider for the search engine!")
+            }
+        }
+
+    private val dataProviderUnregisterListener =
+        object : CompletionCallback<Unit> {
+            override fun onComplete(result: Unit) {
+                Timber.d("Unregistered data provider from the search engine!")
+            }
+
+            override fun onError(e: Exception) {
+                Timber.d("Could not unregister data provider from the search engine!")
+            }
+        }
+
     private val searchSelectionCallback = object : SearchSelectionCallback {
         override fun onCategoryResult(
             suggestion: SearchSuggestion,
@@ -142,6 +181,8 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun loadFavorites() {
+        searchEngine.registerDataProvider(favoritesDataProvider, dataProviderRegistrationListener)
+        favoritesDataProvider.addOnDataChangedListener(favoritesDataChangedListener)
         favoritesDataProvider.getAll(
             object : CompletionCallback<List<FavoriteRecord>> {
                 override fun onComplete(result: List<FavoriteRecord>) {
@@ -157,11 +198,13 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun loadHistory() {
+        searchEngine.registerDataProvider(historyDataProvider, dataProviderRegistrationListener)
+        historyDataProvider.addOnDataChangedListener(historyDataChangedListener)
         historyDataProvider.getAll(
             object : CompletionCallback<List<HistoryRecord>> {
                 override fun onComplete(result: List<HistoryRecord>) {
                     historyRecords.clear()
-                    historyRecords.addAll(result.sortedBy { it.timestamp }.takeLast(4))
+                    historyRecords.addAll(result.sortedByDescending { it.timestamp }.take(4))
                 }
 
                 override fun onError(e: Exception) {
@@ -225,6 +268,10 @@ class SearchViewModel @Inject constructor(
     fun dispose() {
         localBroadcastManager.unregisterReceiver(queryReceiver)
         localBroadcastManager.unregisterReceiver(navigationCallReceiver)
+        favoritesDataProvider.removeOnDataChangedListener(favoritesDataChangedListener)
+        historyDataProvider.removeOnDataChangedListener(historyDataChangedListener)
+        searchEngine.unregisterDataProvider(favoritesDataProvider, dataProviderUnregisterListener)
+        searchEngine.unregisterDataProvider(historyDataProvider, dataProviderUnregisterListener)
     }
 
     companion object {
