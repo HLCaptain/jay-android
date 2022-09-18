@@ -19,25 +19,5 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Theme.Jay" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Primary colors. -->
-        <!--        <item name="colorPrimary">@color/primaryColor</item>-->
-        <!--        <item name="colorPrimaryVariant">@color/primaryLightColor</item>-->
-        <!--        <item name="colorOnPrimary">@color/white</item>-->
-        <!--        <item name="colorPrimaryContainer">@color/primaryDarkColor</item>-->
-        <!--        <item name="colorOnPrimaryContainer">@color/primaryLightColor</item>-->
-        <!--        <item name="colorPrimaryDark">@color/primaryDarkColor</item>-->
-        <!--        <item name="colorAccent">@color/primaryColor</item>-->
-        <!-- Secondary colors. -->
-        <!--        <item name="colorSecondary">@color/secondaryLightColor</item>-->
-        <!--        <item name="colorSecondaryVariant">@color/secondaryColor</item>-->
-        <!--        <item name="colorOnSecondary">@color/white</item>-->
-        <!--        <item name="colorSecondaryContainer">@color/primaryLightColor</item>-->
-        <!--        <item name="colorOnSecondaryContainer">@color/primaryVeryDarkColor</item>-->
-        <!--        <item name="colorSurface">@color/primaryVeryDarkColor</item>-->
-        <item name="cardBackgroundColor">@color/secondaryLightColor</item>
-        <!-- Text colors. -->
-        <!-- Error colors. -->
-        <!--        <item name="colorError">@color/errorColor</item>-->
-        <!--        <item name="colorErrorContainer">@color/errorDarkColor</item>-->
     </style>
 </resources>
