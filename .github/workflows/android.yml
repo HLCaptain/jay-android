@@ -39,9 +39,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Create blank gradle.properties file
-      run: touch gradle.properties
-
     - name: Put keys into gradle.properties
       run: |
         echo -e "\n" >> gradle.properties
