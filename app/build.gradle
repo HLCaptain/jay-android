@@ -129,7 +129,7 @@ dependencies {
     implementation "com.mapbox.search:mapbox-search-android-ui:1.0.0-beta.35"
 
     // Accompanist
-    def accompanist_version = "0.26.2-beta"
+    def accompanist_version = '0.26.3-beta'
     implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist_version"
 
     // Hilt
@@ -142,7 +142,7 @@ dependencies {
     implementation 'com.jakewharton.timber:timber:5.0.1'
 
     // Navigation
-    def compose_nav_version = '1.7.20-beta'
+    def compose_nav_version = '1.7.21-beta'
     implementation "io.github.raamcosta.compose-destinations:animations-core:$compose_nav_version"
     ksp "io.github.raamcosta.compose-destinations:ksp:$compose_nav_version"
 
@@ -180,12 +180,12 @@ dependencies {
     // KTX for the Maps SDK for Android Utility Library
 
     // Import the BoM for the Firebase platform
-    implementation platform('com.google.firebase:firebase-bom:30.4.1')
+    implementation platform('com.google.firebase:firebase-bom:30.5.0')
 
     // Declare the dependencies for the Remote Config and Analytics libraries
     // When using the BoM, you don't specify versions in Firebase library dependencies
-    implementation 'com.google.firebase:firebase-config-ktx'
-    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-config-ktx:21.1.2'
+    implementation 'com.google.firebase:firebase-analytics-ktx:21.1.1'
 
     // JUnit5 testing tools
     def junit_version = '5.9.0'
@@ -199,7 +199,7 @@ dependencies {
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junit_version"
 
     // MockK test tool
-    def mockk_version = '1.12.7'
+    def mockk_version = '1.12.8'
     testImplementation "io.mockk:mockk:$mockk_version"
     androidTestImplementation "io.mockk:mockk-android:$mockk_version"
 
