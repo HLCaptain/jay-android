@@ -30,14 +30,17 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.YoutubeSearchedFor
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,6 +65,7 @@ import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
 import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.theme.HotPink
 import illyan.jay.ui.theme.Neutral90
 import illyan.jay.ui.theme.Neutral95
 
@@ -245,10 +249,6 @@ fun <Item> LazyListScope.searchItems(
     }
 }
 
-/**
- * This search result should only be a POI
- * TODO: make several other cards for different types of results
- */
 @Preview(showBackground = true)
 @Composable
 fun SuggestionCard(
@@ -276,7 +276,7 @@ fun HistoryCard(
         modifier = modifier,
         title = result?.name ?: "History Record Title",
         description = result?.address?.region ?: "History record description",
-        icon = Icons.Rounded.Search,
+        icon = Icons.Rounded.YoutubeSearchedFor,
         onClick = onClick
     )
 }
@@ -292,7 +292,8 @@ fun FavoriteCard(
         modifier = modifier,
         title = result?.name ?: "Favorite Record Title",
         description = result?.address?.region ?: "Favorite record description",
-        icon = Icons.Rounded.Search,
+        icon = Icons.Rounded.Favorite,
+        tint = HotPink,
         onClick = onClick
     )
 }
@@ -304,6 +305,7 @@ fun SearchCard(
     title: String = "Title",
     description: String = "Description",
     icon: ImageVector = Icons.Rounded.Search,
+    tint: Color = LocalContentColor.current,
     onClick: () -> Unit = {}
 ) {
     val cardColors = CardDefaults.elevatedCardColors(
@@ -326,6 +328,7 @@ fun SearchCard(
                 Icon(
                     modifier = Modifier.size(32.dp),
                     imageVector = icon,
+                    tint = tint,
                     contentDescription = "Search Item Icon"
                 )
             }

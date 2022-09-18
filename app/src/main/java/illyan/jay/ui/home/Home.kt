@@ -129,8 +129,9 @@ import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.menu.BackPressHandler
-import illyan.jay.ui.search.SearchViewModel.Companion.ActionSelectFirst
+import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
+import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
 import illyan.jay.ui.theme.Neutral95
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -557,9 +558,12 @@ fun BottomSearchBar(
                         onGo = { focusManager.clearFocus() },
                         onSearch = {
                             focusManager.clearFocus()
-                            val intent = Intent()
-                            intent.action = ActionSelectFirst
-                            LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+                            LocalBroadcastManager.getInstance(context)
+                                .sendBroadcast(
+                                    searchPlaceText,
+                                    KeySearchSelected,
+                                    ActionSearchSelected
+                                )
                         }
                     ),
                     interactionSource = interactionSource,
