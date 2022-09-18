@@ -30,7 +30,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -90,7 +89,6 @@ annotation class MenuNavGraph(
 
 val MenuItemPadding = 6.dp
 
-@OptIn(ExperimentalFoundationApi::class)
 @MenuNavGraph(start = true)
 @Destination
 @Composable
@@ -110,7 +108,7 @@ fun MenuScreen(
     DestinationsNavHost(
         modifier = modifier,
         navGraph = NavGraphs.menu,
-        startRoute = MenuListDestination,
+        startRoute = MenuListDestination
     )
 }
 
@@ -226,7 +224,7 @@ fun MenuItemCard(
         colors = cardColors
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.heightIn(min = 48.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -245,12 +243,13 @@ fun MenuItemCard(
                 Spacer(modifier = Modifier.width(12.dp))
             }
             Text(
-                modifier = Modifier.padding(
-                    start = 4.dp,
-                    end = 12.dp,
-                    top = 4.dp,
-                    bottom = 4.dp
-                ),
+                modifier = Modifier
+                    .padding(
+                        start = 4.dp,
+                        end = 16.dp,
+                        top = 4.dp,
+                        bottom = 4.dp
+                    ),
                 text = title,
                 style = MaterialTheme.typography.titleMedium
             )
@@ -307,7 +306,6 @@ fun BackPressHandler(
 
         onDispose {
             onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
-
         }
     }
 }

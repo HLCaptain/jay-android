@@ -48,12 +48,16 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField 'String', "MapboxAccessToken", MAPBOX_ACCESS_TOKEN
+            buildConfigField 'String', "MapboxAccessToken", "\"$MAPBOX_ACCESS_TOKEN\""
+            buildConfigField 'String', "MapboxDownloadsToken", "\"$MAPBOX_DOWNLOADS_TOKEN\""
+            buildConfigField 'String', "MapboxSdkRegistryToken", "\"$SDK_REGISTRY_TOKEN\""
         }
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            buildConfigField 'String', "MapboxAccessToken", MAPBOX_ACCESS_TOKEN
+            buildConfigField 'String', "MapboxAccessToken", "\"$MAPBOX_ACCESS_TOKEN\""
+            buildConfigField 'String', "MapboxDownloadsToken", "\"$MAPBOX_DOWNLOADS_TOKEN\""
+            buildConfigField 'String', "MapboxSdkRegistryToken", "\"$SDK_REGISTRY_TOKEN\""
         }
     }
     compileOptions {
@@ -121,7 +125,8 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
 
     // Mapbox
-    implementation "com.mapbox.maps:android:10.7.0"
+    implementation "com.mapbox.maps:android:10.8.0"
+    implementation "com.mapbox.search:mapbox-search-android-ui:1.0.0-beta.35"
 
     // Accompanist
     def accompanist_version = "0.26.2-beta"
@@ -164,7 +169,7 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
 
     // Google services
-    implementation 'com.google.firebase:firebase-firestore-ktx:24.3.0'
+    implementation 'com.google.firebase:firebase-firestore-ktx:24.3.1'
     implementation 'com.google.android.gms:play-services-location:20.0.0'
     implementation 'com.google.android.gms:play-services-auth:20.3.0'
     implementation 'com.google.firebase:firebase-auth-ktx:21.0.8'
@@ -194,7 +199,7 @@ dependencies {
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junit_version"
 
     // MockK test tool
-    def mockk_version = '1.12.5'
+    def mockk_version = '1.12.7'
     testImplementation "io.mockk:mockk:$mockk_version"
     androidTestImplementation "io.mockk:mockk-android:$mockk_version"
 
@@ -207,7 +212,7 @@ dependencies {
     androidTestImplementation "androidx.test:rules:1.4.0"
 
     // Desugaring
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
 }
 
 kapt {
@@ -215,5 +220,5 @@ kapt {
 }
 
 hilt {
-    enableExperimentalClasspathAggregation = true
+    enableAggregatingTask = true
 }

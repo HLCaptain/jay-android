@@ -18,59 +18,90 @@
 
 package illyan.jay.ui.search
 
-import android.content.Intent
-import android.content.IntentFilter
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.mapbox.search.SearchOptions
+import com.mapbox.search.record.IndexableRecord
+import com.mapbox.search.result.SearchSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.SearchInteractor
 import illyan.jay.service.BaseReceiver
-import illyan.jay.ui.search.model.SearchResult
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val localBroadcastManager: LocalBroadcastManager
+    private val searchInteractor: SearchInteractor
 ) : ViewModel() {
     var searchQuery by mutableStateOf("")
         private set
 
-    var searchResults = mutableStateListOf<SearchResult>()
+    val historyRecords get() = searchInteractor.historyRecords
+        .sortedByDescending { it.timestamp }.take(4).toMutableStateList()
+
+    val favoriteRecords get() = searchInteractor.favoriteRecords
+        .take(4).toMutableStateList()
+
+    var searchSuggestions = mutableStateListOf<SearchSuggestion>()
         private set
 
-    private val receiver: BaseReceiver = BaseReceiver {
+    private val queryReceiver: BaseReceiver = BaseReceiver {
         searchQuery = it.getStringExtra(KeySearchQuery) ?: ""
-    }
-
-    fun load() {
-        localBroadcastManager.registerReceiver(
-            receiver,
-            IntentFilter(Intent.ACTION_SEARCH)
-        )
-        fillResults()
-    }
-
-    private fun fillResults() {
-        searchResults.clear()
-        for (index in 0..100) {
-            searchResults.add(
-                SearchResult(
-                    "Title of $index",
-                    "Description of index $index"
-                )
+        searchInteractor.search(
+            searchQuery,
+            SearchOptions(
+                limit = 8
             )
+        ) { suggestions, _ ->
+            searchSuggestions.clear()
+            searchSuggestions.addAll(suggestions)
         }
     }
 
+    private val searchSelectedReceiver = BaseReceiver {
+        searchSuggestions.firstOrNull()?.let {
+            navigateTo(it)
+            return@BaseReceiver
+        }
+        favoriteRecords.firstOrNull()?.let {
+            navigateTo(it)
+            return@BaseReceiver
+        }
+        historyRecords.firstOrNull()?.let {
+            navigateTo(it)
+            return@BaseReceiver
+        }
+    }
+
+    fun load() {
+        loadReceivers()
+    }
+
+    private fun loadReceivers() {
+        searchInteractor.registerSearchQueryReceiver(queryReceiver)
+        searchInteractor.registerSearchSelectedReceiver(searchSelectedReceiver)
+    }
+
+    fun navigateTo(searchSuggestion: SearchSuggestion) {
+        searchInteractor.navigateTo(searchSuggestion)
+    }
+
+    fun navigateTo(record: IndexableRecord) {
+        searchInteractor.navigateTo(record)
+    }
+
     fun dispose() {
-        localBroadcastManager.unregisterReceiver(receiver)
+        searchInteractor.unregisterReceiver(queryReceiver)
+        searchInteractor.unregisterReceiver(searchSelectedReceiver)
     }
 
     companion object {
         const val KeyPlaceQuery = "KEY_PLACE_QUERY"
         const val KeySearchQuery = "KEY_SEARCH_QUERY"
+        const val KeySearchSelected = "KEY_SEARCH_SELECTED"
+        const val ActionSearchSelected = "ACTION_SEARCH_SELECTED"
     }
 }

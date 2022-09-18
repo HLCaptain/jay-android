@@ -25,4 +25,9 @@
     <string name="avatar_profile_picture">Avatar profile picture</string>
     <string name="delete_text">Delete text</string>
     <string name="search_marker_icon">Search marker icon</string>
+    <string name="favorites">Favorites</string>
+    <string name="history">History</string>
+    <string name="suggestions">Suggestions</string>
+    <string name="list_is_empty">List is empty</string>
+    <string name="list_is_empty_description">This list would be more useful with items in it!</string>
 </resources>

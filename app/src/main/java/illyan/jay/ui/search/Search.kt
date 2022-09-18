@@ -26,42 +26,46 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LocalCafe
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.YoutubeSearchedFor
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.mapbox.search.record.FavoriteRecord
+import com.mapbox.search.record.HistoryRecord
+import com.mapbox.search.result.SearchSuggestion
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
+import illyan.jay.R
 import illyan.jay.ui.home.RoundedCornerRadius
-import illyan.jay.ui.home.sendBroadcast
-import illyan.jay.ui.map.ButeK
-import illyan.jay.ui.menu.MenuViewModel.Companion.ACTION_QUERY_PLACE
-import illyan.jay.ui.navigation.model.Place
-import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
-import illyan.jay.ui.search.model.SearchResult
+import illyan.jay.ui.theme.HotPink
 import illyan.jay.ui.theme.Neutral90
 import illyan.jay.ui.theme.Neutral95
 
@@ -76,24 +80,19 @@ val SearchItemsCornerRadius = 24.dp
 val DividerStartPadding = 56.dp
 val DividerThickness = 1.dp
 
-@OptIn(ExperimentalMaterialApi::class)
 @SearchNavGraph(start = true)
 @Destination
 @Composable
 fun SearchScreen(
-    modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
-    val focusManager = LocalFocusManager.current
-    val context = LocalContext.current
-    val localBroadcastManager = LocalBroadcastManager.getInstance(context)
     DisposableEffect(key1 = true) {
         viewModel.load()
         onDispose { viewModel.dispose() }
     }
-    // LazyColumn with SearchResultCards.
+    val focusManager = LocalFocusManager.current
     LazyColumn(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = SearchPadding),
         contentPadding = PaddingValues(
@@ -101,75 +100,212 @@ fun SearchScreen(
             bottom = RoundedCornerRadius + SearchPadding
         )
     ) {
-        itemsIndexed(viewModel.searchResults) { index, item ->
-            val roundedCornerTop = if (index == 0) {
-                SearchItemsCornerRadius
-            } else {
-                0.dp
+        if (viewModel.searchQuery.isNotBlank()) {
+            item {
+                Text(
+                    modifier = Modifier.padding(SearchPadding),
+                    text = stringResource(R.string.suggestions),
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
-            val roundedCornerBottom = if (index == viewModel.searchResults.lastIndex) {
-                SearchItemsCornerRadius
-            } else {
-                0.dp
+            suggestionItems(
+                items = viewModel.searchSuggestions
+            ) { suggestion, _ ->
+                focusManager.clearFocus()
+                viewModel.navigateTo(suggestion)
             }
-            Surface(
-                modifier = Modifier
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = roundedCornerTop,
-                            topEnd = roundedCornerTop,
-                            bottomStart = roundedCornerBottom,
-                            bottomEnd = roundedCornerBottom
-                        )
-                    ),
-                color = Neutral95
-            ) {
-                if (index > 0) {
-                    Divider(
-                        thickness = DividerThickness,
-                        color = Neutral90,
-                        modifier = Modifier
-                            .padding(start = DividerStartPadding)
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = DividerThickness / 2f,
-                                    bottomStart = DividerThickness / 2f
-                                )
-                            )
-                    )
-                }
-                Column {
-                    SearchResultCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        result = item,
-                        onClick = {
-                            focusManager.clearFocus()
-                            localBroadcastManager.sendBroadcast(
-                                Place(
-                                    latitude = ButeK.latitude,
-                                    longitude = ButeK.longitude
-                                ),
-                                KeyPlaceQuery,
-                                ACTION_QUERY_PLACE
-                            )
-                        }
-                    )
-                }
-            }
+        }
+        item {
+            Text(
+                modifier = Modifier.padding(SearchPadding),
+                text = stringResource(R.string.favorites),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        favoriteItems(
+            items = viewModel.favoriteRecords
+        ) { favoriteRecord, _ ->
+            focusManager.clearFocus()
+            viewModel.navigateTo(favoriteRecord)
+        }
+        item {
+            Text(
+                modifier = Modifier.padding(SearchPadding),
+                text = stringResource(R.string.history),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        historyItems(
+            items = viewModel.historyRecords
+        ) { favoriteRecord, _ ->
+            focusManager.clearFocus()
+            viewModel.navigateTo(favoriteRecord)
         }
     }
 }
 
-/**
- * This search result should only be a POI
- * TODO: make several other cards for different types of results
- */
+fun LazyListScope.historyItems(
+    items: SnapshotStateList<HistoryRecord>,
+    onClick: (HistoryRecord, Int) -> Unit = { _, _ -> }
+) {
+    searchItems(
+        list = items
+    ) { historyRecord, index ->
+        HistoryCard(
+            modifier = Modifier.fillMaxWidth(),
+            result = historyRecord,
+            onClick = { onClick(historyRecord, index) }
+        )
+    }
+}
+
+fun LazyListScope.favoriteItems(
+    items: SnapshotStateList<FavoriteRecord>,
+    onClick: (FavoriteRecord, Int) -> Unit = { _, _ -> }
+) {
+    searchItems(
+        list = items
+    ) { favoriteRecord, index ->
+        FavoriteCard(
+            modifier = Modifier.fillMaxWidth(),
+            result = favoriteRecord,
+            onClick = { onClick(favoriteRecord, index) }
+        )
+    }
+}
+
+fun LazyListScope.suggestionItems(
+    items: SnapshotStateList<SearchSuggestion>,
+    onClick: (SearchSuggestion, Int) -> Unit = { _, _ -> }
+) {
+    searchItems(
+        list = items
+    ) { suggestion, index ->
+        SuggestionCard(
+            modifier = Modifier.fillMaxWidth(),
+            result = suggestion,
+            onClick = { onClick(suggestion, index) }
+        )
+    }
+}
+
+fun <Item> LazyListScope.searchItems(
+    list: SnapshotStateList<Item> = SnapshotStateList(),
+    emptyListPlaceholder: @Composable () -> Unit = {
+        SearchCard(
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(R.string.list_is_empty),
+            description = stringResource(R.string.list_is_empty_description),
+            icon = Icons.Rounded.Info
+        )
+    },
+    itemProvider: @Composable (Item, Int) -> Unit
+) {
+    if (list.size == 0) {
+        item {
+            emptyListPlaceholder()
+        }
+    }
+    itemsIndexed(list) { index, item ->
+        val roundedCornerTop = if (index == 0) {
+            SearchItemsCornerRadius
+        } else {
+            0.dp
+        }
+        val roundedCornerBottom = if (index == list.lastIndex) {
+            SearchItemsCornerRadius
+        } else {
+            0.dp
+        }
+        Surface(
+            modifier = Modifier
+                .clip(
+                    RoundedCornerShape(
+                        topStart = roundedCornerTop,
+                        topEnd = roundedCornerTop,
+                        bottomStart = roundedCornerBottom,
+                        bottomEnd = roundedCornerBottom
+                    )
+                ),
+            // Highlight first item
+            color = if (index == 0) Neutral90 else Neutral95
+        ) {
+            if (index > 0) {
+                Divider(
+                    thickness = DividerThickness,
+                    color = Neutral90,
+                    modifier = Modifier
+                        .padding(start = DividerStartPadding)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = DividerThickness / 2f,
+                                bottomStart = DividerThickness / 2f
+                            )
+                        )
+                )
+            }
+            itemProvider(item, index)
+        }
+    }
+}
+
 @Preview(showBackground = true)
+@Composable
+fun SuggestionCard(
+    modifier: Modifier = Modifier,
+    result: SearchSuggestion? = null,
+    onClick: () -> Unit = {}
+) {
+    SearchCard(
+        modifier = modifier,
+        title = result?.name ?: "Suggestion Title",
+        description = result?.address?.region ?: "Suggestion description",
+        icon = Icons.Rounded.Search,
+        onClick = onClick
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HistoryCard(
+    modifier: Modifier = Modifier,
+    result: HistoryRecord? = null,
+    onClick: () -> Unit = {}
+) {
+    SearchCard(
+        modifier = modifier,
+        title = result?.name ?: "History Record Title",
+        description = result?.address?.region ?: "History record description",
+        icon = Icons.Rounded.YoutubeSearchedFor,
+        onClick = onClick
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun FavoriteCard(
+    modifier: Modifier = Modifier,
+    result: FavoriteRecord? = null,
+    onClick: () -> Unit = {}
+) {
+    SearchCard(
+        modifier = modifier,
+        title = result?.name ?: "Favorite Record Title",
+        description = result?.address?.region ?: "Favorite record description",
+        icon = Icons.Rounded.Favorite,
+        tint = HotPink,
+        onClick = onClick
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchResultCard(
+fun SearchCard(
     modifier: Modifier = Modifier,
-    result: SearchResult = SearchResult(),
+    title: String = "Title",
+    description: String = "Description",
+    icon: ImageVector = Icons.Rounded.Search,
+    tint: Color = LocalContentColor.current,
     onClick: () -> Unit = {}
 ) {
     val cardColors = CardDefaults.elevatedCardColors(
@@ -178,6 +314,7 @@ fun SearchResultCard(
     // Can be widely generalized. Height is prefered
     // to be limited and the same between list items.
     Card(
+        modifier = modifier,
         onClick = onClick,
         colors = cardColors
     ) {
@@ -190,8 +327,9 @@ fun SearchResultCard(
             ) {
                 Icon(
                     modifier = Modifier.size(32.dp),
-                    imageVector = Icons.Rounded.LocalCafe,
-                    contentDescription = "Placeholder POI Icon"
+                    imageVector = icon,
+                    tint = tint,
+                    contentDescription = "Search Item Icon"
                 )
             }
             Column(
@@ -200,11 +338,11 @@ fun SearchResultCard(
                     .padding(4.dp)
             ) {
                 Text(
-                    text = result.title,
+                    text = title,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = result.description,
+                    text = description,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.DarkGray
                 )
