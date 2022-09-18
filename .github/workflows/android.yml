@@ -44,6 +44,7 @@ jobs:
 
     - name: Put keys into gradle.properties
       run: |
+        echo -e "\n" >> gradle.properties
         echo "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" >> gradle.properties
         echo "MAPBOX_DOWNLOADS_TOKEN=${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}" >> gradle.properties
         echo "SDK_REGISTRY_TOKEN=${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}" >> gradle.properties
