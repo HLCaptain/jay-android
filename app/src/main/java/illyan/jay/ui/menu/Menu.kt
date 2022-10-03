@@ -28,6 +28,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -84,10 +85,12 @@ import timber.log.Timber
 @RootNavGraph
 @NavGraph
 annotation class MenuNavGraph(
-    val start: Boolean = false
+    val start: Boolean = false,
 )
 
 val MenuItemPadding = 6.dp
+val ListMaxHeight = 384.dp
+val ListMinHeight = 128.dp
 
 @MenuNavGraph(start = true)
 @Destination
@@ -95,7 +98,7 @@ val MenuItemPadding = 6.dp
 fun MenuScreen(
     modifier: Modifier = Modifier,
     viewModel: MenuViewModel = hiltViewModel(),
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     DisposableEffect(key1 = true) {
         viewModel.load {
@@ -117,7 +120,7 @@ fun MenuScreen(
 @Destination
 @Composable
 fun MenuList(
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     val gridState = rememberLazyStaggeredGridState()
     val context = LocalContext.current
@@ -127,14 +130,14 @@ fun MenuList(
         columns = StaggeredGridCells.Adaptive(160.dp),
         modifier = Modifier
             .heightIn(
-                min = 128.dp,
-                max = 384.dp
+                min = ListMinHeight,
+                max = ListMaxHeight,
             )
             .padding(
                 start = MenuItemPadding,
                 end = MenuItemPadding,
-                top = MenuItemPadding,
-                bottom = RoundedCornerRadius
+                // TODO: remove additional bottom padding after getting contentPadding working
+                bottom = RoundedCornerRadius + MenuItemPadding
             )
             .clip(
                 RoundedCornerShape(
@@ -142,9 +145,13 @@ fun MenuList(
                     topEnd = 12.dp
                 )
             ),
+        contentPadding = PaddingValues(
+            top = MenuItemPadding,
+            // FIXME: bottom content padding is not applied
+            bottom = RoundedCornerRadius + MenuItemPadding
+        ),
         state = gridState
     ) {
-//        items(viewModel.menuItems) {}
         // TODO: fill up list with content
         item {
             MenuItemCard(
@@ -212,7 +219,7 @@ fun MenuItemCard(
     title: String = "Menu Item Title",
     icon: ImageVector? = null,
     color: Color = MaterialTheme.colorScheme.primaryContainer,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     // Navigate to appropriate screen in whatever
     val cardColors = CardDefaults.cardColors(
@@ -261,7 +268,7 @@ fun MenuItemCard(
 fun BackPressHandler(
     backPressedDispatcher: OnBackPressedDispatcher? =
         LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher,
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
 ) {
     val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
 
@@ -287,7 +294,7 @@ fun BackPressHandler(
 @Composable
 fun BackPressHandler(
     onBackInvokedDispatcher: OnBackInvokedDispatcher,
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
 ) {
     val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
 
