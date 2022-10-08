@@ -1,0 +1,31 @@
+<!--
+  ~ Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+  ~
+  ~ Jay is a driver behaviour analytics app.
+  ~
+  ~ This file is part of Jay.
+  ~
+  ~ Jay is free software: you can redistribute it and/or modify it under the
+  ~ terms of the GNU General Public License as published by the Free Software
+  ~ Foundation, either version 3 of the License, or (at your option) any later version.
+  ~ Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+  ~ A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License along with Jay.
+  ~ If not, see <https://www.gnu.org/licenses/>.
+  -->
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="50dp"
+    android:height="50dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <path
+      android:pathData="M242.82,129 L141.16,354.33a11.38,11.38 74.69,0 0,15.46 14.86l70.76,-35.38a64,64 0,0 1,57.24 -0l70.76,35.38a11.38,11.38 51.87,0 0,15.46 -14.86L269.14,129a14.44,14.44 134.8,0 0,-26.32 0z"
+      android:strokeLineJoin="round"
+      android:strokeWidth="2"
+      android:fillColor="#1589ff"
+      android:strokeColor="#00000000"
+      android:strokeLineCap="round"/>
+</vector>

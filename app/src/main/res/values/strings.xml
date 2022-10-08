@@ -30,4 +30,7 @@
     <string name="suggestions">Suggestions</string>
     <string name="list_is_empty">List is empty</string>
     <string name="list_is_empty_description">This list would be more useful with items in it!</string>
+    <string name="location_permission_denied_title">Location permission denied</string>
+    <string name="location_permission_denied_description">Navigation requires your precise location to give feedback and turn-by-turn instructions.</string>
+    <string name="request_permission">Request permission</string>
 </resources>

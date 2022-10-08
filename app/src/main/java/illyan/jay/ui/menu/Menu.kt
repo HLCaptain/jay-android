@@ -72,6 +72,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.destinations.MenuListDestination
 import illyan.jay.ui.destinations.NavigationScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -167,6 +168,17 @@ fun MenuList(
                         KeyPlaceQuery,
                         ACTION_QUERY_PLACE
                     )
+                },
+                color = Color.Cyan
+            )
+        }
+        item {
+            MenuItemCard(
+                modifier = Modifier.padding(MenuItemPadding),
+                title = "Start free-drive navigation",
+                icon = Icons.Rounded.Navigation,
+                onClick = {
+                    destinationsNavigator.navigate(FreeDriveScreenDestination)
                 },
                 color = Color.Cyan
             )
