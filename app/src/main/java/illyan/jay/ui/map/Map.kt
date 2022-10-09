@@ -149,7 +149,7 @@ fun LocationComponentPlugin.turnOnWithDefaultPuck(
     context: Context
 ) {
     if (!enabled) {
-        val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck)
+        val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)
         enabled = true
         locationPuck = LocationPuck2D(
             topImage = drawable,
