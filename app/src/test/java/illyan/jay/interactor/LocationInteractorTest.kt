@@ -23,14 +23,10 @@ import illyan.jay.TestBase
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.model.DomainLocation
-import illyan.jay.util.TimeUtils
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.verify
-import java.time.Instant
-import java.util.*
-import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -41,6 +37,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.time.Instant
+import java.util.Date
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.days
 
 @ExtendWith(MockKExtension::class)
 class LocationInteractorTest : TestBase() {
@@ -55,7 +55,7 @@ class LocationInteractorTest : TestBase() {
         4, LatLng(4.0, 4.0), 4f, 2,
         Date.from(
             Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS, now.toEpochMilli())
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
             )
         ),
         4f, 4f, 4f, 4.0, 4f, 4f
@@ -66,7 +66,7 @@ class LocationInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -78,7 +78,7 @@ class LocationInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -90,7 +90,7 @@ class LocationInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )

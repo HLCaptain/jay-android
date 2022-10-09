@@ -22,18 +22,18 @@ import illyan.jay.TestBase
 import illyan.jay.data.disk.datasource.AccelerationDiskDataSource
 import illyan.jay.domain.interactor.AccelerationInteractor
 import illyan.jay.domain.model.DomainAcceleration
-import illyan.jay.util.TimeUtils
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.verify
-import java.time.Instant
-import java.util.*
-import kotlin.random.Random
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import java.time.Instant
+import java.util.Date
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.days
 
 @ExtendWith(MockKExtension::class)
 class AccelerationInteractorTest : TestBase() {
@@ -49,7 +49,7 @@ class AccelerationInteractorTest : TestBase() {
         2,
         Date.from(
             Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS, now.toEpochMilli())
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
             )
         ),
         4,
@@ -64,7 +64,7 @@ class AccelerationInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -80,7 +80,7 @@ class AccelerationInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -96,7 +96,7 @@ class AccelerationInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
