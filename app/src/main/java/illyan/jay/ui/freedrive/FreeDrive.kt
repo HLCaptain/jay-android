@@ -21,19 +21,25 @@ package illyan.jay.ui.freedrive
 import android.Manifest
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
@@ -50,7 +56,9 @@ import illyan.jay.ui.menu.MenuNavGraph
 @MenuNavGraph
 @Destination
 @Composable
-fun FreeDriveScreen() {
+fun FreeDriveScreen(
+    freeDriveViewModel: FreeDriveViewModel = hiltViewModel(),
+) {
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -73,6 +81,10 @@ fun FreeDriveScreen() {
 
         is PermissionStatus.Granted -> {
             // TODO start session, then wait for new data to be shown by Mapbox Navigation SDK
+            val startServiceAutomatically by freeDriveViewModel.startServiceAutomatically.collectAsState()
+            LaunchedEffect(true) {
+                freeDriveViewModel.load()
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -80,13 +92,40 @@ fun FreeDriveScreen() {
                     .padding(32.dp)
             ) {
                 mapView.location.turnOnWithDefaultPuck(context)
-                Text(text = "Thanks for enabling us to spy on you :) UWU owo")
+                // TODO toggle to save preference to enable free-driving when navigated to screen automatically or not
+                val isServiceRunning by freeDriveViewModel.isJayServiceRunning.collectAsState()
+                val buttonLabel = if (isServiceRunning) {
+                    stringResource(R.string.stop_free_driving)
+                } else {
+                    stringResource(R.string.start_free_driving)
+                }
+                Button(onClick = { freeDriveViewModel.toggleService() }
+                ) {
+                    Text(text = buttonLabel)
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        style = MaterialTheme.typography.labelLarge,
+                        text = stringResource(R.string.automatically_turn_on_free_driving)
+                    )
+                    Switch(
+                        checked = startServiceAutomatically,
+                        onCheckedChange = {
+                        /* TODO save preferences */
+                            freeDriveViewModel.setAutoStartService(it)
+                        }
+                    )
+                }
             }
         }
     }
 }
-
-
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable

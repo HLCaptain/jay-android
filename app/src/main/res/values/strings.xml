@@ -33,4 +33,7 @@
     <string name="location_permission_denied_title">Location permission denied</string>
     <string name="location_permission_denied_description">Navigation requires your precise location to give feedback and turn-by-turn instructions.</string>
     <string name="request_permission">Request permission</string>
+    <string name="start_free_driving">Start free-driving</string>
+    <string name="stop_free_driving">Stop free-driving</string>
+    <string name="automatically_turn_on_free_driving">Automatically turn on free-driving</string>
 </resources>

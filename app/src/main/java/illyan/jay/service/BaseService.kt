@@ -24,6 +24,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -108,14 +109,18 @@ abstract class BaseService : Service() {
             PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, channelId)
+        val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle(title)
             .setContentText(text)
-            .setSmallIcon(icon)
             .setVibrate(longArrayOf(1000, 2000, 1000))
             .setContentIntent(contentIntent)
             .setSilent(true)
-            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            notification.setSmallIcon(icon)
+        }
+
+        return notification.build()
     }
 
     /**
