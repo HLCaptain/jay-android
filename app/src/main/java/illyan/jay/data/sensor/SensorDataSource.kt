@@ -19,6 +19,7 @@
 package illyan.jay.data.sensor
 
 import android.annotation.SuppressLint
+import android.hardware.Sensor
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Looper
@@ -103,4 +104,6 @@ class SensorDataSource @Inject constructor(
      */
     fun removeLocationUpdates(callback: LocationCallback) =
         fusedLocationProviderClient.removeLocationUpdates(callback)
+
+    fun getSensors(type: Int = Sensor.TYPE_ALL) = sensorManager.getSensorList(type)
 }

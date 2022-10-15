@@ -38,7 +38,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.time.Instant
-import java.util.Date
+import java.time.ZoneOffset
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.days
 
@@ -52,52 +52,66 @@ class LocationInteractorTest : TestBase() {
     private val now = Instant.now()
 
     private val location = DomainLocation(
-        4, LatLng(4.0, 4.0), 4f, 2,
-        Date.from(
-            Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
-            )
-        ),
-        4f, 4f, 4f, 4.0, 4f, 4f
+        id = 4,
+        sessionId = 2,
+        zonedDateTime = Instant.ofEpochMilli(
+            random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+        ).atZone(ZoneOffset.UTC),
+        latLng = LatLng(4.0, 4.0),
+        speed = 4f,
+        accuracy = 4f,
+        bearing = 4f,
+        bearingAccuracy = 4f,
+        altitude = 4.0,
+        speedAccuracy = 4f,
+        verticalAccuracy = 4f
     )
     private val locations = listOf(
         DomainLocation(
-            1, LatLng(1.0, 1.0), 1f, 1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            1f, 1f, 1f, 1.0, 1f, 1f
+            id = 1,
+            sessionId = 1,
+            zonedDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            latLng = LatLng(1.0, 1.0),
+            speed = 1f,
+            accuracy = 1f,
+            bearing = 1f,
+            bearingAccuracy = 1f,
+            altitude = 1.0,
+            speedAccuracy = 1f,
+            verticalAccuracy = 1f
         ),
         DomainLocation(
-            2, LatLng(2.0, 2.0), 2f, 1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            2f, 2f, 2f, 2.0, 2f, 2f
+            id = 2,
+            sessionId = 1,
+            zonedDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            latLng = LatLng(2.0, 2.0),
+            speed = 2f,
+            accuracy = 2f,
+            bearing = 2f,
+            bearingAccuracy = 2f,
+            altitude = 2.0,
+            speedAccuracy = 2f,
+            verticalAccuracy = 2f
         ),
         DomainLocation(
-            3, LatLng(3.0, 3.0), 3f, 1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            3f, 3f, 3f, 3.0, 3f, 3f
-        ),
-        location
+            id = 3,
+            sessionId = 1,
+            zonedDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            latLng = LatLng(3.0, 3.0),
+            speed = 3f,
+            accuracy = 3f,
+            bearing = 3f,
+            bearingAccuracy = 3f,
+            altitude = 3.0,
+            speedAccuracy = 3f,
+            verticalAccuracy = 3f
+        ), location
     )
 
     @BeforeEach

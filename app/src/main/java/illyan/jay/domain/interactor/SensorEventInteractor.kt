@@ -18,36 +18,35 @@
 
 package illyan.jay.domain.interactor
 
-import illyan.jay.data.disk.datasource.RotationDiskDataSource
-import illyan.jay.domain.model.DomainRotation
+import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
+import illyan.jay.domain.model.DomainSensorEvent
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Rotation interactor is a layer which aims to be the intermediary
+ * Acceleration interactor is a layer which aims to be the intermediary
  * between a higher level logic and lower level data source.
  *
- * @property rotationDiskDataSource local datasource
- * @constructor Create empty Rotation interactor
+ * @property sensorEventDiskDataSource local datasource
+ * @constructor Create empty Acceleration interactor
  */
 @Singleton
-class RotationInteractor @Inject constructor(
-    private var rotationDiskDataSource: RotationDiskDataSource
+class SensorEventInteractor @Inject constructor(
+    private val sensorEventDiskDataSource: SensorEventDiskDataSource
 ) {
     /**
-     * Save a rotation data instance.
+     * Save an acceleration data instance.
      *
-     * @param rotation rotation data to be saved.
-     *
-     * @return id of rotation updated.
+     * @param sensorEvent acceleration data to be saved.
      */
-    fun saveRotation(rotation: DomainRotation) = rotationDiskDataSource.saveRotation(rotation)
+    fun saveSensorEvent(sensorEvent: DomainSensorEvent) =
+        sensorEventDiskDataSource.saveSensorEvent(sensorEvent)
 
     /**
-     * Save multiple rotation data instance.
+     * Save multiple acceleration data instances.
      *
-     * @param rotations multiple rotations to be saved.
+     * @param sensorEvents multiple accelerations to be saved.
      */
-    fun saveRotations(rotations: List<DomainRotation>) =
-        rotationDiskDataSource.saveRotations(rotations)
+    fun saveSensorEvents(sensorEvents: List<DomainSensorEvent>) =
+        sensorEventDiskDataSource.saveSensorEvents(sensorEvents)
 }

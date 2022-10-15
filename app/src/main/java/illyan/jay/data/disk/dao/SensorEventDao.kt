@@ -24,47 +24,44 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import illyan.jay.data.disk.model.RoomLocation
+import illyan.jay.data.disk.model.RoomSensorEvent
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface LocationDao {
+interface SensorEventDao {
     @Insert
-    fun insertLocation(location: RoomLocation): Long
+    fun insertSensorEvent(acceleration: RoomSensorEvent): Long
 
     @Insert
-    fun insertLocations(locations: List<RoomLocation>)
+    fun insertSensorEvents(accelerations: List<RoomSensorEvent>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsertLocation(location: RoomLocation): Long
+    fun upsertSensorEvent(acceleration: RoomSensorEvent): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsertLocations(locations: List<RoomLocation>)
+    fun upsertSensorEvents(accelerations: List<RoomSensorEvent>)
 
     @Update
-    fun updateLocation(location: RoomLocation): Int
+    fun updateSensorEvent(acceleration: RoomSensorEvent): Int
 
     @Update
-    fun updateLocations(location: List<RoomLocation>): Int
+    fun updateSensorEvents(acceleration: List<RoomSensorEvent>): Int
 
     @Delete
-    fun deleteLocation(location: RoomLocation)
+    fun deleteSensorEvent(acceleration: RoomSensorEvent)
 
     @Delete
-    fun deleteLocationsForSession(locations: List<RoomLocation>)
+    fun deleteSensorEvents(accelerations: List<RoomSensorEvent>)
 
-    @Query("DELETE FROM location")
-    fun deleteLocations()
+    @Query("DELETE FROM sensor_events")
+    fun deleteSensorEvents()
 
-    @Query("DELETE FROM location WHERE sessionId = :sessionId")
-    fun deleteLocationsForSession(sessionId: Long)
+    @Query("DELETE FROM sensor_events WHERE sessionId = :sessionId")
+    fun deleteSensorEventsForSession(sessionId: Long)
 
-    @Query("SELECT * FROM location WHERE id = :id")
-    fun getLocation(id: Long): Flow<RoomLocation?>
+    @Query("SELECT * FROM sensor_events WHERE id = :id")
+    fun getSensorEvent(id: Long): Flow<RoomSensorEvent?>
 
-    @Query("SELECT * FROM location WHERE sessionId = :sessionId")
-    fun getLocations(sessionId: Long): Flow<List<RoomLocation>>
-
-    @Query("SELECT * FROM location WHERE sessionId = :sessionId ORDER BY id DESC LIMIT :limit")
-    fun getLatestLocations(sessionId: Long, limit: Long): Flow<List<RoomLocation>>
+    @Query("SELECT * FROM sensor_events WHERE sessionId = :sessionId")
+    fun getSensorEvents(sessionId: Long): Flow<List<RoomSensorEvent>>
 }

@@ -18,7 +18,7 @@
 
 package illyan.jay.domain.model
 
-import java.util.*
+import java.time.ZonedDateTime
 
 /**
  * Domain acceleration used for general data handling
@@ -26,19 +26,20 @@ import java.util.*
  *
  * @property id
  * @property sessionId
- * @property time
+ * @property zonedDateTime
  * @property accuracy
  * @property x
  * @property y
  * @property z
  * @constructor Create empty Domain acceleration
  */
-data class DomainAcceleration(
+data class DomainSensorEvent(
     val id: Long = -1,
     val sessionId: Long,
-    val time: Date,
+    val zonedDateTime: ZonedDateTime,
     val accuracy: Int, // enum
     val x: Float,
     val y: Float,
-    val z: Float
+    val z: Float,
+    val type: String
 )

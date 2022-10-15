@@ -18,21 +18,19 @@
 
 package illyan.jay.domain.model
 
-import java.util.*
+import java.time.ZonedDateTime
 
 /**
  * Domain session used for general data handling
  * between DataSources, Interactors and Presenters.
  *
  * @property id
- * @property startTime
- * @property endTime
- * @property distance
+ * @property startDateTime
+ * @property endDateTime
  * @constructor Create empty Domain session
  */
 data class DomainSession(
     val id: Long = -1,
-    val startTime: Date,
-    var endTime: Date?,
-    var distance: Double = 0.0
+    val startDateTime: ZonedDateTime,
+    var endDateTime: ZonedDateTime?
 )

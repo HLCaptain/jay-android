@@ -23,18 +23,12 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import com.google.maps.android.SphericalUtil
 import illyan.jay.data.disk.toDomainModel
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainLocation
-import illyan.jay.domain.model.DomainSession
-import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Location event listener .
@@ -65,47 +59,20 @@ class LocationEventListener @Inject constructor(
                     scope.launch {
                         // Saving locations for every ongoing session
                         val locations = mutableListOf<DomainLocation>()
-                        val sessions = mutableListOf<DomainSession>()
                         ongoingSessionIds.forEach { sessionId ->
                             locationResult.lastLocation?.let { lastLocation ->
-                                val newLocation = lastLocation.toDomainModel(sessionId)
-                                // Updating distances for each location
-                                locationInteractor.getLatestLocations(sessionId, 1)
-                                    .flowOn(Dispatchers.IO)
-                                    .map { it.firstOrNull() }
-                                    .first { location ->
-                                        location?.let { lastLocation ->
-                                            // Need session to calculate new distance value from the old one
-                                            sessionInteractor.getSession(sessionId)
-                                                .flowOn(Dispatchers.IO)
-                                                .first {
-                                                    it?.let { session ->
-                                                        // Updating distances
-                                                        session.distance += SphericalUtil
-                                                            .computeDistanceBetween(
-                                                                lastLocation.latLng,
-                                                                newLocation.latLng
-                                                            )
-                                                        // Saving the session with the new distance
-                                                        sessions += session
-                                                    }
-                                                    true
-                                                }
-                                        }
-                                        true
-                                    }
-                                locations += newLocation
+                                locations += lastLocation.toDomainModel(sessionId)
                             }
                         }
-                        // Saving data with only one query.
                         locationInteractor.saveLocations(locations)
-                        sessionInteractor.saveSessions(sessions)
                     }
                     value.onLocationResult(locationResult)
                 }
 
-                override fun onLocationAvailability(p0: LocationAvailability) =
+                override fun onLocationAvailability(p0: LocationAvailability) {
+                    super.onLocationAvailability(p0)
                     value.onLocationAvailability(p0)
+                }
             }
         }
 

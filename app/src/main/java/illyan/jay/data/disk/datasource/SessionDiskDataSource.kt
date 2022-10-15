@@ -23,12 +23,12 @@ import illyan.jay.data.disk.model.RoomSession
 import illyan.jay.data.disk.toDomainModel
 import illyan.jay.data.disk.toRoomModel
 import illyan.jay.domain.model.DomainSession
-import java.time.Instant
-import java.util.*
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
+import java.time.Instant
+import java.time.ZoneId
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Session disk data source using Room to communicate with the SQLite database.
@@ -80,7 +80,15 @@ class SessionDiskDataSource @Inject constructor(
      * @return ID of the newly started session.
      */
     fun startSession(): Long {
-        val id = sessionDao.insertSession(RoomSession(startTime = Instant.now().toEpochMilli()))
+        val id = sessionDao.insertSession(
+            RoomSession(
+                id = 0,
+                startDateTime = Instant.now()
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant().toEpochMilli(),
+                endDateTime = null
+            )
+        )
         Timber.d("Starting a session with ID = $id!")
         return id
     }
@@ -112,7 +120,7 @@ class SessionDiskDataSource @Inject constructor(
      * @return id of the stopped session.
      */
     fun stopSession(session: DomainSession): Long {
-        if (session.endTime == null) session.endTime = Date.from(Instant.now())
+        if (session.endDateTime == null) session.endDateTime = Instant.now().atZone(ZoneId.systemDefault())
         return saveSession(session)
     }
 
@@ -124,8 +132,8 @@ class SessionDiskDataSource @Inject constructor(
      * then saving the modified values to the database.
      */
     fun stopSessions(sessions: List<DomainSession>) {
-        val endTime = Date.from(Instant.now())
-        sessions.forEach { if (it.endTime == null) it.endTime = endTime }
+        val endTime = Instant.now().atZone(ZoneId.systemDefault())
+        sessions.forEach { if (it.endDateTime == null) it.endDateTime = endTime }
         saveSessions(sessions)
     }
 

@@ -21,9 +21,9 @@ package illyan.jay.data.disk.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import androidx.room.Upsert
 import illyan.jay.data.disk.model.RoomSession
 import kotlinx.coroutines.flow.Flow
 
@@ -35,10 +35,10 @@ interface SessionDao {
     @Insert
     fun insertSessions(sessions: List<RoomSession>)
 
-    @Upsert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsertSession(session: RoomSession): Long
 
-    @Upsert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsertSessions(sessions: List<RoomSession>)
 
     @Update
@@ -65,9 +65,9 @@ interface SessionDao {
     @Query("SELECT * FROM session WHERE id = :id LIMIT 1")
     fun getSession(id: Long): Flow<RoomSession?>
 
-    @Query("SELECT * FROM session WHERE endTime is NULL")
+    @Query("SELECT * FROM session WHERE endDateTime is NULL")
     fun getOngoingSessions(): Flow<List<RoomSession>>
 
-    @Query("SELECT id FROM session WHERE endTime is NULL")
+    @Query("SELECT id FROM session WHERE endDateTime is NULL")
     fun getOngoingSessionIds(): Flow<List<Long>>
 }

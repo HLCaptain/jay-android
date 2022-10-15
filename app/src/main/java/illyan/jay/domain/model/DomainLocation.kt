@@ -19,7 +19,7 @@
 package illyan.jay.domain.model
 
 import com.google.android.gms.maps.model.LatLng
-import java.util.*
+import java.time.ZonedDateTime
 
 /**
  * Domain location used for general data handling
@@ -29,7 +29,7 @@ import java.util.*
  * @property latLng
  * @property speed
  * @property sessionId
- * @property time
+ * @property zonedDateTime
  * @property accuracy
  * @property bearing
  * @property bearingAccuracy
@@ -40,14 +40,14 @@ import java.util.*
  */
 data class DomainLocation(
     val id: Long = -1,
-    val latLng: LatLng,
-    val speed: Float,
     val sessionId: Long,
-    val time: Date,
-    val accuracy: Float,
-    val bearing: Float,
-    val bearingAccuracy: Float, // in degrees
-    val altitude: Double,
-    val speedAccuracy: Float, // in meters per second
-    val verticalAccuracy: Float // in meters
+    val zonedDateTime: ZonedDateTime,
+    val latLng: LatLng,
+    var speed: Float = -1f,
+    var accuracy: Float = -1f,
+    var bearing: Float = -1f,
+    var bearingAccuracy: Float = -1f, // in degrees
+    var altitude: Double = -1.0,
+    var speedAccuracy: Float = -1f, // in meters per second
+    var verticalAccuracy: Float = -1f // in meters
 )

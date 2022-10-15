@@ -50,7 +50,7 @@ abstract class BaseService : Service() {
      */
     private fun broadcastStateChange(
         name: String,
-        state: String
+        state: String,
     ) {
         val intent = Intent()
         intent.action = KEY_SERVICE_STATE_CHANGE
@@ -95,12 +95,13 @@ abstract class BaseService : Service() {
         text: String,
         channelId: String,
         notificationId: Int,
-        icon: IconCompat
+        icon: IconCompat,
+        channelDescription: String,
     ): Notification {
         val notificationIntent = Intent(this, MainActivity::class.java)
         notificationIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
 
-        createNotificationChannel(channelId)
+        createNotificationChannel(channelId, text, channelDescription)
 
         val contentIntent = PendingIntent.getActivity(
             this,
@@ -137,23 +138,45 @@ abstract class BaseService : Service() {
         text: String,
         channelId: String,
         notificationId: Int,
-        icon: IconCompat
+        icon: IconCompat,
+        channelDescription: String,
     ) {
-        val notification = createNotification(title, text, channelId, notificationId, icon)
+        val notification = createNotification(
+            title,
+            text,
+            channelId,
+            notificationId,
+            icon,
+            channelDescription
+        )
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(notificationId, notification)
     }
 
-    private fun createNotificationChannel(channelId: String) {
-        val serviceChannel = NotificationChannel(
-            channelId,
-            "Foreground Service Channel",
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
-        val manager = getSystemService(
-            NotificationManager::class.java
-        )
-        manager.createNotificationChannel(serviceChannel)
+    fun removeNotification(
+        notificationId: Int,
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.deleteNotificationChannel(notificationId.toString())
+        }
+    }
+
+    private fun createNotificationChannel(
+        channelId: String,
+        name: String,
+        description: String,
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                channelId,
+                name,
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            serviceChannel.description = description
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(serviceChannel)
+        }
     }
 
     companion object {

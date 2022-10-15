@@ -19,13 +19,16 @@
 package illyan.jay.data.disk.model
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "session")
+@Entity(
+    tableName = "session",
+    indices = [Index(value = ["id"])]
+)
 data class RoomSession(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val startTime: Long,
-    var endTime: Long? = null,
-    var distance: Double = 0.0
+    val startDateTime: Long,
+    var endDateTime: Long? = null
 )
