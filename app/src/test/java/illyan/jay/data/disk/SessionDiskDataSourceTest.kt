@@ -23,14 +23,10 @@ import illyan.jay.data.disk.dao.SessionDao
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
 import illyan.jay.data.disk.model.RoomSession
 import illyan.jay.domain.model.DomainSession
-import illyan.jay.util.TimeUtils
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.verify
-import java.time.Instant
-import java.util.*
-import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -42,6 +38,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.time.Instant
+import java.util.Date
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.days
 
 @ExtendWith(MockKExtension::class)
 class SessionDiskDataSourceTest : TestBase() {
@@ -56,7 +56,7 @@ class SessionDiskDataSourceTest : TestBase() {
         4,
         Date.from(
             Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS, now.toEpochMilli())
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
             )
         ),
         Date.from(now),
@@ -66,7 +66,7 @@ class SessionDiskDataSourceTest : TestBase() {
         5,
         Date.from(
             Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS, now.toEpochMilli())
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
             )
         ),
         null,
@@ -91,7 +91,7 @@ class SessionDiskDataSourceTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -104,7 +104,7 @@ class SessionDiskDataSourceTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -117,7 +117,7 @@ class SessionDiskDataSourceTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )

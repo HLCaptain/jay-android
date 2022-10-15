@@ -25,16 +25,12 @@ import illyan.jay.data.disk.datasource.RotationDiskDataSource
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainSession
-import illyan.jay.util.TimeUtils
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import java.time.Instant
-import java.util.*
-import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -46,6 +42,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.time.Instant
+import java.util.Date
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.days
 
 @ExtendWith(MockKExtension::class)
 class SessionInteractorTest : TestBase() {
@@ -63,7 +63,7 @@ class SessionInteractorTest : TestBase() {
         4,
         Date.from(
             Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS, now.toEpochMilli())
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
             )
         ),
         Date.from(now),
@@ -73,7 +73,7 @@ class SessionInteractorTest : TestBase() {
         5,
         Date.from(
             Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS, now.toEpochMilli())
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
             )
         ),
         null,
@@ -85,7 +85,7 @@ class SessionInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -98,7 +98,7 @@ class SessionInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )
@@ -111,7 +111,7 @@ class SessionInteractorTest : TestBase() {
             Date.from(
                 Instant.ofEpochMilli(
                     random.nextLong(
-                        now.toEpochMilli() - TimeUtils.DAY_IN_MILLIS,
+                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
                         now.toEpochMilli()
                     )
                 )

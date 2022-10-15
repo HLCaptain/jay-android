@@ -20,6 +20,7 @@ package illyan.jay.util
 
 import android.os.SystemClock
 import java.time.Instant
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Sensor timestamp to absolute time.
@@ -31,6 +32,4 @@ import java.time.Instant
  * @return timestamp counted from Instant.EPOCH.
  */
 fun sensorTimestampToAbsoluteTime(timestamp: Long) = Instant.now()
-    .toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / SECOND_IN_MICRO
-
-const val SECOND_IN_MICRO = 1000000L
+    .toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1.seconds.inWholeMicroseconds
