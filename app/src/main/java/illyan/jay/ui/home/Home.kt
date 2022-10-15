@@ -30,11 +30,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -112,6 +118,7 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
@@ -123,6 +130,8 @@ import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
+import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -214,9 +223,7 @@ fun calculateCornerRadius(
     return if (isSearching) {
         minCornerRadius
     } else {
-        if (
-            bottomSheetState.isCollapsedOrWillBe()
-        ) {
+        if (bottomSheetState.isCollapsedOrWillBe()) {
             maxCornerRadius
         } else {
             val max = BottomSheetPartialMaxFraction
@@ -677,6 +684,7 @@ fun BottomSheetScreen(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
 @Composable
 private fun MenuNavHost(
     modifier: Modifier = Modifier,
@@ -718,10 +726,21 @@ private fun MenuNavHost(
             .animateContentSize { _, _ -> }
             .alpha(alpha = menuAlpha)
             .navigationBarsPadding()
-            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+            .padding(bottom = SearchBarHeight - RoundedCornerRadius),
+        engine = rememberAnimatedNavHostEngine(
+            rootDefaultAnimations = RootNavGraphDefaultAnimations(
+                enterTransition = {
+                    slideInVertically(tween(200)) + fadeIn(tween(200))
+                },
+                exitTransition = {
+                    slideOutVertically(tween(200)) + fadeOut(tween(200))
+                }
+            )
+        )
     )
 }
 
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
 @Composable
 private fun SearchNavHost(
     modifier: Modifier = Modifier,
@@ -753,6 +772,6 @@ private fun SearchNavHost(
             .animateContentSize { _, _ -> }
             .alpha(alpha = searchAlpha)
             .navigationBarsPadding()
-            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+            .padding(bottom = SearchBarHeight - RoundedCornerRadius),
     )
 }

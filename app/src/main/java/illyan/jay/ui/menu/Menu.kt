@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.menu
 
+import android.app.Activity
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
@@ -25,7 +26,13 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -61,11 +68,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
+import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -93,6 +104,7 @@ val MenuItemPadding = 6.dp
 val ListMaxHeight = 384.dp
 val ListMinHeight = 128.dp
 
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
 @MenuNavGraph(start = true)
 @Destination
 @Composable
@@ -112,7 +124,17 @@ fun MenuScreen(
     DestinationsNavHost(
         modifier = modifier,
         navGraph = NavGraphs.menu,
-        startRoute = MenuListDestination
+        startRoute = MenuListDestination,
+        engine = rememberAnimatedNavHostEngine(
+            rootDefaultAnimations = RootNavGraphDefaultAnimations(
+                enterTransition = {
+                    slideInVertically(tween(200)) + fadeIn(tween(200))
+                },
+                exitTransition = {
+                    slideOutVertically(tween(200)) + fadeOut(tween(200))
+                }
+            )
+        )
     )
 }
 
@@ -125,6 +147,9 @@ fun MenuList(
 ) {
     val gridState = rememberLazyStaggeredGridState()
     val context = LocalContext.current
+    BackPressHandler {
+        (context as Activity).moveTaskToBack(false)
+    }
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
     var menuShouldBeBigger by remember { mutableStateOf(false) }
     LazyVerticalStaggeredGrid(
@@ -293,8 +318,9 @@ fun BackPressHandler(
         }
     }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(key1 = backPressedDispatcher) {
-        backPressedDispatcher?.addCallback(backCallback)
+        backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
 
         onDispose {
             backCallback.remove()
