@@ -740,13 +740,23 @@ private fun MenuNavHost(
     )
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
 @Composable
 private fun SearchNavHost(
     modifier: Modifier = Modifier,
     isSearching: Boolean,
     fullScreenFraction: Float = BottomSheetPartialMaxFraction,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    BackPressHandler(
+        customDisposableEffectKey = isSearching,
+        isEnabled = { isSearching }
+    ) {
+        if (isSearching) {
+            coroutineScope.launch {
+                sheetState.collapse()
+            }
+        }
+    }
     val searchAlpha by animateFloatAsState(
         targetValue = if (isSearching) {
             1f

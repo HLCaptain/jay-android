@@ -18,27 +18,30 @@
 
 package illyan.jay.ui.freedrive
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.ServiceInteractor
+import illyan.jay.domain.interactor.SettingsInteractor
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 @HiltViewModel
 class FreeDriveViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
+    private val settingsInteractor: SettingsInteractor,
     private val serviceInteractor: ServiceInteractor
 ): ViewModel() {
 
     val isJayServiceRunning = serviceInteractor.isJayServiceRunning
 
     // FIXME: savedStateHandle somehow does not save state
-    val startServiceAutomatically = savedStateHandle.getStateFlow(AutoStartServiceKey, false)
+    val startServiceAutomatically = settingsInteractor.appSettingsFlow.map { it.turnOnFreeDriveAutomatically }
 
-    fun load() {
+    suspend fun load() {
         // TODO: decide whether to start the service or not based on saved preferences
-        if (startServiceAutomatically.value) {
-            serviceInteractor.startJayService()
+        startServiceAutomatically.first {
+            if (it) serviceInteractor.startJayService()
+            true
         }
     }
 
@@ -50,11 +53,9 @@ class FreeDriveViewModel @Inject constructor(
         }
     }
 
-    fun setAutoStartService(startServiceAutomatically: Boolean) {
-        savedStateHandle[AutoStartServiceKey] = startServiceAutomatically
-    }
-
-    companion object {
-        const val AutoStartServiceKey = "AUTO_START_SERVICE"
+    suspend fun setAutoStartService(startServiceAutomatically: Boolean) {
+        settingsInteractor.updateAppSettings {
+            it.copy(turnOnFreeDriveAutomatically = startServiceAutomatically)
+        }
     }
 }

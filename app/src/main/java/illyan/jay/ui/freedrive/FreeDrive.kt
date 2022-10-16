@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,10 +48,12 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.annotation.Destination
 import illyan.jay.R
+import illyan.jay.data.disk.model.AppSettings
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuNavGraph
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
 @MenuNavGraph
@@ -62,7 +65,7 @@ fun FreeDriveScreen(
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
     )
-
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     when (locationPermissionState.status) {
         is PermissionStatus.Denied -> {
@@ -81,7 +84,8 @@ fun FreeDriveScreen(
 
         is PermissionStatus.Granted -> {
             // TODO start session, then wait for new data to be shown by Mapbox Navigation SDK
-            val startServiceAutomatically by freeDriveViewModel.startServiceAutomatically.collectAsState()
+            val startServiceAutomatically by freeDriveViewModel.startServiceAutomatically
+                .collectAsState(AppSettings.default.turnOnFreeDriveAutomatically)
             LaunchedEffect(true) {
                 freeDriveViewModel.load()
             }
@@ -118,7 +122,9 @@ fun FreeDriveScreen(
                         checked = startServiceAutomatically,
                         onCheckedChange = {
                         /* TODO save preferences */
-                            freeDriveViewModel.setAutoStartService(it)
+                            coroutineScope.launch {
+                                freeDriveViewModel.setAutoStartService(it)
+                            }
                         }
                     )
                 }

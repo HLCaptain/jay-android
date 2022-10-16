@@ -145,11 +145,11 @@ fun MenuScreen(
 fun MenuList(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
-    val gridState = rememberLazyStaggeredGridState()
     val context = LocalContext.current
     BackPressHandler {
         (context as Activity).moveTaskToBack(false)
     }
+    val gridState = rememberLazyStaggeredGridState()
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
     var menuShouldBeBigger by remember { mutableStateOf(false) }
     LazyVerticalStaggeredGrid(
@@ -305,6 +305,8 @@ fun MenuItemCard(
 fun BackPressHandler(
     backPressedDispatcher: OnBackPressedDispatcher? =
         LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher,
+    customDisposableEffectKey: Any? = null,
+    isEnabled: () -> Boolean = { true },
     onBackPressed: () -> Unit,
 ) {
     val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
@@ -319,8 +321,10 @@ fun BackPressHandler(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(key1 = backPressedDispatcher) {
-        backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
+    DisposableEffect(key1 = backPressedDispatcher, key2 = customDisposableEffectKey) {
+        if (isEnabled()) {
+            backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
+        }
 
         onDispose {
             backCallback.remove()
