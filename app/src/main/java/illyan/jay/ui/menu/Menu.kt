@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Expand
 import androidx.compose.material.icons.rounded.Navigation
@@ -57,9 +58,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,6 +70,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
@@ -74,6 +78,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.plugin.animation.camera
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
@@ -87,11 +95,16 @@ import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.destinations.MenuListDestination
 import illyan.jay.ui.destinations.NavigationScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sendBroadcast
+import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.menu.MenuViewModel.Companion.ACTION_QUERY_PLACE
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @RootNavGraph
@@ -138,13 +151,46 @@ fun MenuScreen(
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @MenuNavGraph
 @Destination
 @Composable
 fun MenuList(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
+    viewModel: MenuViewModel = hiltViewModel(),
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val screenHeight = LocalConfiguration.current.screenHeightDp.toDouble()
+    LaunchedEffect(true) {
+        coroutineScope.launch {
+            viewModel.lastUserLocation.map { it.firstOrNull() }.first { location ->
+                location?.let {
+                    mapView.value?.camera?.flyTo(
+                        CameraOptions.Builder()
+                            .center(
+                                Point.fromLngLat(
+                                    location.latLng.longitude,
+                                    location.latLng.latitude
+                                )
+                            )
+                            .zoom(12.0)
+                            .padding(
+                                EdgeInsets(
+                                    0.0,
+                                    0.0,
+                                    // sheetState.offset.value is not in DP! Probably px...
+                                    screenHeight - sheetState.offset.value / 4,
+                                    0.0
+                                )
+                            )
+                            .build()
+                    )
+                }
+                true
+            }
+
+        }
+    }
     val context = LocalContext.current
     BackPressHandler {
         (context as Activity).moveTaskToBack(false)

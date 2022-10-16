@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.service.BaseReceiver
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
@@ -32,11 +33,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MenuViewModel @Inject constructor(
-    private val localBroadcastManager: LocalBroadcastManager
+    private val localBroadcastManager: LocalBroadcastManager,
+    private val locationInteractor: LocationInteractor
 ) : ViewModel() {
     // TODO: make some items worth storing, or delete this later if not used
     var menuItems = mutableStateListOf<String>()
         private set
+
+    val locationObserver = object : Location {
+
+    }
 
     var onReceived: (Place) -> Unit = {}
 

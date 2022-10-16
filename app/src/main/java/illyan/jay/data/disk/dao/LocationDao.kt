@@ -65,6 +65,9 @@ interface LocationDao {
     @Query("SELECT * FROM location WHERE sessionId = :sessionId")
     fun getLocations(sessionId: Long): Flow<List<RoomLocation>>
 
+    @Query("SELECT * FROM location ORDER BY id DESC LIMIT :limit")
+    fun getLatestLocations(limit: Long): Flow<List<RoomLocation>>
+
     @Query("SELECT * FROM location WHERE sessionId = :sessionId ORDER BY id DESC LIMIT :limit")
     fun getLatestLocations(sessionId: Long, limit: Long): Flow<List<RoomLocation>>
 }

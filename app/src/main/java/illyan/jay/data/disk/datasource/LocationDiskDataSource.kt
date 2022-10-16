@@ -23,9 +23,9 @@ import illyan.jay.data.disk.model.RoomLocation
 import illyan.jay.data.disk.toDomainModel
 import illyan.jay.data.disk.toRoomModel
 import illyan.jay.domain.model.DomainLocation
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.map
 
 /**
  * Location disk data source using Room to communicate with the SQLite database.
@@ -50,6 +50,10 @@ class LocationDiskDataSource @Inject constructor(
      */
     fun getLatestLocations(sessionId: Long, limit: Long) =
         locationDao.getLatestLocations(sessionId, limit)
+            .map { it.map(RoomLocation::toDomainModel) }
+
+    fun getLatestLocations(limit: Long) =
+        locationDao.getLatestLocations(limit)
             .map { it.map(RoomLocation::toDomainModel) }
 
     /**

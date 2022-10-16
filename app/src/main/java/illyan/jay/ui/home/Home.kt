@@ -149,6 +149,8 @@ import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
 import illyan.jay.ui.theme.Neutral95
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -175,7 +177,8 @@ val AvatarPaddingValues = PaddingValues(
 const val BottomSheetPartialExpendedFraction = 0.5f
 const val BottomSheetPartialMaxFraction = 1f
 
-lateinit var mapView: MapView
+private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
+val mapView = _mapView.asStateFlow()
 lateinit var sheetState: BottomSheetState
 var isSearching: Boolean = false
 
@@ -392,7 +395,7 @@ fun HomeScreen(
                     lng = ButeK.longitude,
                     zoom = 12.0,
                     onMapLoaded = {
-                        mapView = it
+                        _mapView.value = it
                         val pointAnnotationManager = it.annotations.createPointAnnotationManager()
                         val pointAnnotationOptions = PointAnnotationOptions()
                             // Define a geographic coordinate.

@@ -32,7 +32,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class LocationInteractor @Inject constructor(
-    private var locationDiskDataSource: LocationDiskDataSource
+    private val locationDiskDataSource: LocationDiskDataSource,
 ) {
     /**
      * Get latest (most up to date) locations as a Flow for a particular session.
@@ -47,6 +47,8 @@ class LocationInteractor @Inject constructor(
      */
     fun getLatestLocations(sessionId: Long, limit: Long) =
         locationDiskDataSource.getLatestLocations(sessionId, limit)
+
+    fun getLatestLocations(limit: Long) = locationDiskDataSource.getLatestLocations(limit)
 
     /**
      * Get locations' data as a Flow for a particular session.

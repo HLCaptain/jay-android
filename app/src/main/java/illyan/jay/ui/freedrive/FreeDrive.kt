@@ -88,6 +88,7 @@ fun FreeDriveScreen(
                 .collectAsState(AppSettings.default.turnOnFreeDriveAutomatically)
             LaunchedEffect(true) {
                 freeDriveViewModel.load()
+                mapView.value?.location?.turnOnWithDefaultPuck(context)
             }
             Column(
                 modifier = Modifier
@@ -95,7 +96,6 @@ fun FreeDriveScreen(
                     .height(300.dp)
                     .padding(32.dp)
             ) {
-                mapView.location.turnOnWithDefaultPuck(context)
                 // TODO toggle to save preference to enable free-driving when navigated to screen automatically or not
                 val isServiceRunning by freeDriveViewModel.isJayServiceRunning.collectAsState()
                 val buttonLabel = if (isServiceRunning) {

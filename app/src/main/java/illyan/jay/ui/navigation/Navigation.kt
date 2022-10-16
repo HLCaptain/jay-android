@@ -88,7 +88,7 @@ fun NavigationScreen(
             viewModel.isNewPlace
         ) {
             viewModel.isNewPlace = false
-            mapView.getMapboxMap().flyTo(
+            mapView.value?.getMapboxMap()?.flyTo(
                 CameraOptions.Builder()
                     .center(
                         Point.fromLngLat(
