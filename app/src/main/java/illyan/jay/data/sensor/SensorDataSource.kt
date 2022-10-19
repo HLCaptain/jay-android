@@ -27,6 +27,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Sensor data source helps registering SensorEventListeners to sensor events.
@@ -37,6 +38,7 @@ import javax.inject.Inject
  * and setting location request options.
  * @constructor Create empty Sensor data source
  */
+@Singleton
 class SensorDataSource @Inject constructor(
     private val sensorManager: SensorManager,
     private val fusedLocationProviderClient: FusedLocationProviderClient

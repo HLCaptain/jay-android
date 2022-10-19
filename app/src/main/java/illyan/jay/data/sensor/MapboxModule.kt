@@ -16,18 +16,23 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.menu
+package illyan.jay.data.sensor
 
-import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import android.content.Context
+import com.mapbox.android.core.location.LocationEngineProvider
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
-@HiltViewModel
-class MenuViewModel @Inject constructor(
+@Module
+@InstallIn(SingletonComponent::class)
+object MapboxModule {
 
-) : ViewModel() {
-    // TODO: make some items worth storing, or delete this later if not used
-    var menuItems = mutableStateListOf<String>()
-        private set
+    @Provides
+    @Singleton
+    fun provideLocationEngine(@ApplicationContext context: Context) =
+        LocationEngineProvider.getBestLocationEngine(context)
 }

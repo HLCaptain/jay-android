@@ -26,13 +26,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -58,11 +52,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,41 +62,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
-import com.mapbox.geojson.Point
-import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.EdgeInsets
-import com.mapbox.maps.plugin.animation.camera
-import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
-import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.destinations.FreeDriveScreenDestination
-import illyan.jay.ui.destinations.MenuListDestination
-import illyan.jay.ui.destinations.NavigationScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
-import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sendBroadcast
-import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.map.ButeK
-import illyan.jay.ui.menu.MenuViewModel.Companion.ACTION_QUERY_PLACE
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
 import timber.log.Timber
 
 @RootNavGraph
@@ -117,80 +92,14 @@ val MenuItemPadding = 6.dp
 val ListMaxHeight = 384.dp
 val ListMinHeight = 128.dp
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @MenuNavGraph(start = true)
 @Destination
 @Composable
 fun MenuScreen(
-    modifier: Modifier = Modifier,
-    viewModel: MenuViewModel = hiltViewModel(),
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
-) {
-    DisposableEffect(key1 = true) {
-        viewModel.load {
-            destinationsNavigator.navigate(
-                NavigationScreenDestination(it, 12.0)
-            )
-        }
-        onDispose { viewModel.dispose() }
-    }
-    DestinationsNavHost(
-        modifier = modifier,
-        navGraph = NavGraphs.menu,
-        startRoute = MenuListDestination,
-        engine = rememberAnimatedNavHostEngine(
-            rootDefaultAnimations = RootNavGraphDefaultAnimations(
-                enterTransition = {
-                    slideInVertically(tween(200)) + fadeIn(tween(200))
-                },
-                exitTransition = {
-                    slideOutVertically(tween(200)) + fadeOut(tween(200))
-                }
-            )
-        )
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
-@MenuNavGraph
-@Destination
-@Composable
-fun MenuList(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: MenuViewModel = hiltViewModel(),
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val screenHeight = LocalConfiguration.current.screenHeightDp.toDouble()
-    LaunchedEffect(true) {
-        coroutineScope.launch {
-            viewModel.lastUserLocation.map { it.firstOrNull() }.first { location ->
-                location?.let {
-                    mapView.value?.camera?.flyTo(
-                        CameraOptions.Builder()
-                            .center(
-                                Point.fromLngLat(
-                                    location.latLng.longitude,
-                                    location.latLng.latitude
-                                )
-                            )
-                            .zoom(12.0)
-                            .padding(
-                                EdgeInsets(
-                                    0.0,
-                                    0.0,
-                                    // sheetState.offset.value is not in DP! Probably px...
-                                    screenHeight - sheetState.offset.value / 4,
-                                    0.0
-                                )
-                            )
-                            .build()
-                    )
-                }
-                true
-            }
-
-        }
-    }
     val context = LocalContext.current
     BackPressHandler {
         (context as Activity).moveTaskToBack(false)

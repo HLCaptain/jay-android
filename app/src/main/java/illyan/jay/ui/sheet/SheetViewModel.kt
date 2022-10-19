@@ -16,52 +16,40 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.navigation
+package illyan.jay.ui.sheet
 
 import android.content.IntentFilter
 import android.os.Build
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.service.BaseReceiver
-import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel
-import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
 import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
-class NavigationViewModel @Inject constructor(
-    private val localBroadcastManager: LocalBroadcastManager
+class SheetViewModel @Inject constructor(
+    private val localBroadcastManager: LocalBroadcastManager,
 ) : ViewModel() {
-    var place by mutableStateOf(ButeK)
-        private set
 
-    var isNewPlace by mutableStateOf(true)
+    var onReceived: (Place) -> Unit = {}
 
     private val receiver: BaseReceiver = BaseReceiver { intent ->
         if (Build.VERSION.SDK_INT >= 33) {
             intent.getParcelableExtra(SearchViewModel.KeyPlaceQuery, Place::class.java)?.let {
-                place = it
-                isNewPlace = true
+                onReceived(it)
             }
         } else {
             intent.getParcelableExtra<Place>(SearchViewModel.KeyPlaceQuery)?.let {
-                place = it
-                isNewPlace = true
+                onReceived(it)
             }
         }
     }
 
-    fun load(
-        place: Place
-    ) {
-        this.place = place
-        isNewPlace = true
+    fun loadReceiver(onReceived: (Place) -> Unit) {
+        this.onReceived = onReceived
         localBroadcastManager.registerReceiver(
             receiver,
             IntentFilter(ACTION_QUERY_PLACE)
@@ -71,6 +59,10 @@ class NavigationViewModel @Inject constructor(
 
     fun dispose() {
         localBroadcastManager.unregisterReceiver(receiver)
-        Timber.d("Navigation broadcast receiver disposed!")
+        Timber.d("Sheet broadcast receiver disposed!")
+    }
+
+    companion object {
+        const val ACTION_QUERY_PLACE = "illyan.jay.action.QUERY_PLACE"
     }
 }

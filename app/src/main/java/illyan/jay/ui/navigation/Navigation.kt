@@ -18,6 +18,8 @@
 
 package illyan.jay.ui.navigation
 
+import android.content.Context
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
@@ -30,27 +32,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.plugin.animation.flyTo
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.ui.home.bottomSheetHeight
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
+import illyan.jay.ui.map.padding
 import illyan.jay.ui.menu.BackPressHandler
-import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.sheet.SheetNavGraph
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterialApi::class)
-@MenuNavGraph
+@SheetNavGraph
 @Destination
 @Composable
 fun NavigationScreen(
@@ -58,6 +61,7 @@ fun NavigationScreen(
     zoom: Double = 6.0,
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: NavigationViewModel = hiltViewModel(),
+    context: Context = LocalContext.current
 ) {
     val coroutineScope = rememberCoroutineScope()
     BackPressHandler {
@@ -73,7 +77,6 @@ fun NavigationScreen(
             destinationsNavigator.navigateUp()
         }
     }
-    val screenHeight = LocalConfiguration.current.screenHeightDp.toDouble()
     DisposableEffect(key1 = true) {
         viewModel.load(place)
         onDispose { viewModel.dispose() }
@@ -98,13 +101,8 @@ fun NavigationScreen(
                     )
                     .zoom(zoom)
                     .padding(
-                        EdgeInsets(
-                            0.0,
-                            0.0,
-                            // sheetState.offset.value is not in DP! Probably px...
-                            screenHeight - sheetState.offset.value / 4,
-                            0.0
-                        )
+                        PaddingValues(bottom = bottomSheetHeight),
+                        context
                     )
                     .build()
             )
@@ -115,6 +113,6 @@ fun NavigationScreen(
         modifier = Modifier.height(200.dp),
         text = "Sheet offset ${sheetState.offset.value}\n" +
                 "isAnimationRunning ${sheetState.isAnimationRunning}\n" +
-                "Screen height $screenHeight"
+                "Screen height $bottomSheetHeight"
     )
 }
