@@ -788,15 +788,19 @@ private fun SheetNavHost(
             .animateContentSize { _, _ -> }
             .alpha(alpha = sheetAlpha)
             .navigationBarsPadding()
+            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
-                // FIXME: for some reason, measuredHeight is 40.dp more than its real height.
-                bottomSheetHeight = placeable.measuredHeight.toDp() - 40.dp
+                if (sheetState.isExpanded &&
+                    sheetState.progress.fraction == 1f &&
+                    placeable.measuredHeight.toDp() > 0.dp
+                ) {
+                    bottomSheetHeight = placeable.measuredHeight.toDp()
+                }
                 layout(placeable.width, placeable.height) {
                     placeable.placeRelative(0, 0)
                 }
-            }
-            .padding(bottom = SearchBarHeight - RoundedCornerRadius),
+            },
         engine = rememberAnimatedNavHostEngine(
             rootDefaultAnimations = RootNavGraphDefaultAnimations(
                 enterTransition = {

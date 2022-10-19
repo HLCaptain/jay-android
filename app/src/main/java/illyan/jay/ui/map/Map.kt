@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -132,6 +133,21 @@ fun CameraOptions.Builder.padding(
             paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * pixelDensity,
             paddingValues.calculateBottomPadding().value.toDouble() * pixelDensity,
             paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * pixelDensity
+        )
+    )
+}
+
+fun CameraOptions.Builder.padding(
+    paddingValues: PaddingValues,
+    density: Density,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+): CameraOptions.Builder {
+    return padding(
+        EdgeInsets(
+            paddingValues.calculateTopPadding().value.toDouble() * density.density,
+            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * density.density,
+            paddingValues.calculateBottomPadding().value.toDouble() * density.density,
+            paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * density.density
         )
     )
 }

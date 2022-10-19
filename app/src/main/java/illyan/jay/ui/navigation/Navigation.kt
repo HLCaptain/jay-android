@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.navigation
 
-import android.content.Context
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.ExperimentalMaterialApi
@@ -32,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mapbox.geojson.Point
@@ -61,7 +60,6 @@ fun NavigationScreen(
     zoom: Double = 6.0,
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: NavigationViewModel = hiltViewModel(),
-    context: Context = LocalContext.current
 ) {
     val coroutineScope = rememberCoroutineScope()
     BackPressHandler {
@@ -82,6 +80,7 @@ fun NavigationScreen(
         onDispose { viewModel.dispose() }
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
+    val density = LocalDensity.current
     LaunchedEffect(
         key1 = sheetState.isAnimationRunning,
         key2 = viewModel.place,
@@ -90,6 +89,7 @@ fun NavigationScreen(
             !sheetHeightNotSet &&
             viewModel.isNewPlace
         ) {
+            Timber.d("Height: $bottomSheetHeight")
             viewModel.isNewPlace = false
             mapView.value?.getMapboxMap()?.flyTo(
                 CameraOptions.Builder()
@@ -102,7 +102,7 @@ fun NavigationScreen(
                     .zoom(zoom)
                     .padding(
                         PaddingValues(bottom = bottomSheetHeight),
-                        context
+                        density
                     )
                     .build()
             )
