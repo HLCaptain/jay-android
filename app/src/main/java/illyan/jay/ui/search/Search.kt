@@ -86,7 +86,7 @@ val DividerThickness = 1.dp
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel()
 ) {
-    DisposableEffect(key1 = true) {
+    DisposableEffect(Unit) {
         viewModel.load()
         onDispose { viewModel.dispose() }
     }

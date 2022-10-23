@@ -19,7 +19,6 @@
 package illyan.jay.ui.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.height
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -30,16 +29,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.plugin.animation.flyTo
+import com.mapbox.maps.plugin.animation.camera
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.ui.home.asString
 import illyan.jay.ui.home.bottomSheetHeight
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.mapView
@@ -75,23 +73,25 @@ fun NavigationScreen(
             destinationsNavigator.navigateUp()
         }
     }
-    DisposableEffect(key1 = true) {
+    DisposableEffect(Unit) {
         viewModel.load(place)
         onDispose { viewModel.dispose() }
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     val density = LocalDensity.current
     LaunchedEffect(
-        key1 = sheetState.isAnimationRunning,
-        key2 = viewModel.place,
+        sheetState.isAnimationRunning,
+        viewModel.place,
     ) {
         if (!sheetState.isAnimationRunning &&
             !sheetHeightNotSet &&
             viewModel.isNewPlace
         ) {
-            Timber.d("Height: $bottomSheetHeight")
+            Timber.d("Focusing camera to location" +
+                    "Current sheetHeight: $bottomSheetHeight\n" +
+                    "Current sheetState:\n${sheetState.asString()}")
             viewModel.isNewPlace = false
-            mapView.value?.getMapboxMap()?.flyTo(
+            mapView.value?.camera?.flyTo(
                 CameraOptions.Builder()
                     .center(
                         Point.fromLngLat(
@@ -110,9 +110,6 @@ fun NavigationScreen(
         sheetHeightNotSet = false
     }
     Text(
-        modifier = Modifier.height(200.dp),
-        text = "Sheet offset ${sheetState.offset.value}\n" +
-                "isAnimationRunning ${sheetState.isAnimationRunning}\n" +
-                "Screen height $bottomSheetHeight"
+        text = "Sheet state:\n${sheetState.asString()}"
     )
 }

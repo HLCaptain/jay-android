@@ -55,7 +55,7 @@ fun SheetScreen(
     viewModel: SheetViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
-    DisposableEffect(key1 = true) {
+    DisposableEffect(Unit) {
         viewModel.loadReceiver {
             destinationsNavigator.navigate(
                 NavigationScreenDestination(it, 12.0)

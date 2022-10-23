@@ -109,6 +109,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -193,9 +194,11 @@ const val BottomSheetPartialMaxFraction = 1f
 private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
 val mapView = _mapView.asStateFlow()
 lateinit var sheetState: BottomSheetState
+var sheetOffset: Dp = 0.dp
 var isSearching: Boolean = false
 
 val sheetMaxHeight = 600.dp
+val sheetMinHeight = 100.dp
 var bottomSheetHeight = sheetMaxHeight
 
 fun BottomSheetState.isExpanding() =
@@ -337,7 +340,7 @@ fun HomeScreen(
         BackPressHandler {
             onHomeBackPress(isTextFieldFocused, focusManager, context)
         }
-        LaunchedEffect(key1 = sheetCollapsing) {
+        LaunchedEffect(sheetCollapsing) {
             onSheetStateChanged(
                 isTextFieldFocused,
                 bottomSheetState,
@@ -437,7 +440,7 @@ fun HomeScreen(
                 var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
                 var isMapInitialized by remember { mutableStateOf(false) }
                 LaunchedEffect(
-                    bottomSheetState.isExpanded,
+                    bottomSheetHeight,
                     isMapInitialized,
                     initialLocationLoaded
                 ) {
@@ -448,7 +451,11 @@ fun HomeScreen(
                         initialLocationLoaded &&
                         isMapInitialized
                     ) {
-                        Timber.d("Height: $bottomSheetHeight")
+                        Timber.d(
+                            "Focusing camera to location" +
+                                    "Current sheetHeight: $bottomSheetHeight\n" +
+                                    "Current sheetState:\n${sheetState.asString()}"
+                        )
                         didLoadInLocation = true
                         mapView.value?.camera?.flyTo(
                             cameraOptionsBuilder!!
@@ -473,7 +480,11 @@ fun HomeScreen(
                         !locationPermissionState.status.isGranted &&
                         isMapInitialized
                     ) {
-                        Timber.d("Height: $bottomSheetHeight")
+                        Timber.d(
+                            "Focusing camera to location" +
+                                    "Current sheetHeight: $bottomSheetHeight\n" +
+                                    "Current sheetState:\n${sheetState.asString()}"
+                        )
                         didLoadInLocationWithoutPermissions = true
                         mapView.value?.camera?.flyTo(
                             CameraOptions.Builder()
@@ -496,7 +507,16 @@ fun HomeScreen(
                 var isMapVisible by remember { mutableStateOf(false) }
                 if (initialLocationLoaded || !initialLocationGrace) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-                        val (foreground, map) = createRefs()
+                        val (text, foreground, map) = createRefs()
+                        Text(
+                            modifier = Modifier
+                                .constrainAs(text) {
+                                    top.linkTo(parent.top)
+                                    start.linkTo(parent.start)
+                                }
+                                .zIndex(2f),
+                            text = "Sheet state:\n${sheetState.asString()}",
+                        )
                         Column(modifier = Modifier
                             .fillMaxSize()
                             .constrainAs(foreground) {
@@ -643,7 +663,7 @@ fun BottomSearchBar(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val sheetCollapsing = bottomSheetState?.isCollapsing() ?: false
-    LaunchedEffect(key1 = sheetCollapsing) {
+    LaunchedEffect(sheetCollapsing) {
         if (sheetCollapsing) {
             launch {
                 focusRequester.freeFocus()
@@ -853,7 +873,7 @@ private fun SheetNavHost(
         },
         animationSpec = SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessVeryLow
+            stiffness = Spring.StiffnessMedium
         )
     )
     val stiffness by animateFloatAsState(
@@ -863,7 +883,7 @@ private fun SheetNavHost(
             Spring.StiffnessLow
         }
     )
-    val animatedSheetHeight by animateDpAsState(
+    val animatedSheetMaxHeight by animateDpAsState(
         targetValue = if (isSearching) {
             0.dp
         } else {
@@ -874,26 +894,34 @@ private fun SheetNavHost(
             stiffness = stiffness
         )
     )
+    val navSheetMaxHeight = sheetMaxHeight
+    val density = LocalDensity.current
     DestinationsNavHost(
         navGraph = NavGraphs.sheet,
         modifier = modifier
-            .heightIn(max = animatedSheetHeight)
-            .animateContentSize { _, _ -> }
-            .alpha(alpha = sheetAlpha)
+            .heightIn(max = navSheetMaxHeight)
             .navigationBarsPadding()
             .padding(bottom = SearchBarHeight - RoundedCornerRadius)
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
+                val height = placeable.measuredHeight.toDp()
                 if (sheetState.isExpanded &&
                     sheetState.progress.fraction == 1f &&
-                    placeable.measuredHeight.toDp() > 0.dp
+                    height >= sheetMinHeight &&
+                    height != bottomSheetHeight
                 ) {
-                    bottomSheetHeight = placeable.measuredHeight.toDp()
+                    bottomSheetHeight = height
+                    Timber.d(
+                        "Density: ${density.density}\n" +
+                                "New bottom sheet height: $bottomSheetHeight\n" +
+                                "Bottom sheet state:\n${sheetState.asString()}"
+                    )
                 }
                 layout(placeable.width, placeable.height) {
                     placeable.placeRelative(0, 0)
                 }
-            },
+            }
+            .alpha(alpha = sheetAlpha),
         engine = rememberAnimatedNavHostEngine(
             rootDefaultAnimations = RootNavGraphDefaultAnimations(
                 enterTransition = {
@@ -951,4 +979,24 @@ private fun SearchNavHost(
             .navigationBarsPadding()
             .padding(bottom = SearchBarHeight - RoundedCornerRadius),
     )
+}
+
+fun BottomSheetState.asString(density: Float = 2.75f): String {
+    return "isExpanded ${isExpanded}\n" +
+            "isExpanding ${isExpanding()}\n" +
+            "isCollapsed ${isCollapsed}\n" +
+            "isCollapsing ${isCollapsing()}\n" +
+            "targetValue ${targetValue.name}\n" +
+            "currentValue ${currentValue.name}\n" +
+            "direction ${direction}\n" +
+            "isAnimationRunning ${isAnimationRunning}\n" +
+            "offset ${getOffsetAsDp(density)}\n" +
+            "overflow ${overflow.value}\n" +
+            "progress.fraction ${progress.fraction}\n" +
+            "progress.from ${progress.from.name}\n" +
+            "progress.to ${progress.to.name}\n"
+}
+
+fun BottomSheetState.getOffsetAsDp(density: Float): Dp {
+    return (offset.value / density).dp
 }

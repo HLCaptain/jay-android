@@ -276,7 +276,7 @@ fun BackPressHandler(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(key1 = backPressedDispatcher, key2 = customDisposableEffectKey) {
+    DisposableEffect(backPressedDispatcher, customDisposableEffectKey) {
         if (isEnabled()) {
             backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
         }
@@ -302,7 +302,7 @@ fun BackPressHandler(
         }
     }
 
-    DisposableEffect(key1 = onBackInvokedDispatcher) {
+    DisposableEffect(onBackInvokedDispatcher) {
         onBackInvokedDispatcher.registerOnBackInvokedCallback(
             PRIORITY_DEFAULT,
             backCallback
