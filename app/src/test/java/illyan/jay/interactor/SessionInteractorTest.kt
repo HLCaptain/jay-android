@@ -19,9 +19,8 @@
 package illyan.jay.interactor
 
 import illyan.jay.TestBase
-import illyan.jay.data.disk.datasource.AccelerationDiskDataSource
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
-import illyan.jay.data.disk.datasource.RotationDiskDataSource
+import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainSession
@@ -43,7 +42,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.time.Instant
-import java.util.Date
+import java.time.ZoneOffset
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.days
 
@@ -51,8 +50,7 @@ import kotlin.time.Duration.Companion.days
 class SessionInteractorTest : TestBase() {
 
     private lateinit var mockedSessionDiskDataSource: SessionDiskDataSource
-    private lateinit var mockedAccelerationDiskDataSource: AccelerationDiskDataSource
-    private lateinit var mockedRotationDiskDataSource: RotationDiskDataSource
+    private lateinit var mockedSensorEventDiskDataSource: SensorEventDiskDataSource
     private lateinit var mockedLocationDiskDataSource: LocationDiskDataSource
     private lateinit var sessionInteractor: SessionInteractor
 
@@ -61,63 +59,39 @@ class SessionInteractorTest : TestBase() {
 
     private val session = DomainSession(
         4,
-        Date.from(
-            Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
-            )
-        ),
-        Date.from(now),
-        4.0
+        startDateTime = Instant.ofEpochMilli(
+            random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+        ).atZone(ZoneOffset.UTC),
+        endDateTime = now.atZone(ZoneOffset.UTC),
     )
     private val ongoingSession = DomainSession(
         5,
-        Date.from(
-            Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
-            )
-        ),
+        startDateTime = Instant.ofEpochMilli(
+            random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+        ).atZone(ZoneOffset.UTC),
         null,
-        5.0
     )
     private val sessions = listOf(
         DomainSession(
             1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            Date.from(now),
-            1.0
+            startDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            endDateTime = now.atZone(ZoneOffset.UTC),
         ),
         DomainSession(
             2,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            Date.from(now),
-            2.0
+            startDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            endDateTime = now.atZone(ZoneOffset.UTC),
         ),
         DomainSession(
             3,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            Date.from(now),
-            3.0
+            startDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            endDateTime = now.atZone(ZoneOffset.UTC),
         ),
         session,
         ongoingSession
@@ -126,15 +100,13 @@ class SessionInteractorTest : TestBase() {
     @BeforeEach
     fun initEach() {
         mockedSessionDiskDataSource = mockk(relaxed = true)
-        mockedAccelerationDiskDataSource = mockk(relaxed = true)
-        mockedRotationDiskDataSource = mockk(relaxed = true)
+        mockedSensorEventDiskDataSource = mockk(relaxed = true)
         mockedLocationDiskDataSource = mockk(relaxed = true)
 
         sessionInteractor = spyk(
             SessionInteractor(
                 mockedSessionDiskDataSource,
-                mockedAccelerationDiskDataSource,
-                mockedRotationDiskDataSource,
+                mockedSensorEventDiskDataSource,
                 mockedLocationDiskDataSource
             )
         )
@@ -177,7 +149,7 @@ class SessionInteractorTest : TestBase() {
     @Test
     fun `Get ongoing sessions`() = runTest {
         every { mockedSessionDiskDataSource.getOngoingSessions() } returns flowOf(
-            sessions.filter { it.endTime == null }
+            sessions.filter { it.endDateTime == null }
         )
 
         var result = listOf<DomainSession>()
@@ -186,7 +158,7 @@ class SessionInteractorTest : TestBase() {
         // Wait coroutine to collect the data.
         advanceUntilIdle()
 
-        assertEquals(sessions.filter { it.endTime == null }, result)
+        assertEquals(sessions.filter { it.endDateTime == null }, result)
         verify(exactly = 1) { mockedSessionDiskDataSource.getOngoingSessions() }
     }
 
@@ -194,7 +166,7 @@ class SessionInteractorTest : TestBase() {
     @Test
     fun `Get ongoing session ids`() = runTest {
         every { mockedSessionDiskDataSource.getOngoingSessionIds() } returns flowOf(
-            sessions.filter { it.endTime == null }
+            sessions.filter { it.endDateTime == null }
                 .map { it.id }
         )
 
@@ -204,7 +176,7 @@ class SessionInteractorTest : TestBase() {
         // Wait coroutine to collect the data.
         advanceUntilIdle()
 
-        assertEquals(sessions.filter { it.endTime == null }.map { it.id }, result)
+        assertEquals(sessions.filter { it.endDateTime == null }.map { it.id }, result)
         verify(exactly = 1) { mockedSessionDiskDataSource.getOngoingSessionIds() }
     }
 

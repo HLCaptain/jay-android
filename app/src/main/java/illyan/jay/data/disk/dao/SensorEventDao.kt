@@ -24,50 +24,44 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import illyan.jay.data.disk.model.RoomSession
+import illyan.jay.data.disk.model.RoomSensorEvent
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface SessionDao {
+interface SensorEventDao {
     @Insert
-    fun insertSession(session: RoomSession): Long
+    fun insertSensorEvent(acceleration: RoomSensorEvent): Long
 
     @Insert
-    fun insertSessions(sessions: List<RoomSession>)
+    fun insertSensorEvents(accelerations: List<RoomSensorEvent>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsertSession(session: RoomSession): Long
+    fun upsertSensorEvent(acceleration: RoomSensorEvent): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsertSessions(sessions: List<RoomSession>)
+    fun upsertSensorEvents(accelerations: List<RoomSensorEvent>)
 
     @Update
-    fun updateSession(session: RoomSession): Int
+    fun updateSensorEvent(acceleration: RoomSensorEvent): Int
 
     @Update
-    fun updateSessions(sessions: List<RoomSession>): Int
+    fun updateSensorEvents(acceleration: List<RoomSensorEvent>): Int
 
     @Delete
-    fun deleteSession(session: RoomSession)
+    fun deleteSensorEvent(acceleration: RoomSensorEvent)
 
     @Delete
-    fun deleteSessions(sessions: List<RoomSession>)
+    fun deleteSensorEvents(accelerations: List<RoomSensorEvent>)
 
-    @Query("DELETE FROM session")
-    fun deleteSessions()
+    @Query("DELETE FROM sensor_events")
+    fun deleteSensorEvents()
 
-    @Query("SELECT * FROM session")
-    fun getSessions(): Flow<List<RoomSession>>
+    @Query("DELETE FROM sensor_events WHERE sessionId = :sessionId")
+    fun deleteSensorEventsForSession(sessionId: Long)
 
-    @Query("SELECT id FROM session")
-    fun getSessionIds(): Flow<List<Long>>
+    @Query("SELECT * FROM sensor_events WHERE id = :id")
+    fun getSensorEvent(id: Long): Flow<RoomSensorEvent?>
 
-    @Query("SELECT * FROM session WHERE id = :id LIMIT 1")
-    fun getSession(id: Long): Flow<RoomSession?>
-
-    @Query("SELECT * FROM session WHERE endDateTime is NULL")
-    fun getOngoingSessions(): Flow<List<RoomSession>>
-
-    @Query("SELECT id FROM session WHERE endDateTime is NULL")
-    fun getOngoingSessionIds(): Flow<List<Long>>
+    @Query("SELECT * FROM sensor_events WHERE sessionId = :sessionId")
+    fun getSensorEvents(sessionId: Long): Flow<List<RoomSensorEvent>>
 }

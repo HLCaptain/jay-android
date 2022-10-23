@@ -19,9 +19,11 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
         android:name=".MainApplication"
@@ -49,10 +51,11 @@
 
         <service
             android:name=".service.JayService"
-            android:enabled="true" />
+            android:enabled="true"
+            android:foregroundServiceType="location" />
 
-        <receiver android:name=".service.ServiceStateReceiver"/>
-        <receiver android:name=".service.BaseReceiver"/>
+        <receiver android:name=".service.ServiceStateReceiver" />
+        <receiver android:name=".service.BaseReceiver" />
 
     </application>
 

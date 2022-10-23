@@ -19,35 +19,36 @@
 package illyan.jay.service.listener
 
 import android.hardware.SensorEvent
-import illyan.jay.data.disk.toDomainRotation
-import illyan.jay.domain.interactor.RotationInteractor
+import illyan.jay.data.disk.toDomainModel
+import illyan.jay.domain.interactor.SensorEventInteractor
 import illyan.jay.domain.interactor.SessionInteractor
-import illyan.jay.domain.model.DomainRotation
-import javax.inject.Inject
+import illyan.jay.domain.model.DomainSensorEvent
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
- * Rotation sensor event listener.
+ * Acceleration sensor event listener.
  * On registration, it becomes active and saves data
- * via RotationInteractor.
+ * via AccelerationInteractor.
  *
- * @property rotationInteractor saves data onto this interactor.
+ * @property sensorEventInteractor saves data onto this interactor.
  * @param sessionInteractor using the session interactor to properly save
- * rotation sensor data for each individual session.
- * @constructor Create empty Rotation event listener
+ * acceleration sensor data for each individual session.
+ * @constructor Create empty Acceleration event listener
  */
-class RotationSensorEventListener @Inject constructor(
-    private val rotationInteractor: RotationInteractor,
+class JaySensorEventListener @Inject constructor(
+    private val sensorEventInteractor: SensorEventInteractor,
     sessionInteractor: SessionInteractor
 ) : SessionSensorEventListener(sessionInteractor) {
 
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
-            val rotations = mutableListOf<DomainRotation>()
+            val sensorEvents = mutableListOf<DomainSensorEvent>()
             ongoingSessionIds.forEach { sessionId ->
-                rotations += it.toDomainRotation(sessionId)
+                sensorEvents += it.toDomainModel(sessionId)
             }
-            scope.launch { rotationInteractor.saveRotations(rotations) }
+            // Saving data for each session
+            scope.launch { sensorEventInteractor.saveSensorEvents(sensorEvents) }
         }
     }
 }

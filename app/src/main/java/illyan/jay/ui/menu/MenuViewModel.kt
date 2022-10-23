@@ -18,57 +18,16 @@
 
 package illyan.jay.ui.menu
 
-import android.content.IntentFilter
-import android.os.Build
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.service.BaseReceiver
-import illyan.jay.ui.navigation.model.Place
-import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class MenuViewModel @Inject constructor(
-    private val localBroadcastManager: LocalBroadcastManager
+
 ) : ViewModel() {
     // TODO: make some items worth storing, or delete this later if not used
     var menuItems = mutableStateListOf<String>()
         private set
-
-    var onReceived: (Place) -> Unit = {}
-
-    private val receiver: BaseReceiver = BaseReceiver { intent ->
-        if (Build.VERSION.SDK_INT >= 33) {
-            intent.getParcelableExtra(KeyPlaceQuery, Place::class.java)?.let {
-                onReceived(it)
-            }
-        } else {
-            intent.getParcelableExtra<Place>(KeyPlaceQuery)?.let {
-                onReceived(it)
-            }
-        }
-    }
-
-    fun load(
-        onReceived: (Place) -> Unit
-    ) {
-        this.onReceived = onReceived
-        localBroadcastManager.registerReceiver(
-            receiver,
-            IntentFilter(ACTION_QUERY_PLACE)
-        )
-        Timber.d("Registered $ACTION_QUERY_PLACE receiver!")
-    }
-
-    fun dispose() {
-        localBroadcastManager.unregisterReceiver(receiver)
-        Timber.d("Menu broadcast receiver disposed!")
-    }
-
-    companion object {
-        const val ACTION_QUERY_PLACE = "illyan.jay.action.QUERY_PLACE"
-    }
 }

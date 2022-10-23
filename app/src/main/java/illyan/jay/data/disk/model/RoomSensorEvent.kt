@@ -19,16 +19,29 @@
 package illyan.jay.data.disk.model
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "session",
-    indices = [Index(value = ["id"])]
+    tableName = "sensor_events",
+    foreignKeys = [
+        ForeignKey(
+            entity = RoomSession::class,
+            parentColumns = ["id"],
+            childColumns = ["sessionId"]
+        )
+    ],
+    indices = [Index(value = ["sessionId"]), Index(value = ["time"])]
 )
-data class RoomSession(
+data class RoomSensorEvent(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val startDateTime: Long,
-    var endDateTime: Long? = null
+    val sessionId: Long,
+    val time: Long, // in millis
+    val accuracy: Int, // enum
+    val x: Float,
+    val y: Float,
+    val z: Float,
+    val type: String
 )

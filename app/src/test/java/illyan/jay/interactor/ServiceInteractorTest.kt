@@ -20,6 +20,8 @@ package illyan.jay.interactor
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
+import android.os.Build.VERSION_CODES
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import illyan.jay.TestBase
 import illyan.jay.domain.interactor.ServiceInteractor
@@ -49,8 +51,8 @@ class ServiceInteractorTest : TestBase() {
 
     @BeforeEach
     fun initEach() {
-        mockedReceiver = mockk()
-        mockedContext = mockk()
+        mockedReceiver = mockk(relaxed = true)
+        mockedContext = mockk(relaxed = true)
         mockedBroadcastManager = mockk(relaxed = true)
 
         serviceInteractor = spyk(
@@ -68,16 +70,19 @@ class ServiceInteractorTest : TestBase() {
         val mockedComponentName = mockk<ComponentName>()
         every { serviceInteractor.isJayServiceRunning() } returns false
         every { mockedContext.startForegroundService(any()) } returns mockedComponentName
+        every { mockedContext.startService(any()) } returns mockedComponentName
 
         val result = serviceInteractor.startJayService()
 
         assertEquals(mockedComponentName, result)
-        verify(exactly = 1) { serviceInteractor.isJayServiceRunning() }
-        verify(exactly = 1) { mockedContext.startForegroundService(any()) }
         verifySequence {
             serviceInteractor.startJayService()
             serviceInteractor.isJayServiceRunning()
-            mockedContext.startForegroundService(any())
+            if (Build.VERSION.SDK_INT >= VERSION_CODES.O) {
+                mockedContext.startForegroundService(any())
+            } else {
+                mockedContext.startService(any())
+            }
         }
     }
 
@@ -86,12 +91,14 @@ class ServiceInteractorTest : TestBase() {
         val mockedComponentName = mockk<ComponentName>()
         every { serviceInteractor.isJayServiceRunning() } returns true
         every { mockedContext.startForegroundService(any()) } returns mockedComponentName
+        every { mockedContext.startService(any()) } returns mockedComponentName
 
         val result = serviceInteractor.startJayService()
 
         assertNull(result)
         verify(exactly = 1) { serviceInteractor.isJayServiceRunning() }
         verify(exactly = 0) { mockedContext.startForegroundService(any()) }
+        verify(exactly = 0) { mockedContext.startService(any()) }
     }
 
     @Test

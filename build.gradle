@@ -21,15 +21,17 @@ buildscript {
         compose_version = '1.3.0-beta03'
     }
     dependencies {
-        classpath "com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1"
-        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.5.2"
+        classpath 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1'
+        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.5.2'
         classpath 'com.google.gms:google-services:4.3.14'
-        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.43.2'
-        classpath "de.mannodermaus.gradle.plugins:android-junit5:1.8.2.0"
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.44'
+        classpath 'de.mannodermaus.gradle.plugins:android-junit5:1.8.2.0'
+        classpath 'org.jetbrains.kotlin:kotlin-serialization:1.7.10'
     }
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
@@ -38,8 +40,8 @@ plugins {
     id 'com.android.library' version '7.3.0' apply false
     id 'org.jetbrains.kotlin.android' version '1.7.10' apply false
     id 'androidx.navigation.safeargs.kotlin' version '2.5.1' apply false
-    id "org.sonarqube" version "3.4.0.2513"
-    id 'com.google.dagger.hilt.android' version '2.43.2' apply false
+    id 'org.sonarqube' version "3.4.0.2513"
+    id 'com.google.dagger.hilt.android' version '2.44' apply false
 }
 
 sonarqube {

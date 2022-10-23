@@ -18,27 +18,28 @@
 
 package illyan.jay.domain.model
 
-import java.util.*
+import java.time.ZonedDateTime
 
 /**
- * Domain rotation used for general data handling
+ * Domain acceleration used for general data handling
  * between DataSources, Interactors and Presenters.
  *
  * @property id
  * @property sessionId
- * @property time
+ * @property zonedDateTime
  * @property accuracy
  * @property x
  * @property y
  * @property z
- * @constructor Create empty Domain rotation
+ * @constructor Create empty Domain acceleration
  */
-data class DomainRotation(
+data class DomainSensorEvent(
     val id: Long = -1,
     val sessionId: Long,
-    val time: Date,
+    val zonedDateTime: ZonedDateTime,
     val accuracy: Int, // enum
     val x: Float,
     val y: Float,
-    val z: Float
+    val z: Float,
+    val type: String
 )

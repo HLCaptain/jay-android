@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,31 +16,22 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk.model
+package illyan.jay.domain.interactor
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import androidx.datastore.core.DataStore
+import illyan.jay.data.disk.model.AppSettings
+import javax.inject.Inject
+import javax.inject.Singleton
 
-@Entity(
-    tableName = "rotation",
-    foreignKeys = [
-        ForeignKey(
-            entity = RoomSession::class,
-            parentColumns = ["id"],
-            childColumns = ["sessionId"]
-        )
-    ],
-    indices = [Index(value = ["sessionId"])]
-)
-data class RoomRotation(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val sessionId: Long,
-    val time: Long, // in millis
-    val accuracy: Int, // enum
-    val x: Float,
-    val y: Float,
-    val z: Float
-)
+@Singleton
+class SettingsInteractor @Inject constructor(
+    private val appSettingsDataStore: DataStore<AppSettings>
+) {
+    val appSettingsFlow = appSettingsDataStore.data
+
+    suspend fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
+        appSettingsDataStore.updateData {
+            transform(it)
+        }
+    }
+}

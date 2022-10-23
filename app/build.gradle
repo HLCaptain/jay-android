@@ -26,6 +26,7 @@ plugins {
     id 'com.google.devtools.ksp' version '1.7.10-1.0.6' // Depends on your kotlin version
     id 'de.mannodermaus.android-junit5'
     id 'kotlin-parcelize'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 android {
@@ -131,10 +132,12 @@ dependencies {
     // Mapbox
     implementation "com.mapbox.maps:android:10.8.0"
     implementation "com.mapbox.search:mapbox-search-android-ui:1.0.0-beta.35"
+    implementation "com.mapbox.navigation:android:2.8.0"
 
     // Accompanist
-    def accompanist_version = '0.26.4-beta'
+    def accompanist_version = '0.26.5-rc'
     implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-permissions:$accompanist_version"
 
     // Hilt
     def hilt_version = '2.44'
@@ -156,7 +159,7 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-gson:2.9.0"
 
     // Room
-    def room_version = "2.5.0-alpha03"
+    def room_version = '2.4.3'
     implementation "androidx.room:room-ktx:$room_version"
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
@@ -165,6 +168,11 @@ dependencies {
     implementation "androidx.room:room-guava:$room_version" // optional - Guava support for Room, including Optional and ListenableFuture
     testImplementation "androidx.room:room-testing:$room_version" // optional - Test helpers
     implementation "androidx.room:room-paging:$room_version" // optional - Paging 3 Integration
+
+    // Proto DataStore
+    implementation "androidx.datastore:datastore:1.0.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5"
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
 
     // Coroutine
     def coroutines_version = '1.6.4'

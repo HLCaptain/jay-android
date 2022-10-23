@@ -38,10 +38,10 @@ import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import illyan.jay.service.BaseReceiver
 import illyan.jay.ui.home.sendBroadcast
-import illyan.jay.ui.menu.MenuViewModel
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
+import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -150,7 +150,7 @@ class SearchInteractor @Inject constructor(
                 longitude = place.longitude
             ),
             SearchViewModel.KeyPlaceQuery,
-            MenuViewModel.ACTION_QUERY_PLACE
+            ACTION_QUERY_PLACE
         )
     }
 

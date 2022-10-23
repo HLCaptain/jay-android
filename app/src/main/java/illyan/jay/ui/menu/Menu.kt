@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.menu
 
+import android.app.Activity
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
@@ -28,6 +29,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -38,6 +40,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Expand
 import androidx.compose.material.icons.rounded.Navigation
@@ -60,81 +63,62 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
-import illyan.jay.ui.NavGraphs
-import illyan.jay.ui.destinations.MenuListDestination
-import illyan.jay.ui.destinations.NavigationScreenDestination
+import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.sendBroadcast
 import illyan.jay.ui.map.ButeK
-import illyan.jay.ui.menu.MenuViewModel.Companion.ACTION_QUERY_PLACE
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
+import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
 import timber.log.Timber
 
 @RootNavGraph
 @NavGraph
 annotation class MenuNavGraph(
-    val start: Boolean = false
+    val start: Boolean = false,
 )
 
 val MenuItemPadding = 6.dp
+val ListMaxHeight = 384.dp
+val ListMinHeight = 128.dp
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @MenuNavGraph(start = true)
 @Destination
 @Composable
 fun MenuScreen(
-    modifier: Modifier = Modifier,
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: MenuViewModel = hiltViewModel(),
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
 ) {
-    DisposableEffect(key1 = true) {
-        viewModel.load {
-            destinationsNavigator.navigate(
-                NavigationScreenDestination(it, 12.0)
-            )
-        }
-        onDispose { viewModel.dispose() }
-    }
-    DestinationsNavHost(
-        modifier = modifier,
-        navGraph = NavGraphs.menu,
-        startRoute = MenuListDestination
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@MenuNavGraph
-@Destination
-@Composable
-fun MenuList(
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
-) {
-    val gridState = rememberLazyStaggeredGridState()
     val context = LocalContext.current
+    BackPressHandler {
+        (context as Activity).moveTaskToBack(false)
+    }
+    val gridState = rememberLazyStaggeredGridState()
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
     var menuShouldBeBigger by remember { mutableStateOf(false) }
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
         modifier = Modifier
             .heightIn(
-                min = 128.dp,
-                max = 384.dp
+                min = ListMinHeight,
+                max = ListMaxHeight,
             )
             .padding(
                 start = MenuItemPadding,
                 end = MenuItemPadding,
-                top = MenuItemPadding,
-                bottom = RoundedCornerRadius
+                // TODO: remove additional bottom padding after getting contentPadding working
+                bottom = RoundedCornerRadius + MenuItemPadding
             )
             .clip(
                 RoundedCornerShape(
@@ -142,9 +126,13 @@ fun MenuList(
                     topEnd = 12.dp
                 )
             ),
+        contentPadding = PaddingValues(
+            top = MenuItemPadding,
+            // FIXME: bottom content padding is not applied
+            bottom = RoundedCornerRadius + MenuItemPadding
+        ),
         state = gridState
     ) {
-//        items(viewModel.menuItems) {}
         // TODO: fill up list with content
         item {
             MenuItemCard(
@@ -160,6 +148,17 @@ fun MenuList(
                         KeyPlaceQuery,
                         ACTION_QUERY_PLACE
                     )
+                },
+                color = Color.Cyan
+            )
+        }
+        item {
+            MenuItemCard(
+                modifier = Modifier.padding(MenuItemPadding),
+                title = "Start free-drive navigation",
+                icon = Icons.Rounded.Navigation,
+                onClick = {
+                    destinationsNavigator.navigate(FreeDriveScreenDestination)
                 },
                 color = Color.Cyan
             )
@@ -212,7 +211,7 @@ fun MenuItemCard(
     title: String = "Menu Item Title",
     icon: ImageVector? = null,
     color: Color = MaterialTheme.colorScheme.primaryContainer,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     // Navigate to appropriate screen in whatever
     val cardColors = CardDefaults.cardColors(
@@ -261,7 +260,9 @@ fun MenuItemCard(
 fun BackPressHandler(
     backPressedDispatcher: OnBackPressedDispatcher? =
         LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher,
-    onBackPressed: () -> Unit
+    customDisposableEffectKey: Any? = null,
+    isEnabled: () -> Boolean = { true },
+    onBackPressed: () -> Unit,
 ) {
     val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
 
@@ -274,8 +275,11 @@ fun BackPressHandler(
         }
     }
 
-    DisposableEffect(key1 = backPressedDispatcher) {
-        backPressedDispatcher?.addCallback(backCallback)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(key1 = backPressedDispatcher, key2 = customDisposableEffectKey) {
+        if (isEnabled()) {
+            backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
+        }
 
         onDispose {
             backCallback.remove()
@@ -287,7 +291,7 @@ fun BackPressHandler(
 @Composable
 fun BackPressHandler(
     onBackInvokedDispatcher: OnBackInvokedDispatcher,
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
 ) {
     val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
 

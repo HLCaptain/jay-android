@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,17 +18,8 @@
 
 package illyan.jay.data.disk.model
 
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
-
-@Entity(
-    tableName = "session",
-    indices = [Index(value = ["id"])]
-)
-data class RoomSession(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val startDateTime: Long,
-    var endDateTime: Long? = null
+data class SensorOptions(
+    val sensorType: Int,
+    val sensorTypeString: String,
+    val sensorDelay: Int
 )

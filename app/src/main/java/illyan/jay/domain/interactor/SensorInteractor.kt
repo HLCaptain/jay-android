@@ -36,6 +36,7 @@ import javax.inject.Singleton
 class SensorInteractor @Inject constructor(
     private val sensorDataSource: SensorDataSource
 ) {
+    val sensors = sensorDataSource.getSensors().toList()
     /**
      * Register sensor listener.
      *

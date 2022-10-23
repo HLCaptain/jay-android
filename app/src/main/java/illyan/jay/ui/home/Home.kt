@@ -24,16 +24,23 @@
 
 package illyan.jay.ui.home
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -79,7 +86,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -96,7 +105,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -110,37 +121,52 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
+import com.mapbox.maps.ResourceOptions
+import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
+import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.BuildConfig
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
+import illyan.jay.ui.map.padding
+import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
 import illyan.jay.ui.theme.Neutral95
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @RootNavGraph(start = true)
 @NavGraph
 annotation class HomeNavGraph(
-    val start: Boolean = false
+    val start: Boolean = false,
 )
 
 val RoundedCornerRadius = 24.dp
@@ -160,9 +186,13 @@ val AvatarPaddingValues = PaddingValues(
 const val BottomSheetPartialExpendedFraction = 0.5f
 const val BottomSheetPartialMaxFraction = 1f
 
-lateinit var mapView: MapView
+private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
+val mapView = _mapView.asStateFlow()
 lateinit var sheetState: BottomSheetState
 var isSearching: Boolean = false
+
+val sheetMaxHeight = 600.dp
+var bottomSheetHeight = sheetMaxHeight
 
 fun BottomSheetState.isExpanding() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded
@@ -170,7 +200,7 @@ fun BottomSheetState.isExpanding() =
 fun BottomSheetState.isCollapsing() =
     isAnimationRunning && targetValue == BottomSheetValue.Collapsed
 
-fun BottomSheetState.isExpendedOrWillBe() =
+fun BottomSheetState.isExpandedOrWillBe() =
     isExpanding() || isExpanded
 
 fun BottomSheetState.isCollapsedOrWillBe() =
@@ -180,7 +210,7 @@ fun onSearchBarDrag(
     coroutineScope: CoroutineScope,
     bottomSheetState: BottomSheetState,
     enabled: Boolean = true,
-    onEnabledChange: (Boolean) -> Unit = {}
+    onEnabledChange: (Boolean) -> Unit = {},
 ) {
     // By dragging the search bar, we can toggle bottom sheet state
     if (enabled) {
@@ -203,14 +233,12 @@ fun calculateCornerRadius(
     maxCornerRadius: Dp = RoundedCornerRadius,
     minCornerRadius: Dp = 0.dp,
     threshold: Float = BottomSheetPartialExpendedFraction,
-    fraction: Float = 0f
+    fraction: Float = 0f,
 ): Dp {
     return if (isSearching) {
         minCornerRadius
     } else {
-        if (
-            bottomSheetState.isCollapsedOrWillBe()
-        ) {
+        if (bottomSheetState.isCollapsedOrWillBe()) {
             maxCornerRadius
         } else {
             val max = BottomSheetPartialMaxFraction
@@ -227,13 +255,13 @@ fun calculateCornerRadius(
 inline fun <reified T : Parcelable> LocalBroadcastManager.sendBroadcast(
     message: T,
     key: String,
-    action: String
+    action: String,
 ) {
     Timber.d(
         "Sending broadcast!\n" +
-            "Message: $message\n" +
-            "Key: $key\n" +
-            "Action: $action"
+                "Message: $message\n" +
+                "Key: $key\n" +
+                "Action: $action"
     )
     val intent = Intent()
     intent.putExtra(key, message)
@@ -244,13 +272,13 @@ inline fun <reified T : Parcelable> LocalBroadcastManager.sendBroadcast(
 fun LocalBroadcastManager.sendBroadcast(
     message: String,
     key: String,
-    action: String
+    action: String,
 ) {
     Timber.d(
         "Sending broadcast!\n" +
-            "Message: $message\n" +
-            "Key: $key\n" +
-            "Action: $action"
+                "Message: $message\n" +
+                "Key: $key\n" +
+                "Action: $action"
     )
     val intent = Intent()
     intent.putExtra(key, message)
@@ -258,13 +286,16 @@ fun LocalBroadcastManager.sendBroadcast(
     sendBroadcast(intent)
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @HomeNavGraph(start = true)
 @Destination
 @Composable
 fun HomeScreen(
     context: Context = LocalContext.current,
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
+    viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val systemUiController = rememberSystemUiController()
     val useDarkIcons = !isSystemInDarkTheme()
     LaunchedEffect(systemUiController, useDarkIcons) {
@@ -276,12 +307,15 @@ fun HomeScreen(
         )
         // setStatusBarColor() and setNavigationBarColor() also exist
     }
+    DisposableEffect(Unit) {
+        coroutineScope.launch { viewModel.loadLastLocation() }
+        onDispose { viewModel.dispose() }
+    }
     ConstraintLayout {
         val (searchBar, scaffold) = createRefs()
         val scaffoldState = rememberBottomSheetScaffoldState()
         val bottomSheetState = scaffoldState.bottomSheetState
         sheetState = bottomSheetState
-        val coroutineScope = rememberCoroutineScope()
         var isTextFieldFocused by remember { mutableStateOf(false) }
         var roundDp by remember { mutableStateOf(RoundedCornerRadius) }
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
@@ -354,7 +388,8 @@ fun HomeScreen(
                             fraction = it,
                             threshold = BottomSheetPartialExpendedFraction
                         )
-                    }
+                    },
+                    viewModel = viewModel
                 )
             },
             sheetPeekHeight = SearchBarHeight,
@@ -367,35 +402,85 @@ fun HomeScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(bottom = SearchBarHeight - RoundedCornerRadius / 2f)
+                    .padding(bottom = SearchBarHeight - RoundedCornerRadius / 4f)
             ) {
-                MapboxMap( // Budapest University of Technology and Economics
-                    modifier = Modifier.fillMaxSize(),
-                    lat = ButeK.latitude,
-                    lng = ButeK.longitude,
-                    zoom = 12.0,
-                    onMapLoaded = {
-                        mapView = it
-                        val pointAnnotationManager = it.annotations.createPointAnnotationManager()
-                        val pointAnnotationOptions = PointAnnotationOptions()
-                            // Define a geographic coordinate.
-                            .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
-                            // Specify the bitmap you assigned to the point annotation
-                            // The bitmap will be added to map style automatically.
-                            .withIconImage(
-                                getBitmapFromVectorDrawable(
-                                    context,
-                                    R.drawable.ic_jay_marker_icon_v3_round
-                                )
-                            )
-                        // Add the resulting pointAnnotation to the map.
-                        pointAnnotationManager.create(pointAnnotationOptions)
-                    },
-                    styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
-                    centerPadding = PaddingValues(
-                        bottom = SearchBarHeight
-                    )
+                val locationPermissionState = rememberPermissionState(
+                    permission = Manifest.permission.ACCESS_FINE_LOCATION
                 )
+                val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsState()
+                val cameraOptionsBuilder by viewModel.cameraOptionsBuilder.collectAsState()
+                // Grace period is useful when we would like to initialize the map
+                // with the user's location in focus.
+                // If it ends, it defaults to the middle of the Earth.
+                var initialLocationGrace by remember { mutableStateOf(true) }
+                LaunchedEffect(true) {
+                    // The chance of the Grace period is only given if permissions
+                    // are granted beforehand.
+                    // Disabled grace period temporarly due it would be too much to wait for
+                    // a new location. Though loading in one from Room might be inconvenient.
+                    // TODO: decide to remove grace period or not
+//                    if (locationPermissionState.status.isGranted) {
+//                        delay(200)
+//                    }
+                    initialLocationGrace = false
+                }
+                var didLoadInLodation by remember { mutableStateOf(false) }
+                LaunchedEffect(bottomSheetState.isExpanded) {
+                    if (bottomSheetState.isExpanded &&
+                        !didLoadInLodation &&
+                        cameraOptionsBuilder != null &&
+                        initialLocationLoaded
+                    ) {
+                        Timber.d("Height: $bottomSheetHeight")
+                        didLoadInLodation = true
+                        mapView.value?.camera?.flyTo(
+                            cameraOptionsBuilder!!
+                                .padding(PaddingValues(
+                                    bottom = bottomSheetHeight
+                                ), context)
+                                .build()
+                        )
+                    }
+                }
+                if ((initialLocationLoaded || !initialLocationGrace) && cameraOptionsBuilder != null) {
+                    MapboxMap( // Budapest University of Technology and Economics
+                        modifier = Modifier.fillMaxSize(),
+                        cameraOptionsBuilder = cameraOptionsBuilder!!
+                            .padding(PaddingValues(
+                                bottom = bottomSheetHeight
+                            ), context),
+                        resourceOptions = ResourceOptions.Builder()
+                            .accessToken(BuildConfig.MapboxAccessToken)
+                            .build(),
+                        onMapLoaded = {
+                            _mapView.value = it
+                            val pointAnnotationManager = it.annotations.createPointAnnotationManager()
+                            val pointAnnotationOptions = PointAnnotationOptions()
+                                // Define a geographic coordinate.
+                                .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
+                                // Specify the bitmap you assigned to the point annotation
+                                // The bitmap will be added to map style automatically.
+                                .withIconImage(
+                                    getBitmapFromVectorDrawable(
+                                        context,
+                                        R.drawable.ic_jay_marker_icon_v3_round
+                                    )
+                                )
+                            // Add the resulting pointAnnotation to the map.
+                            pointAnnotationManager.create(pointAnnotationOptions)
+                            when (locationPermissionState.status) {
+                                is PermissionStatus.Granted -> {
+                                    it.location.turnOnWithDefaultPuck(context)
+                                }
+
+                                is PermissionStatus.Denied -> {
+                                    it.location.enabled = false
+                                }
+                            }
+                        },
+                        styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
+                    )
+                }
             }
         }
     }
@@ -404,7 +489,7 @@ fun HomeScreen(
 private fun onHomeBackPress(
     isTextFieldFocused: Boolean,
     focusManager: FocusManager,
-    context: Context
+    context: Context,
 ) {
     Timber.d("Handling back press from Home!")
     if (isTextFieldFocused) {
@@ -418,7 +503,7 @@ private fun onHomeBackPress(
 private suspend fun onSheetStateChanged(
     isTextFieldFocused: Boolean,
     bottomSheetState: BottomSheetState,
-    softwareKeyboardController: SoftwareKeyboardController?
+    softwareKeyboardController: SoftwareKeyboardController?,
 ) {
     if (bottomSheetState.isCollapsing()) {
         // Close the keyboard when closing the bottom sheet
@@ -447,7 +532,7 @@ fun BottomSearchBar(
     bottomSheetState: BottomSheetState? = null,
     context: Context = LocalContext.current,
     onTextFieldFocusChanged: (FocusState) -> Unit = {},
-    onDragAreaOffset: Dp = 48.dp
+    onDragAreaOffset: Dp = 48.dp,
 ) {
     val cardColors = CardDefaults.elevatedCardColors(
         containerColor = Color.White
@@ -483,7 +568,7 @@ fun BottomSearchBar(
     // We should help gestures when not searching
     // and bottomSheet is collapsed or collapsing
     val shouldHelpGestures = searchFieldFocusState?.isFocused == false &&
-        bottomSheetState?.isCollapsedOrWillBe() == true
+            bottomSheetState?.isCollapsedOrWillBe() == true
     ElevatedCard(
         modifier = modifier
             .then(if (shouldHelpGestures) draggable else Modifier)
@@ -610,7 +695,9 @@ fun BottomSearchBar(
 fun BottomSheetScreen(
     modifier: Modifier = Modifier,
     isSearching: Boolean = false,
-    onBottomSheetFractionChange: (Float) -> Unit = {}
+    onBottomSheetFractionChange: (Float) -> Unit = {},
+    viewModel: HomeViewModel = hiltViewModel(),
+    context: Context = LocalContext.current
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = BottomSheetPartialMaxFraction
@@ -642,7 +729,7 @@ fun BottomSheetScreen(
             modifier = modifier
         ) {
             val (menu, search) = createRefs()
-            MenuNavHost(
+            SheetNavHost(
                 modifier = Modifier.constrainAs(menu) {
                     bottom.linkTo(parent.bottom)
                 },
@@ -658,12 +745,13 @@ fun BottomSheetScreen(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
 @Composable
-private fun MenuNavHost(
+private fun SheetNavHost(
     modifier: Modifier = Modifier,
-    isSearching: Boolean
+    isSearching: Boolean,
 ) {
-    val menuAlpha by animateFloatAsState(
+    val sheetAlpha by animateFloatAsState(
         targetValue = if (isSearching) {
             0f
         } else {
@@ -681,25 +769,48 @@ private fun MenuNavHost(
             Spring.StiffnessLow
         }
     )
-    val menuMaxHeight by animateDpAsState(
+    val animatedSheetHeight by animateDpAsState(
         targetValue = if (isSearching) {
             0.dp
         } else {
-            600.dp
+            sheetMaxHeight
         },
         animationSpec = SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = stiffness
         )
     )
+    val density = LocalDensity.current
     DestinationsNavHost(
-        navGraph = NavGraphs.menu,
+        navGraph = NavGraphs.sheet,
         modifier = modifier
-            .heightIn(max = menuMaxHeight)
+            .heightIn(max = animatedSheetHeight)
             .animateContentSize { _, _ -> }
-            .alpha(alpha = menuAlpha)
+            .alpha(alpha = sheetAlpha)
             .navigationBarsPadding()
             .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                if (sheetState.isExpanded &&
+                    sheetState.progress.fraction == 1f &&
+                    placeable.measuredHeight.toDp() > 0.dp
+                ) {
+                    bottomSheetHeight = placeable.measuredHeight.toDp()
+                }
+                layout(placeable.width, placeable.height) {
+                    placeable.placeRelative(0, 0)
+                }
+            },
+        engine = rememberAnimatedNavHostEngine(
+            rootDefaultAnimations = RootNavGraphDefaultAnimations(
+                enterTransition = {
+                    slideInVertically(tween(200)) + fadeIn(tween(200))
+                },
+                exitTransition = {
+                    slideOutVertically(tween(200)) + fadeOut(tween(200))
+                }
+            )
+        )
     )
 }
 
@@ -707,8 +818,19 @@ private fun MenuNavHost(
 private fun SearchNavHost(
     modifier: Modifier = Modifier,
     isSearching: Boolean,
-    fullScreenFraction: Float = BottomSheetPartialMaxFraction
+    fullScreenFraction: Float = BottomSheetPartialMaxFraction,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    BackPressHandler(
+        customDisposableEffectKey = isSearching,
+        isEnabled = { isSearching }
+    ) {
+        if (isSearching) {
+            coroutineScope.launch {
+                sheetState.collapse()
+            }
+        }
+    }
     val searchAlpha by animateFloatAsState(
         targetValue = if (isSearching) {
             1f
@@ -734,6 +856,6 @@ private fun SearchNavHost(
             .animateContentSize { _, _ -> }
             .alpha(alpha = searchAlpha)
             .navigationBarsPadding()
-            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+            .padding(bottom = SearchBarHeight - RoundedCornerRadius),
     )
 }

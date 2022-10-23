@@ -39,7 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.time.Instant
-import java.util.Date
+import java.time.ZoneOffset
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.days
 
@@ -50,88 +50,62 @@ class SessionDiskDataSourceTest : TestBase() {
     private lateinit var sessionDiskDataSource: SessionDiskDataSource
 
     private val random = Random(Instant.now().nano)
-    private val now = Instant.now()
+    private val now = Instant.ofEpochMilli(Instant.now().toEpochMilli())
 
     private val session = DomainSession(
         4,
-        Date.from(
-            Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
-            )
-        ),
-        Date.from(now),
-        4.0
+        startDateTime = Instant.ofEpochMilli(
+            random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+        ).atZone(ZoneOffset.UTC),
+        endDateTime = now.atZone(ZoneOffset.UTC),
     )
     private val ongoingSession = DomainSession(
         5,
-        Date.from(
-            Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
-            )
-        ),
-        null,
-        5.0
+        startDateTime = Instant.ofEpochMilli(
+            random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+        ).atZone(ZoneOffset.UTC),
+        null
     )
     private val roomSession = RoomSession(
         4,
-        session.startTime.toInstant().toEpochMilli(),
+        session.startDateTime.toInstant().toEpochMilli(),
         now.toEpochMilli(),
-        4.0
     )
     private val roomOngoingSession = RoomSession(
         5,
-        ongoingSession.startTime.toInstant().toEpochMilli(),
+        ongoingSession.startDateTime.toInstant().toEpochMilli(),
         null,
-        5.0
     )
 
     private val sessions = listOf(
         DomainSession(
             1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            Date.from(now),
-            1.0
+            startDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            endDateTime = now.atZone(ZoneOffset.UTC),
         ),
         DomainSession(
             2,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            Date.from(now),
-            2.0
+            startDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            endDateTime = now.atZone(ZoneOffset.UTC),
         ),
         DomainSession(
             3,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            Date.from(now),
-            3.0
+            startDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            endDateTime = now.atZone(ZoneOffset.UTC),
         ),
         session,
         ongoingSession
     )
     private val roomSessions = listOf(
-        RoomSession(1, sessions[0].startTime.toInstant().toEpochMilli(), now.toEpochMilli(), 1.0),
-        RoomSession(2, sessions[1].startTime.toInstant().toEpochMilli(), now.toEpochMilli(), 2.0),
-        RoomSession(3, sessions[2].startTime.toInstant().toEpochMilli(), now.toEpochMilli(), 3.0),
+        RoomSession(1, sessions[0].startDateTime.toInstant().toEpochMilli(), now.toEpochMilli()),
+        RoomSession(2, sessions[1].startDateTime.toInstant().toEpochMilli(), now.toEpochMilli()),
+        RoomSession(3, sessions[2].startDateTime.toInstant().toEpochMilli(), now.toEpochMilli()),
         roomSession,
         roomOngoingSession
     )
@@ -179,7 +153,7 @@ class SessionDiskDataSourceTest : TestBase() {
     @Test
     fun `Get ongoing sessions`() = runTest {
         every { mockedDao.getOngoingSessions() } returns flowOf(
-            roomSessions.filter { it.endTime == null }
+            roomSessions.filter { it.endDateTime == null }
         )
 
         var result = listOf<DomainSession>()
@@ -188,7 +162,7 @@ class SessionDiskDataSourceTest : TestBase() {
         // Wait coroutine to collect the data.
         advanceUntilIdle()
 
-        assertEquals(sessions.filter { it.endTime == null }, result)
+        assertEquals(sessions.filter { it.endDateTime == null }, result)
         verify(exactly = 1) { mockedDao.getOngoingSessions() }
     }
 
@@ -196,7 +170,7 @@ class SessionDiskDataSourceTest : TestBase() {
     @Test
     fun `Get ongoing session ids`() = runTest {
         every { mockedDao.getOngoingSessionIds() } returns flowOf(
-            roomSessions.filter { it.endTime == null }.map { it.id }
+            roomSessions.filter { it.endDateTime == null }.map { it.id }
         )
 
         var result = listOf<Long>()
@@ -205,7 +179,7 @@ class SessionDiskDataSourceTest : TestBase() {
         // Wait coroutine to collect the data.
         advanceUntilIdle()
 
-        assertEquals(sessions.filter { it.endTime == null }.map { it.id }, result)
+        assertEquals(sessions.filter { it.endDateTime == null }.map { it.id }, result)
         verify(exactly = 1) { mockedDao.getOngoingSessionIds() }
     }
 
@@ -235,8 +209,8 @@ class SessionDiskDataSourceTest : TestBase() {
         val session = session
         sessionDiskDataSource.stopSessions(listOf(ongoingSession, session))
 
-        assertNotNull(ongoingSession.endTime)
-        assertEquals(this.session.endTime, session.endTime)
+        assertNotNull(ongoingSession.endDateTime)
+        assertEquals(this.session.endDateTime, session.endDateTime)
         verify(exactly = 1) { mockedDao.upsertSessions(any()) }
     }
 

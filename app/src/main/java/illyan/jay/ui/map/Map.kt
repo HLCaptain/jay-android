@@ -21,27 +21,29 @@ package illyan.jay.ui.map
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapInitOptions
+import com.mapbox.maps.MapOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
+import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
+import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.gestures.gestures
-import com.mapbox.maps.plugin.logo.logo
-import illyan.jay.BuildConfig
+import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
+import com.mapbox.maps.plugin.scalebar.scalebar
+import illyan.jay.R
 import illyan.jay.ui.navigation.model.Place
 
 val ButeK = Place(
@@ -49,36 +51,44 @@ val ButeK = Place(
     longitude = 19.056219
 )
 
+val puckScaleExpression = interpolate {
+    linear()
+    zoom()
+    stop {
+        literal(0.0)
+        literal(0.6)
+    }
+    stop {
+        literal(20.0)
+        literal(1.0)
+    }
+}.toJson()
+
 @Composable
 fun MapboxMap(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    lat: Double = ButeK.latitude,
-    lng: Double = ButeK.longitude,
-    zoom: Double = 12.0,
     styleUri: String = Style.OUTDOORS,
     onMapLoaded: (MapView) -> Unit = {},
-    centerPadding: PaddingValues = PaddingValues(0.dp)
+    resourceOptions: ResourceOptions = MapInitOptions.getDefaultResourceOptions(context),
+    mapOptions: MapOptions = MapInitOptions.getDefaultMapOptions(context),
+    cameraOptionsBuilder: CameraOptions.Builder = CameraOptions.Builder()
 ) {
-    val opt = MapInitOptions(
-        context,
-        resourceOptions = ResourceOptions.Builder()
-            .accessToken(BuildConfig.MapboxAccessToken)
-            .build()
+    val options = MapInitOptions(
+        context = context,
+        resourceOptions = resourceOptions,
+        styleUri = styleUri,
+        mapOptions = mapOptions,
+        cameraOptions = cameraOptionsBuilder.build()
     )
     val map = remember {
-        val mapLoaded = MapView(context, opt)
+        val mapLoaded = MapView(context, options)
         onMapLoaded(mapLoaded)
         mapLoaded
     }
     MapboxMapContainer(
         modifier = modifier,
         map = map,
-        lat = lat,
-        lng = lng,
-        zoom = zoom,
-        styleUri = styleUri,
-        centerPadding = centerPadding
     )
 }
 
@@ -86,52 +96,58 @@ fun MapboxMap(
 private fun MapboxMapContainer(
     modifier: Modifier,
     map: MapView,
-    lat: Double,
-    lng: Double,
-    zoom: Double,
-    styleUri: String,
-    centerPadding: PaddingValues
 ) {
-    val (isMapInitialized, setMapInitialized) = remember(map) { mutableStateOf(false) }
-    LaunchedEffect(map, isMapInitialized) {
-        if (!isMapInitialized) {
-            val mapboxMap = map.getMapboxMap()
-            mapboxMap.loadStyleUri(styleUri)
-            mapboxMap.setCamera(
-                CameraOptions.Builder()
-                    .center(Point.fromLngLat(lng, lat))
-                    .zoom(zoom)
-                    .padding(centerPadding)
-                    .build()
-            )
-            setMapInitialized(true)
-        }
-    }
     AndroidView(
         modifier = modifier,
         factory = { map }
     ) {
         it.gestures.scrollEnabled = true
-        it.logo.enabled = false
-        it.getMapboxMap().setCamera(
-            CameraOptions.Builder()
-                .center(Point.fromLngLat(lng, lat))
-                .zoom(zoom)
-                .build()
+        // it.logo.enabled = false // Logo is enabled due to Terms of Service
+        it.scalebar.isMetricUnits = true // TODO set this in settings or based on location, etc.
+        it.scalebar.enabled = false // TODO enable it later if needed (though pay attention to ugly design)
+    }
+}
+
+fun LocationComponentPlugin.turnOnWithDefaultPuck(
+    context: Context
+) {
+    if (!enabled) {
+        val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)
+        enabled = true
+        locationPuck = LocationPuck2D(
+            topImage = drawable,
+            scaleExpression = puckScaleExpression
         )
     }
 }
 
 fun CameraOptions.Builder.padding(
     paddingValues: PaddingValues,
-    layoutDirection: LayoutDirection = LayoutDirection.Ltr
+    context: Context,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+): CameraOptions.Builder {
+    val pixelDensity = context.resources.displayMetrics.density
+    return padding(
+        EdgeInsets(
+            paddingValues.calculateTopPadding().value.toDouble() * pixelDensity,
+            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * pixelDensity,
+            paddingValues.calculateBottomPadding().value.toDouble() * pixelDensity,
+            paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * pixelDensity
+        )
+    )
+}
+
+fun CameraOptions.Builder.padding(
+    paddingValues: PaddingValues,
+    density: Density,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
 ): CameraOptions.Builder {
     return padding(
         EdgeInsets(
-            paddingValues.calculateTopPadding().value.toDouble(),
-            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble(),
-            paddingValues.calculateBottomPadding().value.toDouble(),
-            paddingValues.calculateRightPadding(layoutDirection).value.toDouble()
+            paddingValues.calculateTopPadding().value.toDouble() * density.density,
+            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * density.density,
+            paddingValues.calculateBottomPadding().value.toDouble() * density.density,
+            paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * density.density
         )
     )
 }

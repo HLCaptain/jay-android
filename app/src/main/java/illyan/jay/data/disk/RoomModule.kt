@@ -27,12 +27,12 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 import timber.log.Timber
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object DiskModule {
+object RoomModule {
 
     /**
      * Providing Jay database
@@ -63,7 +63,7 @@ object DiskModule {
      */
     @Provides
     @Singleton
-    fun provideAccelerationDao(db: JayDatabase) = db.accelerationDao()
+    fun provideSensorEventDao(db: JayDatabase) = db.sensorEventDao()
 
     /**
      * Provide location dao
@@ -75,17 +75,6 @@ object DiskModule {
     @Provides
     @Singleton
     fun provideLocationDao(db: JayDatabase) = db.locationDao()
-
-    /**
-     * Provide rotation dao
-     * Do not call this method,
-     * this is only for Hilt to inject dependency in other classes.
-     *
-     * @param db Jay's local SQLite database
-     */
-    @Provides
-    @Singleton
-    fun provideRotationDao(db: JayDatabase) = db.rotationDao()
 
     /**
      * Provide session dao

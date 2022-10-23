@@ -39,7 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.time.Instant
-import java.util.Date
+import java.time.ZoneOffset
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.days
 
@@ -53,66 +53,69 @@ class LocationDiskDataSourceTest : TestBase() {
     private val now = Instant.now()
 
     private val location = DomainLocation(
-        4, LatLng(4.0, 4.0), 4f, 2,
-        Date.from(
-            Instant.ofEpochMilli(
-                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
-            )
-        ),
-        4f, 4f, 4f, 4.0, 4f, 4f
+        id = 4,
+        sessionId = 2,
+        zonedDateTime = Instant.ofEpochMilli(
+            random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+        ).atZone(ZoneOffset.UTC),
+        latLng = LatLng(4.0, 4.0),
+        speed = 4f,
+        accuracy = 4f,
+        bearing = 4f,
+        bearingAccuracy = 4f,
+        altitude = 4.0,
+        speedAccuracy = 4f,
+        verticalAccuracy = 4f
     )
     private val roomLocation = RoomLocation(
-        4,
-        2,
-        4.0,
-        4.0,
-        4f,
-        location.time.toInstant().toEpochMilli(),
-        4f,
-        4f,
-        4f,
-        4f,
-        4.0,
-        4f
+        4, 2, 4.0, 4.0, 4f, location.zonedDateTime.toInstant().toEpochMilli(), 4f, 4f, 4f, 4f, 4.0, 4f
     )
     private val locations = listOf(
         DomainLocation(
-            1, LatLng(1.0, 1.0), 1f, 1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            1f, 1f, 1f, 1.0, 1f, 1f
+            id = 1,
+            sessionId = 1,
+            zonedDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            latLng = LatLng(1.0, 1.0),
+            speed = 1f,
+            accuracy = 1f,
+            bearing = 1f,
+            bearingAccuracy = 1f,
+            altitude = 1.0,
+            speedAccuracy = 1f,
+            verticalAccuracy = 1f
         ),
         DomainLocation(
-            2, LatLng(2.0, 2.0), 2f, 1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            2f, 2f, 2f, 2.0, 2f, 2f
+            id = 2,
+            sessionId = 1,
+            zonedDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            latLng = LatLng(2.0, 2.0),
+            speed = 2f,
+            accuracy = 2f,
+            bearing = 2f,
+            bearingAccuracy = 2f,
+            altitude = 2.0,
+            speedAccuracy = 2f,
+            verticalAccuracy = 2f
         ),
         DomainLocation(
-            3, LatLng(3.0, 3.0), 3f, 1,
-            Date.from(
-                Instant.ofEpochMilli(
-                    random.nextLong(
-                        now.toEpochMilli() - 1.days.inWholeMilliseconds,
-                        now.toEpochMilli()
-                    )
-                )
-            ),
-            3f, 3f, 3f, 3.0, 3f, 3f
-        ),
-        location
+            id = 3,
+            sessionId = 1,
+            zonedDateTime = Instant.ofEpochMilli(
+                random.nextLong(now.toEpochMilli() - 1.days.inWholeMilliseconds, now.toEpochMilli())
+            ).atZone(ZoneOffset.UTC),
+            latLng = LatLng(3.0, 3.0),
+            speed = 3f,
+            accuracy = 3f,
+            bearing = 3f,
+            bearingAccuracy = 3f,
+            altitude = 3.0,
+            speedAccuracy = 3f,
+            verticalAccuracy = 3f
+        ), location
     )
     private val roomLocations = listOf(
         RoomLocation(
@@ -121,43 +124,40 @@ class LocationDiskDataSourceTest : TestBase() {
             1.0,
             1.0,
             1f,
-            locations[0].time.toInstant().toEpochMilli(),
+            locations[0].zonedDateTime.toInstant().toEpochMilli(),
             1f,
             1f,
             1f,
             1f,
             1.0,
             1f
-        ),
-        RoomLocation(
+        ), RoomLocation(
             2,
             1,
             2.0,
             2.0,
             2f,
-            locations[1].time.toInstant().toEpochMilli(),
+            locations[1].zonedDateTime.toInstant().toEpochMilli(),
             2f,
             2f,
             2f,
             2f,
             2.0,
             2f
-        ),
-        RoomLocation(
+        ), RoomLocation(
             3,
             1,
             3.0,
             3.0,
             3f,
-            locations[2].time.toInstant().toEpochMilli(),
+            locations[2].zonedDateTime.toInstant().toEpochMilli(),
             3f,
             3f,
             3f,
             3f,
             3.0,
             3f
-        ),
-        roomLocation
+        ), roomLocation
     )
 
     @BeforeEach
@@ -170,9 +170,7 @@ class LocationDiskDataSourceTest : TestBase() {
     @ParameterizedTest(name = "Session ID = {0}")
     @ValueSource(longs = [1L, 2L, 3L, 4L, 5L, 6L, 0L, -1L])
     fun `Get all locations for a particular session`(sessionId: Long) = runTest {
-        every { mockedDao.getLocations(sessionId) } returns flowOf(
-            roomLocations.filter { it.sessionId == sessionId }
-        )
+        every { mockedDao.getLocations(sessionId) } returns flowOf(roomLocations.filter { it.sessionId == sessionId })
 
         var result = listOf<DomainLocation>()
         locationDiskDataSource.getLocations(sessionId).collect { result = it }
@@ -190,7 +188,9 @@ class LocationDiskDataSourceTest : TestBase() {
     fun `Get latest locations for a particular session with a limit`(sessionId: Long) = runTest {
         val limit = 2L
         val sortedRoomLocations = roomLocations.toList().sortedByDescending { it.time }
-        val sortedLocations = locations.toList().sortedByDescending { it.time }
+        val sortedLocations = locations.toList().sortedByDescending {
+            it.zonedDateTime.toInstant().toEpochMilli()
+        }
         every { mockedDao.getLatestLocations(sessionId, limit) } returns flowOf(
             sortedRoomLocations.filter { it.sessionId == sessionId }.take(limit.toInt())
         )
@@ -202,8 +202,7 @@ class LocationDiskDataSourceTest : TestBase() {
         advanceUntilIdle()
 
         assertEquals(
-            sortedLocations.filter { it.sessionId == sessionId }.take(limit.toInt()),
-            result
+            sortedLocations.filter { it.sessionId == sessionId }.take(limit.toInt()), result
         )
         verify(exactly = 1) { mockedDao.getLatestLocations(sessionId, limit) }
     }

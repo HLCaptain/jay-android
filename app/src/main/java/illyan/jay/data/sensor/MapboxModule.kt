@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,29 +16,23 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.domain.model
+package illyan.jay.data.sensor
 
-import java.util.*
+import android.content.Context
+import com.mapbox.android.core.location.LocationEngineProvider
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
-/**
- * Domain acceleration used for general data handling
- * between DataSources, Interactors and Presenters.
- *
- * @property id
- * @property sessionId
- * @property time
- * @property accuracy
- * @property x
- * @property y
- * @property z
- * @constructor Create empty Domain acceleration
- */
-data class DomainAcceleration(
-    val id: Long = -1,
-    val sessionId: Long,
-    val time: Date,
-    val accuracy: Int, // enum
-    val x: Float,
-    val y: Float,
-    val z: Float
-)
+@Module
+@InstallIn(SingletonComponent::class)
+object MapboxModule {
+
+    @Provides
+    @Singleton
+    fun provideLocationEngine(@ApplicationContext context: Context) =
+        LocationEngineProvider.getBestLocationEngine(context)
+}

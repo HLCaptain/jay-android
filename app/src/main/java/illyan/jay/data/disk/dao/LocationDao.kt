@@ -21,9 +21,9 @@ package illyan.jay.data.disk.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import androidx.room.Upsert
 import illyan.jay.data.disk.model.RoomLocation
 import kotlinx.coroutines.flow.Flow
 
@@ -35,10 +35,10 @@ interface LocationDao {
     @Insert
     fun insertLocations(locations: List<RoomLocation>)
 
-    @Upsert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsertLocation(location: RoomLocation): Long
 
-    @Upsert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsertLocations(locations: List<RoomLocation>)
 
     @Update
@@ -64,6 +64,9 @@ interface LocationDao {
 
     @Query("SELECT * FROM location WHERE sessionId = :sessionId")
     fun getLocations(sessionId: Long): Flow<List<RoomLocation>>
+
+    @Query("SELECT * FROM location ORDER BY id DESC LIMIT :limit")
+    fun getLatestLocations(limit: Long): Flow<List<RoomLocation>>
 
     @Query("SELECT * FROM location WHERE sessionId = :sessionId ORDER BY id DESC LIMIT :limit")
     fun getLatestLocations(sessionId: Long, limit: Long): Flow<List<RoomLocation>>
