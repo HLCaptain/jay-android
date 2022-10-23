@@ -436,7 +436,11 @@ fun HomeScreen(
                 var didLoadInLocation by remember { mutableStateOf(false) }
                 var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
                 var isMapInitialized by remember { mutableStateOf(false) }
-                LaunchedEffect(bottomSheetState.isExpanded, isMapInitialized) {
+                LaunchedEffect(
+                    bottomSheetState.isExpanded,
+                    isMapInitialized,
+                    initialLocationLoaded
+                ) {
                     // Permissions probably granted because there is a location to focus on
                     if (bottomSheetState.isExpanded &&
                         !didLoadInLocation &&
