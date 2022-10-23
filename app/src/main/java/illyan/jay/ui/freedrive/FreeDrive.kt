@@ -86,7 +86,7 @@ fun FreeDriveScreen(
             // TODO start session, then wait for new data to be shown by Mapbox Navigation SDK
             val startServiceAutomatically by freeDriveViewModel.startServiceAutomatically
                 .collectAsState(AppSettings.default.turnOnFreeDriveAutomatically)
-            LaunchedEffect(true) {
+            LaunchedEffect(Unit) {
                 freeDriveViewModel.load()
                 mapView.value?.location?.turnOnWithDefaultPuck(context)
             }

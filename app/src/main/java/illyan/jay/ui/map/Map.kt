@@ -24,6 +24,7 @@ import android.graphics.Canvas
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapInitOptions
@@ -38,6 +40,7 @@ import com.mapbox.maps.MapOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
+import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.gestures.gestures
@@ -69,26 +72,33 @@ fun MapboxMap(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
     styleUri: String = Style.OUTDOORS,
-    onMapLoaded: (MapView) -> Unit = {},
+    onMapFullyLoaded: (MapView) -> Unit = {},
+    onMapInitialized: (MapView) -> Unit = {},
     resourceOptions: ResourceOptions = MapInitOptions.getDefaultResourceOptions(context),
     mapOptions: MapOptions = MapInitOptions.getDefaultMapOptions(context),
     cameraOptionsBuilder: CameraOptions.Builder = CameraOptions.Builder()
+        .center(Point.fromLngLat(
+            ButeK.longitude,
+            ButeK.latitude
+        ))
+        .zoom(4.0),
 ) {
     val options = MapInitOptions(
         context = context,
         resourceOptions = resourceOptions,
         styleUri = styleUri,
         mapOptions = mapOptions,
-        cameraOptions = cameraOptionsBuilder.build()
+        cameraOptions = cameraOptionsBuilder.build(),
     )
     val map = remember {
-        val mapLoaded = MapView(context, options)
-        onMapLoaded(mapLoaded)
-        mapLoaded
+        val initializedMap = MapView(context, options)
+        onMapInitialized(initializedMap)
+        initializedMap
     }
     MapboxMapContainer(
         modifier = modifier,
         map = map,
+        onMapFullyLoaded,
     )
 }
 
@@ -96,7 +106,13 @@ fun MapboxMap(
 private fun MapboxMapContainer(
     modifier: Modifier,
     map: MapView,
+    onMapFullyLoaded: (MapView) -> Unit = {},
 ) {
+    DisposableEffect(Unit) {
+        val onMapLoadedListener = { _: MapLoadedEventData -> onMapFullyLoaded(map) }
+        map.getMapboxMap().addOnMapLoadedListener(onMapLoadedListener)
+        onDispose { map.getMapboxMap().removeOnMapLoadedListener(onMapLoadedListener) }
+    }
     AndroidView(
         modifier = modifier,
         factory = { map }

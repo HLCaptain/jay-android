@@ -30,6 +30,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -83,6 +84,7 @@ import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -107,7 +109,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -126,11 +127,14 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.ResourceOptions
+import com.mapbox.maps.applyDefaultParams
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
@@ -307,8 +311,16 @@ fun HomeScreen(
         )
         // setStatusBarColor() and setNavigationBarColor() also exist
     }
-    DisposableEffect(Unit) {
-        coroutineScope.launch { viewModel.loadLastLocation() }
+    val locationPermissionState = rememberPermissionState(
+        permission = Manifest.permission.ACCESS_FINE_LOCATION
+    )
+    DisposableEffect(locationPermissionState.status.isGranted) {
+        if (locationPermissionState.status.isGranted) {
+            coroutineScope.launch { viewModel.loadLastLocation() }
+            mapView.value?.location?.turnOnWithDefaultPuck(context)
+        } else {
+            mapView.value?.location?.enabled = false
+        }
         onDispose { viewModel.dispose() }
     }
     ConstraintLayout {
@@ -404,16 +416,13 @@ fun HomeScreen(
                 modifier = Modifier
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius / 4f)
             ) {
-                val locationPermissionState = rememberPermissionState(
-                    permission = Manifest.permission.ACCESS_FINE_LOCATION
-                )
                 val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsState()
                 val cameraOptionsBuilder by viewModel.cameraOptionsBuilder.collectAsState()
                 // Grace period is useful when we would like to initialize the map
                 // with the user's location in focus.
                 // If it ends, it defaults to the middle of the Earth.
                 var initialLocationGrace by remember { mutableStateOf(true) }
-                LaunchedEffect(true) {
+                LaunchedEffect(Unit) {
                     // The chance of the Grace period is only given if permissions
                     // are granted beforehand.
                     // Disabled grace period temporarly due it would be too much to wait for
@@ -424,62 +433,143 @@ fun HomeScreen(
 //                    }
                     initialLocationGrace = false
                 }
-                var didLoadInLodation by remember { mutableStateOf(false) }
-                LaunchedEffect(bottomSheetState.isExpanded) {
+                var didLoadInLocation by remember { mutableStateOf(false) }
+                var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
+                var isMapInitialized by remember { mutableStateOf(false) }
+                LaunchedEffect(bottomSheetState.isExpanded, isMapInitialized) {
+                    // Permissions probably granted because there is a location to focus on
                     if (bottomSheetState.isExpanded &&
-                        !didLoadInLodation &&
+                        !didLoadInLocation &&
                         cameraOptionsBuilder != null &&
-                        initialLocationLoaded
+                        initialLocationLoaded &&
+                        isMapInitialized
                     ) {
                         Timber.d("Height: $bottomSheetHeight")
-                        didLoadInLodation = true
+                        didLoadInLocation = true
                         mapView.value?.camera?.flyTo(
                             cameraOptionsBuilder!!
-                                .padding(PaddingValues(
-                                    bottom = bottomSheetHeight
-                                ), context)
+                                .center(viewModel.initialLocation.value?.let {
+                                    Point.fromLngLat(
+                                        it.longitude,
+                                        it.latitude
+                                    )
+                                }
+                                )
+                                .padding(
+                                    PaddingValues(
+                                        bottom = bottomSheetHeight
+                                    ), context
+                                )
+                                .build()
+                        )
+                    }
+                    // Permissions not granted
+                    if (bottomSheetState.isExpanded &&
+                        !didLoadInLocationWithoutPermissions &&
+                        !locationPermissionState.status.isGranted &&
+                        isMapInitialized
+                    ) {
+                        Timber.d("Height: $bottomSheetHeight")
+                        didLoadInLocationWithoutPermissions = true
+                        mapView.value?.camera?.flyTo(
+                            CameraOptions.Builder()
+                                .zoom(4.0)
+                                .center(
+                                    Point.fromLngLat(
+                                        ButeK.longitude,
+                                        ButeK.latitude
+                                    )
+                                )
+                                .padding(
+                                    PaddingValues(
+                                        bottom = bottomSheetHeight
+                                    ), context
+                                )
                                 .build()
                         )
                     }
                 }
-                if ((initialLocationLoaded || !initialLocationGrace) && cameraOptionsBuilder != null) {
-                    MapboxMap( // Budapest University of Technology and Economics
-                        modifier = Modifier.fillMaxSize(),
-                        cameraOptionsBuilder = cameraOptionsBuilder!!
-                            .padding(PaddingValues(
-                                bottom = bottomSheetHeight
-                            ), context),
-                        resourceOptions = ResourceOptions.Builder()
-                            .accessToken(BuildConfig.MapboxAccessToken)
-                            .build(),
-                        onMapLoaded = {
-                            _mapView.value = it
-                            val pointAnnotationManager = it.annotations.createPointAnnotationManager()
-                            val pointAnnotationOptions = PointAnnotationOptions()
-                                // Define a geographic coordinate.
-                                .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
-                                // Specify the bitmap you assigned to the point annotation
-                                // The bitmap will be added to map style automatically.
-                                .withIconImage(
-                                    getBitmapFromVectorDrawable(
-                                        context,
-                                        R.drawable.ic_jay_marker_icon_v3_round
+                var isMapVisible by remember { mutableStateOf(false) }
+                if (initialLocationLoaded || !initialLocationGrace) {
+                    ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+                        val (foreground, map) = createRefs()
+                        Column(modifier = Modifier
+                            .fillMaxSize()
+                            .constrainAs(foreground) {
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            }
+                            .zIndex(1f)) {
+                            AnimatedVisibility(
+                                visible = !isMapVisible,
+                                exit = fadeOut(animationSpec = tween(800))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.background)
+                                )
+                            }
+                        }
+                        MapboxMap(
+                            // Budapest University of Technology and Economics
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .constrainAs(map) {
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                },
+                            cameraOptionsBuilder = cameraOptionsBuilder?.padding(
+                                PaddingValues(
+                                    bottom = bottomSheetHeight
+                                ), context
+                            ) ?: CameraOptions.Builder()
+                                .center(
+                                    Point.fromLngLat(
+                                        ButeK.longitude,
+                                        ButeK.latitude
                                     )
                                 )
-                            // Add the resulting pointAnnotation to the map.
-                            pointAnnotationManager.create(pointAnnotationOptions)
-                            when (locationPermissionState.status) {
-                                is PermissionStatus.Granted -> {
-                                    it.location.turnOnWithDefaultPuck(context)
-                                }
+                                .zoom(4.0),
+                            resourceOptions = ResourceOptions.Builder().applyDefaultParams(context)
+                                .accessToken(BuildConfig.MapboxAccessToken)
+                                .build(),
+                            onMapFullyLoaded = { isMapVisible = true },
+                            onMapInitialized = {
+                                isMapInitialized = true
+                                _mapView.value = it
+                                val pointAnnotationManager =
+                                    it.annotations.createPointAnnotationManager()
+                                val pointAnnotationOptions = PointAnnotationOptions()
+                                    // Define a geographic coordinate.
+                                    .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
+                                    // Specify the bitmap you assigned to the point annotation
+                                    // The bitmap will be added to map style automatically.
+                                    .withIconImage(
+                                        getBitmapFromVectorDrawable(
+                                            context,
+                                            R.drawable.ic_jay_marker_icon_v3_round
+                                        )
+                                    )
+                                // Add the resulting pointAnnotation to the map.
+                                pointAnnotationManager.create(pointAnnotationOptions)
+                                when (locationPermissionState.status) {
+                                    is PermissionStatus.Granted -> {
+                                        it.location.turnOnWithDefaultPuck(context)
+                                    }
 
-                                is PermissionStatus.Denied -> {
-                                    it.location.enabled = false
+                                    is PermissionStatus.Denied -> {
+                                        it.location.enabled = false
+                                    }
                                 }
-                            }
-                        },
-                        styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
-                    )
+                            },
+                            styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
+                        )
+                    }
                 }
             }
         }
@@ -697,7 +787,7 @@ fun BottomSheetScreen(
     isSearching: Boolean = false,
     onBottomSheetFractionChange: (Float) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
-    context: Context = LocalContext.current
+    context: Context = LocalContext.current,
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = BottomSheetPartialMaxFraction
@@ -780,7 +870,6 @@ private fun SheetNavHost(
             stiffness = stiffness
         )
     )
-    val density = LocalDensity.current
     DestinationsNavHost(
         navGraph = NavGraphs.sheet,
         modifier = modifier
