@@ -102,6 +102,7 @@ fun MenuScreen(
 ) {
     val context = LocalContext.current
     BackPressHandler {
+        Timber.d("Intercepted back press!")
         (context as Activity).moveTaskToBack(false)
     }
     val gridState = rememberLazyStaggeredGridState()

@@ -108,6 +108,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -150,6 +153,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.BuildConfig
+import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.map.ButeK
@@ -194,12 +198,28 @@ const val BottomSheetPartialMaxFraction = 1f
 private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
 val mapView = _mapView.asStateFlow()
 lateinit var sheetState: BottomSheetState
-var sheetOffset: Dp = 0.dp
 var isSearching: Boolean = false
 
 val sheetMaxHeight = 600.dp
 val sheetMinHeight = 100.dp
-var bottomSheetHeight = sheetMaxHeight
+
+private val _sheetContentHeight = MutableStateFlow(0.dp)
+val sheetContentHeight = _sheetContentHeight.asStateFlow()
+
+private val _density = MutableStateFlow(2.75f)
+val density = _density.asStateFlow()
+
+private val _screenHeight = MutableStateFlow<Dp?>(null)
+val screenHeight = _screenHeight.asStateFlow()
+
+private val _absoluteTop = MutableStateFlow(0.dp)
+val absoluteTop = _absoluteTop.asStateFlow()
+
+private val _absoluteBottom = MutableStateFlow(0.dp)
+val absoluteBottom = _absoluteBottom.asStateFlow()
+
+private val _cameraPadding = MutableStateFlow(PaddingValues())
+val cameraPadding = _cameraPadding.asStateFlow()
 
 fun BottomSheetState.isExpanding() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded
@@ -293,6 +313,12 @@ fun LocalBroadcastManager.sendBroadcast(
     sendBroadcast(intent)
 }
 
+fun refreshCameraPadding() {
+    _cameraPadding.value = PaddingValues(
+        bottom = absoluteBottom.value - sheetState.getOffsetAsDp(density.value)
+    )
+}
+
 @OptIn(ExperimentalPermissionsApi::class)
 @HomeNavGraph(start = true)
 @Destination
@@ -314,6 +340,7 @@ fun HomeScreen(
         )
         // setStatusBarColor() and setNavigationBarColor() also exist
     }
+    val cameraPaddingValues by cameraPadding.collectAsState()
     val locationPermissionState = rememberPermissionState(
         permission = Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -326,7 +353,31 @@ fun HomeScreen(
         }
         onDispose { viewModel.dispose() }
     }
-    ConstraintLayout {
+    val density = LocalDensity.current.density
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+    LaunchedEffect(density) { _density.value = density }
+    LaunchedEffect(screenHeightDp) { _screenHeight.value = screenHeightDp }
+    ConstraintLayout(
+        modifier = Modifier.onGloballyPositioned { coords ->
+            // FIXME: window position might not reflect real positions and offsets of parent
+            var topSet = false
+            val absoluteTopPosition = (coords.positionInWindow().y / density).dp
+            if (_absoluteTop.value != absoluteTopPosition) {
+                _absoluteTop.value = absoluteTopPosition
+                topSet = true
+            }
+            var bottomSet = false
+            val absoluteBottomPosition = ((coords.positionInWindow().y + coords.size.height) / density).dp
+            if (_absoluteBottom.value != absoluteBottomPosition) {
+                bottomSet = true
+                _absoluteBottom.value = absoluteBottomPosition
+            }
+            if (topSet || bottomSet) {
+                refreshCameraPadding()
+                Timber.d("Camera bottom padding: ${absoluteBottomPosition - sheetState.getOffsetAsDp(density)}")
+            }
+        }
+    ) {
         val (searchBar, scaffold) = createRefs()
         val scaffoldState = rememberBottomSheetScaffoldState()
         val bottomSheetState = scaffoldState.bottomSheetState
@@ -340,6 +391,7 @@ fun HomeScreen(
         BackPressHandler {
             onHomeBackPress(isTextFieldFocused, focusManager, context)
         }
+        LaunchedEffect(bottomSheetState.offset) { refreshCameraPadding() }
         LaunchedEffect(sheetCollapsing) {
             onSheetStateChanged(
                 isTextFieldFocused,
@@ -439,8 +491,9 @@ fun HomeScreen(
                 var didLoadInLocation by remember { mutableStateOf(false) }
                 var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
                 var isMapInitialized by remember { mutableStateOf(false) }
+                val sheetContentHeight by sheetContentHeight.collectAsState()
                 LaunchedEffect(
-                    bottomSheetHeight,
+                    bottomSheetState.getOffsetAsDp(density),
                     isMapInitialized,
                     initialLocationLoaded
                 ) {
@@ -449,12 +502,16 @@ fun HomeScreen(
                         !didLoadInLocation &&
                         cameraOptionsBuilder != null &&
                         initialLocationLoaded &&
-                        isMapInitialized
+                        isMapInitialized &&
+                        bottomSheetState.progress.to == BottomSheetValue.Expanded &&
+                        sheetContentHeight >= 20.dp
                     ) {
+                        refreshCameraPadding()
                         Timber.d(
-                            "Focusing camera to location" +
-                                    "Current sheetHeight: $bottomSheetHeight\n" +
-                                    "Current sheetState:\n${sheetState.asString()}"
+                            "Focusing camera to location\n" +
+                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
+                                    "Current sheetState:\n${sheetState.asString()}" +
+                                    "Sheet content height = $sheetContentHeight"
                         )
                         didLoadInLocation = true
                         mapView.value?.camera?.flyTo(
@@ -467,9 +524,7 @@ fun HomeScreen(
                                 }
                                 )
                                 .padding(
-                                    PaddingValues(
-                                        bottom = bottomSheetHeight
-                                    ), context
+                                    _cameraPadding.value, context
                                 )
                                 .build()
                         )
@@ -478,12 +533,16 @@ fun HomeScreen(
                     if (bottomSheetState.isExpanded &&
                         !didLoadInLocationWithoutPermissions &&
                         !locationPermissionState.status.isGranted &&
-                        isMapInitialized
+                        isMapInitialized &&
+                        bottomSheetState.progress.to == BottomSheetValue.Expanded &&
+                        sheetContentHeight >= 20.dp
                     ) {
+                        refreshCameraPadding()
                         Timber.d(
                             "Focusing camera to location" +
-                                    "Current sheetHeight: $bottomSheetHeight\n" +
-                                    "Current sheetState:\n${sheetState.asString()}"
+                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
+                                    "Current sheetState:\n${sheetState.asString()}\n" +
+                                    "Sheet content height = $sheetContentHeight"
                         )
                         didLoadInLocationWithoutPermissions = true
                         mapView.value?.camera?.flyTo(
@@ -496,9 +555,7 @@ fun HomeScreen(
                                     )
                                 )
                                 .padding(
-                                    PaddingValues(
-                                        bottom = bottomSheetHeight
-                                    ), context
+                                    _cameraPadding.value, context
                                 )
                                 .build()
                         )
@@ -507,6 +564,7 @@ fun HomeScreen(
                 var isMapVisible by remember { mutableStateOf(false) }
                 if (initialLocationLoaded || !initialLocationGrace) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+                        val absoluteTop by absoluteTop.collectAsState()
                         val (text, foreground, map) = createRefs()
                         Text(
                             modifier = Modifier
@@ -515,7 +573,7 @@ fun HomeScreen(
                                     start.linkTo(parent.start)
                                 }
                                 .zIndex(2f),
-                            text = "Sheet state:\n${sheetState.asString()}",
+                            text = "Absolute Top: $absoluteTop\n" + "Sheet state:\n${sheetState.asString()}",
                         )
                         Column(modifier = Modifier
                             .fillMaxSize()
@@ -548,9 +606,7 @@ fun HomeScreen(
                                     end.linkTo(parent.end)
                                 },
                             cameraOptionsBuilder = cameraOptionsBuilder?.padding(
-                                PaddingValues(
-                                    bottom = bottomSheetHeight
-                                ), context
+                                cameraPaddingValues, context
                             ) ?: CameraOptions.Builder()
                                 .center(
                                     Point.fromLngLat(
@@ -606,6 +662,7 @@ private fun onHomeBackPress(
     context: Context,
 ) {
     Timber.d("Handling back press from Home!")
+    if (sheetState.isCollapsedOrWillBe()) (context as MainActivity).moveTaskToBack(false)
     if (isTextFieldFocused) {
         // Remove the focus from the textfield
         focusManager.clearFocus()
@@ -816,7 +873,13 @@ fun BottomSheetScreen(
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = BottomSheetPartialMaxFraction
     ConstraintLayout(
-        modifier = modifier
+        modifier = modifier.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            _sheetContentHeight.value = (placeable.height / density).dp
+            layout(placeable.width, placeable.height) {
+                placeable.placeRelative(0, 0)
+            }
+        }
     ) {
         if (!isSearching) {
             Row(
@@ -895,7 +958,7 @@ private fun SheetNavHost(
         )
     )
     val navSheetMaxHeight = sheetMaxHeight
-    val density = LocalDensity.current
+    val density = LocalDensity.current.density
     DestinationsNavHost(
         navGraph = NavGraphs.sheet,
         modifier = modifier
@@ -908,14 +971,14 @@ private fun SheetNavHost(
                 if (sheetState.isExpanded &&
                     sheetState.progress.fraction == 1f &&
                     height >= sheetMinHeight &&
-                    height != bottomSheetHeight
+                    height != sheetState.getOffsetAsDp(density)
                 ) {
-                    bottomSheetHeight = height
                     Timber.d(
-                        "Density: ${density.density}\n" +
-                                "New bottom sheet height: $bottomSheetHeight\n" +
+                        "Density: ${density}\n" +
+                                "New bottom sheet height: ${sheetState.getOffsetAsDp(density)}\n" +
                                 "Bottom sheet state:\n${sheetState.asString()}"
                     )
+                    refreshCameraPadding()
                 }
                 layout(placeable.width, placeable.height) {
                     placeable.placeRelative(0, 0)

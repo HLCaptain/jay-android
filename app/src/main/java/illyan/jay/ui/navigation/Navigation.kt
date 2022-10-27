@@ -18,17 +18,18 @@
 
 package illyan.jay.ui.navigation
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mapbox.geojson.Point
@@ -37,10 +38,14 @@ import com.mapbox.maps.plugin.animation.camera
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.MainActivity
 import illyan.jay.ui.home.asString
-import illyan.jay.ui.home.bottomSheetHeight
+import illyan.jay.ui.home.cameraPadding
+import illyan.jay.ui.home.getOffsetAsDp
+import illyan.jay.ui.home.isCollapsedOrWillBe
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.mapView
+import illyan.jay.ui.home.refreshCameraPadding
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.map.padding
 import illyan.jay.ui.menu.BackPressHandler
@@ -60,9 +65,11 @@ fun NavigationScreen(
     viewModel: NavigationViewModel = hiltViewModel(),
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     BackPressHandler {
         Timber.d("Handling back press in Navigation!")
         // If searching and back is pressed, close the sheet instead of the app
+        if (sheetState.isCollapsedOrWillBe()) (context as MainActivity).moveTaskToBack(false)
         if (isSearching) {
             coroutineScope.launch {
                 // This call will automatically unfocus the textfield
@@ -79,16 +86,19 @@ fun NavigationScreen(
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     val density = LocalDensity.current
+    val cameraPaddingValues by cameraPadding.collectAsState()
     LaunchedEffect(
         sheetState.isAnimationRunning,
         viewModel.place,
     ) {
         if (!sheetState.isAnimationRunning &&
             !sheetHeightNotSet &&
-            viewModel.isNewPlace
+            viewModel.isNewPlace &&
+            sheetState.offset.value >= 10f
         ) {
-            Timber.d("Focusing camera to location" +
-                    "Current sheetHeight: $bottomSheetHeight\n" +
+            refreshCameraPadding()
+            Timber.d("Focusing camera to location\n" +
+                    "Current sheetHeight: ${sheetState.getOffsetAsDp(density.density)}\n" +
                     "Current sheetState:\n${sheetState.asString()}")
             viewModel.isNewPlace = false
             mapView.value?.camera?.flyTo(
@@ -101,7 +111,7 @@ fun NavigationScreen(
                     )
                     .zoom(zoom)
                     .padding(
-                        PaddingValues(bottom = bottomSheetHeight),
+                        cameraPaddingValues,
                         density
                     )
                     .build()
