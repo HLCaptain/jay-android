@@ -19,6 +19,11 @@
 package illyan.jay.util
 
 import android.os.SystemClock
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.ui.unit.LayoutDirection
+import com.mapbox.maps.EdgeInsets
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 
@@ -33,3 +38,22 @@ import kotlin.time.Duration.Companion.seconds
  */
 fun sensorTimestampToAbsoluteTime(timestamp: Long) = Instant.now()
     .toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1.seconds.inWholeMicroseconds
+
+operator fun EdgeInsets.plus(edgeInsets: EdgeInsets): EdgeInsets {
+    return EdgeInsets(
+        top + edgeInsets.top,
+        left + edgeInsets.left,
+        bottom + edgeInsets.bottom,
+        right + edgeInsets.right
+    )
+}
+
+operator fun PaddingValues.plus(paddingValues: PaddingValues): PaddingValues {
+    val direction = LayoutDirection.Ltr
+    return PaddingValues(
+        start = calculateStartPadding(direction) + paddingValues.calculateStartPadding(direction),
+        top = calculateTopPadding() + paddingValues.calculateTopPadding(),
+        end = calculateEndPadding(direction) + paddingValues.calculateEndPadding(direction),
+        bottom = calculateBottomPadding() + paddingValues.calculateBottomPadding(),
+    )
+}

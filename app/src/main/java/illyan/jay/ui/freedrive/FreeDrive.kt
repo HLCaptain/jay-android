@@ -21,6 +21,7 @@ package illyan.jay.ui.freedrive
 import android.Manifest
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,22 +47,44 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import com.mapbox.geojson.Point
+import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.data.disk.model.AppSettings
 import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.home.absoluteBottom
+import illyan.jay.ui.home.absoluteTop
+import illyan.jay.ui.home.cameraPadding
+import illyan.jay.ui.home.density
+import illyan.jay.ui.home.flyToLocation
 import illyan.jay.ui.home.mapView
+import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuNavGraph
+import illyan.jay.util.plus
 import kotlinx.coroutines.launch
+
+private const val paddingRatio = 0.25f
+
+fun calculatePaddingOffset(): PaddingValues {
+    val layoutHeight = absoluteBottom.value - absoluteTop.value
+    val freeSpace = layoutHeight - cameraPadding.value.calculateBottomPadding()
+    return PaddingValues(
+        bottom = freeSpace * paddingRatio
+    )
+}
 
 @OptIn(ExperimentalPermissionsApi::class)
 @MenuNavGraph
 @Destination
 @Composable
 fun FreeDriveScreen(
-    freeDriveViewModel: FreeDriveViewModel = hiltViewModel(),
+    viewModel: FreeDriveViewModel = hiltViewModel(),
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
@@ -84,11 +108,42 @@ fun FreeDriveScreen(
 
         is PermissionStatus.Granted -> {
             // TODO start session, then wait for new data to be shown by Mapbox Navigation SDK
-            val startServiceAutomatically by freeDriveViewModel.startServiceAutomatically
+            val startServiceAutomatically by viewModel.startServiceAutomatically
                 .collectAsState(AppSettings.default.turnOnFreeDriveAutomatically)
-            LaunchedEffect(Unit) {
-                freeDriveViewModel.load()
+            val cameraPadding by cameraPadding.collectAsState()
+            DisposableEffect(Unit) {
+                coroutineScope.launch {
+                    viewModel.load()
+                    mapView.value?.let {
+                        viewModel.loadViewport(
+                            it.getMapboxMap(),
+                            it.camera,
+                            cameraPadding + calculatePaddingOffset()
+                        )
+                    }
+                }
                 mapView.value?.location?.turnOnWithDefaultPuck(context)
+                onDispose {
+                    viewModel.disposeViewport()
+                    viewModel.lastLocation.value?.let { location ->
+                        flyToLocation(
+                            point = Point.fromLngLat(
+                                location.longitude,
+                                location.latitude
+                            ),
+                            zoom = 12.0,
+                            extraCameraOptions = { builder ->
+                                builder
+                                    .pitch(0.0)
+                                    .bearing(0.0)
+                            }
+                        )
+                    }
+                }
+            }
+            LaunchedEffect(cameraPadding) {
+                viewModel.followingPaddingOffset =
+                    (cameraPadding + calculatePaddingOffset()).toEdgeInsets(density.value)
             }
             Column(
                 modifier = Modifier
@@ -96,14 +151,14 @@ fun FreeDriveScreen(
                     .height(300.dp)
                     .padding(32.dp)
             ) {
-                // TODO toggle to save preference to enable free-driving when navigated to screen automatically or not
-                val isServiceRunning by freeDriveViewModel.isJayServiceRunning.collectAsState()
+                val isServiceRunning by viewModel.isJayServiceRunning.collectAsState()
                 val buttonLabel = if (isServiceRunning) {
                     stringResource(R.string.stop_free_driving)
                 } else {
                     stringResource(R.string.start_free_driving)
                 }
-                Button(onClick = { freeDriveViewModel.toggleService() }
+                Button(
+                    onClick = { viewModel.toggleService() }
                 ) {
                     Text(text = buttonLabel)
                 }
@@ -121,9 +176,8 @@ fun FreeDriveScreen(
                     Switch(
                         checked = startServiceAutomatically,
                         onCheckedChange = {
-                        /* TODO save preferences */
                             coroutineScope.launch {
-                                freeDriveViewModel.setAutoStartService(it)
+                                viewModel.setAutoStartService(it)
                             }
                         }
                     )

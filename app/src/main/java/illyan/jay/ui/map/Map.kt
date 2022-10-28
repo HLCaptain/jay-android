@@ -77,10 +77,12 @@ fun MapboxMap(
     resourceOptions: ResourceOptions = MapInitOptions.getDefaultResourceOptions(context),
     mapOptions: MapOptions = MapInitOptions.getDefaultMapOptions(context),
     cameraOptionsBuilder: CameraOptions.Builder = CameraOptions.Builder()
-        .center(Point.fromLngLat(
-            ButeK.longitude,
-            ButeK.latitude
-        ))
+        .center(
+            Point.fromLngLat(
+                ButeK.longitude,
+                ButeK.latitude
+            )
+        )
         .zoom(4.0),
 ) {
     val options = MapInitOptions(
@@ -125,7 +127,7 @@ private fun MapboxMapContainer(
 }
 
 fun LocationComponentPlugin.turnOnWithDefaultPuck(
-    context: Context
+    context: Context,
 ) {
     if (!enabled) {
         val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)
@@ -144,11 +146,9 @@ fun CameraOptions.Builder.padding(
 ): CameraOptions.Builder {
     val pixelDensity = context.resources.displayMetrics.density
     return padding(
-        EdgeInsets(
-            paddingValues.calculateTopPadding().value.toDouble() * pixelDensity,
-            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * pixelDensity,
-            paddingValues.calculateBottomPadding().value.toDouble() * pixelDensity,
-            paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * pixelDensity
+        paddingValues.toEdgeInsets(
+            density = pixelDensity,
+            layoutDirection = layoutDirection
         )
     )
 }
@@ -166,15 +166,18 @@ fun CameraOptions.Builder.padding(
     density: Float,
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
 ): CameraOptions.Builder {
-    return padding(
-        EdgeInsets(
-            paddingValues.calculateTopPadding().value.toDouble() * density,
-            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * density,
-            paddingValues.calculateBottomPadding().value.toDouble() * density,
-            paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * density
-        )
-    )
+    return padding(paddingValues.toEdgeInsets(density, layoutDirection))
 }
+
+fun PaddingValues.toEdgeInsets(
+    density: Float,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+) = EdgeInsets(
+    calculateTopPadding().value.toDouble() * density,
+    calculateLeftPadding(layoutDirection).value.toDouble() * density,
+    calculateBottomPadding().value.toDouble() * density,
+    calculateRightPadding(layoutDirection).value.toDouble() * density
+)
 
 // https://www.geeksforgeeks.org/how-to-convert-a-vector-to-bitmap-in-android/
 fun getBitmapFromVectorDrawable(context: Context, drawableId: Int): Bitmap {

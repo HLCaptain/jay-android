@@ -124,6 +124,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -257,6 +258,29 @@ fun tryFlyToLocation(
     )
 }
 
+fun flyToLocation(
+    point: Point,
+    zoom: Double = 12.0,
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+) {
+    Timber.d("Focusing camera to location\n" +
+            "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
+            "Current sheetState:\n${sheetState.asString()}")
+    // FIXME: make refreshCameraPadding() not crash
+//    refreshCameraPadding()
+    mapView.value?.camera?.flyTo(
+        CameraOptions.Builder()
+            .center(point)
+            .zoom(zoom)
+            .padding(
+                cameraPadding.value,
+                density.value
+            )
+            .extraOptions(extraCameraOptions)
+            .build()
+    )
+}
+
 /**
  * This method takes animations and sheet offset into consideration
  * before focusing the camera onto a location.
@@ -379,7 +403,7 @@ fun refreshCameraPadding() {
     val topSpace = absoluteTop.value
     val sheetOffset = sheetState.getOffsetAsDp(density.value)
     _cameraPadding.value = PaddingValues(
-        bottom = screenHeight + bottomSpace + topSpace - sheetOffset
+        bottom = max(0.dp, screenHeight + bottomSpace + topSpace - sheetOffset)
     )
 }
 
@@ -561,6 +585,7 @@ fun HomeScreen(
                     isMapInitialized,
                     initialLocationLoaded
                 ) {
+                    refreshCameraPadding()
                     // Permissions probably granted because there is a location to focus on
                     if (bottomSheetState.isExpanded &&
                         !didLoadInLocation &&
@@ -568,9 +593,9 @@ fun HomeScreen(
                         initialLocationLoaded &&
                         isMapInitialized &&
                         bottomSheetState.progress.to == BottomSheetValue.Expanded &&
-                        sheetContentHeight >= 20.dp
+                        sheetContentHeight >= 20.dp &&
+                        _cameraPadding.value.calculateBottomPadding() >= 20.dp
                     ) {
-                        refreshCameraPadding()
                         Timber.d(
                             "Focusing camera to location\n" +
                                     "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
@@ -599,9 +624,9 @@ fun HomeScreen(
                         !locationPermissionState.status.isGranted &&
                         isMapInitialized &&
                         bottomSheetState.progress.to == BottomSheetValue.Expanded &&
-                        sheetContentHeight >= 20.dp
+                        sheetContentHeight >= 20.dp &&
+                        _cameraPadding.value.calculateBottomPadding() >= 20.dp
                     ) {
-                        refreshCameraPadding()
                         Timber.d(
                             "Focusing camera to location" +
                                     "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
@@ -628,17 +653,18 @@ fun HomeScreen(
                 var isMapVisible by remember { mutableStateOf(false) }
                 if (initialLocationLoaded || !initialLocationGrace) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-                        val absoluteTop by absoluteTop.collectAsState()
+                        // TODO: remove this Text in future commits, before the PR merges.
                         val (text, foreground, map) = createRefs()
-                        Text(
-                            modifier = Modifier
-                                .constrainAs(text) {
-                                    top.linkTo(parent.top)
-                                    start.linkTo(parent.start)
-                                }
-                                .zIndex(2f),
-                            text = "Absolute Top: $absoluteTop\n" + "Sheet state:\n${sheetState.asString()}",
-                        )
+//                        val absoluteTop by absoluteTop.collectAsState()
+//                        Text(
+//                            modifier = Modifier
+//                                .constrainAs(text) {
+//                                    top.linkTo(parent.top)
+//                                    start.linkTo(parent.start)
+//                                }
+//                                .zIndex(2f),
+//                            text = "Absolute Top: $absoluteTop\n" + "Sheet state:\n${sheetState.asString()}",
+//                        )
                         Column(modifier = Modifier
                             .fillMaxSize()
                             .constrainAs(foreground) {
