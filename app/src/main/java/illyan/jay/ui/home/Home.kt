@@ -209,7 +209,7 @@ val sheetContentHeight = _sheetContentHeight.asStateFlow()
 private val _density = MutableStateFlow(2.75f)
 val density = _density.asStateFlow()
 
-private val _screenHeight = MutableStateFlow<Dp?>(null)
+private val _screenHeight = MutableStateFlow<Dp>(0.dp)
 val screenHeight = _screenHeight.asStateFlow()
 
 private val _absoluteTop = MutableStateFlow(0.dp)
@@ -314,8 +314,12 @@ fun LocalBroadcastManager.sendBroadcast(
 }
 
 fun refreshCameraPadding() {
+    val screenHeight = screenHeight.value
+    val bottomSpace = screenHeight - absoluteBottom.value
+    val topSpace = absoluteTop.value
+    val sheetOffset = sheetState.getOffsetAsDp(density.value)
     _cameraPadding.value = PaddingValues(
-        bottom = absoluteBottom.value - sheetState.getOffsetAsDp(density.value)
+        bottom = screenHeight + bottomSpace + topSpace - sheetOffset
     )
 }
 
