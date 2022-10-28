@@ -158,12 +158,20 @@ fun CameraOptions.Builder.padding(
     density: Density,
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
 ): CameraOptions.Builder {
+    return padding(paddingValues, density.density, layoutDirection)
+}
+
+fun CameraOptions.Builder.padding(
+    paddingValues: PaddingValues,
+    density: Float,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+): CameraOptions.Builder {
     return padding(
         EdgeInsets(
-            paddingValues.calculateTopPadding().value.toDouble() * density.density,
-            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * density.density,
-            paddingValues.calculateBottomPadding().value.toDouble() * density.density,
-            paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * density.density
+            paddingValues.calculateTopPadding().value.toDouble() * density,
+            paddingValues.calculateLeftPadding(layoutDirection).value.toDouble() * density,
+            paddingValues.calculateBottomPadding().value.toDouble() * density,
+            paddingValues.calculateRightPadding(layoutDirection).value.toDouble() * density
         )
     )
 }

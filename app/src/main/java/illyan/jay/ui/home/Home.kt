@@ -162,6 +162,7 @@ import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.map.padding
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
+import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
@@ -232,6 +233,65 @@ fun BottomSheetState.isExpandedOrWillBe() =
 
 fun BottomSheetState.isCollapsedOrWillBe() =
     isCollapsing() || isCollapsed
+
+fun CameraOptions.Builder.extraOptions(
+    extraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it }
+) = extraOptions(this)
+
+fun tryFlyToLocation(
+    extraCondition: () -> Boolean = { true },
+    place: Place,
+    zoom: Double = 12.0,
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+    onFly: () -> Unit = {}
+) {
+    tryFlyToLocation(
+        extraCondition = extraCondition,
+        point = Point.fromLngLat(
+            place.longitude,
+            place.latitude
+        ),
+        zoom = zoom,
+        extraCameraOptions = extraCameraOptions,
+        onFly = onFly
+    )
+}
+
+/**
+ * This method takes animations and sheet offset into consideration
+ * before focusing the camera onto a location.
+ *
+ * Usually used after a navigation in NavHosts located on the BottomSheet.
+ */
+fun tryFlyToLocation(
+    extraCondition: () -> Boolean = { true },
+    point: Point,
+    zoom: Double = 12.0,
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+    onFly: () -> Unit = {}
+) {
+    if (!sheetState.isAnimationRunning &&
+        sheetState.offset.value >= 10f &&
+        extraCondition()
+    ) {
+        onFly()
+        Timber.d("Focusing camera to location\n" +
+                "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
+                "Current sheetState:\n${sheetState.asString()}")
+        refreshCameraPadding()
+        mapView.value?.camera?.flyTo(
+            CameraOptions.Builder()
+                .center(point)
+                .zoom(zoom)
+                .padding(
+                    cameraPadding.value,
+                    density.value
+                )
+                .extraOptions(extraCameraOptions)
+                .build()
+        )
+    }
+}
 
 fun onSearchBarDrag(
     coroutineScope: CoroutineScope,

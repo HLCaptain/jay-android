@@ -23,31 +23,22 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.mapbox.geojson.Point
-import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.plugin.animation.camera
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
 import illyan.jay.ui.home.asString
-import illyan.jay.ui.home.cameraPadding
-import illyan.jay.ui.home.getOffsetAsDp
 import illyan.jay.ui.home.isCollapsedOrWillBe
 import illyan.jay.ui.home.isSearching
-import illyan.jay.ui.home.mapView
-import illyan.jay.ui.home.refreshCameraPadding
 import illyan.jay.ui.home.sheetState
-import illyan.jay.ui.map.padding
+import illyan.jay.ui.home.tryFlyToLocation
 import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.sheet.SheetNavGraph
@@ -85,38 +76,15 @@ fun NavigationScreen(
         onDispose { viewModel.dispose() }
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
-    val density = LocalDensity.current
-    val cameraPaddingValues by cameraPadding.collectAsState()
     LaunchedEffect(
         sheetState.isAnimationRunning,
         viewModel.place,
     ) {
-        if (!sheetState.isAnimationRunning &&
-            !sheetHeightNotSet &&
-            viewModel.isNewPlace &&
-            sheetState.offset.value >= 10f
-        ) {
-            refreshCameraPadding()
-            Timber.d("Focusing camera to location\n" +
-                    "Current sheetHeight: ${sheetState.getOffsetAsDp(density.density)}\n" +
-                    "Current sheetState:\n${sheetState.asString()}")
-            viewModel.isNewPlace = false
-            mapView.value?.camera?.flyTo(
-                CameraOptions.Builder()
-                    .center(
-                        Point.fromLngLat(
-                            viewModel.place.longitude,
-                            viewModel.place.latitude
-                        )
-                    )
-                    .zoom(zoom)
-                    .padding(
-                        cameraPaddingValues,
-                        density
-                    )
-                    .build()
-            )
-        }
+        tryFlyToLocation(
+            extraCondition = { !sheetHeightNotSet && viewModel.isNewPlace },
+            place = viewModel.place,
+            zoom = zoom
+        ) { viewModel.isNewPlace = false }
         sheetHeightNotSet = false
     }
     Text(
