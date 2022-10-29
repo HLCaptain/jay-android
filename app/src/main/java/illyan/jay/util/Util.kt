@@ -16,13 +16,19 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */ // ktlint-disable filename
 
+@file:OptIn(ExperimentalMaterialApi::class)
+
 package illyan.jay.util
 
 import android.os.SystemClock
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.material.BottomSheetState
+import androidx.compose.material.BottomSheetValue
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.ui.unit.LayoutDirection
+import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
@@ -38,6 +44,22 @@ import kotlin.time.Duration.Companion.seconds
  */
 fun sensorTimestampToAbsoluteTime(timestamp: Long) = Instant.now()
     .toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1.seconds.inWholeMicroseconds
+
+fun BottomSheetState.isExpanding() =
+    isAnimationRunning && targetValue == BottomSheetValue.Expanded
+
+fun BottomSheetState.isCollapsing() =
+    isAnimationRunning && targetValue == BottomSheetValue.Collapsed
+
+fun BottomSheetState.isExpandedOrWillBe() =
+    isExpanding() || isExpanded
+
+fun BottomSheetState.isCollapsedOrWillBe() =
+    isCollapsing() || isCollapsed
+
+fun CameraOptions.Builder.extraOptions(
+    extraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+) = extraOptions(this)
 
 operator fun EdgeInsets.plus(edgeInsets: EdgeInsets): EdgeInsets {
     return EdgeInsets(

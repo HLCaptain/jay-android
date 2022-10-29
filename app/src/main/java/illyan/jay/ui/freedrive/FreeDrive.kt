@@ -129,15 +129,17 @@ fun FreeDriveScreen(
                     viewModel.disposeViewport()
                     viewModel.lastLocation.value?.let { location ->
                         flyToLocation(
-                            point = Point.fromLngLat(
-                                location.longitude,
-                                location.latitude
-                            ),
-                            zoom = 12.0,
                             extraCameraOptions = { builder ->
                                 builder
                                     .pitch(0.0)
                                     .bearing(0.0)
+                                    .zoom(12.0)
+                                    .center(
+                                        Point.fromLngLat(
+                                            location.longitude,
+                                            location.latitude
+                                        )
+                                    )
                             }
                         )
                     }

@@ -52,6 +52,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
@@ -121,8 +122,8 @@ fun SessionsList(
                         shape = RoundedCornerShape(12.dp)
                     ),
                 session = session,
-                onClick = {
-                    // TODO: navigate to SessionStatsScreen
+                onClick = { id ->
+                    destinationsNavigator.navigate(SessionScreenDestination(id))
                 }
             )
         }

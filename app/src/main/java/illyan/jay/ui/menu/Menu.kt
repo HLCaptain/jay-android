@@ -69,7 +69,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
@@ -80,7 +79,6 @@ import illyan.jay.MainActivity
 import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.destinations.SessionsScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
-import illyan.jay.ui.home.isCollapsedOrWillBe
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sendBroadcast
 import illyan.jay.ui.home.sheetState
@@ -88,6 +86,7 @@ import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
+import illyan.jay.util.isCollapsedOrWillBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -121,7 +120,6 @@ val DefaultScreenOnSheetPadding = PaddingValues(
 @Composable
 fun MenuScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
-    viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     BackPressHandler {

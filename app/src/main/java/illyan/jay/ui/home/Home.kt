@@ -35,7 +35,6 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -151,8 +150,6 @@ import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
@@ -161,6 +158,7 @@ import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.map.padding
+import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.navigation.model.Place
@@ -168,6 +166,10 @@ import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
 import illyan.jay.ui.theme.Neutral95
+import illyan.jay.util.extraOptions
+import illyan.jay.util.isCollapsedOrWillBe
+import illyan.jay.util.isCollapsing
+import illyan.jay.util.isExpanding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -223,28 +225,12 @@ val absoluteBottom = _absoluteBottom.asStateFlow()
 private val _cameraPadding = MutableStateFlow(PaddingValues())
 val cameraPadding = _cameraPadding.asStateFlow()
 
-fun BottomSheetState.isExpanding() =
-    isAnimationRunning && targetValue == BottomSheetValue.Expanded
-
-fun BottomSheetState.isCollapsing() =
-    isAnimationRunning && targetValue == BottomSheetValue.Collapsed
-
-fun BottomSheetState.isExpandedOrWillBe() =
-    isExpanding() || isExpanded
-
-fun BottomSheetState.isCollapsedOrWillBe() =
-    isCollapsing() || isCollapsed
-
-fun CameraOptions.Builder.extraOptions(
-    extraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it }
-) = extraOptions(this)
-
 fun tryFlyToLocation(
     extraCondition: () -> Boolean = { true },
     place: Place,
     zoom: Double = 12.0,
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
-    onFly: () -> Unit = {}
+    onFly: () -> Unit = {},
 ) {
     tryFlyToLocation(
         extraCondition = extraCondition,
@@ -259,19 +245,17 @@ fun tryFlyToLocation(
 }
 
 fun flyToLocation(
-    point: Point,
-    zoom: Double = 12.0,
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
 ) {
-    Timber.d("Focusing camera to location\n" +
-            "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
-            "Current sheetState:\n${sheetState.asString()}")
+    Timber.d(
+        "Focusing camera to location\n" +
+                "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
+                "Current sheetState:\n${sheetState.asString()}"
+    )
     // FIXME: make refreshCameraPadding() not crash
 //    refreshCameraPadding()
     mapView.value?.camera?.flyTo(
         CameraOptions.Builder()
-            .center(point)
-            .zoom(zoom)
             .padding(
                 cameraPadding.value,
                 density.value
@@ -292,7 +276,7 @@ fun tryFlyToLocation(
     point: Point,
     zoom: Double = 12.0,
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
-    onFly: () -> Unit = {}
+    onFly: () -> Unit = {},
 ) {
     if (!sheetState.isAnimationRunning &&
         sheetState.offset.value >= 10f &&
@@ -301,10 +285,41 @@ fun tryFlyToLocation(
         onFly()
         refreshCameraPadding()
         flyToLocation(
-            point = point,
-            zoom = zoom,
-            extraCameraOptions = extraCameraOptions
+            extraCameraOptions = {
+                it
+                    .zoom(zoom)
+                    .center(point)
+                    .extraOptions(extraCameraOptions)
+            }
         )
+    }
+}
+
+fun tryFlyToPath(
+    extraCondition: () -> Boolean = { true },
+    path: List<Point>,
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+    onFly: () -> Unit = {},
+) {
+    if (path.isEmpty()) return
+    if (!sheetState.isAnimationRunning &&
+        sheetState.offset.value >= 10f &&
+        extraCondition()
+    ) {
+        onFly()
+        refreshCameraPadding()
+        flyToLocation {
+            val cameraOptions = mapView.value?.getMapboxMap()?.cameraForCoordinates(
+                coordinates = path,
+                padding = cameraPadding.value.toEdgeInsets(density.value)
+            )
+            it
+                .zoom(cameraOptions?.zoom?.times(0.95f))
+                .center(cameraOptions?.center)
+                .padding(cameraOptions?.padding)
+                .extraOptions(extraCameraOptions)
+        }
+
     }
 }
 
@@ -404,7 +419,6 @@ fun refreshCameraPadding() {
 @Composable
 fun HomeScreen(
     context: Context = LocalContext.current,
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -446,14 +460,21 @@ fun HomeScreen(
                 topSet = true
             }
             var bottomSet = false
-            val absoluteBottomPosition = ((coords.positionInWindow().y + coords.size.height) / density).dp
+            val absoluteBottomPosition =
+                ((coords.positionInWindow().y + coords.size.height) / density).dp
             if (_absoluteBottom.value != absoluteBottomPosition) {
                 bottomSet = true
                 _absoluteBottom.value = absoluteBottomPosition
             }
             if (topSet || bottomSet) {
                 refreshCameraPadding()
-                Timber.d("Camera bottom padding: ${absoluteBottomPosition - sheetState.getOffsetAsDp(density)}")
+                Timber.d(
+                    "Camera bottom padding: ${
+                        absoluteBottomPosition - sheetState.getOffsetAsDp(
+                            density
+                        )
+                    }"
+                )
             }
         }
     ) {
@@ -534,8 +555,7 @@ fun HomeScreen(
                             fraction = it,
                             threshold = BottomSheetPartialExpendedFraction
                         )
-                    },
-                    viewModel = viewModel
+                    }
                 )
             },
             sheetPeekHeight = SearchBarHeight,
@@ -645,17 +665,7 @@ fun HomeScreen(
                 if (initialLocationLoaded || !initialLocationGrace) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                         // TODO: remove this Text in future commits, before the PR merges.
-                        val (text, foreground, map) = createRefs()
-//                        val absoluteTop by absoluteTop.collectAsState()
-//                        Text(
-//                            modifier = Modifier
-//                                .constrainAs(text) {
-//                                    top.linkTo(parent.top)
-//                                    start.linkTo(parent.start)
-//                                }
-//                                .zIndex(2f),
-//                            text = "Absolute Top: $absoluteTop\n" + "Sheet state:\n${sheetState.asString()}",
-//                        )
+                        val (foreground, map) = createRefs()
                         Column(modifier = Modifier
                             .fillMaxSize()
                             .constrainAs(foreground) {
@@ -948,8 +958,6 @@ fun BottomSheetScreen(
     modifier: Modifier = Modifier,
     isSearching: Boolean = false,
     onBottomSheetFractionChange: (Float) -> Unit = {},
-    viewModel: HomeViewModel = hiltViewModel(),
-    context: Context = LocalContext.current,
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = BottomSheetPartialMaxFraction
@@ -1020,30 +1028,11 @@ private fun SheetNavHost(
             stiffness = Spring.StiffnessMedium
         )
     )
-    val stiffness by animateFloatAsState(
-        targetValue = if (isSearching) {
-            Spring.StiffnessVeryLow
-        } else {
-            Spring.StiffnessLow
-        }
-    )
-    val animatedSheetMaxHeight by animateDpAsState(
-        targetValue = if (isSearching) {
-            0.dp
-        } else {
-            sheetMaxHeight
-        },
-        animationSpec = SpringSpec(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = stiffness
-        )
-    )
-    val navSheetMaxHeight = sheetMaxHeight
     val density = LocalDensity.current.density
     DestinationsNavHost(
         navGraph = NavGraphs.sheet,
         modifier = modifier
-            .heightIn(max = navSheetMaxHeight)
+            .heightIn(max = sheetMaxHeight)
             .navigationBarsPadding()
             .padding(bottom = SearchBarHeight - RoundedCornerRadius)
             .layout { measurable, constraints ->
