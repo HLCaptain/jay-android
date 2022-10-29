@@ -56,6 +56,8 @@ class SessionInteractor @Inject constructor(
      */
     fun getSessions() = sessionDiskDataSource.getSessions()
 
+    fun getSessionIds() = sessionDiskDataSource.getSessionIds()
+
     /**
      * Get ongoing sessions, which have no end date.
      *

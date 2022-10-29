@@ -65,6 +65,7 @@ import illyan.jay.ui.home.mapView
 import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuNavGraph
+import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.util.plus
 import kotlinx.coroutines.launch
 
@@ -86,6 +87,7 @@ fun FreeDriveScreen(
     viewModel: FreeDriveViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
+    SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
     )

@@ -299,20 +299,11 @@ fun tryFlyToLocation(
         extraCondition()
     ) {
         onFly()
-        Timber.d("Focusing camera to location\n" +
-                "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
-                "Current sheetState:\n${sheetState.asString()}")
         refreshCameraPadding()
-        mapView.value?.camera?.flyTo(
-            CameraOptions.Builder()
-                .center(point)
-                .zoom(zoom)
-                .padding(
-                    cameraPadding.value,
-                    density.value
-                )
-                .extraOptions(extraCameraOptions)
-                .build()
+        flyToLocation(
+            point = point,
+            zoom = zoom,
+            extraCameraOptions = extraCameraOptions
         )
     }
 }

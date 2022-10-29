@@ -36,4 +36,7 @@
     <string name="start_free_driving">Start free-driving</string>
     <string name="stop_free_driving">Stop free-driving</string>
     <string name="automatically_turn_on_free_driving">Automatically turn on free-driving</string>
+    <string name="unknown">Unknown</string>
+    <string name="distance">Distance</string>
+    <string name="meters">m</string>
 </resources>

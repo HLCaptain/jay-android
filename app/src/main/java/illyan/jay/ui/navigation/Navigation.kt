@@ -26,24 +26,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
-import illyan.jay.MainActivity
 import illyan.jay.ui.home.asString
-import illyan.jay.ui.home.isCollapsedOrWillBe
-import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.home.tryFlyToLocation
-import illyan.jay.ui.menu.BackPressHandler
+import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.sheet.SheetNavGraph
-import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @OptIn(ExperimentalMaterialApi::class)
 @SheetNavGraph
@@ -55,22 +48,7 @@ fun NavigationScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: NavigationViewModel = hiltViewModel(),
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-    BackPressHandler {
-        Timber.d("Handling back press in Navigation!")
-        // If searching and back is pressed, close the sheet instead of the app
-        if (sheetState.isCollapsedOrWillBe()) (context as MainActivity).moveTaskToBack(false)
-        if (isSearching) {
-            coroutineScope.launch {
-                // This call will automatically unfocus the textfield
-                // because BottomSearchBar listens on sheet changes.
-                sheetState.collapse()
-            }
-        } else {
-            destinationsNavigator.navigateUp()
-        }
-    }
+    SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     DisposableEffect(Unit) {
         viewModel.load(place)
         onDispose { viewModel.dispose() }

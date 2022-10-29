@@ -47,6 +47,8 @@ class SessionDiskDataSource @Inject constructor(
      */
     fun getSessions() = sessionDao.getSessions().map { it.map(RoomSession::toDomainModel) }
 
+    fun getSessionIds() = sessionDao.getSessionIds()
+
     /**
      * Get a particular session by its ID.
      *
