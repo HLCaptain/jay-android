@@ -18,14 +18,18 @@
 
 package illyan.jay.domain.interactor
 
+import com.mapbox.geojson.Point
+import com.mapbox.search.ReverseGeoOptions
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
 import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
 import illyan.jay.domain.model.DomainSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
-
 /**
  * Session interactor is a layer which aims to be the intermediary
  * between a higher level logic and lower level data source.
@@ -37,7 +41,8 @@ import javax.inject.Singleton
 class SessionInteractor @Inject constructor(
     private val sessionDiskDataSource: SessionDiskDataSource,
     private val sensorEventDiskDataSource: SensorEventDiskDataSource,
-    private val locationDiskDataSource: LocationDiskDataSource
+    private val locationDiskDataSource: LocationDiskDataSource,
+    private val searchInteractor: SearchInteractor,
 ) {
     /**
      * Get a particular session by its ID.
@@ -95,7 +100,21 @@ class SessionInteractor @Inject constructor(
      *
      * @return ID of the newly started session.
      */
-    fun startSession() = sessionDiskDataSource.startSession()
+    suspend fun startSession(coroutineScope: CoroutineScope): Long {
+        val sessionId = sessionDiskDataSource.startSession()
+        getSession(sessionId).first { session ->
+            session?.let {
+                coroutineScope.launch {
+                    refreshSessionStartLocation(
+                        session,
+                        coroutineScope
+                    )
+                }
+            }
+            session != null
+        }
+        return sessionId
+    }
 
     /**
      * Stop a session.
@@ -107,12 +126,104 @@ class SessionInteractor @Inject constructor(
      */
     fun stopSession(session: DomainSession) = sessionDiskDataSource.stopSession(session)
 
+    suspend fun refreshSessionStartLocation(
+        session: DomainSession,
+        coroutineScope: CoroutineScope
+    ) {
+        locationDiskDataSource.getLocations(session.id).first { locations ->
+            val sortedLocations = locations.sortedBy { location ->
+                location.zonedDateTime.toInstant().toEpochMilli()
+            }
+            val startLocation = sortedLocations.firstOrNull()?.latLng
+            session.startLocation = startLocation
+            startLocation?.let {
+                coroutineScope.launch(Dispatchers.IO) {
+                    saveSession(session)
+                }
+            }
+
+            // Reverse geocoding locations to get names for them.
+            if (startLocation != null && session.startLocationName == null) {
+                searchInteractor.search(
+                    reverseGeoOptions = ReverseGeoOptions(
+                        center = Point.fromLngLat(
+                            startLocation.longitude,
+                            startLocation.latitude
+                        )
+                    )
+                ) { results, _ ->
+                    results.firstOrNull()?.let {
+                        session.startLocationName = it.address?.place
+                        session.startLocationName?.let {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                saveSession(session)
+                            }
+                        }
+                    }
+                }
+            }
+            locations.isNotEmpty()
+        }
+    }
+
+    suspend fun refreshSessionEndLocation(
+        session: DomainSession,
+        coroutineScope: CoroutineScope
+    ) {
+        locationDiskDataSource.getLocations(session.id).first { locations ->
+            val sortedLocations = locations.sortedBy { location ->
+                location.zonedDateTime.toInstant().toEpochMilli()
+            }
+            val endLocation = sortedLocations.lastOrNull()?.latLng
+            session.endLocation = endLocation
+            endLocation?.let {
+                coroutineScope.launch(Dispatchers.IO) {
+                    saveSession(session)
+                }
+            }
+
+            // Reverse geocoding locations to get names for them.
+            if (endLocation != null && session.endLocationName == null) {
+                searchInteractor.search(
+                    reverseGeoOptions = ReverseGeoOptions(
+                        center = Point.fromLngLat(
+                            endLocation.longitude,
+                            endLocation.latitude
+                        )
+                    )
+                ) { results, _ ->
+                    results.firstOrNull()?.let {
+                        session.endLocationName = it.address?.place
+                        session.endLocationName?.let {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                saveSession(session)
+                            }
+                        }
+                    }
+                }
+            }
+            locations.isNotEmpty()
+        }
+    }
+
     /**
      * Stop all ongoing sessions.
      */
-    suspend fun stopOngoingSessions() {
-        getOngoingSessions().first {
-            sessionDiskDataSource.stopSessions(it)
+    suspend fun stopOngoingSessions(coroutineScope: CoroutineScope) {
+        getOngoingSessions().first { sessions ->
+            sessionDiskDataSource.stopSessions(sessions)
+            sessions.forEach { session ->
+                coroutineScope.launch {
+                    refreshSessionStartLocation(
+                        session,
+                        coroutineScope
+                    )
+                    refreshSessionEndLocation(
+                        session,
+                        coroutineScope
+                    )
+                }
+            }
             true
         }
     }
@@ -133,3 +244,4 @@ class SessionInteractor @Inject constructor(
         }
     }
 }
+

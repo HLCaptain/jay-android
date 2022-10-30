@@ -101,17 +101,28 @@ val MenuItemPadding = 6.dp
 val ListMaxHeight = 384.dp
 val ListMinHeight = 128.dp
 
+//val DefaultContentPadding = PaddingValues(
+//    top = MenuItemPadding,
+//    // FIXME: bottom content padding is not applied
+//    bottom = RoundedCornerRadius + MenuItemPadding
+//)
+//
+//val DefaultScreenOnSheetPadding = PaddingValues(
+//    start = MenuItemPadding,
+//    end = MenuItemPadding,
+//    // TODO: remove additional bottom padding after getting contentPadding working
+//    bottom = RoundedCornerRadius + MenuItemPadding
+//)
+
 val DefaultContentPadding = PaddingValues(
-    top = MenuItemPadding,
-    // FIXME: bottom content padding is not applied
-    bottom = RoundedCornerRadius + MenuItemPadding
+    bottom = MenuItemPadding
 )
 
 val DefaultScreenOnSheetPadding = PaddingValues(
+    top = MenuItemPadding,
     start = MenuItemPadding,
     end = MenuItemPadding,
-    // TODO: remove additional bottom padding after getting contentPadding working
-    bottom = RoundedCornerRadius + MenuItemPadding
+    bottom = RoundedCornerRadius
 )
 
 @OptIn(ExperimentalFoundationApi::class)

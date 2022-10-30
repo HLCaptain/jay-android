@@ -35,7 +35,9 @@ data class UiSession(
     val endLocationName: String?
 )
 
-fun DomainSession.toUiModel(locations: List<DomainLocation>): UiSession {
+fun DomainSession.toUiModel(
+    locations: List<DomainLocation>
+): UiSession {
     val sortedLocations = locations.sortedBy {
         it.zonedDateTime.toInstant().toEpochMilli()
     }.map { it.latLng }
@@ -46,7 +48,7 @@ fun DomainSession.toUiModel(locations: List<DomainLocation>): UiSession {
         startCoordinate = sortedLocations.firstOrNull(),
         endCoordinate = sortedLocations.lastOrNull(),
         totalDistance = sortedLocations.sphericalPathLength(),
-        startLocationName = null,
-        endLocationName = null
+        startLocationName = startLocationName,
+        endLocationName = endLocationName
     )
 }

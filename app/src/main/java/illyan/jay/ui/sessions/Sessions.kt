@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.sessions
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,7 +78,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
 @Composable
 fun SessionsScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
-    viewModel: SessionsViewModel = hiltViewModel()
+    viewModel: SessionsViewModel = hiltViewModel(),
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     LaunchedEffect(Unit) {
@@ -101,7 +103,7 @@ fun SessionsScreen(
 fun SessionsList(
     modifier: Modifier = Modifier,
     viewModel: SessionsViewModel = hiltViewModel(),
-    destinationsNavigator: DestinationsNavigator
+    destinationsNavigator: DestinationsNavigator,
 ) {
     val sessionIds by viewModel.sessionIds.collectAsState()
     LazyColumn(
@@ -162,16 +164,27 @@ fun SessionCard(
                 Icon(
                     imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = ""
                 )
-                Text(
-                    text = session?.endLocationName ?: stringResource(R.string.unknown),
-                    style = MaterialTheme.typography.titleLarge
-                )
+                Crossfade(
+                    targetState = session?.endDateTime == null,
+                ) {
+                    if (it) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreHoriz, contentDescription = ""
+                        )
+
+                    } else {
+                        Text(
+                            text = session?.endLocationName ?: stringResource(R.string.unknown),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                }
             }
             Column {
                 Text(
                     text = "${stringResource(R.string.distance)}: " +
-                        "${session?.totalDistance ?: stringResource(R.string.unknown)} " +
-                        stringResource(R.string.meters)
+                            "${session?.totalDistance ?: stringResource(R.string.unknown)} " +
+                            stringResource(R.string.meters)
                 )
             }
         }

@@ -18,6 +18,7 @@
 
 package illyan.jay.domain.model
 
+import com.google.android.gms.maps.model.LatLng
 import java.time.ZonedDateTime
 
 /**
@@ -32,5 +33,9 @@ import java.time.ZonedDateTime
 data class DomainSession(
     val id: Long = -1,
     val startDateTime: ZonedDateTime,
-    var endDateTime: ZonedDateTime?
+    var endDateTime: ZonedDateTime?,
+    var startLocation: LatLng? = null,
+    var endLocation: LatLng? = null,
+    var startLocationName: String? = null,
+    var endLocationName: String? = null
 )

@@ -30,5 +30,11 @@ data class RoomSession(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val startDateTime: Long,
-    var endDateTime: Long? = null
+    var endDateTime: Long? = null,
+    var startLocationLatitude: Double? = null,
+    var startLocationLongitude: Double? = null,
+    var endLocationLatitude: Double? = null,
+    var endLocationLongitude: Double? = null,
+    var startLocationName: String? = null,
+    var endLocationName: String? = null
 )

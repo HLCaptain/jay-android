@@ -35,8 +35,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
-    private val locationInteractor: LocationInteractor
-): ViewModel() {
+    private val locationInteractor: LocationInteractor,
+) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<Long, StateFlow<UiSession?>>()
 
     private val _sessionIds = MutableStateFlow(listOf<Long>())
@@ -61,6 +61,22 @@ class SessionsViewModel @Inject constructor(
         viewModelScope.launch {
             sessionInteractor.getSession(sessionId).collectLatest { session ->
                 session?.let {
+                    if (session.startLocation == null ||
+                        session.startLocationName == null
+                    ) {
+                        sessionInteractor.refreshSessionStartLocation(
+                            session,
+                            viewModelScope
+                        )
+                    }
+                    if (session.endDateTime != null &&
+                        (session.endLocation == null || session.endLocationName == null)
+                    ) {
+                        sessionInteractor.refreshSessionEndLocation(
+                            session,
+                            viewModelScope
+                        )
+                    }
                     locationInteractor.getLocations(sessionId).collectLatest {
                         sessionMutableStateFlow.value = session.toUiModel(it)
                     }
