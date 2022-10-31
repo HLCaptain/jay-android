@@ -23,6 +23,8 @@ import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import java.time.ZonedDateTime
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 data class UiSession(
     val id: Long,
@@ -33,10 +35,14 @@ data class UiSession(
     val totalDistance: Double,
     val startLocationName: String?,
     val endLocationName: String?,
-    val locations: List<UiLocation>
+    val locations: List<UiLocation>,
+    val duration: Duration
 )
 
-fun DomainSession.toUiModel(locations: List<DomainLocation>): UiSession {
+fun DomainSession.toUiModel(
+    locations: List<DomainLocation>,
+    currentTime: ZonedDateTime = ZonedDateTime.now(),
+): UiSession {
     val sortedLocations = locations.sortedBy {
         it.zonedDateTime.toInstant().toEpochMilli()
     }
@@ -48,8 +54,15 @@ fun DomainSession.toUiModel(locations: List<DomainLocation>): UiSession {
         startCoordinate = sortedLocationLatLngs.firstOrNull(),
         endCoordinate = sortedLocationLatLngs.lastOrNull(),
         totalDistance = sortedLocationLatLngs.sphericalPathLength(),
-        startLocationName = null,
-        endLocationName = null,
+        startLocationName = startLocationName,
+        endLocationName = endLocationName,
         locations = sortedLocations.map { it.toUiModel() },
+        duration = if (endDateTime != null) {
+            (endDateTime!!.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
+                .milliseconds
+        } else {
+            (currentTime.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
+                .milliseconds
+        },
     )
 }

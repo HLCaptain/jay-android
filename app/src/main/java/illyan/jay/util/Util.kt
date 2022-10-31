@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import java.time.Instant
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -44,6 +45,29 @@ import kotlin.time.Duration.Companion.seconds
  */
 fun sensorTimestampToAbsoluteTime(timestamp: Long) = Instant.now()
     .toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1.seconds.inWholeMicroseconds
+
+fun Duration.format(
+    separator: String = " ",
+    second: String = "s",
+    minute: String = "m",
+    hour: String = "h",
+    day: String = "d",
+): String {
+    return toComponents { days, hours, minutes, seconds, _ ->
+        val builder = StringBuilder()
+        if (days > 0) {
+            builder.append(days.toString() + day + separator)
+        }
+        if (days > 0 || hours > 0) {
+            builder.append(hours.toString() + hour + separator)
+        }
+        if (days > 0 || hours > 0 || minutes > 0) {
+            builder.append(minutes.toString() + minute + separator)
+        }
+        builder.append(seconds.toString() + second)
+        builder.toString()
+    }
+}
 
 fun BottomSheetState.isExpanding() =
     isAnimationRunning && targetValue == BottomSheetValue.Expanded

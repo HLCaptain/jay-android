@@ -61,6 +61,7 @@ import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.Neutral95
+import illyan.jay.util.format
 
 val DefaultContentPadding = PaddingValues(
     bottom = MenuItemPadding * 2
@@ -161,17 +162,10 @@ fun SessionCard(
                     text = session?.startLocationName ?: stringResource(R.string.unknown),
                     style = MaterialTheme.typography.titleLarge
                 )
-                Icon(
-                    imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = ""
-                )
-                Crossfade(
-                    targetState = session?.endDateTime == null,
-                ) {
+                Icon(imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "")
+                Crossfade(targetState = session?.endDateTime == null) {
                     if (it) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreHoriz, contentDescription = ""
-                        )
-
+                        Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
                     } else {
                         Text(
                             text = session?.endLocationName ?: stringResource(R.string.unknown),
@@ -185,6 +179,16 @@ fun SessionCard(
                     text = "${stringResource(R.string.distance)}: " +
                             "${session?.totalDistance ?: stringResource(R.string.unknown)} " +
                             stringResource(R.string.meters)
+                )
+                Text(
+                    text = "${stringResource(R.string.duration)}: " +
+                            session?.duration?.format(
+                                separator = " ",
+                                second = stringResource(R.string.second_short),
+                                minute = stringResource(R.string.minute_short),
+                                hour = stringResource(R.string.hour_short),
+                                day = stringResource(R.string.day_short)
+                            )
                 )
             }
         }

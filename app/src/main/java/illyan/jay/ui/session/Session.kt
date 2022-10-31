@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.session
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -58,6 +60,7 @@ import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.DefaultScreenOnSheetPadding
+import illyan.jay.util.format
 import illyan.jay.util.plus
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -130,19 +133,33 @@ fun SessionScreen(
                 text = session?.startLocationName ?: stringResource(R.string.unknown),
                 style = MaterialTheme.typography.titleLarge
             )
-            Icon(
-                imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = ""
-            )
-            Text(
-                text = session?.endLocationName ?: stringResource(R.string.unknown),
-                style = MaterialTheme.typography.titleLarge
-            )
+            Icon(imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "")
+            Crossfade(targetState = session?.endDateTime == null) {
+                if (it) {
+                    Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
+                } else {
+                    Text(
+                        text = session?.endLocationName ?: stringResource(R.string.unknown),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            }
         }
         Column {
             Text(
                 text = "${stringResource(R.string.distance)}: " +
                         "${session?.totalDistance ?: stringResource(R.string.unknown)} " +
                         stringResource(R.string.meters)
+            )
+            Text(
+                text = "${stringResource(R.string.duration)}: " +
+                        session?.duration?.format(
+                            separator = " ",
+                            second = stringResource(R.string.second_short),
+                            minute = stringResource(R.string.minute_short),
+                            hour = stringResource(R.string.hour_short),
+                            day = stringResource(R.string.day_short)
+                        )
             )
         }
     }

@@ -23,6 +23,8 @@ import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import java.time.ZonedDateTime
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 data class UiSession(
     val id: Long,
@@ -32,11 +34,13 @@ data class UiSession(
     val endCoordinate: LatLng?,
     val totalDistance: Double,
     val startLocationName: String?,
-    val endLocationName: String?
+    val endLocationName: String?,
+    val duration: Duration
 )
 
 fun DomainSession.toUiModel(
-    locations: List<DomainLocation>
+    locations: List<DomainLocation>,
+    currentTime: ZonedDateTime = ZonedDateTime.now(),
 ): UiSession {
     val sortedLocations = locations.sortedBy {
         it.zonedDateTime.toInstant().toEpochMilli()
@@ -49,6 +53,13 @@ fun DomainSession.toUiModel(
         endCoordinate = sortedLocations.lastOrNull(),
         totalDistance = sortedLocations.sphericalPathLength(),
         startLocationName = startLocationName,
-        endLocationName = endLocationName
+        endLocationName = endLocationName,
+        duration = if (endDateTime != null) {
+            (endDateTime!!.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
+                .milliseconds
+        } else {
+            (currentTime.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
+                .milliseconds
+        },
     )
 }
