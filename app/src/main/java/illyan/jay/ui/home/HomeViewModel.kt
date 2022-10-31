@@ -21,12 +21,10 @@ package illyan.jay.ui.home
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import com.mapbox.android.core.location.LocationEngineCallback
-import com.mapbox.android.core.location.LocationEngineRequest
 import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.ui.map.ButeK
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,13 +59,8 @@ class HomeViewModel @Inject constructor(
         override fun onFailure(exception: Exception) { exception.printStackTrace() }
     }
 
-    private val request = LocationEngineRequest
-        .Builder(LocationInteractor.LOCATION_REQUEST_INTERVAL_DEFAULT)
-        .setPriority(LocationEngineRequest.PRIORITY_HIGH_ACCURACY)
-        .build()
-
     suspend fun loadLastLocation() {
-        mapboxInteractor.requestLocationUpdates(request, callback)
+        mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
         initialLocation.first { location ->
             if (location != null) {
                 _cameraOptionsBuilder.value = CameraOptions.Builder()

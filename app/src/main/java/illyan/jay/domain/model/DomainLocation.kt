@@ -23,7 +23,7 @@ import java.time.ZonedDateTime
 
 /**
  * Domain location used for general data handling
- * between DataSources, Interactors and Presenters.
+ * between DataSources, Interactors and ViewModels.
  *
  * @property id
  * @property latLng
@@ -43,11 +43,11 @@ data class DomainLocation(
     val sessionId: Long,
     val zonedDateTime: ZonedDateTime,
     val latLng: LatLng,
-    var speed: Float = -1f,
-    var accuracy: Float = -1f,
-    var bearing: Float = -1f,
-    var bearingAccuracy: Float = -1f, // in degrees
-    var altitude: Double = -1.0,
-    var speedAccuracy: Float = -1f, // in meters per second
-    var verticalAccuracy: Float = -1f // in meters
+    var speed: Float = Float.NaN,
+    var accuracy: Float = Float.NaN,
+    var bearing: Float = Float.NaN,
+    var bearingAccuracy: Float = Float.NaN, // in degrees
+    var altitude: Double = Double.NaN,
+    var speedAccuracy: Float = Float.NaN, // in meters per second
+    var verticalAccuracy: Float = Float.NaN // in meters
 )

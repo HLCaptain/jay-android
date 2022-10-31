@@ -30,11 +30,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Parcelable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -83,6 +83,7 @@ import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -106,6 +107,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -119,6 +123,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -126,11 +131,14 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.ResourceOptions
+import com.mapbox.maps.applyDefaultParams
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
@@ -142,21 +150,26 @@ import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.BuildConfig
+import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.map.padding
+import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
+import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
 import illyan.jay.ui.theme.Neutral95
+import illyan.jay.util.extraOptions
+import illyan.jay.util.isCollapsedOrWillBe
+import illyan.jay.util.isCollapsing
+import illyan.jay.util.isExpanding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -192,19 +205,120 @@ lateinit var sheetState: BottomSheetState
 var isSearching: Boolean = false
 
 val sheetMaxHeight = 600.dp
-var bottomSheetHeight = sheetMaxHeight
+val sheetMinHeight = 100.dp
 
-fun BottomSheetState.isExpanding() =
-    isAnimationRunning && targetValue == BottomSheetValue.Expanded
+private val _sheetContentHeight = MutableStateFlow(0.dp)
+val sheetContentHeight = _sheetContentHeight.asStateFlow()
 
-fun BottomSheetState.isCollapsing() =
-    isAnimationRunning && targetValue == BottomSheetValue.Collapsed
+private val _density = MutableStateFlow(2.75f)
+val density = _density.asStateFlow()
 
-fun BottomSheetState.isExpandedOrWillBe() =
-    isExpanding() || isExpanded
+private val _screenHeight = MutableStateFlow<Dp>(0.dp)
+val screenHeight = _screenHeight.asStateFlow()
 
-fun BottomSheetState.isCollapsedOrWillBe() =
-    isCollapsing() || isCollapsed
+private val _absoluteTop = MutableStateFlow(0.dp)
+val absoluteTop = _absoluteTop.asStateFlow()
+
+private val _absoluteBottom = MutableStateFlow(0.dp)
+val absoluteBottom = _absoluteBottom.asStateFlow()
+
+private val _cameraPadding = MutableStateFlow(PaddingValues())
+val cameraPadding = _cameraPadding.asStateFlow()
+
+fun tryFlyToLocation(
+    extraCondition: () -> Boolean = { true },
+    place: Place,
+    zoom: Double = 12.0,
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+    onFly: () -> Unit = {},
+) {
+    tryFlyToLocation(
+        extraCondition = extraCondition,
+        point = Point.fromLngLat(
+            place.longitude,
+            place.latitude
+        ),
+        zoom = zoom,
+        extraCameraOptions = extraCameraOptions,
+        onFly = onFly
+    )
+}
+
+fun flyToLocation(
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+) {
+    Timber.d(
+        "Focusing camera to location\n" +
+                "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
+                "Current sheetState:\n${sheetState.asString()}"
+    )
+    refreshCameraPadding()
+    mapView.value?.camera?.flyTo(
+        CameraOptions.Builder()
+            .padding(
+                cameraPadding.value,
+                density.value
+            )
+            .extraOptions(extraCameraOptions)
+            .build()
+    )
+}
+
+/**
+ * This method takes animations and sheet offset into consideration
+ * before focusing the camera onto a location.
+ *
+ * Usually used after a navigation in NavHosts located on the BottomSheet.
+ */
+fun tryFlyToLocation(
+    extraCondition: () -> Boolean = { true },
+    point: Point,
+    zoom: Double = 12.0,
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+    onFly: () -> Unit = {},
+) {
+    if (!sheetState.isAnimationRunning &&
+        sheetState.offset.value >= 10f &&
+        extraCondition()
+    ) {
+        onFly()
+        flyToLocation(
+            extraCameraOptions = {
+                it
+                    .zoom(zoom)
+                    .center(point)
+                    .extraOptions(extraCameraOptions)
+            }
+        )
+    }
+}
+
+fun tryFlyToPath(
+    extraCondition: () -> Boolean = { true },
+    path: List<Point>,
+    extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+    onFly: () -> Unit = {},
+) {
+    if (path.isEmpty()) return
+    if (!sheetState.isAnimationRunning &&
+        sheetState.offset.value >= 10f &&
+        extraCondition()
+    ) {
+        onFly()
+        flyToLocation {
+            val cameraOptions = mapView.value?.getMapboxMap()?.cameraForCoordinates(
+                coordinates = path,
+                padding = cameraPadding.value.toEdgeInsets(density.value)
+            )
+            it
+                .zoom(cameraOptions?.zoom?.times(0.95f))
+                .center(cameraOptions?.center)
+                .padding(cameraOptions?.padding)
+                .extraOptions(extraCameraOptions)
+        }
+
+    }
+}
 
 fun onSearchBarDrag(
     coroutineScope: CoroutineScope,
@@ -286,13 +400,22 @@ fun LocalBroadcastManager.sendBroadcast(
     sendBroadcast(intent)
 }
 
+fun refreshCameraPadding() {
+    val screenHeight = screenHeight.value
+    val bottomSpace = screenHeight - absoluteBottom.value
+    val topSpace = absoluteTop.value
+    val sheetOffset = sheetState.getOffsetAsDp(density.value)
+    _cameraPadding.value = PaddingValues(
+        bottom = max(0.dp, screenHeight + bottomSpace + topSpace - sheetOffset)
+    )
+}
+
 @OptIn(ExperimentalPermissionsApi::class)
 @HomeNavGraph(start = true)
 @Destination
 @Composable
 fun HomeScreen(
     context: Context = LocalContext.current,
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -307,11 +430,50 @@ fun HomeScreen(
         )
         // setStatusBarColor() and setNavigationBarColor() also exist
     }
-    DisposableEffect(Unit) {
-        coroutineScope.launch { viewModel.loadLastLocation() }
+    val cameraPaddingValues by cameraPadding.collectAsState()
+    val locationPermissionState = rememberPermissionState(
+        permission = Manifest.permission.ACCESS_FINE_LOCATION
+    )
+    DisposableEffect(locationPermissionState.status.isGranted) {
+        if (locationPermissionState.status.isGranted) {
+            coroutineScope.launch { viewModel.loadLastLocation() }
+            mapView.value?.location?.turnOnWithDefaultPuck(context)
+        } else {
+            mapView.value?.location?.enabled = false
+        }
         onDispose { viewModel.dispose() }
     }
-    ConstraintLayout {
+    val density = LocalDensity.current.density
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+    LaunchedEffect(density) { _density.value = density }
+    LaunchedEffect(screenHeightDp) { _screenHeight.value = screenHeightDp }
+    ConstraintLayout(
+        modifier = Modifier.onGloballyPositioned { coords ->
+            var topSet = false
+            val absoluteTopPosition = (coords.positionInWindow().y / density).dp
+            if (_absoluteTop.value != absoluteTopPosition) {
+                _absoluteTop.value = absoluteTopPosition
+                topSet = true
+            }
+            var bottomSet = false
+            val absoluteBottomPosition =
+                ((coords.positionInWindow().y + coords.size.height) / density).dp
+            if (_absoluteBottom.value != absoluteBottomPosition) {
+                bottomSet = true
+                _absoluteBottom.value = absoluteBottomPosition
+            }
+            if (topSet || bottomSet) {
+                refreshCameraPadding()
+                Timber.d(
+                    "Camera bottom padding: ${
+                        absoluteBottomPosition - sheetState.getOffsetAsDp(
+                            density
+                        )
+                    }"
+                )
+            }
+        }
+    ) {
         val (searchBar, scaffold) = createRefs()
         val scaffoldState = rememberBottomSheetScaffoldState()
         val bottomSheetState = scaffoldState.bottomSheetState
@@ -325,7 +487,8 @@ fun HomeScreen(
         BackPressHandler {
             onHomeBackPress(isTextFieldFocused, focusManager, context)
         }
-        LaunchedEffect(key1 = sheetCollapsing) {
+        LaunchedEffect(bottomSheetState.offset) { refreshCameraPadding() }
+        LaunchedEffect(sheetCollapsing) {
             onSheetStateChanged(
                 isTextFieldFocused,
                 bottomSheetState,
@@ -388,8 +551,7 @@ fun HomeScreen(
                             fraction = it,
                             threshold = BottomSheetPartialExpendedFraction
                         )
-                    },
-                    viewModel = viewModel
+                    }
                 )
             },
             sheetPeekHeight = SearchBarHeight,
@@ -404,16 +566,13 @@ fun HomeScreen(
                 modifier = Modifier
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius / 4f)
             ) {
-                val locationPermissionState = rememberPermissionState(
-                    permission = Manifest.permission.ACCESS_FINE_LOCATION
-                )
                 val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsState()
                 val cameraOptionsBuilder by viewModel.cameraOptionsBuilder.collectAsState()
                 // Grace period is useful when we would like to initialize the map
                 // with the user's location in focus.
                 // If it ends, it defaults to the middle of the Earth.
                 var initialLocationGrace by remember { mutableStateOf(true) }
-                LaunchedEffect(true) {
+                LaunchedEffect(Unit) {
                     // The chance of the Grace period is only given if permissions
                     // are granted beforehand.
                     // Disabled grace period temporarly due it would be too much to wait for
@@ -424,62 +583,159 @@ fun HomeScreen(
 //                    }
                     initialLocationGrace = false
                 }
-                var didLoadInLodation by remember { mutableStateOf(false) }
-                LaunchedEffect(bottomSheetState.isExpanded) {
+                var didLoadInLocation by remember { mutableStateOf(false) }
+                var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
+                var isMapInitialized by remember { mutableStateOf(false) }
+                val sheetContentHeight by sheetContentHeight.collectAsState()
+                LaunchedEffect(
+                    bottomSheetState.getOffsetAsDp(density),
+                    isMapInitialized,
+                    initialLocationLoaded
+                ) {
+                    refreshCameraPadding()
+                    // Permissions probably granted because there is a location to focus on
                     if (bottomSheetState.isExpanded &&
-                        !didLoadInLodation &&
+                        !didLoadInLocation &&
                         cameraOptionsBuilder != null &&
-                        initialLocationLoaded
+                        initialLocationLoaded &&
+                        isMapInitialized &&
+                        bottomSheetState.progress.to == BottomSheetValue.Expanded &&
+                        sheetContentHeight >= 20.dp &&
+                        _cameraPadding.value.calculateBottomPadding() >= 20.dp
                     ) {
-                        Timber.d("Height: $bottomSheetHeight")
-                        didLoadInLodation = true
+                        Timber.d(
+                            "Focusing camera to location\n" +
+                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
+                                    "Current sheetState:\n${sheetState.asString()}" +
+                                    "Sheet content height = $sheetContentHeight"
+                        )
+                        didLoadInLocation = true
                         mapView.value?.camera?.flyTo(
                             cameraOptionsBuilder!!
-                                .padding(PaddingValues(
-                                    bottom = bottomSheetHeight
-                                ), context)
+                                .center(viewModel.initialLocation.value?.let {
+                                    Point.fromLngLat(
+                                        it.longitude,
+                                        it.latitude
+                                    )
+                                }
+                                )
+                                .padding(
+                                    _cameraPadding.value, context
+                                )
+                                .build()
+                        )
+                    }
+                    // Permissions not granted
+                    if (bottomSheetState.isExpanded &&
+                        !didLoadInLocationWithoutPermissions &&
+                        !locationPermissionState.status.isGranted &&
+                        isMapInitialized &&
+                        bottomSheetState.progress.to == BottomSheetValue.Expanded &&
+                        sheetContentHeight >= 20.dp &&
+                        _cameraPadding.value.calculateBottomPadding() >= 20.dp
+                    ) {
+                        Timber.d(
+                            "Focusing camera to location" +
+                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
+                                    "Current sheetState:\n${sheetState.asString()}\n" +
+                                    "Sheet content height = $sheetContentHeight"
+                        )
+                        didLoadInLocationWithoutPermissions = true
+                        mapView.value?.camera?.flyTo(
+                            CameraOptions.Builder()
+                                .zoom(4.0)
+                                .center(
+                                    Point.fromLngLat(
+                                        ButeK.longitude,
+                                        ButeK.latitude
+                                    )
+                                )
+                                .padding(
+                                    _cameraPadding.value, context
+                                )
                                 .build()
                         )
                     }
                 }
-                if ((initialLocationLoaded || !initialLocationGrace) && cameraOptionsBuilder != null) {
-                    MapboxMap( // Budapest University of Technology and Economics
-                        modifier = Modifier.fillMaxSize(),
-                        cameraOptionsBuilder = cameraOptionsBuilder!!
-                            .padding(PaddingValues(
-                                bottom = bottomSheetHeight
-                            ), context),
-                        resourceOptions = ResourceOptions.Builder()
-                            .accessToken(BuildConfig.MapboxAccessToken)
-                            .build(),
-                        onMapLoaded = {
-                            _mapView.value = it
-                            val pointAnnotationManager = it.annotations.createPointAnnotationManager()
-                            val pointAnnotationOptions = PointAnnotationOptions()
-                                // Define a geographic coordinate.
-                                .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
-                                // Specify the bitmap you assigned to the point annotation
-                                // The bitmap will be added to map style automatically.
-                                .withIconImage(
-                                    getBitmapFromVectorDrawable(
-                                        context,
-                                        R.drawable.ic_jay_marker_icon_v3_round
+                var isMapVisible by remember { mutableStateOf(false) }
+                if (initialLocationLoaded || !initialLocationGrace) {
+                    ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+                        val (foreground, map) = createRefs()
+                        Column(modifier = Modifier
+                            .fillMaxSize()
+                            .constrainAs(foreground) {
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            }
+                            .zIndex(1f)) {
+                            AnimatedVisibility(
+                                visible = !isMapVisible,
+                                exit = fadeOut(animationSpec = tween(800))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.background)
+                                )
+                            }
+                        }
+                        MapboxMap(
+                            // Budapest University of Technology and Economics
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .constrainAs(map) {
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                },
+                            cameraOptionsBuilder = cameraOptionsBuilder?.padding(
+                                cameraPaddingValues, context
+                            ) ?: CameraOptions.Builder()
+                                .center(
+                                    Point.fromLngLat(
+                                        ButeK.longitude,
+                                        ButeK.latitude
                                     )
                                 )
-                            // Add the resulting pointAnnotation to the map.
-                            pointAnnotationManager.create(pointAnnotationOptions)
-                            when (locationPermissionState.status) {
-                                is PermissionStatus.Granted -> {
-                                    it.location.turnOnWithDefaultPuck(context)
-                                }
+                                .zoom(4.0),
+                            resourceOptions = ResourceOptions.Builder().applyDefaultParams(context)
+                                .accessToken(BuildConfig.MapboxAccessToken)
+                                .build(),
+                            onMapFullyLoaded = { isMapVisible = true },
+                            onMapInitialized = {
+                                isMapInitialized = true
+                                _mapView.value = it
+                                val pointAnnotationManager =
+                                    it.annotations.createPointAnnotationManager()
+                                val pointAnnotationOptions = PointAnnotationOptions()
+                                    // Define a geographic coordinate.
+                                    .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
+                                    // Specify the bitmap you assigned to the point annotation
+                                    // The bitmap will be added to map style automatically.
+                                    .withIconImage(
+                                        getBitmapFromVectorDrawable(
+                                            context,
+                                            R.drawable.ic_jay_marker_icon_v3_round
+                                        )
+                                    )
+                                // Add the resulting pointAnnotation to the map.
+                                pointAnnotationManager.create(pointAnnotationOptions)
+                                when (locationPermissionState.status) {
+                                    is PermissionStatus.Granted -> {
+                                        it.location.turnOnWithDefaultPuck(context)
+                                    }
 
-                                is PermissionStatus.Denied -> {
-                                    it.location.enabled = false
+                                    is PermissionStatus.Denied -> {
+                                        it.location.enabled = false
+                                    }
                                 }
-                            }
-                        },
-                        styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
-                    )
+                            },
+                            styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
+                        )
+                    }
                 }
             }
         }
@@ -492,6 +748,7 @@ private fun onHomeBackPress(
     context: Context,
 ) {
     Timber.d("Handling back press from Home!")
+    if (sheetState.isCollapsedOrWillBe()) (context as MainActivity).moveTaskToBack(false)
     if (isTextFieldFocused) {
         // Remove the focus from the textfield
         focusManager.clearFocus()
@@ -549,7 +806,7 @@ fun BottomSearchBar(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val sheetCollapsing = bottomSheetState?.isCollapsing() ?: false
-    LaunchedEffect(key1 = sheetCollapsing) {
+    LaunchedEffect(sheetCollapsing) {
         if (sheetCollapsing) {
             launch {
                 focusRequester.freeFocus()
@@ -696,13 +953,17 @@ fun BottomSheetScreen(
     modifier: Modifier = Modifier,
     isSearching: Boolean = false,
     onBottomSheetFractionChange: (Float) -> Unit = {},
-    viewModel: HomeViewModel = hiltViewModel(),
-    context: Context = LocalContext.current
 ) {
     val halfWayFraction = BottomSheetPartialExpendedFraction
     val fullScreenFraction = BottomSheetPartialMaxFraction
     ConstraintLayout(
-        modifier = modifier
+        modifier = modifier.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints)
+            _sheetContentHeight.value = (placeable.height / density).dp
+            layout(placeable.width, placeable.height) {
+                placeable.placeRelative(0, 0)
+            }
+        }
     ) {
         if (!isSearching) {
             Row(
@@ -759,48 +1020,36 @@ private fun SheetNavHost(
         },
         animationSpec = SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessVeryLow
+            stiffness = Spring.StiffnessMedium
         )
     )
-    val stiffness by animateFloatAsState(
-        targetValue = if (isSearching) {
-            Spring.StiffnessVeryLow
-        } else {
-            Spring.StiffnessLow
-        }
-    )
-    val animatedSheetHeight by animateDpAsState(
-        targetValue = if (isSearching) {
-            0.dp
-        } else {
-            sheetMaxHeight
-        },
-        animationSpec = SpringSpec(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = stiffness
-        )
-    )
-    val density = LocalDensity.current
+    val density = LocalDensity.current.density
     DestinationsNavHost(
         navGraph = NavGraphs.sheet,
         modifier = modifier
-            .heightIn(max = animatedSheetHeight)
-            .animateContentSize { _, _ -> }
-            .alpha(alpha = sheetAlpha)
+            .heightIn(max = sheetMaxHeight)
             .navigationBarsPadding()
             .padding(bottom = SearchBarHeight - RoundedCornerRadius)
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
+                val height = placeable.measuredHeight.toDp()
                 if (sheetState.isExpanded &&
                     sheetState.progress.fraction == 1f &&
-                    placeable.measuredHeight.toDp() > 0.dp
+                    height >= sheetMinHeight &&
+                    height != sheetState.getOffsetAsDp(density)
                 ) {
-                    bottomSheetHeight = placeable.measuredHeight.toDp()
+                    Timber.d(
+                        "Density: ${density}\n" +
+                                "New bottom sheet height: ${sheetState.getOffsetAsDp(density)}\n" +
+                                "Bottom sheet state:\n${sheetState.asString()}"
+                    )
+                    refreshCameraPadding()
                 }
                 layout(placeable.width, placeable.height) {
                     placeable.placeRelative(0, 0)
                 }
-            },
+            }
+            .alpha(alpha = sheetAlpha),
         engine = rememberAnimatedNavHostEngine(
             rootDefaultAnimations = RootNavGraphDefaultAnimations(
                 enterTransition = {
@@ -858,4 +1107,24 @@ private fun SearchNavHost(
             .navigationBarsPadding()
             .padding(bottom = SearchBarHeight - RoundedCornerRadius),
     )
+}
+
+fun BottomSheetState.asString(density: Float = 2.75f): String {
+    return "isExpanded ${isExpanded}\n" +
+            "isExpanding ${isExpanding()}\n" +
+            "isCollapsed ${isCollapsed}\n" +
+            "isCollapsing ${isCollapsing()}\n" +
+            "targetValue ${targetValue.name}\n" +
+            "currentValue ${currentValue.name}\n" +
+            "direction ${direction}\n" +
+            "isAnimationRunning ${isAnimationRunning}\n" +
+            "offset ${getOffsetAsDp(density)}\n" +
+            "overflow ${overflow.value}\n" +
+            "progress.fraction ${progress.fraction}\n" +
+            "progress.from ${progress.from.name}\n" +
+            "progress.to ${progress.to.name}\n"
+}
+
+fun BottomSheetState.getOffsetAsDp(density: Float): Dp {
+    return (offset.value / density).dp
 }

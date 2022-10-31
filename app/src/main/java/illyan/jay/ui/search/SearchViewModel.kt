@@ -22,14 +22,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.mapbox.search.SearchOptions
 import com.mapbox.search.record.IndexableRecord
 import com.mapbox.search.result.SearchSuggestion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.SearchInteractor
 import illyan.jay.service.BaseReceiver
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,11 +43,23 @@ class SearchViewModel @Inject constructor(
     var searchQuery by mutableStateOf("")
         private set
 
-    val historyRecords get() = searchInteractor.historyRecords
-        .sortedByDescending { it.timestamp }.take(4).toMutableStateList()
+    private val _historyRecords = MutableStateFlow(
+        searchInteractor.historyRecords.value.sortedByDescending { it.timestamp }.take(4)
+    )
+    val historyRecords = _historyRecords.asStateFlow()
+    private val _favoriteRecords = MutableStateFlow(searchInteractor.favoriteRecords.value)
+    val favoriteRecords = _favoriteRecords.asStateFlow()
 
-    val favoriteRecords get() = searchInteractor.favoriteRecords
-        .take(4).toMutableStateList()
+    init {
+        viewModelScope.launch {
+            searchInteractor.historyRecords.collectLatest { records ->
+                _historyRecords.value = records.sortedByDescending { it.timestamp }.take(4)
+            }
+            searchInteractor.favoriteRecords.collectLatest {
+                _favoriteRecords.value = it.take(4)
+            }
+        }
+    }
 
     var searchSuggestions = mutableStateListOf<SearchSuggestion>()
         private set
@@ -66,11 +82,11 @@ class SearchViewModel @Inject constructor(
             navigateTo(it)
             return@BaseReceiver
         }
-        favoriteRecords.firstOrNull()?.let {
+        favoriteRecords.value.firstOrNull()?.let {
             navigateTo(it)
             return@BaseReceiver
         }
-        historyRecords.firstOrNull()?.let {
+        historyRecords.value.firstOrNull()?.let {
             navigateTo(it)
             return@BaseReceiver
         }

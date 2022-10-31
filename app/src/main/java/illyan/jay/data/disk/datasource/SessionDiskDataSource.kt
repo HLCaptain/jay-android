@@ -47,6 +47,8 @@ class SessionDiskDataSource @Inject constructor(
      */
     fun getSessions() = sessionDao.getSessions().map { it.map(RoomSession::toDomainModel) }
 
+    fun getSessionIds() = sessionDao.getSessionIds()
+
     /**
      * Get a particular session by its ID.
      *
@@ -75,7 +77,7 @@ class SessionDiskDataSource @Inject constructor(
 
     /**
      * Creates a session in the database with the current time as
-     * the starting date, end date as null and distance = 0.
+     * the starting date, end date as null.
      *
      * @return ID of the newly started session.
      */

@@ -138,6 +138,7 @@ dependencies {
     def accompanist_version = '0.26.5-rc'
     implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist_version"
     implementation "com.google.accompanist:accompanist-permissions:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-placeholder-material:$accompanist_version"
 
     // Hilt
     def hilt_version = '2.44'

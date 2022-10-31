@@ -46,6 +46,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,11 +88,13 @@ val DividerThickness = 1.dp
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel()
 ) {
-    DisposableEffect(key1 = true) {
+    DisposableEffect(Unit) {
         viewModel.load()
         onDispose { viewModel.dispose() }
     }
     val focusManager = LocalFocusManager.current
+    val favoriteItems by viewModel.favoriteRecords.collectAsState()
+    val historyItems by viewModel.historyRecords.collectAsState()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -123,7 +127,7 @@ fun SearchScreen(
             )
         }
         favoriteItems(
-            items = viewModel.favoriteRecords
+            items = favoriteItems
         ) { favoriteRecord, _ ->
             focusManager.clearFocus()
             viewModel.navigateTo(favoriteRecord)
@@ -136,7 +140,7 @@ fun SearchScreen(
             )
         }
         historyItems(
-            items = viewModel.historyRecords
+            items = historyItems
         ) { favoriteRecord, _ ->
             focusManager.clearFocus()
             viewModel.navigateTo(favoriteRecord)
@@ -145,7 +149,7 @@ fun SearchScreen(
 }
 
 fun LazyListScope.historyItems(
-    items: SnapshotStateList<HistoryRecord>,
+    items: List<HistoryRecord>,
     onClick: (HistoryRecord, Int) -> Unit = { _, _ -> }
 ) {
     searchItems(
@@ -160,7 +164,7 @@ fun LazyListScope.historyItems(
 }
 
 fun LazyListScope.favoriteItems(
-    items: SnapshotStateList<FavoriteRecord>,
+    items: List<FavoriteRecord>,
     onClick: (FavoriteRecord, Int) -> Unit = { _, _ -> }
 ) {
     searchItems(
@@ -175,7 +179,7 @@ fun LazyListScope.favoriteItems(
 }
 
 fun LazyListScope.suggestionItems(
-    items: SnapshotStateList<SearchSuggestion>,
+    items: List<SearchSuggestion>,
     onClick: (SearchSuggestion, Int) -> Unit = { _, _ -> }
 ) {
     searchItems(
@@ -190,7 +194,7 @@ fun LazyListScope.suggestionItems(
 }
 
 fun <Item> LazyListScope.searchItems(
-    list: SnapshotStateList<Item> = SnapshotStateList(),
+    list: List<Item> = SnapshotStateList(),
     emptyListPlaceholder: @Composable () -> Unit = {
         SearchCard(
             modifier = Modifier.fillMaxWidth(),
@@ -201,7 +205,7 @@ fun <Item> LazyListScope.searchItems(
     },
     itemProvider: @Composable (Item, Int) -> Unit
 ) {
-    if (list.size == 0) {
+    if (list.isEmpty()) {
         item {
             emptyListPlaceholder()
         }

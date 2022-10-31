@@ -16,10 +16,22 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */ // ktlint-disable filename
 
+@file:OptIn(ExperimentalMaterialApi::class)
+
 package illyan.jay.util
 
 import android.os.SystemClock
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.material.BottomSheetState
+import androidx.compose.material.BottomSheetValue
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.ui.unit.LayoutDirection
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.EdgeInsets
 import java.time.Instant
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -33,3 +45,61 @@ import kotlin.time.Duration.Companion.seconds
  */
 fun sensorTimestampToAbsoluteTime(timestamp: Long) = Instant.now()
     .toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1.seconds.inWholeMicroseconds
+
+fun Duration.format(
+    separator: String = " ",
+    second: String = "s",
+    minute: String = "m",
+    hour: String = "h",
+    day: String = "d",
+): String {
+    return toComponents { days, hours, minutes, seconds, _ ->
+        val builder = StringBuilder()
+        if (days > 0) {
+            builder.append(days.toString() + day + separator)
+        }
+        if (days > 0 || hours > 0) {
+            builder.append(hours.toString() + hour + separator)
+        }
+        if (days > 0 || hours > 0 || minutes > 0) {
+            builder.append(minutes.toString() + minute + separator)
+        }
+        builder.append(seconds.toString() + second)
+        builder.toString()
+    }
+}
+
+fun BottomSheetState.isExpanding() =
+    isAnimationRunning && targetValue == BottomSheetValue.Expanded
+
+fun BottomSheetState.isCollapsing() =
+    isAnimationRunning && targetValue == BottomSheetValue.Collapsed
+
+fun BottomSheetState.isExpandedOrWillBe() =
+    isExpanding() || isExpanded
+
+fun BottomSheetState.isCollapsedOrWillBe() =
+    isCollapsing() || isCollapsed
+
+fun CameraOptions.Builder.extraOptions(
+    extraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
+) = extraOptions(this)
+
+operator fun EdgeInsets.plus(edgeInsets: EdgeInsets): EdgeInsets {
+    return EdgeInsets(
+        top + edgeInsets.top,
+        left + edgeInsets.left,
+        bottom + edgeInsets.bottom,
+        right + edgeInsets.right
+    )
+}
+
+operator fun PaddingValues.plus(paddingValues: PaddingValues): PaddingValues {
+    val direction = LayoutDirection.Ltr
+    return PaddingValues(
+        start = calculateStartPadding(direction) + paddingValues.calculateStartPadding(direction),
+        top = calculateTopPadding() + paddingValues.calculateTopPadding(),
+        end = calculateEndPadding(direction) + paddingValues.calculateEndPadding(direction),
+        bottom = calculateBottomPadding() + paddingValues.calculateBottomPadding(),
+    )
+}

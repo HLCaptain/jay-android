@@ -22,6 +22,7 @@ import illyan.jay.TestBase
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
 import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
+import illyan.jay.domain.interactor.SearchInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainSession
 import io.mockk.every
@@ -30,6 +31,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -53,6 +55,8 @@ class SessionInteractorTest : TestBase() {
     private lateinit var mockedSensorEventDiskDataSource: SensorEventDiskDataSource
     private lateinit var mockedLocationDiskDataSource: LocationDiskDataSource
     private lateinit var sessionInteractor: SessionInteractor
+    private lateinit var mockedSearchInteractor: SearchInteractor
+    private lateinit var mockedCoroutineScope: CoroutineScope
 
     private val random = Random(Instant.now().nano)
     private val now = Instant.now()
@@ -102,12 +106,15 @@ class SessionInteractorTest : TestBase() {
         mockedSessionDiskDataSource = mockk(relaxed = true)
         mockedSensorEventDiskDataSource = mockk(relaxed = true)
         mockedLocationDiskDataSource = mockk(relaxed = true)
+        mockedSearchInteractor = mockk(relaxed = true)
+        mockedCoroutineScope = mockk(relaxed = true)
 
         sessionInteractor = spyk(
             SessionInteractor(
                 mockedSessionDiskDataSource,
                 mockedSensorEventDiskDataSource,
-                mockedLocationDiskDataSource
+                mockedLocationDiskDataSource,
+                mockedSearchInteractor
             )
         )
     }
@@ -185,7 +192,7 @@ class SessionInteractorTest : TestBase() {
     fun `Start a session`() = runTest {
         every { mockedSessionDiskDataSource.startSession() } returns sessions.size + 1L
 
-        val result = sessionInteractor.startSession()
+        val result = sessionInteractor.startSession(mockedCoroutineScope)
 
         assertEquals(sessions.size + 1L, result)
         verify(exactly = 1) { mockedSessionDiskDataSource.startSession() }
@@ -207,7 +214,7 @@ class SessionInteractorTest : TestBase() {
         val ongoingSession = ongoingSession.copy()
         every { sessionInteractor.getOngoingSessions() } returns flowOf(listOf(ongoingSession))
 
-        launch { sessionInteractor.stopOngoingSessions() }
+        launch { sessionInteractor.stopOngoingSessions(mockedCoroutineScope) }
 
         // Wait coroutine to collect the data.
         advanceUntilIdle()
@@ -215,7 +222,7 @@ class SessionInteractorTest : TestBase() {
         verify(exactly = 1) { sessionInteractor.getOngoingSessions() }
         verify(exactly = 1) { mockedSessionDiskDataSource.stopSessions(listOf(ongoingSession)) }
         verifyOrder {
-            launch { sessionInteractor.stopOngoingSessions() }
+            launch { sessionInteractor.stopOngoingSessions(any()) }
             sessionInteractor.getOngoingSessions()
             mockedSessionDiskDataSource.stopSessions(listOf(ongoingSession))
         }

@@ -36,4 +36,13 @@
     <string name="start_free_driving">Start free-driving</string>
     <string name="stop_free_driving">Stop free-driving</string>
     <string name="automatically_turn_on_free_driving">Automatically turn on free-driving</string>
+    <string name="unknown">Unknown</string>
+    <string name="distance">Distance</string>
+    <string name="meters">m</string>
+    <string name="duration">Duration</string>
+    <string name="hour_short">h</string>
+    <string name="minute_short">m</string>
+    <string name="second_short">s</string>
+    <string name="day_short">d</string>
+    <string name="kilometers">km</string>
 </resources>

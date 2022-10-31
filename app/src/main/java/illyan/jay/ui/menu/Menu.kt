@@ -19,6 +19,7 @@
 package illyan.jay.ui.menu
 
 import android.app.Activity
+import android.content.Context
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
@@ -44,6 +45,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Expand
 import androidx.compose.material.icons.rounded.Navigation
+import androidx.compose.material.icons.rounded.Route
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +57,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,20 +69,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.MainActivity
 import illyan.jay.ui.destinations.FreeDriveScreenDestination
+import illyan.jay.ui.destinations.SessionsScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sendBroadcast
+import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
+import illyan.jay.util.isCollapsedOrWillBe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @RootNavGraph
@@ -92,16 +101,40 @@ val MenuItemPadding = 6.dp
 val ListMaxHeight = 384.dp
 val ListMinHeight = 128.dp
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+//val DefaultContentPadding = PaddingValues(
+//    top = MenuItemPadding,
+//    // FIXME: bottom content padding is not applied
+//    bottom = RoundedCornerRadius + MenuItemPadding
+//)
+//
+//val DefaultScreenOnSheetPadding = PaddingValues(
+//    start = MenuItemPadding,
+//    end = MenuItemPadding,
+//    // TODO: remove additional bottom padding after getting contentPadding working
+//    bottom = RoundedCornerRadius + MenuItemPadding
+//)
+
+val DefaultContentPadding = PaddingValues(
+    bottom = MenuItemPadding
+)
+
+val DefaultScreenOnSheetPadding = PaddingValues(
+    top = MenuItemPadding,
+    start = MenuItemPadding,
+    end = MenuItemPadding,
+    bottom = RoundedCornerRadius
+)
+
+@OptIn(ExperimentalFoundationApi::class)
 @MenuNavGraph(start = true)
 @Destination
 @Composable
 fun MenuScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
-    viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     BackPressHandler {
+        Timber.d("Intercepted back press!")
         (context as Activity).moveTaskToBack(false)
     }
     val gridState = rememberLazyStaggeredGridState()
@@ -114,23 +147,14 @@ fun MenuScreen(
                 min = ListMinHeight,
                 max = ListMaxHeight,
             )
-            .padding(
-                start = MenuItemPadding,
-                end = MenuItemPadding,
-                // TODO: remove additional bottom padding after getting contentPadding working
-                bottom = RoundedCornerRadius + MenuItemPadding
-            )
+            .padding(DefaultScreenOnSheetPadding)
             .clip(
                 RoundedCornerShape(
                     topStart = 12.dp,
                     topEnd = 12.dp
                 )
             ),
-        contentPadding = PaddingValues(
-            top = MenuItemPadding,
-            // FIXME: bottom content padding is not applied
-            bottom = RoundedCornerRadius + MenuItemPadding
-        ),
+        contentPadding = DefaultContentPadding,
         state = gridState
     ) {
         // TODO: fill up list with content
@@ -159,6 +183,17 @@ fun MenuScreen(
                 icon = Icons.Rounded.Navigation,
                 onClick = {
                     destinationsNavigator.navigate(FreeDriveScreenDestination)
+                },
+                color = Color.Cyan
+            )
+        }
+        item {
+            MenuItemCard(
+                modifier = Modifier.padding(MenuItemPadding),
+                title = "Sessions",
+                icon = Icons.Rounded.Route,
+                onClick = {
+                    destinationsNavigator.navigate(SessionsScreenDestination)
                 },
                 color = Color.Cyan
             )
@@ -276,13 +311,46 @@ fun BackPressHandler(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(key1 = backPressedDispatcher, key2 = customDisposableEffectKey) {
+    DisposableEffect(backPressedDispatcher, customDisposableEffectKey) {
         if (isEnabled()) {
             backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
         }
 
         onDispose {
             backCallback.remove()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun SheetScreenBackPressHandler(
+    backPressedDispatcher: OnBackPressedDispatcher? =
+        LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher,
+    customDisposableEffectKey: Any? = null,
+    isEnabled: () -> Boolean = { true },
+    context: Context = LocalContext.current,
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+    destinationsNavigator: DestinationsNavigator,
+    onBackPressed: () -> Unit = {},
+) {
+    BackPressHandler(
+        backPressedDispatcher = backPressedDispatcher,
+        customDisposableEffectKey = customDisposableEffectKey,
+        isEnabled = isEnabled,
+    ) {
+        onBackPressed()
+        Timber.d("Handling back press in Navigation!")
+        // If searching and back is pressed, close the sheet instead of the app
+        if (sheetState.isCollapsedOrWillBe()) (context as MainActivity).moveTaskToBack(false)
+        if (isSearching) {
+            coroutineScope.launch {
+                // This call will automatically unfocus the textfield
+                // because BottomSearchBar listens on sheet changes.
+                sheetState.collapse()
+            }
+        } else {
+            destinationsNavigator.navigateUp()
         }
     }
 }
@@ -302,7 +370,7 @@ fun BackPressHandler(
         }
     }
 
-    DisposableEffect(key1 = onBackInvokedDispatcher) {
+    DisposableEffect(onBackInvokedDispatcher) {
         onBackInvokedDispatcher.registerOnBackInvokedCallback(
             PRIORITY_DEFAULT,
             backCallback

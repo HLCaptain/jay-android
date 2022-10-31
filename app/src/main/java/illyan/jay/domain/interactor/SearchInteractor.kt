@@ -20,10 +20,11 @@ package illyan.jay.domain.interactor
 
 import android.content.Intent
 import android.content.IntentFilter
-import androidx.compose.runtime.mutableStateListOf
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.mapbox.search.CompletionCallback
 import com.mapbox.search.ResponseInfo
+import com.mapbox.search.ReverseGeoOptions
+import com.mapbox.search.SearchCallback
 import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchOptions
 import com.mapbox.search.SearchSelectionCallback
@@ -42,6 +43,8 @@ import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -53,25 +56,23 @@ class SearchInteractor @Inject constructor(
     private val historyDataProvider: HistoryDataProvider,
     private val favoritesDataProvider: FavoritesDataProvider
 ) {
-    var historyRecords = mutableStateListOf<HistoryRecord>()
-        private set
+    private val _historyRecords = MutableStateFlow(listOf<HistoryRecord>())
+    val historyRecords = _historyRecords.asStateFlow()
 
-    var favoriteRecords = mutableStateListOf<FavoriteRecord>()
-        private set
+    private val _favoriteRecords = MutableStateFlow(listOf<FavoriteRecord>())
+    val favoriteRecords = _favoriteRecords.asStateFlow()
 
     private val historyDataChangedListener =
         object : LocalDataProvider.OnDataChangedListener<HistoryRecord> {
             override fun onDataChanged(newData: List<HistoryRecord>) {
-                historyRecords.clear()
-                historyRecords.addAll(newData)
+                _historyRecords.value = newData
             }
         }
 
     private val favoritesDataChangedListener =
         object : LocalDataProvider.OnDataChangedListener<FavoriteRecord> {
             override fun onDataChanged(newData: List<FavoriteRecord>) {
-                favoriteRecords.clear()
-                favoriteRecords.addAll(newData)
+                _favoriteRecords.value = newData
             }
         }
 
@@ -85,8 +86,7 @@ class SearchInteractor @Inject constructor(
         favoritesDataProvider.getAll(
             object : CompletionCallback<List<FavoriteRecord>> {
                 override fun onComplete(result: List<FavoriteRecord>) {
-                    favoriteRecords.clear()
-                    favoriteRecords.addAll(result)
+                    _favoriteRecords.value = result
                 }
 
                 override fun onError(e: Exception) {
@@ -101,8 +101,7 @@ class SearchInteractor @Inject constructor(
         historyDataProvider.getAll(
             object : CompletionCallback<List<HistoryRecord>> {
                 override fun onComplete(result: List<HistoryRecord>) {
-                    historyRecords.clear()
-                    historyRecords.addAll(result)
+                    _historyRecords.value = result
                 }
 
                 override fun onError(e: Exception) {
@@ -207,6 +206,31 @@ class SearchInteractor @Inject constructor(
                     responseInfo: ResponseInfo
                 ) {
                     onSuggestions(suggestions, responseInfo)
+                }
+            }
+        )
+    }
+
+    fun search(
+        reverseGeoOptions: ReverseGeoOptions,
+        onError: (e: Exception) -> Unit = {
+            Timber.d("Error searching for point ${reverseGeoOptions.center}")
+            it.printStackTrace()
+        },
+        onSuggestions: (
+            results: List<SearchResult>,
+            responseInfo: ResponseInfo
+        ) -> Unit
+    ) {
+        searchEngine.search(
+            options = reverseGeoOptions,
+            callback = object : SearchCallback {
+                override fun onError(e: Exception) {
+                    onError(e)
+                }
+
+                override fun onResults(results: List<SearchResult>, responseInfo: ResponseInfo) {
+                    onSuggestions(results, responseInfo)
                 }
             }
         )
