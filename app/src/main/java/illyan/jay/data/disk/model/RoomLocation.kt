@@ -37,15 +37,15 @@ import androidx.room.PrimaryKey
 data class RoomLocation(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val sessionId: Long,
-    val latitude: Double,
-    val longitude: Double,
-    val accuracy: Float,
+    val sessionId: Int,
+    val latitude: Float,
+    val longitude: Float,
+    val accuracy: Byte,
     val time: Long, // in millis
     val speed: Float,
-    val speedAccuracy: Float, // in meters per second
-    val bearing: Float,
-    val bearingAccuracy: Float, // in degrees
-    val altitude: Double,
-    val verticalAccuracy: Float // in meters
+    val speedAccuracy: Byte, // in meters per second
+    val bearing: Short,
+    val bearingAccuracy: Short, // in degrees
+    val altitude: Short,
+    val verticalAccuracy: Short // in meters
 )

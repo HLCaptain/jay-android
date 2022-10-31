@@ -31,10 +31,10 @@ data class RoomSession(
     val id: Long = 0,
     val startDateTime: Long,
     var endDateTime: Long? = null,
-    var startLocationLatitude: Double? = null,
-    var startLocationLongitude: Double? = null,
-    var endLocationLatitude: Double? = null,
-    var endLocationLongitude: Double? = null,
+    var startLocationLatitude: Float? = null,
+    var startLocationLongitude: Float? = null,
+    var endLocationLatitude: Float? = null,
+    var endLocationLongitude: Float? = null,
     var startLocationName: String? = null,
     var endLocationName: String? = null
 )

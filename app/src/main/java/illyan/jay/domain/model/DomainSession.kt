@@ -34,8 +34,45 @@ data class DomainSession(
     val id: Long = -1,
     val startDateTime: ZonedDateTime,
     var endDateTime: ZonedDateTime?,
-    var startLocation: LatLng? = null,
-    var endLocation: LatLng? = null,
+    var startLocationLatitude: Float? = null,
+    var startLocationLongitude: Float? = null,
+    var endLocationLatitude: Float? = null,
+    var endLocationLongitude: Float? = null,
     var startLocationName: String? = null,
     var endLocationName: String? = null
-)
+) {
+    var startLocation: LatLng?
+        get() {
+            return if (startLocationLatitude != null && startLocationLongitude != null) {
+                LatLng(
+                    startLocationLatitude!!.toDouble(),
+                    startLocationLongitude!!.toDouble()
+                )
+            } else {
+                null
+            }
+        }
+        set(value) {
+            if (startLocationLatitude == null || startLocationLongitude == null) {
+                startLocationLatitude = value?.latitude?.toFloat()
+                startLocationLongitude = value?.longitude?.toFloat()
+            }
+        }
+    var endLocation: LatLng?
+        get() {
+            return if (endLocationLatitude != null && endLocationLongitude != null) {
+                LatLng(
+                    endLocationLatitude!!.toDouble(),
+                    endLocationLongitude!!.toDouble()
+                )
+            } else {
+                null
+            }
+        }
+        set(value) {
+            if (endLocationLatitude == null || endLocationLongitude == null) {
+                endLocationLatitude = value?.latitude?.toFloat()
+                endLocationLongitude = value?.longitude?.toFloat()
+            }
+        }
+}

@@ -22,7 +22,6 @@ import android.hardware.SensorEvent
 import android.location.Location
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
-import com.google.android.gms.maps.model.LatLng
 import illyan.jay.data.disk.model.RoomLocation
 import illyan.jay.data.disk.model.RoomSensorEvent
 import illyan.jay.data.disk.model.RoomSession
@@ -38,14 +37,10 @@ fun RoomSession.toDomainModel() = DomainSession(
     id = id,
     startDateTime = Instant.ofEpochMilli(startDateTime).atZone(ZoneOffset.UTC),
     endDateTime = endDateTime?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC) },
-    startLocation = if (startLocationLatitude != null && startLocationLongitude != null)
-        LatLng(startLocationLatitude!!, startLocationLongitude!!)
-    else
-        null,
-    endLocation = if (endLocationLatitude != null && endLocationLongitude != null)
-        LatLng(endLocationLatitude!!, endLocationLongitude!!)
-    else
-        null,
+    startLocationLatitude = startLocationLatitude,
+    startLocationLongitude = startLocationLongitude,
+    endLocationLatitude = endLocationLatitude,
+    endLocationLongitude = endLocationLongitude,
     startLocationName = startLocationName,
     endLocationName = endLocationName,
 )
@@ -54,10 +49,10 @@ fun DomainSession.toRoomModel() = RoomSession(
     id = id,
     startDateTime = startDateTime.toInstant().toEpochMilli(),
     endDateTime = endDateTime?.toInstant()?.toEpochMilli(),
-    startLocationLatitude = startLocation?.latitude,
-    startLocationLongitude = startLocation?.longitude,
-    endLocationLatitude = endLocation?.latitude,
-    endLocationLongitude = endLocation?.longitude,
+    startLocationLatitude = startLocationLatitude,
+    startLocationLongitude = startLocationLongitude,
+    endLocationLatitude = endLocationLatitude,
+    endLocationLongitude = endLocationLongitude,
     startLocationName = startLocationName,
     endLocationName = endLocationName,
 )
@@ -65,7 +60,8 @@ fun DomainSession.toRoomModel() = RoomSession(
 // Location
 fun RoomLocation.toDomainModel() = DomainLocation(
     id = id,
-    latLng = LatLng(latitude, longitude),
+    latitude = latitude,
+    longitude = longitude,
     speed = speed,
     sessionId = sessionId,
     zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
@@ -78,8 +74,8 @@ fun RoomLocation.toDomainModel() = DomainLocation(
 )
 
 fun DomainLocation.toRoomModel() = RoomLocation(
-    latitude = latLng.latitude,
-    longitude = latLng.longitude,
+    latitude = latitude,
+    longitude = longitude,
     speed = speed,
     sessionId = sessionId,
     time = zonedDateTime.toInstant().toEpochMilli(),
@@ -93,20 +89,21 @@ fun DomainLocation.toRoomModel() = RoomLocation(
 
 fun Location.toDomainModel(sessionId: Long): DomainLocation {
     val domainLocation = DomainLocation(
-        latLng = LatLng(latitude, longitude),
-        sessionId = sessionId,
+        latitude = latitude.toFloat(),
+        longitude = longitude.toFloat(),
+        sessionId = sessionId.toInt(),
         zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC)
     )
 
     if (hasSpeed()) domainLocation.speed = speed
-    if (hasAccuracy()) domainLocation.accuracy = accuracy
-    if (hasBearing()) domainLocation.bearing = bearing
-    if (hasAltitude()) domainLocation.altitude = altitude
+    if (hasAccuracy()) domainLocation.accuracy = accuracy.toInt().toByte()
+    if (hasBearing()) domainLocation.bearing = bearing.toInt().toShort()
+    if (hasAltitude()) domainLocation.altitude = altitude.toInt().toShort()
 
     if (VERSION.SDK_INT >= VERSION_CODES.O) {
-        if (hasBearingAccuracy()) domainLocation.bearingAccuracy = bearingAccuracyDegrees
-        if (hasSpeedAccuracy()) domainLocation.speedAccuracy = speedAccuracyMetersPerSecond
-        if (hasVerticalAccuracy()) domainLocation.verticalAccuracy = verticalAccuracyMeters
+        if (hasBearingAccuracy()) domainLocation.bearingAccuracy = bearingAccuracyDegrees.toInt().toShort()
+        if (hasSpeedAccuracy()) domainLocation.speedAccuracy = speedAccuracyMetersPerSecond.toInt().toByte()
+        if (hasVerticalAccuracy()) domainLocation.verticalAccuracy = verticalAccuracyMeters.toInt().toShort()
     }
     return domainLocation
 }
@@ -135,11 +132,11 @@ fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
 
 // Sensors
 fun SensorEvent.toDomainModel(sessionId: Long) = DomainSensorEvent(
-    sessionId = sessionId,
+    sessionId = sessionId.toInt(),
     zonedDateTime = Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp)).atZone(ZoneOffset.UTC),
-    accuracy = accuracy,
+    accuracy = accuracy.toByte(),
     x = values[0],
     y = values[1],
     z = values[2],
-    type = sensor.stringType
+    type = sensor.type.toByte()
 )

@@ -25,13 +25,13 @@ import java.time.ZonedDateTime
 data class UiLocation(
     val zonedDateTime: ZonedDateTime,
     val latLng: LatLng,
-    var speed: Float = -1f,
-    var accuracy: Float = -1f,
-    var bearing: Float = -1f,
-    var bearingAccuracy: Float = -1f, // in degrees
-    var altitude: Double = -1.0,
-    var speedAccuracy: Float = -1f, // in meters per second
-    var verticalAccuracy: Float = -1f, // in meters
+    var speed: Float,
+    var accuracy: Byte,
+    var bearing: Short,
+    var bearingAccuracy: Short, // in degrees
+    var altitude: Short,
+    var speedAccuracy: Byte, // in meters per second
+    var verticalAccuracy: Short, // in meters
 )
 
 fun DomainLocation.toUiModel() = UiLocation(
