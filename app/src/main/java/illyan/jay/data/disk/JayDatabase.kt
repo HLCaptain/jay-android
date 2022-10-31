@@ -39,7 +39,7 @@ import illyan.jay.data.disk.model.RoomSession
         RoomLocation::class,
         RoomSensorEvent::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = false
 )
 abstract class JayDatabase : RoomDatabase() {

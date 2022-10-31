@@ -37,11 +37,11 @@ import androidx.room.PrimaryKey
 data class RoomSensorEvent(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val sessionId: Long,
+    val sessionId: Int,
     val time: Long, // in millis
-    val accuracy: Int, // enum
+    val accuracy: Byte, // SensorManager.SENSOR_STATUS_ACCURACY_HIGH
     val x: Float,
     val y: Float,
     val z: Float,
-    val type: String
+    val type: Byte // Sensor.TYPE_ACCELEROMETER
 )

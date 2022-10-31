@@ -35,11 +35,11 @@ import java.time.ZonedDateTime
  */
 data class DomainSensorEvent(
     val id: Long = -1,
-    val sessionId: Long,
+    val sessionId: Int,
     val zonedDateTime: ZonedDateTime,
-    val accuracy: Int, // enum
+    val accuracy: Byte, // enum
     val x: Float,
     val y: Float,
     val z: Float,
-    val type: String
+    val type: Byte
 )
