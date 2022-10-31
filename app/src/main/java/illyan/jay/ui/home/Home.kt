@@ -252,8 +252,7 @@ fun flyToLocation(
                 "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
                 "Current sheetState:\n${sheetState.asString()}"
     )
-    // FIXME: make refreshCameraPadding() not crash
-//    refreshCameraPadding()
+    refreshCameraPadding()
     mapView.value?.camera?.flyTo(
         CameraOptions.Builder()
             .padding(
@@ -283,7 +282,6 @@ fun tryFlyToLocation(
         extraCondition()
     ) {
         onFly()
-        refreshCameraPadding()
         flyToLocation(
             extraCameraOptions = {
                 it
@@ -307,7 +305,6 @@ fun tryFlyToPath(
         extraCondition()
     ) {
         onFly()
-        refreshCameraPadding()
         flyToLocation {
             val cameraOptions = mapView.value?.getMapboxMap()?.cameraForCoordinates(
                 coordinates = path,
@@ -452,7 +449,6 @@ fun HomeScreen(
     LaunchedEffect(screenHeightDp) { _screenHeight.value = screenHeightDp }
     ConstraintLayout(
         modifier = Modifier.onGloballyPositioned { coords ->
-            // FIXME: window position might not reflect real positions and offsets of parent
             var topSet = false
             val absoluteTopPosition = (coords.positionInWindow().y / density).dp
             if (_absoluteTop.value != absoluteTopPosition) {
@@ -664,7 +660,6 @@ fun HomeScreen(
                 var isMapVisible by remember { mutableStateOf(false) }
                 if (initialLocationLoaded || !initialLocationGrace) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-                        // TODO: remove this Text in future commits, before the PR merges.
                         val (foreground, map) = createRefs()
                         Column(modifier = Modifier
                             .fillMaxSize()
