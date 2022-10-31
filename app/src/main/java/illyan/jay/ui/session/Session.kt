@@ -62,6 +62,7 @@ import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.DefaultScreenOnSheetPadding
 import illyan.jay.util.format
 import illyan.jay.util.plus
+import java.math.RoundingMode
 
 @OptIn(ExperimentalMaterialApi::class)
 @MenuNavGraph
@@ -148,7 +149,8 @@ fun SessionScreen(
         Column {
             Text(
                 text = "${stringResource(R.string.distance)}: " +
-                        "${session?.totalDistance ?: stringResource(R.string.unknown)} " +
+                        "${session?.totalDistance?.div(1000)?.toBigDecimal()?.setScale(2, RoundingMode.FLOOR) ?:
+                        stringResource(R.string.unknown)} " +
                         stringResource(R.string.meters)
             )
             Text(

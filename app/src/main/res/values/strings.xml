@@ -44,4 +44,5 @@
     <string name="minute_short">m</string>
     <string name="second_short">s</string>
     <string name="day_short">d</string>
+    <string name="kilometers">km</string>
 </resources>

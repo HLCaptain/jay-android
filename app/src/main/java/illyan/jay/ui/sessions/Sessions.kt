@@ -62,6 +62,7 @@ import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.Neutral95
 import illyan.jay.util.format
+import java.math.RoundingMode
 
 val DefaultContentPadding = PaddingValues(
     bottom = MenuItemPadding * 2
@@ -177,8 +178,9 @@ fun SessionCard(
             Column {
                 Text(
                     text = "${stringResource(R.string.distance)}: " +
-                            "${session?.totalDistance ?: stringResource(R.string.unknown)} " +
-                            stringResource(R.string.meters)
+                            "${session?.totalDistance?.div(1000)?.toBigDecimal()?.setScale(2, RoundingMode.FLOOR) ?:
+                            stringResource(R.string.unknown)} " +
+                            stringResource(R.string.kilometers)
                 )
                 Text(
                     text = "${stringResource(R.string.duration)}: " +
