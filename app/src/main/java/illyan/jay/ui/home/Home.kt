@@ -154,6 +154,7 @@ import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.login.LoginDialog
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
@@ -926,22 +927,29 @@ fun BottomSearchBar(
                         }
                     }
                 )
+                var showLoginDialog by remember { mutableStateOf(false) }
                 IconButton(
-                    onClick = { /* TODO: show login dialog/screen */ },
+                    onClick = {
+                        showLoginDialog = true
+                    },
                     modifier = Modifier.padding(AvatarPaddingValues),
                     interactionSource = interactionSource
                 ) {
                     Image(
                         // Placeholder icon for now
-                        painter = painterResource(R.drawable.ic_illyan_avatar_color),
-                        contentDescription = stringResource(R.string.avatar_profile_picture),
-                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(RoundedCornerRadius * 2)
                             .clip(CircleShape)
-                            .background(Neutral95)
+                            .background(Neutral95),
+                        painter = painterResource(R.drawable.ic_illyan_avatar_color),
+                        contentDescription = stringResource(R.string.avatar_profile_picture),
+                        contentScale = ContentScale.Crop,
                     )
                 }
+                LoginDialog(
+                    isDialogOpen = showLoginDialog,
+                    onDialogClosed = { showLoginDialog = false }
+                )
             }
             Spacer(modifier = Modifier.height(onDragAreaOffset))
         }
