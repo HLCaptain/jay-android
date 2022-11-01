@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.login
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,21 +30,32 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import illyan.jay.MainActivity
 import illyan.jay.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginDialog(
     isDialogOpen: Boolean = true,
-    onDialogClosed: () -> Unit = {}
+    onDialogClosed: () -> Unit = {},
+    viewModel: LoginViewModel = hiltViewModel(),
+    context: Context = LocalContext.current
 ) {
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    LaunchedEffect(isUserSignedIn) {
+        if (isUserSignedIn) onDialogClosed()
+    }
     if (isDialogOpen) {
         AlertDialog(
             onDismissRequest = { onDialogClosed() },
@@ -57,7 +69,7 @@ fun LoginDialog(
                 ) {
                     Button(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { /* TODO: Sign in via Google */ }) {
+                        onClick = { viewModel.signInViaGoogle((context as MainActivity)) }) {
                         Text(text = stringResource(R.string.google_sign_in))
                     }
                     // TODO: make login via email/password combo

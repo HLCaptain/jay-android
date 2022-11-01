@@ -52,4 +52,8 @@
     <string name="cancel">Cancel</string>
     <string name="password">Password</string>
     <string name="email">Email</string>
+    <string name="profile">Profile</string>
+    <string name="sign_out">Sign out</string>
+    <string name="close">Close</string>
+    <string name="sign_in">Sign in</string>
 </resources>
