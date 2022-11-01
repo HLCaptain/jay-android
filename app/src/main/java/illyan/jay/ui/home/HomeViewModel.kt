@@ -25,6 +25,7 @@ import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.ui.map.ButeK
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val mapboxInteractor: MapboxInteractor,
+    private val authInteractor: AuthInteractor
 ) : ViewModel() {
 
     private val _initialLocation = MutableStateFlow<Location?>(null)
@@ -45,6 +47,9 @@ class HomeViewModel @Inject constructor(
 
     private val _cameraOptionsBuilder = MutableStateFlow<CameraOptions.Builder?>(null)
     val cameraOptionsBuilder = _cameraOptionsBuilder.asStateFlow()
+
+    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
+    val userPhotoUrl = authInteractor.userPhotoUrlStateFlow
 
     private val callback = object : LocationEngineCallback<LocationEngineResult> {
         override fun onSuccess(result: LocationEngineResult?) {

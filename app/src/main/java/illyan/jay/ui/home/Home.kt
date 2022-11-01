@@ -79,6 +79,8 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -95,6 +97,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -105,7 +108,6 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -128,11 +130,17 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.placeholder.PlaceholderHighlight
+import com.google.accompanist.placeholder.material.placeholder
+import com.google.accompanist.placeholder.material.shimmer
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
@@ -162,10 +170,10 @@ import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.profile.ProfileScreen
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
-import illyan.jay.ui.theme.Neutral95
 import illyan.jay.util.extraOptions
 import illyan.jay.util.isCollapsedOrWillBe
 import illyan.jay.util.isCollapsing
@@ -528,7 +536,8 @@ fun HomeScreen(
                         bottomSheetState.expand()
                     }
                 }
-            }
+            },
+            viewModel = viewModel
         )
         BottomSheetScaffold(
             modifier = Modifier
@@ -790,6 +799,7 @@ fun BottomSearchBar(
     context: Context = LocalContext.current,
     onTextFieldFocusChanged: (FocusState) -> Unit = {},
     onDragAreaOffset: Dp = 48.dp,
+    viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val cardColors = CardDefaults.elevatedCardColors(
         containerColor = Color.White
@@ -926,22 +936,64 @@ fun BottomSearchBar(
                         }
                     }
                 )
+                var isProfileScreenShowing by remember { mutableStateOf(false) }
                 IconButton(
-                    onClick = { /* TODO: show login dialog/screen */ },
+                    onClick = { isProfileScreenShowing = true },
                     modifier = Modifier.padding(AvatarPaddingValues),
                     interactionSource = interactionSource
                 ) {
-                    Image(
-                        // Placeholder icon for now
-                        painter = painterResource(R.drawable.ic_illyan_avatar_color),
-                        contentDescription = stringResource(R.string.avatar_profile_picture),
-                        contentScale = ContentScale.Crop,
+                    Box(
                         modifier = Modifier
                             .size(RoundedCornerRadius * 2)
-                            .clip(CircleShape)
-                            .background(Neutral95)
-                    )
+                            .clip(CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+                        val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
+                        if (isUserSignedIn && userPhotoUrl != null) {
+                            SubcomposeAsyncImage(
+                                modifier = Modifier.fillMaxSize(),
+                                model = userPhotoUrl?.toString(),
+                                loading = {
+                                    when (painter.state) {
+                                        is AsyncImagePainter.State.Loading -> {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .placeholder(
+                                                        visible = true,
+                                                        highlight = PlaceholderHighlight.shimmer()
+                                                    )
+                                            )
+                                        }
+                                        is AsyncImagePainter.State.Error -> Icons.Rounded.BrokenImage
+                                        is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
+                                        else -> Icon(
+                                            modifier = Modifier.fillMaxSize(),
+                                            imageVector = Icons.Rounded.AccountCircle,
+                                            tint = Color.LightGray,
+                                            contentDescription = stringResource(R.string.avatar_profile_picture)
+                                        )
+                                    }
+                                },
+                                contentDescription = stringResource(R.string.avatar_profile_picture)
+                            )
+                        } else {
+                            Icon(
+                                modifier = Modifier.fillMaxSize(),
+                                imageVector = Icons.Rounded.AccountCircle,
+                                tint = Color.LightGray,
+                                contentDescription = stringResource(R.string.avatar_profile_picture)
+                            )
+                        }
+                    }
                 }
+                ProfileScreen(
+                    isDialogOpen = isProfileScreenShowing,
+                    onDialogClosed = {
+                        isProfileScreenShowing = false
+                    }
+                )
             }
             Spacer(modifier = Modifier.height(onDragAreaOffset))
         }

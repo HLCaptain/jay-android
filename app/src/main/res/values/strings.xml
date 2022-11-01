@@ -45,4 +45,15 @@
     <string name="second_short">s</string>
     <string name="day_short">d</string>
     <string name="kilometers">km</string>
+    <string name="login_to_jay">Login to Jay</string>
+    <string name="google_sign_in">Google Sign In</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="login">Login</string>
+    <string name="cancel">Cancel</string>
+    <string name="password">Password</string>
+    <string name="email">Email</string>
+    <string name="profile">Profile</string>
+    <string name="sign_out">Sign out</string>
+    <string name="close">Close</string>
+    <string name="sign_in">Sign in</string>
 </resources>
