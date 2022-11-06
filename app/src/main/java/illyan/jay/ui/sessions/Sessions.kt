@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -83,22 +85,45 @@ fun SessionsScreen(
     viewModel: SessionsViewModel = hiltViewModel(),
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
-        viewModel.load()
+        viewModel.load(context)
     }
-    SessionsList(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(DefaultScreenOnSheetPadding)
-            .clip(
-                RoundedCornerShape(
-                    topStart = 12.dp,
-                    topEnd = 12.dp
-                )
-            ),
-        viewModel = viewModel,
-        destinationsNavigator = destinationsNavigator
-    )
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    Column(
+        modifier = Modifier.padding(DefaultScreenOnSheetPadding)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = { viewModel.syncSessions() },
+                enabled = isUserSignedIn
+            ) {
+                Text(text = "Sync sessions to the cloud!")
+            }
+            Button(
+                onClick = { viewModel.deleteAllSyncedData() },
+                enabled = isUserSignedIn
+            ) {
+                Text(text = "PURGE IT ALL!")
+            }
+        }
+        SessionsList(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp
+                    )
+                ),
+            viewModel = viewModel,
+            destinationsNavigator = destinationsNavigator
+        )
+    }
 }
 
 @Composable
@@ -108,11 +133,24 @@ fun SessionsList(
     destinationsNavigator: DestinationsNavigator,
 ) {
     val sessionIds by viewModel.sessionIds.collectAsState()
+    val syncedSessions by viewModel.syncedSessions.collectAsState()
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
         verticalArrangement = Arrangement.spacedBy(MenuItemPadding)
     ) {
+        item {
+            Text(text = "Synced sessions")
+        }
+        items(syncedSessions) {
+            SessionCard(
+                modifier = Modifier.fillMaxWidth(),
+                session = it
+            )
+        }
+        item {
+            Text(text = "Local sessions")
+        }
         items(sessionIds) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
             val isPlaceholderVisible = session == null

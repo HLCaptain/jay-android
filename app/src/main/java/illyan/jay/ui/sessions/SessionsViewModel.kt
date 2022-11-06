@@ -18,34 +18,85 @@
 
 package illyan.jay.ui.sessions
 
+import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
+    private val authInteractor: AuthInteractor
 ) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<Long, StateFlow<UiSession?>>()
 
     private val _sessionIds = MutableStateFlow(listOf<Long>())
     val sessionIds = _sessionIds.asStateFlow()
 
-    fun load() {
+    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
+
+    private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())
+    val syncedSessions = _syncedSessions.map { sessions -> sessions.map { it.toUiModel() } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _syncedSessions.value.map { it.toUiModel() })
+
+    fun load(context: Context) {
         viewModelScope.launch {
-            sessionInteractor.getSessionIds().collectLatest {
+            sessionInteractor.getLocalOnlySessionIds().collectLatest {
                 _sessionIds.value = it.sortedDescending()
+            }
+        }
+        viewModelScope.launch {
+            sessionInteractor.getSyncedSessions(
+                (context as Activity)
+            ) {
+                Timber.d("Got sessions from Firebase, size = ${it.size}")
+                _syncedSessions.value = it
+            }
+        }
+    }
+
+    fun deleteAllSyncedData() {
+        viewModelScope.launch {
+            sessionInteractor.deleteAllSyncedData(viewModelScope)
+        }
+    }
+
+    fun syncSessions() {
+        viewModelScope.launch {
+            sessionInteractor.getSessions().first { sessions ->
+                sessions.forEach {
+                    if (it.uuid == null) {
+                        viewModelScope.launch {
+                            locationInteractor.getLocations(it.id).first { locations ->
+                                sessionInteractor.uploadSession(
+                                    it to locations,
+                                    viewModelScope
+                                )
+                                locations.isNotEmpty()
+                            }
+                        }
+                    }
+                }
+                sessions.isNotEmpty()
             }
         }
     }

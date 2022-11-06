@@ -35,6 +35,7 @@ import java.time.ZoneOffset
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
     id = id,
+    uuid = uuid,
     startDateTime = Instant.ofEpochMilli(startDateTime).atZone(ZoneOffset.UTC),
     endDateTime = endDateTime?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC) },
     startLocationLatitude = startLocationLatitude,
@@ -47,6 +48,7 @@ fun RoomSession.toDomainModel() = DomainSession(
 
 fun DomainSession.toRoomModel() = RoomSession(
     id = id,
+    uuid = uuid,
     startDateTime = startDateTime.toInstant().toEpochMilli(),
     endDateTime = endDateTime?.toInstant()?.toEpochMilli(),
     startLocationLatitude = startLocationLatitude,

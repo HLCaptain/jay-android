@@ -70,4 +70,19 @@ interface SessionDao {
 
     @Query("SELECT id FROM session WHERE endDateTime is NULL")
     fun getOngoingSessionIds(): Flow<List<Long>>
+
+    @Query("SELECT id FROM session WHERE uuid is NULL")
+    fun getLocalOnlySessionIds(): Flow<List<Long>>
+
+    @Query("SELECT id FROM session WHERE uuid is NOT NULL")
+    fun getSyncedSessionIds(): Flow<List<Long>>
+
+    @Query("SELECT * FROM session WHERE uuid is NULL")
+    fun getLocalOnlySessions(): Flow<List<RoomSession>>
+
+    @Query("SELECT * FROM session WHERE uuid is NOT NULL")
+    fun getSyncedSessions(): Flow<List<RoomSession>>
+
+    @Query("UPDATE session SET uuid = NULL")
+    fun removeUUIDsFromSessions()
 }

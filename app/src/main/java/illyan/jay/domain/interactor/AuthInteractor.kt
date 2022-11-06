@@ -30,7 +30,6 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.get
 import com.google.firebase.remoteconfig.ktx.remoteConfig
@@ -41,6 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+
 /**
  * Auth interactor is an abstraction layer between higher level logic
  * and lower level implementation.
@@ -50,15 +50,16 @@ import javax.inject.Singleton
  */
 @Singleton
 class AuthInteractor @Inject constructor(
+    private val auth: FirebaseAuth,
     private val context: Context
 ) {
-    private val _currentUserStateFlow = MutableStateFlow(Firebase.auth.currentUser)
+    private val _currentUserStateFlow = MutableStateFlow(auth.currentUser)
     val currentUserStateFlow = _currentUserStateFlow.asStateFlow()
 
-    private val _isUserSignedInStateFlow = MutableStateFlow(Firebase.auth.currentUser != null)
+    private val _isUserSignedInStateFlow = MutableStateFlow(auth.currentUser != null)
     val isUserSignedInStateFlow = _isUserSignedInStateFlow.asStateFlow()
 
-    private val _userPhotoUrlStateFlow = MutableStateFlow(Firebase.auth.currentUser?.photoUrl)
+    private val _userPhotoUrlStateFlow = MutableStateFlow(auth.currentUser?.photoUrl)
     val userPhotoUrlStateFlow = _userPhotoUrlStateFlow.asStateFlow()
 
     private val _googleSignInClient = MutableStateFlow<GoogleSignInClient?>(null)
@@ -67,6 +68,7 @@ class AuthInteractor @Inject constructor(
     private val googleAuthStateListeners = mutableStateListOf<(Int) -> Unit>()
 
     val isUserSignedIn get() = isUserSignedInStateFlow.value
+    val userUUID get() = currentUserStateFlow.value?.uid
 
     init {
         addAuthStateListener {
@@ -77,7 +79,7 @@ class AuthInteractor @Inject constructor(
     }
 
     fun signOut() {
-        Firebase.auth.signOut()
+        auth.signOut()
         googleSignInClient.value?.signOut()
     }
 
@@ -131,7 +133,7 @@ class AuthInteractor @Inject constructor(
         activity: Activity,
         credential: AuthCredential
     ) {
-        Firebase.auth.signInWithCredential(credential)
+        auth.signInWithCredential(credential)
             .addOnCompleteListener(activity) { task ->
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
@@ -152,8 +154,7 @@ class AuthInteractor @Inject constructor(
     fun addAuthStateListener(
         listener: (FirebaseAuth) -> Unit
     ) {
-
-        Firebase.auth.addAuthStateListener {
+        auth.addAuthStateListener {
             listener(it)
         }
     }

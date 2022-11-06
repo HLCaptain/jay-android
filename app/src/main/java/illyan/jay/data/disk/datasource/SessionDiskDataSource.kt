@@ -47,7 +47,17 @@ class SessionDiskDataSource @Inject constructor(
      */
     fun getSessions() = sessionDao.getSessions().map { it.map(RoomSession::toDomainModel) }
 
+    fun getLocalOnlySessions() = sessionDao.getLocalOnlySessions()
+        .map { it.map(RoomSession::toDomainModel) }
+
+    fun getSyncedSessions() = sessionDao.getSyncedSessions()
+        .map { it.map(RoomSession::toDomainModel) }
+
     fun getSessionIds() = sessionDao.getSessionIds()
+
+    fun getLocalOnlySessionIds() = sessionDao.getLocalOnlySessionIds()
+
+    fun getSyncedSessionIds() = sessionDao.getSyncedSessionIds()
 
     /**
      * Get a particular session by its ID.
@@ -141,4 +151,6 @@ class SessionDiskDataSource @Inject constructor(
 
     fun deleteSessions(sessions: List<DomainSession>) =
         sessionDao.deleteSessions(sessions.map(DomainSession::toRoomModel))
+
+    fun removeUUIDsFromSessions() = sessionDao.removeUUIDsFromSessions()
 }

@@ -45,13 +45,23 @@ fun DomainSession.toUiModel(
     val sortedLocations = locations.sortedBy {
         it.zonedDateTime.toInstant().toEpochMilli()
     }.map { it.latLng }
+    return toUiModel(
+        sortedLocations.sphericalPathLength(),
+        currentTime
+    )
+}
+
+fun DomainSession.toUiModel(
+    totalDistance: Double = distance?.toDouble() ?: -1.0,
+    currentTime: ZonedDateTime = ZonedDateTime.now(),
+): UiSession {
     return UiSession(
         id = id,
         startDateTime = startDateTime,
         endDateTime = endDateTime,
-        startCoordinate = sortedLocations.firstOrNull(),
-        endCoordinate = sortedLocations.lastOrNull(),
-        totalDistance = sortedLocations.sphericalPathLength(),
+        startCoordinate = startLocation,
+        endCoordinate = endLocation,
+        totalDistance = totalDistance,
         startLocationName = startLocationName,
         endLocationName = endLocationName,
         duration = if (endDateTime != null) {

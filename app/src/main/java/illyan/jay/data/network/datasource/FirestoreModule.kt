@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,26 +16,21 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk.model
+package illyan.jay.data.network.datasource
 
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
-@Entity(
-    tableName = "session",
-    indices = [Index(value = ["id"])]
-)
-data class RoomSession(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val uuid: String? = null,
-    val startDateTime: Long,
-    var endDateTime: Long? = null,
-    var startLocationLatitude: Float? = null,
-    var startLocationLongitude: Float? = null,
-    var endLocationLatitude: Float? = null,
-    var endLocationLongitude: Float? = null,
-    var startLocationName: String? = null,
-    var endLocationName: String? = null
-)
+@Module
+@InstallIn(SingletonComponent::class)
+object FirestoreModule {
+
+    @Singleton
+    @Provides
+    fun provideFirestore() = Firebase.firestore
+}

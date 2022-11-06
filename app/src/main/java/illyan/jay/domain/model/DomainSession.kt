@@ -32,14 +32,17 @@ import java.time.ZonedDateTime
  */
 data class DomainSession(
     val id: Long = -1,
+    var uuid: String? = null,
     val startDateTime: ZonedDateTime,
     var endDateTime: ZonedDateTime?,
     var startLocationLatitude: Float? = null,
     var startLocationLongitude: Float? = null,
     var endLocationLatitude: Float? = null,
     var endLocationLongitude: Float? = null,
+    // These are optional values for an already ended session
     var startLocationName: String? = null,
-    var endLocationName: String? = null
+    var endLocationName: String? = null,
+    var distance: Float? = null,
 ) {
     var startLocation: LatLng?
         get() {

@@ -18,11 +18,14 @@
 
 package illyan.jay.domain.interactor
 
+import android.app.Activity
 import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
 import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
+import illyan.jay.data.network.datasource.SessionNetworkDataSource
+import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +46,7 @@ class SessionInteractor @Inject constructor(
     private val sensorEventDiskDataSource: SensorEventDiskDataSource,
     private val locationDiskDataSource: LocationDiskDataSource,
     private val searchInteractor: SearchInteractor,
+    private val sessionNetworkDataSource: SessionNetworkDataSource
 ) {
     /**
      * Get a particular session by its ID.
@@ -54,6 +58,44 @@ class SessionInteractor @Inject constructor(
      */
     fun getSession(id: Long) = sessionDiskDataSource.getSession(id)
 
+    fun getSyncedSessions(
+        activity: Activity,
+        listener: (List<DomainSession>) -> Unit
+    ) = sessionNetworkDataSource.getSessions(activity, listener)
+
+    fun deleteAllSyncedData(coroutineScope: CoroutineScope) {
+        sessionNetworkDataSource.deleteUserData(coroutineScope)
+        coroutineScope.launch(Dispatchers.IO) { sessionDiskDataSource.removeUUIDsFromSessions() }
+    }
+
+    fun getSyncedPath(
+        sessionUUID: String,
+        coroutineScope: CoroutineScope
+    ) = sessionNetworkDataSource.getLocations(
+        sessionId = sessionUUID,
+        coroutineScope = coroutineScope
+    )
+
+    fun uploadSessions(
+        sessionsAndLocations: List<Pair<DomainSession, List<DomainLocation>>>,
+        coroutineScope: CoroutineScope
+    ) {
+        sessionsAndLocations.forEach {
+            sessionNetworkDataSource.insertSession(it.first, it.second, coroutineScope)
+        }
+    }
+
+    fun uploadSession(
+        sessionAndLocation: Pair<DomainSession, List<DomainLocation>>,
+        coroutineScope: CoroutineScope
+    ) {
+        sessionNetworkDataSource.insertSession(
+            sessionAndLocation.first,
+            sessionAndLocation.second,
+            coroutineScope
+        )
+    }
+
     /**
      * Get all session as a Flow.
      *
@@ -62,6 +104,8 @@ class SessionInteractor @Inject constructor(
     fun getSessions() = sessionDiskDataSource.getSessions()
 
     fun getSessionIds() = sessionDiskDataSource.getSessionIds()
+
+    fun getLocalOnlySessionIds() = sessionDiskDataSource.getLocalOnlySessionIds()
 
     /**
      * Get ongoing sessions, which have no end date.
