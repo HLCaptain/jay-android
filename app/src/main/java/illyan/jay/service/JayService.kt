@@ -30,7 +30,6 @@ import illyan.jay.service.listener.JaySensorEventListener
 import illyan.jay.service.listener.LocationEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -59,7 +58,7 @@ class JayService @Inject constructor() : BaseService() {
     @Inject
     lateinit var icon: IconCompat
 
-    private var sessionId = -1L
+    private var sessionUUID = ""
 
     companion object {
         private const val NOTIFICATION_ID = 333
@@ -81,10 +80,8 @@ class JayService @Inject constructor() : BaseService() {
         )
 
         // Starting sensors right after starting the sessions. Not necessary, but no harm.
-        val childJob = Job(job)
-        val childScope = CoroutineScope(Dispatchers.IO + childJob)
         scope.launch {
-            sessionId = sessionInteractor.startSession(childScope)
+            sessionUUID = sessionInteractor.startSession()
         }.invokeOnCompletion { startSensors() }
 
         return START_STICKY_COMPATIBILITY
@@ -166,11 +163,8 @@ class JayService @Inject constructor() : BaseService() {
     override fun onDestroy() {
         stopSensors()
         removeNotification(NOTIFICATION_ID)
-
-        val childJob = Job(job)
-        val childScope = CoroutineScope(Dispatchers.IO + childJob)
         scope.launch {
-            sessionInteractor.stopOngoingSessions(childScope)
+            sessionInteractor.stopOngoingSessions()
         }
         job.complete()
         isRunning = false

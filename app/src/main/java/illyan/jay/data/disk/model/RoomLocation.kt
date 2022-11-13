@@ -28,22 +28,22 @@ import androidx.room.PrimaryKey
     foreignKeys = [
         ForeignKey(
             entity = RoomSession::class,
-            parentColumns = ["id"],
-            childColumns = ["sessionId"]
+            parentColumns = ["uuid"],
+            childColumns = ["sessionUUID"]
         )
     ],
-    indices = [Index(value = ["sessionId"])]
+    indices = [Index(value = ["sessionUUID"])]
 )
 data class RoomLocation(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val sessionId: Int,
+    val sessionUUID: String,
     val latitude: Float,
     val longitude: Float,
     val accuracy: Byte,
     val time: Long, // in millis
     val speed: Float,
-    val speedAccuracy: Byte, // in meters per second
+    val speedAccuracy: Float, // in meters per second
     val bearing: Short,
     val bearingAccuracy: Short, // in degrees
     val altitude: Short,

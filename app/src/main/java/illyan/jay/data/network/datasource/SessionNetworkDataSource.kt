@@ -19,24 +19,21 @@
 package illyan.jay.data.network.datasource
 
 import android.app.Activity
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import com.google.maps.android.ktx.utils.sphericalPathLength
-import illyan.jay.data.disk.datasource.SessionDiskDataSource
-import illyan.jay.data.network.toDomainLocations
+import illyan.jay.data.network.model.PathDocument
 import illyan.jay.data.network.toDomainSession
 import illyan.jay.data.network.toHashMap
 import illyan.jay.data.network.toPaths
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,127 +41,104 @@ import javax.inject.Singleton
 class SessionNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
-    private val sessionDiskDataSource: SessionDiskDataSource,
 ) {
-    fun getLocations(
-        sessionId: String,
-        coroutineScope: CoroutineScope,
-    ) = flow<List<DomainLocation>> {
-        if (authInteractor.isUserSignedIn) {
-            firestore
-                .collection(PathsCollectionPath)
-                .whereEqualTo(
-                    "owner",
-                    "$UsersCollectionPath/${authInteractor.userUUID}"
-                )
-                .whereEqualTo(
-                    "partOfSession",
-                    "$SessionsCollectionPath/$sessionId"
-                )
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    coroutineScope.launch { emit(snapshot.documents.toDomainLocations()) }
-                }
-                .addOnCanceledListener { coroutineScope.launch { emit(emptyList()) } }
-                .addOnFailureListener { coroutineScope.launch { emit(emptyList()) } }
-        } else {
-            emit(emptyList())
-        }
-    }
-
     fun getSessions(
-        activity: Activity,
-        listener: (List<DomainSession>) -> Unit
-    ) {
-        if (authInteractor.isUserSignedIn) {
+        activity: Activity? = null,
+        userUUID: String = authInteractor.userUUID.toString(),
+        listener: (List<DomainSession>?) -> Unit,
+    ): ListenerRegistration? {
+        return if (authInteractor.isUserSignedIn) {
             Timber.d("Connecting snapshot listener to Firebase")
+            val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
+                val domainSessions = (snapshot?.get("sessions") as List<Map<String, Any>>?)?.map {
+                    it.toDomainSession(it["uuid"] as String, authInteractor.userUUID!!)
+                } ?: emptyList()
+                Timber.d("Firebase got sessions with IDs: ${
+                    domainSessions.map { it.uuid.substring(0..3) }
+                }")
+                listener(domainSessions)
+            }
             firestore
                 .collection(UsersCollectionPath)
-                .document(authInteractor.userUUID.toString())
-                .addSnapshotListener(activity) { snapshot, error ->
-                    val domainSessions = (snapshot?.get("sessions") as List<Map<String, Any>>?)?.map {
-                        it.toDomainSession(it["id"] as String?)
-                    } ?: emptyList()
-                    Timber.d("Firebase got sessions with IDs: ${
-                        domainSessions.map { it.uuid.toString().substring(0..3) }
-                    }")
-                    listener(domainSessions)
+                .document(userUUID)
+                .run { if (activity != null)
+                    addSnapshotListener(activity, snapshotListener)
+                else
+                    addSnapshotListener(snapshotListener)
                 }
         } else {
             Timber.d("Connecting snapshot listener to Firebase")
-            listener(emptyList())
+            listener(null)
+            null
         }
     }
 
     fun insertSession(
         domainSession: DomainSession,
         domainLocations: List<DomainLocation>,
-        coroutineScope: CoroutineScope,
-    ) {
-        // TODO: upload path data first
-        // TODO: upload session data
-        // TODO: update/upload user data with it
-        // TODO: don't assume to update session data
+        onSuccess: (List<DomainSession>) -> Unit
+    ) = insertSessions(listOf(domainSession), domainLocations, onSuccess)
 
-        if (domainSession.uuid == null && authInteractor.isUserSignedIn) {
-            domainSession.uuid = UUID.randomUUID().toString()
-            if (domainSession.distance == null) {
-                domainSession.distance = domainLocations
+    fun insertSessions(
+        domainSessions: List<DomainSession>,
+        domainLocations: List<DomainLocation>,
+        onSuccess: (List<DomainSession>) -> Unit
+    ) {
+        if (!authInteractor.isUserSignedIn) return
+        val paths = mutableListOf<PathDocument>()
+        domainSessions.forEach { session ->
+            val locationsForThisSession = domainLocations.filter { it.sessionUUID.contentEquals(session.uuid) }
+            if (session.distance == null) {
+                session.distance = locationsForThisSession
                     .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
                     .map { it.latLng }.sphericalPathLength().toFloat()
             }
-            val paths = domainLocations.toPaths(domainSession.uuid.toString())
+            paths.addAll(locationsForThisSession.toPaths(session.uuid))
+        }
+        val pathRefs = paths.map {
+            firestore
+                .collection(PathsCollectionPath)
+                .document(it.uuid) to it
+        }
+        val userRef = firestore
+            .collection(UsersCollectionPath)
+            .document(authInteractor.userUUID!!)
 
-            val pathRefs = paths.map {
-                firestore
-                    .collection(PathsCollectionPath)
-                    .document(it.uuid) to it
-            }
+        firestore.runBatch { batch ->
+            pathRefs.forEach { batch.set(it.first, it.second.toHashMap()) }
 
-            val userRef = firestore
-                .collection(UsersCollectionPath)
-                .document(authInteractor.userUUID!!)
-
-            firestore.runBatch { batch ->
-                pathRefs.forEach { batch.set(it.first, it.second.toHashMap()) }
-
-                batch.set(
-                    userRef,
-                    mapOf("sessions" to FieldValue.arrayUnion(domainSession.toHashMap())),
-                    SetOptions.merge()
-                )
-            }.addOnSuccessListener {
-                coroutineScope.launch(Dispatchers.IO) {
-                    sessionDiskDataSource.saveSession(domainSession)
-                }
-            }
-        } // else it is already synced to the cloud
-
+            batch.set(
+                userRef,
+                mapOf("sessions" to FieldValue.arrayUnion(*domainSessions.map { it.toHashMap() }.toTypedArray())),
+                SetOptions.merge()
+            )
+        }.addOnSuccessListener {
+            onSuccess(domainSessions)
+        }
     }
 
-    fun deleteUserData(coroutineScope: CoroutineScope) {
-        if (authInteractor.isUserSignedIn) {
-            firestore
-                .collection(UsersCollectionPath)
-                .document(authInteractor.userUUID!!)
-                .get()
-                .addOnSuccessListener { userSnapshot ->
-                    val domainSessionIds = (userSnapshot["sessions"] as List<Map<String, Any>>?)
-                        ?.map { it["id"] as String? } ?: emptyList()
-                    if (domainSessionIds.firstOrNull() != null) { // at least one not null element
-                        firestore
-                            .collection(PathsCollectionPath)
-                            .whereIn("sessionId", domainSessionIds)
-                            .get()
-                            .addOnSuccessListener { pathSnapshot ->
-                                pathSnapshot.documents.forEach {
-                                    it.reference.delete()
-                                }
-                                userSnapshot.reference.delete()
+    fun deleteUserData() {
+        if (!authInteractor.isUserSignedIn) return
+        firestore
+            .collection(UsersCollectionPath)
+            .document(authInteractor.userUUID!!)
+            .get()
+            .addOnSuccessListener { userSnapshot ->
+                val domainSessionIds = (userSnapshot["sessions"] as List<Map<String, Any>>?)
+                    ?.map { it["uuid"] as String? } ?: emptyList()
+                if (domainSessionIds.firstOrNull() != null) { // at least one not null element
+                    firestore
+                        .collection(PathsCollectionPath)
+                        .whereIn("sessionUUID", domainSessionIds)
+                        .get()
+                        .addOnSuccessListener { pathSnapshot ->
+                            pathSnapshot.documents.forEach {
+                                it.reference.delete()
                             }
-                    }
+                            userSnapshot.reference.delete()
+                        }
                 }
-        }
+            }
     }
 
     companion object {

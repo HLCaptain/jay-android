@@ -27,7 +27,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 data class UiSession(
-    val id: Long,
+    val uuid: String,
     val startDateTime: ZonedDateTime,
     val endDateTime: ZonedDateTime?,
     val startCoordinate: LatLng?,
@@ -48,7 +48,7 @@ fun DomainSession.toUiModel(
     }
     val sortedLocationLatLngs = sortedLocations.map { it.latLng }
     return UiSession(
-        id = id,
+        uuid = uuid,
         startDateTime = startDateTime,
         endDateTime = endDateTime,
         startCoordinate = sortedLocationLatLngs.firstOrNull(),

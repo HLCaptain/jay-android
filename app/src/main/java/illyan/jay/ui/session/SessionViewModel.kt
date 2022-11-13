@@ -28,23 +28,46 @@ import illyan.jay.ui.session.model.toUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SessionViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
-    private val locationInteractor: LocationInteractor
-): ViewModel() {
+    private val locationInteractor: LocationInteractor,
+) : ViewModel() {
     private val _session = MutableStateFlow<UiSession?>(null)
     val session = _session.asStateFlow()
 
-    fun load(sessionId: Long) {
+    val isLoadingSessionFromNetwork = MutableStateFlow(false)
+
+    fun load(sessionUUID: String) {
         viewModelScope.launch {
-            sessionInteractor.getSession(sessionId).collectLatest { session ->
-                session?.let {
-                    locationInteractor.getLocations(it.id).collectLatest { locations ->
-                        _session.value = it.toUiModel(locations)
+            sessionInteractor.getSession(sessionUUID).collectLatest { session ->
+                if (session != null) {
+                    locationInteractor.getLocations(session.uuid).collectLatest { localPath ->
+                        if (localPath.isEmpty()) {
+                            locationInteractor.getSyncedPath(session.uuid).first { remotePath ->
+                                if (!remotePath.isNullOrEmpty()) {
+                                    locationInteractor.saveLocations(remotePath)
+                                }
+                                !remotePath.isNullOrEmpty()
+                            }
+                        }
+                        _session.value = session.toUiModel(localPath)
+                    }
+                } else {
+                    isLoadingSessionFromNetwork.value = true
+                    locationInteractor.getSyncedPath(sessionUUID).first { remotePath ->
+                        if (remotePath != null) {
+                            sessionInteractor.syncedSessions.collectLatest { sessions ->
+                                sessions?.firstOrNull{ it.uuid.contentEquals(sessionUUID) }?.let { session ->
+                                    _session.value = session.toUiModel(remotePath)
+                                }
+                            }
+                        }
+                        remotePath != null
                     }
                 }
             }

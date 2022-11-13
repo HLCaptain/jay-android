@@ -19,15 +19,15 @@
 package illyan.jay.ui.sessions.model
 
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
+import illyan.jay.util.sphericalPathLength
 import java.time.ZonedDateTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 data class UiSession(
-    val id: Long,
+    val uuid: String,
     val startDateTime: ZonedDateTime,
     val endDateTime: ZonedDateTime?,
     val startCoordinate: LatLng?,
@@ -35,28 +35,31 @@ data class UiSession(
     val totalDistance: Double,
     val startLocationName: String?,
     val endLocationName: String?,
-    val duration: Duration
+    val duration: Duration,
+    val isLocal: Boolean,
+    val isSynced: Boolean,
+    val isNotOwned: Boolean
 )
 
 fun DomainSession.toUiModel(
     locations: List<DomainLocation>,
+    currentClientUUID: String,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
 ): UiSession {
-    val sortedLocations = locations.sortedBy {
-        it.zonedDateTime.toInstant().toEpochMilli()
-    }.map { it.latLng }
     return toUiModel(
-        sortedLocations.sphericalPathLength(),
+        locations.sphericalPathLength(),
+        currentClientUUID,
         currentTime
     )
 }
 
 fun DomainSession.toUiModel(
     totalDistance: Double = distance?.toDouble() ?: -1.0,
+    currentClientUUID: String,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
 ): UiSession {
     return UiSession(
-        id = id,
+        uuid = uuid,
         startDateTime = startDateTime,
         endDateTime = endDateTime,
         startCoordinate = startLocation,
@@ -71,5 +74,8 @@ fun DomainSession.toUiModel(
             (currentTime.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
                 .milliseconds
         },
+        isSynced = clientUUID != currentClientUUID || isSynced,
+        isLocal = clientUUID == currentClientUUID,
+        isNotOwned = ownerUserUUID == null
     )
 }

@@ -31,8 +31,10 @@ data class PathDocument(
     val bearingAccuracyChanges: List<Short>,
     val bearings: List<Short>,
     val coords: List<GeoPoint>,
-    val sessionId: String, // reference of the session this path is part of
+    val sessionUUID: String, // reference of the session this path is part of
     val speeds: List<Float>,
+    val speedAccuracyChangeTimestamps: List<Timestamp>,
+    val speedAccuracyChanges: List<Float>,
     val timestamps: List<Timestamp>,
     val verticalAccuracyChangeTimestamps: List<Timestamp>,
     val verticalAccuracyChanges: List<Short>

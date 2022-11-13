@@ -28,16 +28,16 @@ import androidx.room.PrimaryKey
     foreignKeys = [
         ForeignKey(
             entity = RoomSession::class,
-            parentColumns = ["id"],
-            childColumns = ["sessionId"]
+            parentColumns = ["uuid"],
+            childColumns = ["sessionUUID"]
         )
     ],
-    indices = [Index(value = ["sessionId"]), Index(value = ["time"])]
+    indices = [Index(value = ["sessionUUID"]), Index(value = ["time"])]
 )
 data class RoomSensorEvent(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val sessionId: Int,
+    val sessionUUID: String,
     val time: Long, // in millis
     val accuracy: Byte, // SensorManager.SENSOR_STATUS_ACCURACY_HIGH
     val x: Float,

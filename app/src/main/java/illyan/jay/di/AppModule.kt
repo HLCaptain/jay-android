@@ -34,6 +34,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import illyan.jay.BuildConfig
 import illyan.jay.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import javax.inject.Singleton
 
 @Module
@@ -81,4 +84,14 @@ object AppModule {
     @Singleton
     fun provideFavoritesDataProvider() =
         MapboxSearchSdk.serviceProvider.favoritesDataProvider()
+
+    @Provides
+    @CoroutineScopeIO
+    fun provideCoroutineScopeIO() = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Provides
+    @CoroutineScopeMain
+    fun provideCoroutineScopeMain() = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 }
+
+

@@ -47,12 +47,12 @@ abstract class SessionSensorEventListener(
      * IDs of ongoing sessions. Needed to be private to ensure safety
      * from ConcurrentModificationExceptions.
      */
-    private val _ongoingSessionIds = mutableListOf<Long>()
+    private val _ongoingSessionIds = mutableListOf<String>()
 
     /**
      * Needed to guarantee safety from ConcurrentModificationExceptions.
      */
-    protected val ongoingSessionIds get() = _ongoingSessionIds.toList()
+    protected val ongoingSessionUUIDs get() = _ongoingSessionIds.toList()
 
     init {
         scope.launch {
@@ -64,7 +64,7 @@ abstract class SessionSensorEventListener(
      * Load ongoing session IDs with IO context on a non UI thread.
      */
     private suspend fun loadOngoingSessionIds() = withContext(Dispatchers.IO) {
-        sessionInteractor.getOngoingSessionIds()
+        sessionInteractor.getOngoingSessionUUIDs()
             .flowOn(Dispatchers.IO)
             .collect {
                 _ongoingSessionIds.clear()

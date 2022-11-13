@@ -16,16 +16,14 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk.model
+package illyan.jay.di
 
-import kotlinx.serialization.Serializable
+import javax.inject.Qualifier
 
-@Serializable
-data class AppSettings(
-    val turnOnFreeDriveAutomatically: Boolean = false,
-    val clientUUID: String? = null
-) {
-    companion object {
-        val default = AppSettings()
-    }
-}
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class CoroutineScopeIO
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class CoroutineScopeMain

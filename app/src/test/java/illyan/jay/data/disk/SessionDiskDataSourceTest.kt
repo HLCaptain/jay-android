@@ -169,7 +169,7 @@ class SessionDiskDataSourceTest : TestBase() {
     @ExperimentalCoroutinesApi
     @Test
     fun `Get ongoing session ids`() = runTest {
-        every { mockedDao.getOngoingSessionIds() } returns flowOf(
+        every { mockedDao.getOngoingSessionUUIDs() } returns flowOf(
             roomSessions.filter { it.endDateTime == null }.map { it.id }
         )
 
@@ -180,7 +180,7 @@ class SessionDiskDataSourceTest : TestBase() {
         advanceUntilIdle()
 
         assertEquals(sessions.filter { it.endDateTime == null }.map { it.id }, result)
-        verify(exactly = 1) { mockedDao.getOngoingSessionIds() }
+        verify(exactly = 1) { mockedDao.getOngoingSessionUUIDs() }
     }
 
     @Test

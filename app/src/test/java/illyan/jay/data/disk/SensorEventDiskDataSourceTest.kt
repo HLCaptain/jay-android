@@ -143,7 +143,7 @@ class SensorEventDiskDataSourceTest : TestBase() {
         // Wait coroutine to collect the data.
         advanceUntilIdle()
 
-        assertEquals(accelerations.filter { it.sessionId == sessionId }, result)
+        assertEquals(accelerations.filter { it.sessionUUID == sessionId }, result)
         verify(exactly = 1) { mockedDao.getSensorEvents(sessionId) }
     }
 

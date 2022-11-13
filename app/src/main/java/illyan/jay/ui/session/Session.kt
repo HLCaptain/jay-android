@@ -69,20 +69,22 @@ import java.math.RoundingMode
 @Destination
 @Composable
 fun SessionScreen(
-    sessionId: Long,
+    sessionUUID: String,
     viewModel: SessionViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     LaunchedEffect(Unit) {
-        viewModel.load(sessionId)
+        viewModel.load(sessionUUID)
     }
     val session by viewModel.session.collectAsState()
     var sheetHeightNotSet by remember { mutableStateOf(true) }
+    val isLoadingFromNetwork by viewModel.isLoadingSessionFromNetwork.collectAsState()
     var sessionLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(
         session,
-        sheetState.isAnimationRunning
+        sheetState.isAnimationRunning,
+        isLoadingFromNetwork
     ) {
         session?.let {
             if (!sessionLoaded) {
@@ -93,7 +95,7 @@ fun SessionScreen(
                             location.latLng.latitude
                         )
                     },
-                    extraCondition = { !sheetHeightNotSet },
+                    extraCondition = { !sheetHeightNotSet || isLoadingFromNetwork },
                     onFly = { sessionLoaded = true }
                 )
             }

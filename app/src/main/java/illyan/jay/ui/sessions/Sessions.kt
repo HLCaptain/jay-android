@@ -30,7 +30,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
+import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.PersonOff
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.placeholder.PlaceholderHighlight
@@ -86,17 +90,17 @@ fun SessionsScreen(
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        viewModel.load(context)
+    val signedInUser by viewModel.signedInUser.collectAsState()
+    LaunchedEffect(signedInUser) {
+        viewModel.loadLocalSessions()
+        viewModel.loadCloudSessions(context)
     }
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     Column(
         modifier = Modifier.padding(DefaultScreenOnSheetPadding)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
             Button(
                 onClick = { viewModel.syncSessions() },
@@ -108,7 +112,12 @@ fun SessionsScreen(
                 onClick = { viewModel.deleteAllSyncedData() },
                 enabled = isUserSignedIn
             ) {
-                Text(text = "PURGE IT ALL!")
+                Text(text = "PURGE IT ALL (in the cloud)!")
+            }
+            Button(
+                onClick = { viewModel.deleteSessionsLocally() },
+            ) {
+                Text(text = "PURGE IT ALL (locally)!")
             }
         }
         SessionsList(
@@ -132,26 +141,24 @@ fun SessionsList(
     viewModel: SessionsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator,
 ) {
-    val sessionIds by viewModel.sessionIds.collectAsState()
-    val syncedSessions by viewModel.syncedSessions.collectAsState()
+    val localSessionUUIDs by viewModel.localSessionUUIDs.collectAsState()
+    val remoteSessions by viewModel.syncedSessions.collectAsState()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
         verticalArrangement = Arrangement.spacedBy(MenuItemPadding)
     ) {
-        item {
-            Text(text = "Synced sessions")
-        }
-        items(syncedSessions) {
+        items(remoteSessions) {
             SessionCard(
                 modifier = Modifier.fillMaxWidth(),
-                session = it
+                session = it,
+                onClick = { sessionUUID ->
+                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
+                }
             )
         }
-        item {
-            Text(text = "Local sessions")
-        }
-        items(sessionIds) {
+        items(localSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
             val isPlaceholderVisible = session == null
             val placeholderHighlight = PlaceholderHighlight.shimmer()
@@ -164,27 +171,35 @@ fun SessionsList(
                         shape = RoundedCornerShape(12.dp)
                     ),
                 session = session,
-                onClick = { id ->
-                    destinationsNavigator.navigate(SessionScreenDestination(id))
+                onClick = { sessionUUID ->
+                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
                 }
-            )
+            ) {
+                if (session != null && session!!.isNotOwned && isUserSignedIn) {
+                    Button(onClick = { viewModel.ownSession(session!!.uuid) }) {
+                        Text(text = "Own this session!")
+                    }
+                }
+            }
         }
     }
 }
 
+@Preview(showBackground = true)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionCard(
     modifier: Modifier = Modifier,
     session: UiSession?,
-    onClick: (Long) -> Unit = {},
+    onClick: (String) -> Unit = {},
+    content: @Composable () -> Unit = {}
 ) {
     val cardColors = CardDefaults.cardColors(
         containerColor = Neutral95
     )
     Card(
         modifier = modifier,
-        onClick = { session?.let { onClick(it.id) } },
+        onClick = { session?.let { onClick(it.uuid) } },
         colors = cardColors,
     ) {
         Column(
@@ -194,42 +209,66 @@ fun SessionCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = session?.startLocationName ?: stringResource(R.string.unknown),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Icon(imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "")
-                Crossfade(targetState = session?.endDateTime == null) {
-                    if (it) {
-                        Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
-                    } else {
-                        Text(
-                            text = session?.endLocationName ?: stringResource(R.string.unknown),
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                Row(
+                    modifier = Modifier.padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = session?.startLocationName ?: stringResource(R.string.unknown),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Icon(imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "")
+                    Crossfade(targetState = session?.endDateTime == null) {
+                        if (it) {
+                            Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
+                        } else {
+                            Text(
+                                text = session?.endLocationName ?: stringResource(R.string.unknown),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+                    }
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (session?.isLocal == true) {
+                        Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
+                    }
+                    if (session?.isSynced == true) {
+                        Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
+                    }
+                    if (session?.isNotOwned == true) {
+                        Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
                     }
                 }
             }
-            Column {
-                Text(
-                    text = "${stringResource(R.string.distance)}: " +
-                            "${session?.totalDistance?.div(1000)?.toBigDecimal()?.setScale(2, RoundingMode.FLOOR) ?:
-                            stringResource(R.string.unknown)} " +
-                            stringResource(R.string.kilometers)
-                )
-                Text(
-                    text = "${stringResource(R.string.duration)}: " +
-                            session?.duration?.format(
-                                separator = " ",
-                                second = stringResource(R.string.second_short),
-                                minute = stringResource(R.string.minute_short),
-                                hour = stringResource(R.string.hour_short),
-                                day = stringResource(R.string.day_short)
-                            )
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "${stringResource(R.string.distance)}: " +
+                                "${session?.totalDistance?.div(1000)?.toBigDecimal()?.setScale(2, RoundingMode.FLOOR) ?:
+                                stringResource(R.string.unknown)} " +
+                                stringResource(R.string.kilometers)
+                    )
+                    Text(
+                        text = "${stringResource(R.string.duration)}: " +
+                                session?.duration?.format(
+                                    separator = " ",
+                                    second = stringResource(R.string.second_short),
+                                    minute = stringResource(R.string.minute_short),
+                                    hour = stringResource(R.string.hour_short),
+                                    day = stringResource(R.string.day_short)
+                                )
+                    )
+                }
+                content()
             }
         }
     }

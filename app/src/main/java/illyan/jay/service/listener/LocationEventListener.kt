@@ -59,9 +59,9 @@ class LocationEventListener @Inject constructor(
                     scope.launch {
                         // Saving locations for every ongoing session
                         val locations = mutableListOf<DomainLocation>()
-                        ongoingSessionIds.forEach { sessionId ->
+                        ongoingSessionUUIDs.forEach { sessionUUID ->
                             locationResult.lastLocation?.let { lastLocation ->
-                                locations += lastLocation.toDomainModel(sessionId)
+                                locations += lastLocation.toDomainModel(sessionUUID)
                             }
                         }
                         locationInteractor.saveLocations(locations)

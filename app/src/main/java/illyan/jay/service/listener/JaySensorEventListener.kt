@@ -44,8 +44,8 @@ class JaySensorEventListener @Inject constructor(
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
             val sensorEvents = mutableListOf<DomainSensorEvent>()
-            ongoingSessionIds.forEach { sessionId ->
-                sensorEvents += it.toDomainModel(sessionId)
+            ongoingSessionUUIDs.forEach { sessionUUID ->
+                sensorEvents += it.toDomainModel(sessionUUID)
             }
             // Saving data for each session
             scope.launch { sensorEventInteractor.saveSensorEvents(sensorEvents) }

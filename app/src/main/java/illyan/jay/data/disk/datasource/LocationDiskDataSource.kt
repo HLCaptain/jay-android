@@ -40,7 +40,7 @@ class LocationDiskDataSource @Inject constructor(
     /**
      * Get latest (most up to date) locations as a Flow for a particular session.
      *
-     * @param sessionId particular session's ID, which is the
+     * @param sessionUUID particular session's ID, which is the
      * foreign key of the location data returned.
      * @param limit number of latest location data returned in order from
      * the freshest location to older location data.
@@ -48,8 +48,8 @@ class LocationDiskDataSource @Inject constructor(
      * @return location data flow for a particular session in order from
      * the freshest location to older location data.
      */
-    fun getLatestLocations(sessionId: Long, limit: Long) =
-        locationDao.getLatestLocations(sessionId, limit)
+    fun getLatestLocations(sessionUUID: String, limit: Long) =
+        locationDao.getLatestLocations(sessionUUID, limit)
             .map { it.map(RoomLocation::toDomainModel) }
 
     fun getLatestLocations(limit: Long) =
@@ -59,12 +59,15 @@ class LocationDiskDataSource @Inject constructor(
     /**
      * Get locations' data as a Flow for a particular session.
      *
-     * @param sessionId particular session's ID, which is the
+     * @param sessionUUID particular session's ID, which is the
      * foreign key of location data returned.
      *
      * @return location data flow for a particular session.
      */
-    fun getLocations(sessionId: Long) = locationDao.getLocations(sessionId)
+    fun getLocations(sessionUUID: String) = locationDao.getLocations(sessionUUID)
+        .map { it.map(RoomLocation::toDomainModel) }
+
+    fun getLocations(sessionUUIDs: List<String>) = locationDao.getLocations(sessionUUIDs)
         .map { it.map(RoomLocation::toDomainModel) }
 
     /**
@@ -86,5 +89,5 @@ class LocationDiskDataSource @Inject constructor(
     fun saveLocations(locations: List<DomainLocation>) =
         locationDao.upsertLocations(locations.map(DomainLocation::toRoomModel))
 
-    fun deleteLocationForSession(sessionId: Long) = locationDao.deleteLocationsForSession(sessionId)
+    fun deleteLocationForSession(sessionUUID: String) = locationDao.deleteLocations(sessionUUID)
 }

@@ -178,7 +178,7 @@ class SessionInteractorTest : TestBase() {
         )
 
         var result = listOf<Long>()
-        sessionInteractor.getOngoingSessionIds().collect { result = it }
+        sessionInteractor.getOngoingSessionUUIDs().collect { result = it }
 
         // Wait coroutine to collect the data.
         advanceUntilIdle()
