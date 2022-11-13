@@ -56,4 +56,10 @@
     <string name="sign_out">Sign out</string>
     <string name="close">Close</string>
     <string name="sign_in">Sign in</string>
+    <string name="sync">Sync</string>
+    <string name="cloud_only">Cloud only</string>
+    <string name="local_only">Local only</string>
+    <string name="delete_locally">Delete locally</string>
+    <string name="own_all_sessions">Own all sessions</string>
+    <string name="own_session">Own session</string>
 </resources>

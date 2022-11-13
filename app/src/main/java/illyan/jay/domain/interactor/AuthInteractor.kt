@@ -35,8 +35,13 @@ import com.google.firebase.remoteconfig.ktx.get
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
+import illyan.jay.di.CoroutineScopeIO
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -51,7 +56,8 @@ import javax.inject.Singleton
 @Singleton
 class AuthInteractor @Inject constructor(
     private val auth: FirebaseAuth,
-    private val context: Context
+    private val context: Context,
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
     private val _currentUserStateFlow = MutableStateFlow(auth.currentUser)
     val currentUserStateFlow = _currentUserStateFlow.asStateFlow()
@@ -70,6 +76,9 @@ class AuthInteractor @Inject constructor(
     val isUserSignedIn get() = isUserSignedInStateFlow.value
     val userUUID get() = currentUserStateFlow.value?.uid
 
+    private val _isSigningOut = MutableStateFlow(false)
+    val isUserSigningOut = _isSigningOut.asStateFlow()
+
     init {
         addAuthStateListener {
             _currentUserStateFlow.value = it.currentUser
@@ -79,8 +88,33 @@ class AuthInteractor @Inject constructor(
     }
 
     fun signOut() {
-        auth.signOut()
-        googleSignInClient.value?.signOut()
+        _isSigningOut.value = true
+        val size = onSignOutListeners.size
+        if (size == 0) {
+            auth.signOut()
+            googleSignInClient.value?.signOut()
+            _isSigningOut.value = false
+        } else {
+            val approvedListeners = MutableStateFlow(0)
+            onSignOutListeners.forEach {
+                coroutineScopeIO.launch {
+                    it(auth).first {
+                        approvedListeners.value++
+                        true
+                    }
+                }
+            }
+            coroutineScopeIO.launch {
+                approvedListeners.first {
+                    if (it >= size) {
+                        auth.signOut()
+                        googleSignInClient.value?.signOut()
+                        _isSigningOut.value = false
+                    }
+                    it >= size
+                }
+            }
+        }
     }
 
     fun signInViaGoogle(activity: MainActivity) {
@@ -159,6 +193,14 @@ class AuthInteractor @Inject constructor(
         }
     }
 
+    // Each listener emit when they are ready to sign out
+    private val onSignOutListeners = mutableListOf<(FirebaseAuth) -> Flow<Unit>>()
+
+    fun addOnSignOutListener(
+        listener: (FirebaseAuth) -> Flow<Unit>
+    ) {
+        onSignOutListeners.add(listener)
+    }
 
     /**
      * Callback is only called once!

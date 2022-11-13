@@ -30,7 +30,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.CloudSync
+import androidx.compose.material.icons.rounded.CloudUpload
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.LibraryAdd
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material.icons.rounded.Save
@@ -41,6 +45,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -100,24 +105,54 @@ fun SessionsScreen(
         modifier = Modifier.padding(DefaultScreenOnSheetPadding)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Button(
+            TextButton(
                 onClick = { viewModel.syncSessions() },
-                enabled = isUserSignedIn
+                enabled = isUserSignedIn,
             ) {
-                Text(text = "Sync sessions to the cloud!")
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
+                    Text(text = stringResource(R.string.sync))
+                }
             }
-            Button(
+            TextButton(
                 onClick = { viewModel.deleteAllSyncedData() },
-                enabled = isUserSignedIn
+                enabled = isUserSignedIn,
             ) {
-                Text(text = "PURGE IT ALL (in the cloud)!")
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
+                    Text(text = stringResource(R.string.local_only))
+                }
             }
-            Button(
+            TextButton(
                 onClick = { viewModel.deleteSessionsLocally() },
             ) {
-                Text(text = "PURGE IT ALL (locally)!")
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
+                    Text(text = stringResource(R.string.delete_locally))
+                }
+            }
+            TextButton(
+                onClick = { viewModel.ownAllSessions() },
+                enabled = isUserSignedIn,
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(imageVector = Icons.Rounded.LibraryAdd, contentDescription = "")
+                    Text(text = stringResource(R.string.own_all_sessions))
+                }
             }
         }
         SessionsList(
@@ -176,8 +211,16 @@ fun SessionsList(
                 }
             ) {
                 if (session != null && session!!.isNotOwned && isUserSignedIn) {
-                    Button(onClick = { viewModel.ownSession(session!!.uuid) }) {
-                        Text(text = "Own this session!")
+                    Button(
+                        onClick = { viewModel.ownSession(session!!.uuid) },
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
+                            Text(text = stringResource(R.string.own_session))
+                        }
                     }
                 }
             }
@@ -190,7 +233,7 @@ fun SessionsList(
 @Composable
 fun SessionCard(
     modifier: Modifier = Modifier,
-    session: UiSession?,
+    session: UiSession? = null,
     onClick: (String) -> Unit = {},
     content: @Composable () -> Unit = {}
 ) {
@@ -253,19 +296,26 @@ fun SessionCard(
                 Column {
                     Text(
                         text = "${stringResource(R.string.distance)}: " +
-                                "${session?.totalDistance?.div(1000)?.toBigDecimal()?.setScale(2, RoundingMode.FLOOR) ?:
-                                stringResource(R.string.unknown)} " +
-                                stringResource(R.string.kilometers)
+                                if (session == null) {
+                                    stringResource(R.string.unknown)
+                                } else {
+                                    "${session.totalDistance
+                                        .div(1000)
+                                        .toBigDecimal()
+                                        .setScale(2, RoundingMode.FLOOR)} " +
+                                            stringResource(R.string.kilometers)
+                                }
                     )
                     Text(
                         text = "${stringResource(R.string.duration)}: " +
-                                session?.duration?.format(
+                                (session?.duration?.format(
                                     separator = " ",
                                     second = stringResource(R.string.second_short),
                                     minute = stringResource(R.string.minute_short),
                                     hour = stringResource(R.string.hour_short),
                                     day = stringResource(R.string.day_short)
                                 )
+                                    ?: stringResource(R.string.unknown))
                     )
                 }
                 content()

@@ -74,7 +74,7 @@ fun DomainSession.toUiModel(
             (currentTime.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
                 .milliseconds
         },
-        isSynced = clientUUID != currentClientUUID || isSynced,
+        isSynced = isSynced,
         isLocal = clientUUID == currentClientUUID,
         isNotOwned = ownerUserUUID == null
     )

@@ -37,7 +37,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -75,7 +74,7 @@ class SessionsViewModel @Inject constructor(
 
     fun loadCloudSessions(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            sessionInteractor.syncSessions((context as Activity))
+            sessionInteractor.loadSyncedSessions((context as Activity))
             sessionInteractor.syncedSessions.collectLatest {
                 _syncedSessions.value = it ?: emptyList()
             }
@@ -97,20 +96,7 @@ class SessionsViewModel @Inject constructor(
     }
 
     fun syncSessions() {
-        viewModelScope.launch(Dispatchers.IO) {
-            sessionInteractor.getSessions().first { sessions ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    locationInteractor.getLocations(sessions.map { it.uuid }).first { locations ->
-                        sessionInteractor.uploadSessions(
-                            sessions,
-                            locations,
-                        )
-                        true
-                    }
-                }
-                true
-            }
-        }
+        sessionInteractor.uploadNotSyncedSessions()
     }
 
     fun deleteSessionsLocally() {

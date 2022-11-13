@@ -36,12 +36,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
 /**
  * Session interactor is a layer which aims to be the intermediary
  * between a higher level logic and lower level data source.
@@ -58,8 +60,38 @@ class SessionInteractor @Inject constructor(
     private val sessionNetworkDataSource: SessionNetworkDataSource,
     private val authInteractor: AuthInteractor,
     private val settingsInteractor: SettingsInteractor,
+    private val serviceInteractor: ServiceInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
+
+    init {
+        var previousUserUUID = authInteractor.userUUID
+        authInteractor.addOnSignOutListener {
+            flow {
+                // Make here any changes before signing out, for
+                // example, save data, stop sessions, services.
+                // Sync to the cloud if set.
+                if (!serviceInteractor.isJayServiceRunning()) {
+                    emit(Unit)
+                } else {
+                    serviceInteractor.stopJayService()
+                    getOngoingSessions().first { sessions ->
+                        if (sessions.none { it.endDateTime == null }) {
+                            emit(Unit)
+                        }
+                        sessions.none { it.endDateTime == null }
+                    }
+                }
+            }
+        }
+        authInteractor.addAuthStateListener {
+            if (previousUserUUID != it.uid) {
+                serviceInteractor.stopJayService()
+                previousUserUUID = it.uid
+            }
+        }
+    }
+
     /**
      * Get a particular session by its ID.
      *
@@ -70,7 +102,8 @@ class SessionInteractor @Inject constructor(
      */
     fun getSession(uuid: String) = sessionDiskDataSource.getSession(uuid, authInteractor.userUUID)
 
-    private val _syncedSessionsPerUser = hashMapOf<String, MutableStateFlow<List<DomainSession>?>?>()
+    private val _syncedSessionsPerUser =
+        hashMapOf<String, MutableStateFlow<List<DomainSession>?>?>()
 
     private val _openSnapshotListeners = hashMapOf<String, ListenerRegistration?>()
 
@@ -89,7 +122,7 @@ class SessionInteractor @Inject constructor(
     private val _syncedSessions = MutableStateFlow<List<DomainSession>?>(null)
     val syncedSessions = _syncedSessions.asStateFlow()
 
-    fun syncSessions(activity: Activity) {
+    fun loadSyncedSessions(activity: Activity) {
         if (!authInteractor.isUserSignedIn) {
             _syncedSessions.value = emptyList()
             return
@@ -110,8 +143,25 @@ class SessionInteractor @Inject constructor(
                 Timber.d("Got ${sessions?.size} synced sessions for user $userUUID")
                 _syncedSessionsPerUser[userUUID]!!.value = sessions
                 coroutineScopeIO.launch {
-                    sessionDiskDataSource.updateSyncOnSessions(sessions?.map { it.uuid } ?: emptyList(), true)
+                    sessionDiskDataSource.updateSyncOnSessions(sessions?.map { it.uuid }
+                        ?: emptyList(), true)
                 }
+            }
+        }
+    }
+
+    fun uploadNotSyncedSessions() {
+        if (!authInteractor.isUserSignedIn) return
+        coroutineScopeIO.launch {
+            getLocalOnlySessions().first { sessions ->
+                locationDiskDataSource.getLocations(sessions.map { it.uuid }).first { locations ->
+                    uploadSessions(
+                        sessions,
+                        locations,
+                    )
+                    true
+                }
+                true
             }
         }
     }
@@ -125,14 +175,13 @@ class SessionInteractor @Inject constructor(
     }
 
     fun deleteAllSyncedData() {
-        sessionNetworkDataSource.deleteUserData()
         coroutineScopeIO.launch {
+            sessionNetworkDataSource.deleteUserData()
             getSessionUUIDs().first {
                 sessionDiskDataSource.updateSyncOnSessions(it, false)
                 true
             }
         }
-
     }
 
     fun uploadSessions(
@@ -168,7 +217,10 @@ class SessionInteractor @Inject constructor(
 
     fun getSessionUUIDs() = sessionDiskDataSource.getSessionIds(authInteractor.userUUID)
 
-    fun getLocalOnlySessionUUIDs() = sessionDiskDataSource.getLocalOnlySessionUUIDs(authInteractor.userUUID)
+    fun getLocalOnlySessionUUIDs() =
+        sessionDiskDataSource.getLocalOnlySessionUUIDs(authInteractor.userUUID)
+
+    fun getLocalOnlySessions() = sessionDiskDataSource.getLocalOnlySessions(authInteractor.userUUID)
 
     /**
      * Get ongoing sessions, which have no end date.
@@ -183,7 +235,8 @@ class SessionInteractor @Inject constructor(
      *
      * @return a flow of ongoing sessions' IDs.
      */
-    fun getOngoingSessionUUIDs() = sessionDiskDataSource.getOngoingSessionIds(authInteractor.userUUID)
+    fun getOngoingSessionUUIDs() =
+        sessionDiskDataSource.getOngoingSessionIds(authInteractor.userUUID)
 
     /**
      * Save session data.
@@ -244,7 +297,7 @@ class SessionInteractor @Inject constructor(
     fun stopSession(session: DomainSession) = sessionDiskDataSource.stopSession(session)
 
     suspend fun refreshSessionStartLocation(
-        session: DomainSession
+        session: DomainSession,
     ) {
         locationDiskDataSource.getLocations(session.uuid).first { locations ->
             val sortedLocations = locations.sortedBy { location ->

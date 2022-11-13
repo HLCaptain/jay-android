@@ -28,6 +28,6 @@ class ProfileViewModel @Inject constructor(
     private val authInteractor: AuthInteractor
 ): ViewModel() {
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
-
+    val isUserSigningOut = authInteractor.isUserSigningOut
     fun signOut() = authInteractor.signOut()
 }
