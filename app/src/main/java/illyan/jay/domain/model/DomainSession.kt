@@ -31,16 +31,23 @@ import java.time.ZonedDateTime
  * @constructor Create empty Domain session
  */
 data class DomainSession(
-    val id: Long = -1,
+    var uuid: String,
     val startDateTime: ZonedDateTime,
     var endDateTime: ZonedDateTime?,
     var startLocationLatitude: Float? = null,
     var startLocationLongitude: Float? = null,
     var endLocationLatitude: Float? = null,
     var endLocationLongitude: Float? = null,
+    // These are optional values for an already ended session
     var startLocationName: String? = null,
-    var endLocationName: String? = null
+    var endLocationName: String? = null,
+    var distance: Float? = null,
+    var ownerUserUUID: String? = null,
+    var clientUUID: String? = null,
+    val isSynced: Boolean = false
 ) {
+    val isOwned = ownerUserUUID != null
+
     var startLocation: LatLng?
         get() {
             return if (startLocationLatitude != null && startLocationLongitude != null) {

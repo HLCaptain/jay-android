@@ -56,12 +56,12 @@ interface SensorEventDao {
     @Query("DELETE FROM sensor_events")
     fun deleteSensorEvents()
 
-    @Query("DELETE FROM sensor_events WHERE sessionId = :sessionId")
-    fun deleteSensorEventsForSession(sessionId: Long)
+    @Query("DELETE FROM sensor_events WHERE sessionUUID = :sessionUUID")
+    fun deleteSensorEventsForSession(sessionUUID: String)
 
     @Query("SELECT * FROM sensor_events WHERE id = :id")
     fun getSensorEvent(id: Long): Flow<RoomSensorEvent?>
 
-    @Query("SELECT * FROM sensor_events WHERE sessionId = :sessionId")
-    fun getSensorEvents(sessionId: Long): Flow<List<RoomSensorEvent>>
+    @Query("SELECT * FROM sensor_events WHERE sessionUUID = :sessionUUID")
+    fun getSensorEvents(sessionUUID: String): Flow<List<RoomSensorEvent>>
 }

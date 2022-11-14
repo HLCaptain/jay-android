@@ -22,7 +22,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppSettings(
-    val turnOnFreeDriveAutomatically: Boolean = false
+    val turnOnFreeDriveAutomatically: Boolean = false,
+    val clientUUID: String? = null
 ) {
     companion object {
         val default = AppSettings()

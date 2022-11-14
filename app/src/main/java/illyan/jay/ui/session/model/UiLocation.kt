@@ -30,7 +30,7 @@ data class UiLocation(
     var bearing: Short,
     var bearingAccuracy: Short, // in degrees
     var altitude: Short,
-    var speedAccuracy: Byte, // in meters per second
+    var speedAccuracy: Float, // in meters per second
     var verticalAccuracy: Short, // in meters
 )
 

@@ -34,7 +34,7 @@ import java.time.ZoneOffset
 
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
-    id = id,
+    uuid = uuid,
     startDateTime = Instant.ofEpochMilli(startDateTime).atZone(ZoneOffset.UTC),
     endDateTime = endDateTime?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC) },
     startLocationLatitude = startLocationLatitude,
@@ -43,10 +43,14 @@ fun RoomSession.toDomainModel() = DomainSession(
     endLocationLongitude = endLocationLongitude,
     startLocationName = startLocationName,
     endLocationName = endLocationName,
+    distance = distance,
+    ownerUserUUID = ownerUserUUID,
+    clientUUID = clientUUID,
+    isSynced = isSynced,
 )
 
 fun DomainSession.toRoomModel() = RoomSession(
-    id = id,
+    uuid = uuid,
     startDateTime = startDateTime.toInstant().toEpochMilli(),
     endDateTime = endDateTime?.toInstant()?.toEpochMilli(),
     startLocationLatitude = startLocationLatitude,
@@ -55,6 +59,10 @@ fun DomainSession.toRoomModel() = RoomSession(
     endLocationLongitude = endLocationLongitude,
     startLocationName = startLocationName,
     endLocationName = endLocationName,
+    distance = distance,
+    ownerUserUUID = ownerUserUUID,
+    clientUUID = clientUUID,
+    isSynced = isSynced,
 )
 
 // Location
@@ -63,7 +71,7 @@ fun RoomLocation.toDomainModel() = DomainLocation(
     latitude = latitude,
     longitude = longitude,
     speed = speed,
-    sessionId = sessionId,
+    sessionUUID = sessionUUID,
     zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     accuracy = accuracy,
     bearing = bearing,
@@ -77,7 +85,7 @@ fun DomainLocation.toRoomModel() = RoomLocation(
     latitude = latitude,
     longitude = longitude,
     speed = speed,
-    sessionId = sessionId,
+    sessionUUID = sessionUUID,
     time = zonedDateTime.toInstant().toEpochMilli(),
     accuracy = accuracy,
     bearing = bearing,
@@ -87,12 +95,14 @@ fun DomainLocation.toRoomModel() = RoomLocation(
     verticalAccuracy = verticalAccuracy
 )
 
-fun Location.toDomainModel(sessionId: Long): DomainLocation {
+fun Location.toDomainModel(
+    sessionUUID: String
+): DomainLocation {
     val domainLocation = DomainLocation(
         latitude = latitude.toFloat(),
         longitude = longitude.toFloat(),
-        sessionId = sessionId.toInt(),
-        zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC)
+        zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
+        sessionUUID = sessionUUID
     )
 
     if (hasSpeed()) domainLocation.speed = speed
@@ -102,7 +112,7 @@ fun Location.toDomainModel(sessionId: Long): DomainLocation {
 
     if (VERSION.SDK_INT >= VERSION_CODES.O) {
         if (hasBearingAccuracy()) domainLocation.bearingAccuracy = bearingAccuracyDegrees.toInt().toShort()
-        if (hasSpeedAccuracy()) domainLocation.speedAccuracy = speedAccuracyMetersPerSecond.toInt().toByte()
+        if (hasSpeedAccuracy()) domainLocation.speedAccuracy = speedAccuracyMetersPerSecond
         if (hasVerticalAccuracy()) domainLocation.verticalAccuracy = verticalAccuracyMeters.toInt().toShort()
     }
     return domainLocation
@@ -112,7 +122,7 @@ fun Location.toDomainModel(sessionId: Long): DomainLocation {
 fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
     id = id,
     zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
-    sessionId = sessionId,
+    sessionUUID = sessionUUID,
     accuracy = accuracy,
     x = x,
     y = y,
@@ -122,7 +132,7 @@ fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
 
 fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
     time = zonedDateTime.toInstant().toEpochMilli(),
-    sessionId = sessionId,
+    sessionUUID = sessionUUID,
     accuracy = accuracy,
     x = x,
     y = y,
@@ -131,8 +141,8 @@ fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
 )
 
 // Sensors
-fun SensorEvent.toDomainModel(sessionId: Long) = DomainSensorEvent(
-    sessionId = sessionId.toInt(),
+fun SensorEvent.toDomainModel(sessionUUID: String) = DomainSensorEvent(
+    sessionUUID = sessionUUID,
     zonedDateTime = Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp)).atZone(ZoneOffset.UTC),
     accuracy = accuracy.toByte(),
     x = values[0],

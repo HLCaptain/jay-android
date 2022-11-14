@@ -46,18 +46,18 @@ class SensorEventDiskDataSource @Inject constructor(
      *
      * @return sensorEvent data for a particular session.
      */
-    fun getSensorEvents(session: DomainSession) = getSensorEvents(session.id)
+    fun getSensorEvents(session: DomainSession) = getSensorEvents(session.uuid)
 
     /**
      * Get sensorEvents' data as a Flow for a particular session.
      *
-     * @param sessionId particular session's ID, which is the
+     * @param sessionUUID particular session's ID, which is the
      * foreign key of sensorEvent data returned.
      *
      * @return sensorEvent data flow for a particular session.
      */
-    fun getSensorEvents(sessionId: Long) =
-        sensorEventDao.getSensorEvents(sessionId)
+    fun getSensorEvents(sessionUUID: String) =
+        sensorEventDao.getSensorEvents(sessionUUID)
             .map { it.map(RoomSensorEvent::toDomainModel) }
 
     /**
@@ -80,6 +80,6 @@ class SensorEventDiskDataSource @Inject constructor(
     fun saveSensorEvents(sensorEvents: List<DomainSensorEvent>) =
         sensorEventDao.upsertSensorEvents(sensorEvents.map(DomainSensorEvent::toRoomModel))
 
-    fun deleteSensorEventsForSession(sessionId: Long) =
-        sensorEventDao.deleteSensorEventsForSession(sessionId)
+    fun deleteSensorEventsForSession(sessionUUID: String) =
+        sensorEventDao.deleteSensorEventsForSession(sessionUUID)
 }

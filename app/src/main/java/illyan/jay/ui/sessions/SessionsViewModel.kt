@@ -18,17 +18,27 @@
 
 package illyan.jay.ui.sessions
 
+import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.domain.interactor.SettingsInteractor
+import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,49 +46,86 @@ import javax.inject.Inject
 class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
+    private val authInteractor: AuthInteractor,
+    private val settingsInteractor: SettingsInteractor
 ) : ViewModel() {
-    private val sessionStateFlows = mutableMapOf<Long, StateFlow<UiSession?>>()
+    private val sessionStateFlows = mutableMapOf<String, StateFlow<UiSession?>>()
 
-    private val _sessionIds = MutableStateFlow(listOf<Long>())
-    val sessionIds = _sessionIds.asStateFlow()
+    private val _sessionUUIDs = MutableStateFlow(listOf<String>())
+    val localSessionUUIDs = _sessionUUIDs.asStateFlow()
 
-    fun load() {
-        viewModelScope.launch {
-            sessionInteractor.getSessionIds().collectLatest {
-                _sessionIds.value = it.sortedDescending()
+    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
+    val signedInUser = authInteractor.currentUserStateFlow
+
+    private val clientUUID = settingsInteractor.appSettingsFlow.map { it.clientUUID ?: "" }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())
+    val syncedSessions = _syncedSessions.combine(clientUUID) { sessions, clientUUID -> sessions.map { it.toUiModel(currentClientUUID = clientUUID, isLocal = false) } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _syncedSessions.value.map { it.toUiModel(currentClientUUID = clientUUID.value, isLocal = false) })
+
+    fun loadLocalSessions() {
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.getLocalOnlySessionUUIDs().collectLatest {
+                _sessionUUIDs.value = it.asReversed()
             }
         }
     }
 
-    fun getSessionStateFlow(sessionId: Long): StateFlow<UiSession?> {
-        if (sessionStateFlows.contains(sessionId)) {
-            return sessionStateFlows[sessionId]!!
+    fun loadCloudSessions(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.loadSyncedSessions((context as Activity))
+            sessionInteractor.syncedSessions.collectLatest {
+                _syncedSessions.value = it ?: emptyList()
+            }
+        }
+    }
+
+    fun deleteAllSyncedData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.deleteAllSyncedData()
+        }
+    }
+
+    fun ownSession(sessionUUID: String) {
+        sessionInteractor.ownSession(sessionUUID)
+    }
+
+    fun ownAllSessions() {
+        sessionInteractor.ownAllNotOwnedSessions()
+    }
+
+    fun syncSessions() {
+        sessionInteractor.uploadNotSyncedSessions()
+    }
+
+    fun deleteSessionsLocally() {
+        sessionInteractor.deleteStoppedSessions()
+    }
+
+    fun getSessionStateFlow(sessionUUDI: String): StateFlow<UiSession?> {
+        if (sessionStateFlows.contains(sessionUUDI)) {
+            return sessionStateFlows[sessionUUDI]!!
         }
         val sessionMutableStateFlow = MutableStateFlow<UiSession?>(null)
         val sessionStateFlow = sessionMutableStateFlow.asStateFlow()
-        sessionStateFlows[sessionId] = sessionStateFlow
+        sessionStateFlows[sessionUUDI] = sessionStateFlow
 
-        viewModelScope.launch {
-            sessionInteractor.getSession(sessionId).collectLatest { session ->
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.getSession(sessionUUDI).collectLatest { session ->
                 session?.let {
                     if (session.startLocation == null ||
                         session.startLocationName == null
                     ) {
-                        sessionInteractor.refreshSessionStartLocation(
-                            session,
-                            viewModelScope
-                        )
+                        sessionInteractor.refreshSessionStartLocation(session)
                     }
                     if (session.endDateTime != null &&
                         (session.endLocation == null || session.endLocationName == null)
                     ) {
-                        sessionInteractor.refreshSessionEndLocation(
-                            session,
-                            viewModelScope
-                        )
+                        sessionInteractor.refreshSessionEndLocation(session)
                     }
-                    locationInteractor.getLocations(sessionId).collectLatest {
-                        sessionMutableStateFlow.value = session.toUiModel(it)
+                    locationInteractor.getLocations(sessionUUDI).collectLatest {
+                        sessionMutableStateFlow.value = session.toUiModel(it, clientUUID.value, true)
                     }
                 }
             }

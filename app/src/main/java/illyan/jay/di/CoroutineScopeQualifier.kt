@@ -16,18 +16,14 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.profile
+package illyan.jay.di
 
-import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.domain.interactor.AuthInteractor
-import javax.inject.Inject
+import javax.inject.Qualifier
 
-@HiltViewModel
-class ProfileViewModel @Inject constructor(
-    private val authInteractor: AuthInteractor
-): ViewModel() {
-    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
-    val isUserSigningOut = authInteractor.isUserSigningOut
-    fun signOut() = authInteractor.signOut()
-}
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class CoroutineScopeIO
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class CoroutineScopeMain

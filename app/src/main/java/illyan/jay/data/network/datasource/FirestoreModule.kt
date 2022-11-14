@@ -16,18 +16,21 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.profile
+package illyan.jay.data.network.datasource
 
-import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.domain.interactor.AuthInteractor
-import javax.inject.Inject
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
-@HiltViewModel
-class ProfileViewModel @Inject constructor(
-    private val authInteractor: AuthInteractor
-): ViewModel() {
-    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
-    val isUserSigningOut = authInteractor.isUserSigningOut
-    fun signOut() = authInteractor.signOut()
+@Module
+@InstallIn(SingletonComponent::class)
+object FirestoreModule {
+
+    @Singleton
+    @Provides
+    fun provideFirestore() = Firebase.firestore
 }

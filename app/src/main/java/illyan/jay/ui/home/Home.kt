@@ -1090,11 +1090,11 @@ private fun SheetNavHost(
                     height >= sheetMinHeight &&
                     height != sheetState.getOffsetAsDp(density)
                 ) {
-                    Timber.d(
-                        "Density: ${density}\n" +
-                                "New bottom sheet height: ${sheetState.getOffsetAsDp(density)}\n" +
-                                "Bottom sheet state:\n${sheetState.asString()}"
-                    )
+//                    Timber.d(
+//                        "Density: ${density}\n" +
+//                                "New bottom sheet height: ${sheetState.getOffsetAsDp(density)}\n" +
+//                                "Bottom sheet state:\n${sheetState.asString()}"
+//                    )
                     refreshCameraPadding()
                 }
                 layout(placeable.width, placeable.height) {

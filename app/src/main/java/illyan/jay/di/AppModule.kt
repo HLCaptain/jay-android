@@ -23,6 +23,8 @@ import android.hardware.SensorManager
 import androidx.core.graphics.drawable.IconCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.mapbox.search.MapboxSearchSdk
 import com.mapbox.search.SearchEngineSettings
 import dagger.Module
@@ -32,6 +34,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import illyan.jay.BuildConfig
 import illyan.jay.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import javax.inject.Singleton
 
 @Module
@@ -39,6 +44,9 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     fun provideAppContext(@ApplicationContext context: Context) = context
+
+    @Provides
+    fun provideFirebaseAuth() = Firebase.auth
 
     @Provides
     @Singleton
@@ -76,4 +84,14 @@ object AppModule {
     @Singleton
     fun provideFavoritesDataProvider() =
         MapboxSearchSdk.serviceProvider.favoritesDataProvider()
+
+    @Provides
+    @CoroutineScopeIO
+    fun provideCoroutineScopeIO() = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Provides
+    @CoroutineScopeMain
+    fun provideCoroutineScopeMain() = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 }
+
+

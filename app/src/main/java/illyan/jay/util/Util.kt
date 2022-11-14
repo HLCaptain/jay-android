@@ -28,9 +28,16 @@ import androidx.compose.material.BottomSheetState
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.ui.unit.LayoutDirection
+import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.GeoPoint
+import com.google.maps.android.ktx.utils.sphericalPathLength
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
+import illyan.jay.domain.model.DomainLocation
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -103,3 +110,17 @@ operator fun PaddingValues.plus(paddingValues: PaddingValues): PaddingValues {
         bottom = calculateBottomPadding() + paddingValues.calculateBottomPadding(),
     )
 }
+
+fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
+
+fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()
+
+fun LatLng.toGeoPoint() = GeoPoint(latitude, longitude)
+
+fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
+
+fun Timestamp.toZonedDateTime() = toInstant().atZone(ZoneOffset.UTC)
+
+fun List<DomainLocation>.sphericalPathLength() = sortedBy {
+    it.zonedDateTime.toInstant().toEpochMilli()
+}.map { it.latLng }.sphericalPathLength()

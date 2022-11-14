@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.profile
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -47,6 +48,7 @@ fun ProfileScreen(
     if (isDialogOpen) {
         val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
         var showDialog by remember { mutableStateOf(false) }
+        val isUserSigningOut by viewModel.isUserSigningOut.collectAsState()
         AlertDialog(
             properties = DialogProperties(
                 usePlatformDefaultWidth = false
@@ -54,13 +56,20 @@ fun ProfileScreen(
             onDismissRequest = { onDialogClosed() },
             title = { Text(text = stringResource(R.string.profile)) },
             confirmButton = {
-                if (isUserSignedIn) {
-                    TextButton(onClick = { viewModel.signOut() }) {
-                        Text(text = stringResource(R.string.sign_out))
-                    }
-                } else {
-                    Button(onClick = { showDialog = true }) {
-                        Text(text = stringResource(R.string.sign_in))
+                Crossfade(targetState = isUserSignedIn) {
+                    if (it) {
+                        TextButton(
+                            enabled = !isUserSigningOut,
+                            onClick = { viewModel.signOut() }
+                        ) {
+                            Text(text = stringResource(R.string.sign_out))
+                        }
+                    } else {
+                        Button(
+                            onClick = { showDialog = true }
+                        ) {
+                            Text(text = stringResource(R.string.sign_in))
+                        }
                     }
                 }
             },

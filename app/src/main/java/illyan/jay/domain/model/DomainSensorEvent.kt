@@ -25,7 +25,7 @@ import java.time.ZonedDateTime
  * between DataSources, Interactors and Presenters.
  *
  * @property id
- * @property sessionId
+ * @property sessionUUID
  * @property zonedDateTime
  * @property accuracy
  * @property x
@@ -35,7 +35,7 @@ import java.time.ZonedDateTime
  */
 data class DomainSensorEvent(
     val id: Long = -1,
-    val sessionId: Int,
+    val sessionUUID: String,
     val zonedDateTime: ZonedDateTime,
     val accuracy: Byte, // enum
     val x: Float,

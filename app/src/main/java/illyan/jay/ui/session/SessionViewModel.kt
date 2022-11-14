@@ -23,28 +23,49 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SessionViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
-    private val locationInteractor: LocationInteractor
-): ViewModel() {
+    private val locationInteractor: LocationInteractor,
+) : ViewModel() {
     private val _session = MutableStateFlow<UiSession?>(null)
     val session = _session.asStateFlow()
 
-    fun load(sessionId: Long) {
+    private val _path = MutableStateFlow<List<UiLocation>?>(null)
+    val path = _path.asStateFlow()
+
+    val isLoadingSessionFromNetwork = MutableStateFlow(false)
+
+    fun load(sessionUUID: String) {
         viewModelScope.launch {
-            sessionInteractor.getSession(sessionId).collectLatest { session ->
-                session?.let {
-                    locationInteractor.getLocations(it.id).collectLatest { locations ->
-                        _session.value = it.toUiModel(locations)
+            sessionInteractor.getSession(sessionUUID).collectLatest { session ->
+                if (session != null) {
+                    _session.value = session.toUiModel()
+                    locationInteractor.getLocations(session.uuid).collectLatest { localPath ->
+                        _path.value = localPath.sortedBy { it.zonedDateTime.toInstant() }.map { it.toUiModel() }
+                    }
+                } else {
+                    isLoadingSessionFromNetwork.value = true
+                    locationInteractor.getSyncedPath(sessionUUID).first { remotePath ->
+                        if (remotePath != null) {
+                            _path.value = remotePath.sortedBy { it.zonedDateTime.toInstant() }.map { it.toUiModel() }
+                            sessionInteractor.syncedSessions.collectLatest { sessions ->
+                                sessions?.firstOrNull{ it.uuid.contentEquals(sessionUUID) }?.let { session ->
+                                    _session.value = session.toUiModel()
+                                }
+                            }
+                        }
+                        remotePath != null
                     }
                 }
             }

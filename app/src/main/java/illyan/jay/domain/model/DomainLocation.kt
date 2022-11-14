@@ -40,17 +40,17 @@ import java.time.ZonedDateTime
  */
 data class DomainLocation(
     val id: Long = -1,
-    val sessionId: Int,
+    var sessionUUID: String,
     val zonedDateTime: ZonedDateTime,
     val latitude: Float,
     val longitude: Float,
     var speed: Float = Float.NaN,
     var accuracy: Byte = Byte.MIN_VALUE,
-    var bearing: Short = Short.MIN_VALUE,
+    var bearing: Short = Short.MIN_VALUE, // TODO: may change Short to Byte?
     var bearingAccuracy: Short = Short.MIN_VALUE, // in degrees
     var altitude: Short = Short.MIN_VALUE,
-    var speedAccuracy: Byte = Byte.MIN_VALUE, // in meters per second
-    var verticalAccuracy: Short = Short.MIN_VALUE // in meters
+    var speedAccuracy: Float = Float.NaN, // in meters per second
+    var verticalAccuracy: Short = Short.MIN_VALUE, // in meters
 ) {
     val latLng = LatLng(latitude.toDouble(), longitude.toDouble())
 }
