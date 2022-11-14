@@ -103,7 +103,9 @@ fun SessionsScreen(
     val areThereSessionsNotOwned by viewModel.areThereSessionsNotOwned.collectAsState()
     val canDeleteSessions by viewModel.canDeleteSessionsLocally.collectAsState()
     val syncedSessions by viewModel.syncedSessions.collectAsState()
-    val localSessionUUIDs by viewModel.localSessionUUIDs.collectAsState()
+    val canSyncSessions by viewModel.canSyncSessions.collectAsState()
+    val localSessionUUIDs by viewModel.ownedLocalSessionUUIDs.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
         viewModel.loadCloudSessions(context)
@@ -112,64 +114,70 @@ fun SessionsScreen(
     Column(
         modifier = Modifier.padding(DefaultScreenOnSheetPadding)
     ) {
-        Column(
+        Row(
             modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            AnimatedVisibility(visible = isUserSignedIn && localSessionUUIDs.isNotEmpty()) {
-                TextButton(
-                    onClick = { viewModel.syncSessions() },
-                    enabled = isUserSignedIn && localSessionUUIDs.isNotEmpty(),
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+            Column {
+                AnimatedVisibility(visible = isUserSignedIn && canSyncSessions) {
+                    TextButton(
+                        onClick = { viewModel.syncSessions() },
+                        enabled = isUserSignedIn && canSyncSessions,
                     ) {
-                        Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
-                        Text(text = stringResource(R.string.sync))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
+                            Text(text = stringResource(R.string.sync))
+                        }
+                    }
+                }
+                AnimatedVisibility(visible = isUserSignedIn && syncedSessions.isNotEmpty()) {
+                    TextButton(
+                        onClick = { viewModel.deleteAllSyncedData() },
+                        enabled = isUserSignedIn && syncedSessions.isNotEmpty(),
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
+                            Text(text = stringResource(R.string.delete_from_cloud))
+                        }
+                    }
+                }
+                AnimatedVisibility(visible = canDeleteSessions) {
+                    TextButton(
+                        onClick = { viewModel.deleteSessionsLocally() },
+                        enabled = canDeleteSessions
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
+                            Text(text = stringResource(R.string.delete_locally))
+                        }
+                    }
+                }
+                AnimatedVisibility(visible = isUserSignedIn && areThereSessionsNotOwned) {
+                    TextButton(
+                        onClick = { viewModel.ownAllSessions() },
+                        enabled = isUserSignedIn && areThereSessionsNotOwned,
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(imageVector = Icons.Rounded.AddChart, contentDescription = "")
+                            Text(text = stringResource(R.string.own_all_sessions))
+                        }
                     }
                 }
             }
-            AnimatedVisibility(visible = isUserSignedIn && syncedSessions.isNotEmpty()) {
-                TextButton(
-                    onClick = { viewModel.deleteAllSyncedData() },
-                    enabled = isUserSignedIn && syncedSessions.isNotEmpty(),
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
-                        Text(text = stringResource(R.string.delete_from_cloud))
-                    }
-                }
-            }
-            AnimatedVisibility(visible = canDeleteSessions) {
-                TextButton(
-                    onClick = { viewModel.deleteSessionsLocally() },
-                    enabled = canDeleteSessions
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
-                        Text(text = stringResource(R.string.delete_locally))
-                    }
-                }
-            }
-            AnimatedVisibility(visible = isUserSignedIn && areThereSessionsNotOwned) {
-                TextButton(
-                    onClick = { viewModel.ownAllSessions() },
-                    enabled = isUserSignedIn && areThereSessionsNotOwned,
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(imageVector = Icons.Rounded.AddChart, contentDescription = "")
-                        Text(text = stringResource(R.string.own_all_sessions))
-                    }
-                }
+            AnimatedVisibility(visible = isLoading) {
+                SmallCircularProgressIndicator()
             }
         }
         SessionsList(
@@ -193,12 +201,13 @@ fun SessionsList(
     viewModel: SessionsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator,
 ) {
-    val localSessionUUIDs by viewModel.localSessionUUIDs.collectAsState()
+    val ownedLocalSessionUUIDs by viewModel.ownedLocalSessionUUIDs.collectAsState()
     val remoteSessions by viewModel.syncedSessions.collectAsState()
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val noSessionsToShow by viewModel.noSessionsToShow.collectAsState()
     val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsState()
     val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsState()
+    val notOwnedSessionUUIDs by viewModel.notOwnedSessionUUIDs.collectAsState()
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
@@ -259,7 +268,7 @@ fun SessionsList(
                 }
             }
         }
-        items(localSessionUUIDs) {
+        items(notOwnedSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
             val isPlaceholderVisible = session == null
             val placeholderHighlight = PlaceholderHighlight.shimmer()
@@ -276,7 +285,7 @@ fun SessionsList(
                     destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
                 }
             ) {
-                if (session != null && session!!.isNotOwned && isUserSignedIn) {
+                if (session != null && isUserSignedIn) {
                     Button(
                         onClick = { viewModel.ownSession(session!!.uuid) },
                     ) {
@@ -290,6 +299,24 @@ fun SessionsList(
                     }
                 }
             }
+        }
+        items(ownedLocalSessionUUIDs) {
+            val session by viewModel.getSessionStateFlow(it).collectAsState()
+            val isPlaceholderVisible = session == null
+            val placeholderHighlight = PlaceholderHighlight.shimmer()
+            SessionCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .placeholder(
+                        visible = isPlaceholderVisible,
+                        highlight = placeholderHighlight,
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                session = session,
+                onClick = { sessionUUID ->
+                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
+                }
+            )
         }
     }
 }

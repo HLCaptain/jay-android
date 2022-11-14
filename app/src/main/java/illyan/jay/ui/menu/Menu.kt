@@ -27,13 +27,11 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -43,7 +41,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Expand
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Route
 import androidx.compose.material3.Card
@@ -55,11 +52,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -76,6 +72,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
+import illyan.jay.R
 import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.destinations.SessionsScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -86,6 +83,7 @@ import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
+import illyan.jay.ui.theme.SignatureTone95
 import illyan.jay.util.isCollapsedOrWillBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -101,21 +99,8 @@ val MenuItemPadding = 6.dp
 val ListMaxHeight = 384.dp
 val ListMinHeight = 128.dp
 
-//val DefaultContentPadding = PaddingValues(
-//    top = MenuItemPadding,
-//    // FIXME: bottom content padding is not applied
-//    bottom = RoundedCornerRadius + MenuItemPadding
-//)
-//
-//val DefaultScreenOnSheetPadding = PaddingValues(
-//    start = MenuItemPadding,
-//    end = MenuItemPadding,
-//    // TODO: remove additional bottom padding after getting contentPadding working
-//    bottom = RoundedCornerRadius + MenuItemPadding
-//)
-
 val DefaultContentPadding = PaddingValues(
-    bottom = MenuItemPadding
+    bottom = MenuItemPadding + RoundedCornerRadius
 )
 
 val DefaultScreenOnSheetPadding = PaddingValues(
@@ -139,7 +124,6 @@ fun MenuScreen(
     }
     val gridState = rememberLazyStaggeredGridState()
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
-    var menuShouldBeBigger by remember { mutableStateOf(false) }
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
         modifier = Modifier
@@ -157,11 +141,10 @@ fun MenuScreen(
         contentPadding = DefaultContentPadding,
         state = gridState
     ) {
-        // TODO: fill up list with content
         item {
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
-                title = "Navigate to BME",
+                title = stringResource(R.string.navigate_to_bme),
                 icon = Icons.Rounded.Navigation,
                 onClick = {
                     localBroadcastManager.sendBroadcast(
@@ -173,69 +156,32 @@ fun MenuScreen(
                         ACTION_QUERY_PLACE
                     )
                 },
-                color = Color.Cyan
+                color = SignatureTone95
             )
         }
         item {
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
-                title = "Start free-drive navigation",
+                title = stringResource(R.string.start_free_drive_navigation),
                 icon = Icons.Rounded.Navigation,
                 onClick = {
                     destinationsNavigator.navigate(FreeDriveScreenDestination)
                 },
-                color = Color.Cyan
+                color = SignatureTone95
             )
         }
         item {
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
-                title = "Sessions",
+                title = stringResource(R.string.sessions),
                 icon = Icons.Rounded.Route,
                 onClick = {
                     destinationsNavigator.navigate(SessionsScreenDestination)
                 },
-                color = Color.Cyan
+                color = SignatureTone95
             )
-        }
-        item {
-            MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
-                title = "This is a title with longer text"
-            )
-        }
-        item {
-            MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
-                title = "Lol, this is a menu item, which is really cool"
-            )
-        }
-        item {
-            MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
-                title = "Nice"
-            )
-        }
-        item {
-            MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
-                title = "Bruh, press this menu item or dont, I dont care, but hey, have a great day"
-            )
-        }
-        item {
-            MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
-                title = "Make the menu bigger",
-                color = Color.Magenta,
-                icon = Icons.Rounded.Expand
-            ) {
-                menuShouldBeBigger = !menuShouldBeBigger
-            }
         }
     }
-    Spacer(modifier = Modifier.height(RoundedCornerRadius))
-    val spacerHeight by animateDpAsState(targetValue = if (menuShouldBeBigger) 800.dp else 0.dp)
-    Spacer(modifier = Modifier.height(spacerHeight))
 }
 
 @Preview(showBackground = true)
@@ -243,7 +189,7 @@ fun MenuScreen(
 @Composable
 fun MenuItemCard(
     modifier: Modifier = Modifier,
-    title: String = "Menu Item Title",
+    title: String = stringResource(R.string.menu_item_title),
     icon: ImageVector? = null,
     color: Color = MaterialTheme.colorScheme.primaryContainer,
     onClick: () -> Unit = {},
@@ -271,7 +217,7 @@ fun MenuItemCard(
                         bottom = 12.dp
                     ),
                     imageVector = icon,
-                    contentDescription = "Menu Item Icon"
+                    contentDescription = stringResource(R.string.menu_item_icon)
                 )
             } else {
                 Spacer(modifier = Modifier.width(12.dp))

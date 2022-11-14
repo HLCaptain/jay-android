@@ -99,9 +99,9 @@ fun SessionScreen(
                     extraCondition = { !sheetHeightNotSet && !sheetState.isAnimationRunning },
                     onFly = { pathLoaded = true }
                 )
-                sheetHeightNotSet = false
             }
         }
+        sheetHeightNotSet = sheetState.isAnimationRunning
     }
     DisposableEffect(
         path

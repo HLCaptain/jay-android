@@ -223,6 +223,13 @@ class SessionInteractor @Inject constructor(
 
     fun getLocalOnlySessions() = sessionDiskDataSource.getLocalOnlySessions(authInteractor.userUUID)
 
+    fun getOwnSessionsFromDisk() = sessionDiskDataSource.getSessionsByOwner(authInteractor.userUUID)
+
+    fun getOwnLocalSessions(): Flow<List<DomainSession>>? {
+        if (!authInteractor.isUserSignedIn) return null
+        return sessionDiskDataSource.getLocalSessionsByOwner(authInteractor.userUUID!!)
+    }
+
     /**
      * Get ongoing sessions, which have no end date.
      *

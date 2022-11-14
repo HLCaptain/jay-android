@@ -35,3 +35,6 @@ val JeansBlue = Color(0xFFA7CBE6)
 
 val Neutral95 = Color(0xFFF2F2F2)
 val Neutral90 = Color(0xFFE6E6E6)
+
+
+val SignatureTone95 = Color(0xFFEBF1FF)
