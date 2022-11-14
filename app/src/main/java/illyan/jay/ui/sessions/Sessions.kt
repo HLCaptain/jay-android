@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.sessions
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,7 +36,9 @@ import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.Button
@@ -65,6 +68,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
@@ -96,6 +100,10 @@ fun SessionsScreen(
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     val context = LocalContext.current
     val signedInUser by viewModel.signedInUser.collectAsState()
+    val areThereSessionsNotOwned by viewModel.areThereSessionsNotOwned.collectAsState()
+    val canDeleteSessions by viewModel.canDeleteSessionsLocally.collectAsState()
+    val syncedSessions by viewModel.syncedSessions.collectAsState()
+    val localSessionUUIDs by viewModel.localSessionUUIDs.collectAsState()
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
         viewModel.loadCloudSessions(context)
@@ -107,51 +115,60 @@ fun SessionsScreen(
         Column(
             modifier = Modifier.fillMaxWidth(),
         ) {
-            TextButton(
-                onClick = { viewModel.syncSessions() },
-                enabled = isUserSignedIn,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            AnimatedVisibility(visible = isUserSignedIn && localSessionUUIDs.isNotEmpty()) {
+                TextButton(
+                    onClick = { viewModel.syncSessions() },
+                    enabled = isUserSignedIn && localSessionUUIDs.isNotEmpty(),
                 ) {
-                    Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
-                    Text(text = stringResource(R.string.sync))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
+                        Text(text = stringResource(R.string.sync))
+                    }
                 }
             }
-            TextButton(
-                onClick = { viewModel.deleteAllSyncedData() },
-                enabled = isUserSignedIn,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            AnimatedVisibility(visible = isUserSignedIn && syncedSessions.isNotEmpty()) {
+                TextButton(
+                    onClick = { viewModel.deleteAllSyncedData() },
+                    enabled = isUserSignedIn && syncedSessions.isNotEmpty(),
                 ) {
-                    Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
-                    Text(text = stringResource(R.string.local_only))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
+                        Text(text = stringResource(R.string.delete_from_cloud))
+                    }
                 }
             }
-            TextButton(
-                onClick = { viewModel.deleteSessionsLocally() },
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            AnimatedVisibility(visible = canDeleteSessions) {
+                TextButton(
+                    onClick = { viewModel.deleteSessionsLocally() },
+                    enabled = canDeleteSessions
                 ) {
-                    Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
-                    Text(text = stringResource(R.string.delete_locally))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
+                        Text(text = stringResource(R.string.delete_locally))
+                    }
                 }
             }
-            TextButton(
-                onClick = { viewModel.ownAllSessions() },
-                enabled = isUserSignedIn,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            AnimatedVisibility(visible = isUserSignedIn && areThereSessionsNotOwned) {
+                TextButton(
+                    onClick = { viewModel.ownAllSessions() },
+                    enabled = isUserSignedIn && areThereSessionsNotOwned,
                 ) {
-                    Icon(imageVector = Icons.Rounded.AddChart, contentDescription = "")
-                    Text(text = stringResource(R.string.own_all_sessions))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(imageVector = Icons.Rounded.AddChart, contentDescription = "")
+                        Text(text = stringResource(R.string.own_all_sessions))
+                    }
                 }
             }
         }
@@ -179,11 +196,43 @@ fun SessionsList(
     val localSessionUUIDs by viewModel.localSessionUUIDs.collectAsState()
     val remoteSessions by viewModel.syncedSessions.collectAsState()
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val noSessionsToShow by viewModel.noSessionsToShow.collectAsState()
+    val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsState()
+    val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsState()
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
         verticalArrangement = Arrangement.spacedBy(MenuItemPadding)
     ) {
+        if (noSessionsToShow) {
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(imageVector = Icons.Rounded.Info, contentDescription = "")
+                    Text(text = stringResource(R.string.no_sessions_to_show))
+                }
+            }
+        }
+        if (!syncedSessionsLoaded && isUserSignedIn) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SmallCircularProgressIndicator()
+                        Text(text = stringResource(R.string.loading_sessions_from_cloud))
+                    }
+                }
+            }
+        }
         items(remoteSessions) {
             SessionCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -192,6 +241,23 @@ fun SessionsList(
                     destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
                 }
             )
+        }
+        if (!localSessionsLoaded) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SmallCircularProgressIndicator()
+                        Text(text = stringResource(R.string.loading_sessions))
+                    }
+                }
+            }
         }
         items(localSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
@@ -218,8 +284,8 @@ fun SessionsList(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
-                            Text(text = stringResource(R.string.own_session))
+                            Icon(imageVector = Icons.Rounded.PersonAdd, contentDescription = "")
+                            Text(text = stringResource(R.string.own))
                         }
                     }
                 }
@@ -235,7 +301,7 @@ fun SessionCard(
     modifier: Modifier = Modifier,
     session: UiSession? = null,
     onClick: (String) -> Unit = {},
-    content: @Composable () -> Unit = {}
+    content: @Composable () -> Unit = {},
 ) {
     val cardColors = CardDefaults.cardColors(
         containerColor = Neutral95
@@ -299,10 +365,12 @@ fun SessionCard(
                                 if (session == null) {
                                     stringResource(R.string.unknown)
                                 } else {
-                                    "${session.totalDistance
-                                        .div(1000)
-                                        .toBigDecimal()
-                                        .setScale(2, RoundingMode.FLOOR)} " +
+                                    "${
+                                        session.totalDistance
+                                            .div(1000)
+                                            .toBigDecimal()
+                                            .setScale(2, RoundingMode.FLOOR)
+                                    } " +
                                             stringResource(R.string.kilometers)
                                 }
                     )

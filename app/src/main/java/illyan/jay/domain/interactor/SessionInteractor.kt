@@ -216,6 +216,8 @@ class SessionInteractor @Inject constructor(
 
     fun getSessionUUIDs() = sessionDiskDataSource.getSessionIds(authInteractor.userUUID)
 
+    fun getNotOwnedSessions() = sessionDiskDataSource.getAllNotOwnedSessions()
+
     fun getLocalOnlySessionUUIDs() =
         sessionDiskDataSource.getLocalOnlySessionUUIDs(authInteractor.userUUID)
 

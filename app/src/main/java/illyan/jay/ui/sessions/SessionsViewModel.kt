@@ -57,17 +57,73 @@ class SessionsViewModel @Inject constructor(
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
     val signedInUser = authInteractor.currentUserStateFlow
 
+    private val _syncedSessionsLoaded = MutableStateFlow(false)
+    val syncedSessionsLoaded = _syncedSessionsLoaded.asStateFlow()
+    private val _localSessionsLoaded = MutableStateFlow(false)
+    val localSessionsLoaded = _localSessionsLoaded.asStateFlow()
+
     private val clientUUID = settingsInteractor.appSettingsFlow.map { it.clientUUID ?: "" }
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
+    private val _syncedLocalSessionUUIDs = MutableStateFlow(listOf<String>())
+    val syncedLocalSessionUUIDs = _syncedLocalSessionUUIDs.asStateFlow()
+
     private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())
-    val syncedSessions = _syncedSessions.combine(clientUUID) { sessions, clientUUID -> sessions.map { it.toUiModel(currentClientUUID = clientUUID, isLocal = false) } }
+    val syncedSessions = combine(_syncedSessions, clientUUID, syncedLocalSessionUUIDs) { synced, clientUUID, locals -> synced.map { it.toUiModel(currentClientUUID = clientUUID, isLocal = locals.contains(it.uuid)) } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, _syncedSessions.value.map { it.toUiModel(currentClientUUID = clientUUID.value, isLocal = false) })
+
+    private val _notOwnedSessionUUIDs = MutableStateFlow(listOf<String>())
+    val areThereSessionsNotOwned = _notOwnedSessionUUIDs.map { it.isNotEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val noSessionsToShow = combine(
+        syncedSessions,
+        localSessionUUIDs,
+        syncedSessionsLoaded,
+        localSessionsLoaded
+    ) { synced, local, syncedLoaded, localLoaded ->
+        if (syncedLoaded && localLoaded) {
+            synced.isEmpty() && local.isEmpty()
+        } else {
+            false
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    private val _ongoingSessionUUIDs = MutableStateFlow(listOf<String>())
+    val ongoingSessionUUIDs = _ongoingSessionUUIDs.asStateFlow()
+
+    val canDeleteSessionsLocally = combine(
+        ongoingSessionUUIDs,
+        localSessionUUIDs,
+        syncedLocalSessionUUIDs
+    ) { locals, ongoing, syncedLocals ->
+        if (syncedLocals.isNotEmpty()) {
+            true
+        } else {
+            locals.size - ongoing.size > 0
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun loadLocalSessions() {
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.getLocalOnlySessionUUIDs().collectLatest {
                 _sessionUUIDs.value = it.asReversed()
+                _localSessionsLoaded.value = true
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
+                _notOwnedSessionUUIDs.value = sessions.map { it.uuid }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.getOngoingSessionUUIDs().collectLatest {
+                _ongoingSessionUUIDs.value = it
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.getSyncedSessionsFromDisk().collectLatest { sessions ->
+                _syncedLocalSessionUUIDs.value = sessions.map { it.uuid }
             }
         }
     }
@@ -77,6 +133,7 @@ class SessionsViewModel @Inject constructor(
             sessionInteractor.loadSyncedSessions((context as Activity))
             sessionInteractor.syncedSessions.collectLatest {
                 _syncedSessions.value = it ?: emptyList()
+                _syncedSessionsLoaded.value = it != null
             }
         }
     }

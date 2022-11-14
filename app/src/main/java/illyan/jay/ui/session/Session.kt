@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
@@ -56,6 +55,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.home.tryFlyToPath
@@ -169,7 +169,7 @@ fun SessionDetailsScreen(
             AnimatedVisibility(
                 visible = isPathLoadingFromNetwork && (path == null || session == null)
             ) {
-                CircularProgressIndicator()
+                SmallCircularProgressIndicator()
             }
         }
         Column {
