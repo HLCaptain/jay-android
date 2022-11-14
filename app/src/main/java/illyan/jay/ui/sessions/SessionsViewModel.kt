@@ -61,8 +61,8 @@ class SessionsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())
-    val syncedSessions = _syncedSessions.combine(clientUUID) { sessions, clientUUID -> sessions.map { it.toUiModel(currentClientUUID = clientUUID) } }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, _syncedSessions.value.map { it.toUiModel(currentClientUUID = clientUUID.value) })
+    val syncedSessions = _syncedSessions.combine(clientUUID) { sessions, clientUUID -> sessions.map { it.toUiModel(currentClientUUID = clientUUID, isLocal = false) } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _syncedSessions.value.map { it.toUiModel(currentClientUUID = clientUUID.value, isLocal = false) })
 
     fun loadLocalSessions() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -125,7 +125,7 @@ class SessionsViewModel @Inject constructor(
                         sessionInteractor.refreshSessionEndLocation(session)
                     }
                     locationInteractor.getLocations(sessionUUDI).collectLatest {
-                        sessionMutableStateFlow.value = session.toUiModel(it, clientUUID.value)
+                        sessionMutableStateFlow.value = session.toUiModel(it, clientUUID.value, true)
                     }
                 }
             }

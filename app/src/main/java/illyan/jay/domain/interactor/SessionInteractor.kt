@@ -201,7 +201,6 @@ class SessionInteractor @Inject constructor(
         sessionDiskDataSource.refreshSessionUUIDs(sessions, authInteractor.userUUID!!)
     }
 
-
     fun uploadSession(
         session: DomainSession,
         locations: List<DomainLocation>,

@@ -44,11 +44,13 @@ data class UiSession(
 fun DomainSession.toUiModel(
     locations: List<DomainLocation>,
     currentClientUUID: String,
+    isLocal: Boolean = clientUUID == currentClientUUID,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
 ): UiSession {
     return toUiModel(
         locations.sphericalPathLength(),
         currentClientUUID,
+        isLocal,
         currentTime
     )
 }
@@ -56,6 +58,7 @@ fun DomainSession.toUiModel(
 fun DomainSession.toUiModel(
     totalDistance: Double = distance?.toDouble() ?: -1.0,
     currentClientUUID: String,
+    isLocal: Boolean = clientUUID == currentClientUUID,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
 ): UiSession {
     return UiSession(
@@ -75,7 +78,7 @@ fun DomainSession.toUiModel(
                 .milliseconds
         },
         isSynced = isSynced,
-        isLocal = clientUUID == currentClientUUID,
+        isLocal = isLocal,
         isNotOwned = ownerUserUUID == null
     )
 }
