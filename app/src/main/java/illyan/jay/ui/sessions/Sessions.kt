@@ -104,7 +104,6 @@ fun SessionsScreen(
     val canDeleteSessions by viewModel.canDeleteSessionsLocally.collectAsState()
     val syncedSessions by viewModel.syncedSessions.collectAsState()
     val canSyncSessions by viewModel.canSyncSessions.collectAsState()
-    val localSessionUUIDs by viewModel.ownedLocalSessionUUIDs.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
