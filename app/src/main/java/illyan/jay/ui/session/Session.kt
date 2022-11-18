@@ -100,8 +100,8 @@ fun SessionScreen(
                     onFly = { pathLoaded = true }
                 )
             }
+            sheetHeightNotSet = !sheetState.isAnimationRunning
         }
-        sheetHeightNotSet = sheetState.isAnimationRunning
     }
     DisposableEffect(
         path
