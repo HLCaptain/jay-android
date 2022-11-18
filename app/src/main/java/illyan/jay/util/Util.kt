@@ -111,6 +111,16 @@ operator fun PaddingValues.plus(paddingValues: PaddingValues): PaddingValues {
     )
 }
 
+operator fun PaddingValues.minus(paddingValues: PaddingValues): PaddingValues {
+    val direction = LayoutDirection.Ltr
+    return PaddingValues(
+        start = calculateStartPadding(direction) - paddingValues.calculateStartPadding(direction),
+        top = calculateTopPadding() - paddingValues.calculateTopPadding(),
+        end = calculateEndPadding(direction) - paddingValues.calculateEndPadding(direction),
+        bottom = calculateBottomPadding() - paddingValues.calculateBottomPadding(),
+    )
+}
+
 fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
 
 fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()

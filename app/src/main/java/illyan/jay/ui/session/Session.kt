@@ -81,14 +81,17 @@ fun SessionScreen(
         viewModel.load(sessionUUID)
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
-    var pathLoaded by remember { mutableStateOf(false) }
+    var flownToPath by remember { mutableStateOf(false) }
     val path by viewModel.path.collectAsState()
+    LaunchedEffect(sheetState.isAnimationRunning) {
+        sheetHeightNotSet = sheetState.isAnimationRunning
+    }
     LaunchedEffect(
         path,
-        sheetState.isAnimationRunning,
+        sheetHeightNotSet
     ) {
         path?.let {
-            if (!pathLoaded) {
+            if (!flownToPath) {
                 tryFlyToPath(
                     path = path!!.map { location ->
                         Point.fromLngLat(
@@ -96,11 +99,10 @@ fun SessionScreen(
                             location.latLng.latitude
                         )
                     },
-                    extraCondition = { !sheetHeightNotSet && !sheetState.isAnimationRunning },
-                    onFly = { pathLoaded = true }
+                    extraCondition = { !sheetHeightNotSet },
+                    onFly = { flownToPath = true }
                 )
             }
-            sheetHeightNotSet = !sheetState.isAnimationRunning
         }
     }
     DisposableEffect(
@@ -115,6 +117,8 @@ fun SessionScreen(
                         Point.fromLngLat(it.latLng.longitude, it.latLng.latitude)
                     } ?: emptyList()
                 )
+                // TODO: make this drawn line a gradient, showing speed via LineLayer,
+                //  aka https://docs.mapbox.com/android/legacy/maps/examples/line-gradient/
                 // AzureBlue
                 .withLineColor("#1b8fff")
                 .withLineWidth(5.0)

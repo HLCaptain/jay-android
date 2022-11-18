@@ -153,7 +153,7 @@ class SessionInteractor @Inject constructor(
     fun uploadNotSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
         coroutineScopeIO.launch {
-            getLocalOnlySessions().first { sessions ->
+            sessionDiskDataSource.getStoppedSessions(authInteractor.userUUID!!).first { sessions ->
                 locationDiskDataSource.getLocations(sessions.map { it.uuid }).first { locations ->
                     uploadSessions(
                         sessions,

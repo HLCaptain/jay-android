@@ -107,8 +107,8 @@ class SessionsViewModel @Inject constructor(
     val ongoingSessionUUIDs = _ongoingSessionUUIDs.asStateFlow()
 
     val canDeleteSessionsLocally = combine(
-        ongoingSessionUUIDs,
         ownedLocalSessionUUIDs,
+        ongoingSessionUUIDs,
         syncedLocalSessionUUIDs
     ) { locals, ongoing, syncedLocals ->
         if (syncedLocals.isNotEmpty()) {

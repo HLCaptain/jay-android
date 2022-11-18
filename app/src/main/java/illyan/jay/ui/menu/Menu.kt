@@ -41,6 +41,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Route
 import androidx.compose.material3.Card
@@ -99,15 +100,11 @@ val MenuItemPadding = 6.dp
 val ListMaxHeight = 384.dp
 val ListMinHeight = 128.dp
 
-val DefaultContentPadding = PaddingValues(
-    bottom = MenuItemPadding + RoundedCornerRadius
-)
-
 val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding,
     start = MenuItemPadding,
     end = MenuItemPadding,
-    bottom = RoundedCornerRadius
+    bottom = RoundedCornerRadius + MenuItemPadding // TODO: swap additional padding to contentPadding when it is fixed
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -138,14 +135,13 @@ fun MenuScreen(
                     topEnd = 12.dp
                 )
             ),
-        contentPadding = DefaultContentPadding,
         state = gridState
     ) {
         item {
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
                 title = stringResource(R.string.navigate_to_bme),
-                icon = Icons.Rounded.Navigation,
+                icon = Icons.Default.TravelExplore,
                 onClick = {
                     localBroadcastManager.sendBroadcast(
                         Place(
@@ -162,7 +158,7 @@ fun MenuScreen(
         item {
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
-                title = stringResource(R.string.start_free_drive_navigation),
+                title = stringResource(R.string.free_drive),
                 icon = Icons.Rounded.Navigation,
                 onClick = {
                     destinationsNavigator.navigate(FreeDriveScreenDestination)

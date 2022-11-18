@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.placeholder
@@ -77,6 +78,7 @@ import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.Neutral95
 import illyan.jay.util.format
+import illyan.jay.util.minus
 import java.math.RoundingMode
 
 val DefaultContentPadding = PaddingValues(
@@ -105,92 +107,119 @@ fun SessionsScreen(
     val syncedSessions by viewModel.syncedSessions.collectAsState()
     val canSyncSessions by viewModel.canSyncSessions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val showButtons = isUserSignedIn &&
+            (canSyncSessions || syncedSessions.isNotEmpty() || areThereSessionsNotOwned) ||
+            canDeleteSessions
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
         viewModel.loadCloudSessions(context)
     }
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
-    Column(
-        modifier = Modifier.padding(DefaultScreenOnSheetPadding)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                AnimatedVisibility(visible = isUserSignedIn && canSyncSessions) {
-                    TextButton(
-                        onClick = { viewModel.syncSessions() },
-                        enabled = isUserSignedIn && canSyncSessions,
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
-                            Text(text = stringResource(R.string.sync))
-                        }
-                    }
-                }
-                AnimatedVisibility(visible = isUserSignedIn && syncedSessions.isNotEmpty()) {
-                    TextButton(
-                        onClick = { viewModel.deleteAllSyncedData() },
-                        enabled = isUserSignedIn && syncedSessions.isNotEmpty(),
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
-                            Text(text = stringResource(R.string.delete_from_cloud))
-                        }
-                    }
-                }
-                AnimatedVisibility(visible = canDeleteSessions) {
-                    TextButton(
-                        onClick = { viewModel.deleteSessionsLocally() },
-                        enabled = canDeleteSessions
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
-                            Text(text = stringResource(R.string.delete_locally))
-                        }
-                    }
-                }
-                AnimatedVisibility(visible = isUserSignedIn && areThereSessionsNotOwned) {
-                    TextButton(
-                        onClick = { viewModel.ownAllSessions() },
-                        enabled = isUserSignedIn && areThereSessionsNotOwned,
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(imageVector = Icons.Rounded.AddChart, contentDescription = "")
-                            Text(text = stringResource(R.string.own_all_sessions))
-                        }
-                    }
-                }
+    ConstraintLayout(
+        modifier = Modifier.padding(
+            if (showButtons) {
+                DefaultScreenOnSheetPadding - PaddingValues(
+                    top = DefaultScreenOnSheetPadding.calculateTopPadding()
+                )
+            } else {
+                DefaultScreenOnSheetPadding
             }
-            AnimatedVisibility(visible = isLoading) {
-                SmallCircularProgressIndicator()
-            }
-        }
-        SessionsList(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 12.dp,
-                        topEnd = 12.dp
-                    )
-                ),
-            viewModel = viewModel,
-            destinationsNavigator = destinationsNavigator
         )
+    ) {
+        val (column, globalLoadingIndicator) = createRefs()
+        AnimatedVisibility(
+            modifier = Modifier.constrainAs(globalLoadingIndicator) {
+                top.linkTo(parent.top)
+                end.linkTo(parent.end)
+            },
+            visible = isLoading
+        ) {
+            SmallCircularProgressIndicator()
+        }
+        Column(
+            modifier = Modifier.constrainAs(column) {
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    AnimatedVisibility(visible = isUserSignedIn && canSyncSessions) {
+                        TextButton(
+                            onClick = { viewModel.syncSessions() },
+                            enabled = isUserSignedIn && canSyncSessions,
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
+                                Text(text = stringResource(R.string.sync))
+                            }
+                        }
+                    }
+                    AnimatedVisibility(visible = isUserSignedIn && syncedSessions.isNotEmpty()) {
+                        TextButton(
+                            onClick = { viewModel.deleteAllSyncedData() },
+                            enabled = isUserSignedIn && syncedSessions.isNotEmpty(),
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
+                                Text(text = stringResource(R.string.delete_from_cloud))
+                            }
+                        }
+                    }
+                    AnimatedVisibility(visible = canDeleteSessions) {
+                        TextButton(
+                            onClick = { viewModel.deleteSessionsLocally() },
+                            enabled = canDeleteSessions
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
+                                Text(text = stringResource(R.string.delete_locally))
+                            }
+                        }
+                    }
+                    AnimatedVisibility(visible = isUserSignedIn && areThereSessionsNotOwned) {
+                        TextButton(
+                            onClick = { viewModel.ownAllSessions() },
+                            enabled = isUserSignedIn && areThereSessionsNotOwned,
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(imageVector = Icons.Rounded.AddChart, contentDescription = "")
+                                Text(text = stringResource(R.string.own_all_sessions))
+                            }
+                        }
+                    }
+                }
+            }
+            SessionsList(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 12.dp,
+                            topEnd = 12.dp
+                        )
+                    ),
+                viewModel = viewModel,
+                destinationsNavigator = destinationsNavigator
+            )
+        }
     }
 }
 
