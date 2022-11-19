@@ -148,9 +148,6 @@ import com.mapbox.maps.MapView
 import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.applyDefaultParams
 import com.mapbox.maps.plugin.animation.camera
-import com.mapbox.maps.plugin.annotation.annotations
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
@@ -164,7 +161,6 @@ import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
-import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.map.padding
 import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
@@ -717,26 +713,10 @@ fun HomeScreen(
                             onMapInitialized = {
                                 isMapInitialized = true
                                 _mapView.value = it
-                                val pointAnnotationManager =
-                                    it.annotations.createPointAnnotationManager()
-                                val pointAnnotationOptions = PointAnnotationOptions()
-                                    // Define a geographic coordinate.
-                                    .withPoint(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
-                                    // Specify the bitmap you assigned to the point annotation
-                                    // The bitmap will be added to map style automatically.
-                                    .withIconImage(
-                                        getBitmapFromVectorDrawable(
-                                            context,
-                                            R.drawable.ic_jay_marker_icon_v3_round
-                                        )
-                                    )
-                                // Add the resulting pointAnnotation to the map.
-                                pointAnnotationManager.create(pointAnnotationOptions)
                                 when (locationPermissionState.status) {
                                     is PermissionStatus.Granted -> {
                                         it.location.turnOnWithDefaultPuck(context)
                                     }
-
                                     is PermissionStatus.Denied -> {
                                         it.location.enabled = false
                                     }

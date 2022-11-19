@@ -62,9 +62,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material.placeholder
-import com.google.accompanist.placeholder.material.shimmer
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
@@ -77,6 +74,7 @@ import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.Neutral95
+import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
 import illyan.jay.util.minus
 import java.math.RoundingMode
@@ -299,15 +297,10 @@ fun SessionsList(
         items(notOwnedSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
             val isPlaceholderVisible = session == null
-            val placeholderHighlight = PlaceholderHighlight.shimmer()
             SessionCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .placeholder(
-                        visible = isPlaceholderVisible,
-                        highlight = placeholderHighlight,
-                        shape = RoundedCornerShape(12.dp)
-                    ),
+                    .cardPlaceholder(isPlaceholderVisible),
                 session = session,
                 onClick = { sessionUUID ->
                     destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
@@ -331,15 +324,10 @@ fun SessionsList(
         items(ownedLocalSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
             val isPlaceholderVisible = session == null
-            val placeholderHighlight = PlaceholderHighlight.shimmer()
             SessionCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .placeholder(
-                        visible = isPlaceholderVisible,
-                        highlight = placeholderHighlight,
-                        shape = RoundedCornerShape(12.dp)
-                    ),
+                    .cardPlaceholder(isPlaceholderVisible),
                 session = session,
                 onClick = { sessionUUID ->
                     destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))

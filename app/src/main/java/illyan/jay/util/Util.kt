@@ -24,14 +24,24 @@ import android.os.SystemClock
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.BottomSheetState
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import com.google.accompanist.placeholder.PlaceholderHighlight
+import com.google.accompanist.placeholder.material.placeholder
+import com.google.accompanist.placeholder.material.shimmer
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import com.google.maps.android.SphericalUtil
 import com.google.maps.android.ktx.utils.sphericalPathLength
+import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import illyan.jay.domain.model.DomainLocation
@@ -121,6 +131,16 @@ operator fun PaddingValues.minus(paddingValues: PaddingValues): PaddingValues {
     )
 }
 
+fun Point.equals(point: Point, accuracyInMeters: Double): Boolean {
+    val thisLatLng = LatLng(latitude(), longitude())
+    val latLng = LatLng(point.latitude(), point.longitude())
+    return thisLatLng.equals(latLng, accuracyInMeters)
+}
+
+fun LatLng.equals(latLng: LatLng, accuracyInMeters: Double): Boolean {
+    return SphericalUtil.computeDistanceBetween(this, latLng) <= accuracyInMeters
+}
+
 fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
 
 fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()
@@ -134,3 +154,39 @@ fun Timestamp.toZonedDateTime() = toInstant().atZone(ZoneOffset.UTC)
 fun List<DomainLocation>.sphericalPathLength() = sortedBy {
     it.zonedDateTime.toInstant().toEpochMilli()
 }.map { it.latLng }.sphericalPathLength()
+
+fun Modifier.textPlaceholder(
+    visible: Boolean,
+    placeholderHighlight: PlaceholderHighlight? = null,
+    shape: Shape = RoundedCornerShape(4.dp)
+) = composed {
+    Modifier.placeholder(
+        visible = visible,
+        highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
+        shape = shape
+    )
+}
+
+fun Modifier.largeTextPlaceholder(
+    visible: Boolean,
+    placeholderHighlight: PlaceholderHighlight? = null,
+    shape: Shape = RoundedCornerShape(8.dp)
+) = composed {
+    Modifier.placeholder(
+        visible = visible,
+        highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
+        shape = shape
+    )
+}
+
+fun Modifier.cardPlaceholder(
+    visible: Boolean,
+    placeholderHighlight: PlaceholderHighlight? = null,
+    shape: Shape = RoundedCornerShape(12.dp)
+) = composed {
+    Modifier.placeholder(
+        visible = visible,
+        highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
+        shape = shape
+    )
+}

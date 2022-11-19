@@ -67,6 +67,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.mapbox.search.result.SearchResultType
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -138,6 +139,7 @@ fun MenuScreen(
         state = gridState
     ) {
         item {
+            val buteName = stringResource(R.string.bute)
             MenuItemCard(
                 modifier = Modifier.padding(MenuItemPadding),
                 title = stringResource(R.string.navigate_to_bme),
@@ -145,6 +147,8 @@ fun MenuScreen(
                 onClick = {
                     localBroadcastManager.sendBroadcast(
                         Place(
+                            name = buteName,
+                            type = SearchResultType.POI,
                             latitude = ButeK.latitude,
                             longitude = ButeK.longitude
                         ),

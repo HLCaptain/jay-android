@@ -19,10 +19,16 @@
 package illyan.jay.ui.navigation.model
 
 import android.os.Parcelable
+import com.mapbox.geojson.Point
+import com.mapbox.search.result.SearchResultType
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class Place(
+    val name: String? = null,
+    val type: SearchResultType? = null,
     val longitude: Double,
     val latitude: Double
 ) : Parcelable
+
+fun Place.toPoint() = Point.fromLngLat(longitude, latitude)

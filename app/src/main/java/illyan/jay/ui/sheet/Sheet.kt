@@ -58,7 +58,7 @@ fun SheetScreen(
     DisposableEffect(Unit) {
         viewModel.loadReceiver {
             destinationsNavigator.navigate(
-                NavigationScreenDestination(it, 12.0)
+                NavigationScreenDestination(it)
             )
         }
         onDispose { viewModel.dispose() }
