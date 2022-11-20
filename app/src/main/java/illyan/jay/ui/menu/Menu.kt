@@ -98,14 +98,16 @@ annotation class MenuNavGraph(
 )
 
 val MenuItemPadding = 6.dp
-val ListMaxHeight = 384.dp
-val ListMinHeight = 128.dp
+
+val DefaultContentPadding = PaddingValues(
+    bottom = RoundedCornerRadius + MenuItemPadding * 2
+)
 
 val DefaultScreenOnSheetPadding = PaddingValues(
-    top = MenuItemPadding,
-    start = MenuItemPadding,
-    end = MenuItemPadding,
-    bottom = RoundedCornerRadius + MenuItemPadding // TODO: swap additional padding to contentPadding when it is fixed
+    top = MenuItemPadding * 2,
+    start = MenuItemPadding * 2,
+    end = MenuItemPadding * 2,
+    bottom =  RoundedCornerRadius + MenuItemPadding * 2 // TODO: swap additional padding to contentPadding when it is fixed
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -124,24 +126,22 @@ fun MenuScreen(
     val localBroadcastManager = LocalBroadcastManager.getInstance(context)
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
+        verticalArrangement = Arrangement.spacedBy(MenuItemPadding * 2),
+        horizontalArrangement = Arrangement.spacedBy(MenuItemPadding * 2),
+        //contentPadding = DefaultContentPadding, // TODO: include this when finally devs fixed contentPadding on StaggeredGrids
         modifier = Modifier
-            .heightIn(
-                min = ListMinHeight,
-                max = ListMaxHeight,
-            )
-            .padding(DefaultScreenOnSheetPadding)
             .clip(
                 RoundedCornerShape(
                     topStart = 12.dp,
                     topEnd = 12.dp
                 )
-            ),
+            )
+            .padding(DefaultScreenOnSheetPadding),
         state = gridState
     ) {
         item {
             val buteName = stringResource(R.string.bute)
             MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
                 title = stringResource(R.string.navigate_to_bme),
                 icon = Icons.Default.TravelExplore,
                 onClick = {
@@ -161,7 +161,6 @@ fun MenuScreen(
         }
         item {
             MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
                 title = stringResource(R.string.free_drive),
                 icon = Icons.Rounded.Navigation,
                 onClick = {
@@ -172,7 +171,6 @@ fun MenuScreen(
         }
         item {
             MenuItemCard(
-                modifier = Modifier.padding(MenuItemPadding),
                 title = stringResource(R.string.sessions),
                 icon = Icons.Rounded.Route,
                 onClick = {

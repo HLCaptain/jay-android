@@ -29,6 +29,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import android.net.Uri
 import android.os.Parcelable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -166,7 +167,7 @@ import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.navigation.model.Place
-import illyan.jay.ui.profile.ProfileScreen
+import illyan.jay.ui.profile.ProfileDialog
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
@@ -922,53 +923,17 @@ fun BottomSearchBar(
                     modifier = Modifier.padding(AvatarPaddingValues),
                     interactionSource = interactionSource
                 ) {
-                    Box(
+                    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+                    val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
+                    AvatarAsyncImage(
                         modifier = Modifier
                             .size(RoundedCornerRadius * 2)
                             .clip(CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
-                        val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
-                        if (isUserSignedIn && userPhotoUrl != null) {
-                            SubcomposeAsyncImage(
-                                modifier = Modifier.fillMaxSize(),
-                                model = userPhotoUrl?.toString(),
-                                loading = {
-                                    when (painter.state) {
-                                        is AsyncImagePainter.State.Loading -> {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .placeholder(
-                                                        visible = true,
-                                                        highlight = PlaceholderHighlight.shimmer()
-                                                    )
-                                            )
-                                        }
-                                        is AsyncImagePainter.State.Error -> Icons.Rounded.BrokenImage
-                                        is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                                        else -> Icon(
-                                            modifier = Modifier.fillMaxSize(),
-                                            imageVector = Icons.Rounded.AccountCircle,
-                                            tint = Color.LightGray,
-                                            contentDescription = stringResource(R.string.avatar_profile_picture)
-                                        )
-                                    }
-                                },
-                                contentDescription = stringResource(R.string.avatar_profile_picture)
-                            )
-                        } else {
-                            Icon(
-                                modifier = Modifier.fillMaxSize(),
-                                imageVector = Icons.Rounded.AccountCircle,
-                                tint = Color.LightGray,
-                                contentDescription = stringResource(R.string.avatar_profile_picture)
-                            )
-                        }
-                    }
+                        enabled = isUserSignedIn && userPhotoUrl != null,
+                        userPhotoUrl = userPhotoUrl
+                    )
                 }
-                ProfileScreen(
+                ProfileDialog(
                     isDialogOpen = isProfileScreenShowing,
                     onDialogClosed = {
                         isProfileScreenShowing = false
@@ -976,6 +941,54 @@ fun BottomSearchBar(
                 )
             }
             Spacer(modifier = Modifier.height(onDragAreaOffset))
+        }
+    }
+}
+
+@Composable
+fun AvatarAsyncImage(
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    userPhotoUrl: Uri?
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        if (enabled) {
+            SubcomposeAsyncImage(
+                modifier = modifier,
+                model = userPhotoUrl?.toString(),
+                loading = {
+                    when (painter.state) {
+                        is AsyncImagePainter.State.Loading -> {
+                            Box(
+                                modifier = modifier
+                                    .placeholder(
+                                        visible = true,
+                                        highlight = PlaceholderHighlight.shimmer()
+                                    )
+                            )
+                        }
+                        is AsyncImagePainter.State.Error -> Icons.Rounded.BrokenImage
+                        is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
+                        else -> Icon(
+                            modifier = modifier,
+                            imageVector = Icons.Rounded.AccountCircle,
+                            tint = Color.LightGray,
+                            contentDescription = stringResource(R.string.avatar_profile_picture)
+                        )
+                    }
+                },
+                contentDescription = stringResource(R.string.avatar_profile_picture)
+            )
+        } else {
+            Icon(
+                modifier = modifier,
+                imageVector = Icons.Rounded.AccountCircle,
+                tint = Color.LightGray,
+                contentDescription = stringResource(R.string.avatar_profile_picture)
+            )
         }
     }
 }

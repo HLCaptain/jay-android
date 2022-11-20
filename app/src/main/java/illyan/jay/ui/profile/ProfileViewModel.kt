@@ -19,8 +19,12 @@
 package illyan.jay.ui.profile
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.AuthInteractor
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,5 +33,31 @@ class ProfileViewModel @Inject constructor(
 ): ViewModel() {
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
     val isUserSigningOut = authInteractor.isUserSigningOut
+    val userPhotoUrl = authInteractor.userPhotoUrlStateFlow
+
+    val userEmail = authInteractor.currentUserStateFlow
+        .map { it?.email }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            authInteractor.currentUserStateFlow.value?.email
+        )
+
+    val userPhoneNumber = authInteractor.currentUserStateFlow
+        .map { it?.phoneNumber }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            authInteractor.currentUserStateFlow.value?.phoneNumber
+        )
+
+    val userName = authInteractor.currentUserStateFlow
+        .map { it?.displayName }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            authInteractor.currentUserStateFlow.value?.displayName
+        )
+
     fun signOut() = authInteractor.signOut()
 }
