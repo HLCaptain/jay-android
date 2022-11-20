@@ -83,8 +83,14 @@ fun SessionScreen(
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     var flownToPath by remember { mutableStateOf(false) }
     val path by viewModel.path.collectAsState()
+    var fakeStopped by remember { mutableStateOf(false) }
     LaunchedEffect(sheetState.isAnimationRunning) {
-        sheetHeightNotSet = sheetState.isAnimationRunning
+        if (fakeStopped) {
+            sheetHeightNotSet = sheetState.isAnimationRunning
+        }
+        if (!sheetState.isAnimationRunning) {
+            fakeStopped = true
+        }
     }
     LaunchedEffect(
         path,
