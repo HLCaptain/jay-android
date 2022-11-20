@@ -90,31 +90,33 @@ class SessionsViewModel @Inject constructor(
     val areThereSessionsNotOwned = notOwnedSessionUUIDs.map { it.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    val noSessionsToShow = combine(
-        syncedSessions,
-        ownedLocalSessionUUIDs,
-        syncedSessionsLoaded,
-        localSessionsLoaded
-    ) { synced, local, syncedLoaded, localLoaded ->
-        if (syncedLoaded && localLoaded) {
-            synced.isEmpty() && local.isEmpty()
-        } else {
-            false
-        }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
     private val _ongoingSessionUUIDs = MutableStateFlow(listOf<String>())
     val ongoingSessionUUIDs = _ongoingSessionUUIDs.asStateFlow()
 
+    val noSessionsToShow = combine(
+        syncedSessions,
+        ownedLocalSessionUUIDs,
+        notOwnedSessionUUIDs,
+        ongoingSessionUUIDs,
+        isLoading
+    ) { synced, owned, notOwned, ongoing, loading  ->
+        if (loading) {
+            false
+        } else {
+            synced.isEmpty() && owned.isEmpty() && notOwned.isEmpty() && ongoing.isEmpty()
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val canDeleteSessionsLocally = combine(
         ownedLocalSessionUUIDs,
+        notOwnedSessionUUIDs,
         ongoingSessionUUIDs,
         syncedLocalSessionUUIDs
-    ) { locals, ongoing, syncedLocals ->
+    ) { owned, notOwned, ongoing, syncedLocals ->
         if (syncedLocals.isNotEmpty()) {
             true
         } else {
-            locals.size - ongoing.size > 0
+            owned.size + notOwned.size - ongoing.size > 0
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
