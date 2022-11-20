@@ -18,21 +18,68 @@
 
 package illyan.jay.domain.model
 
-import java.util.*
+import com.google.android.gms.maps.model.LatLng
+import java.time.ZonedDateTime
 
 /**
  * Domain session used for general data handling
  * between DataSources, Interactors and Presenters.
  *
  * @property id
- * @property startTime
- * @property endTime
- * @property distance
+ * @property startDateTime
+ * @property endDateTime
  * @constructor Create empty Domain session
  */
 data class DomainSession(
-    val id: Long = -1,
-    val startTime: Date,
-    var endTime: Date?,
-    var distance: Double = 0.0
-)
+    var uuid: String,
+    val startDateTime: ZonedDateTime,
+    var endDateTime: ZonedDateTime?,
+    var startLocationLatitude: Float? = null,
+    var startLocationLongitude: Float? = null,
+    var endLocationLatitude: Float? = null,
+    var endLocationLongitude: Float? = null,
+    // These are optional values for an already ended session
+    var startLocationName: String? = null,
+    var endLocationName: String? = null,
+    var distance: Float? = null,
+    var ownerUserUUID: String? = null,
+    var clientUUID: String? = null,
+    val isSynced: Boolean = false
+) {
+    val isOwned = ownerUserUUID != null
+
+    var startLocation: LatLng?
+        get() {
+            return if (startLocationLatitude != null && startLocationLongitude != null) {
+                LatLng(
+                    startLocationLatitude!!.toDouble(),
+                    startLocationLongitude!!.toDouble()
+                )
+            } else {
+                null
+            }
+        }
+        set(value) {
+            if (startLocationLatitude == null || startLocationLongitude == null) {
+                startLocationLatitude = value?.latitude?.toFloat()
+                startLocationLongitude = value?.longitude?.toFloat()
+            }
+        }
+    var endLocation: LatLng?
+        get() {
+            return if (endLocationLatitude != null && endLocationLongitude != null) {
+                LatLng(
+                    endLocationLatitude!!.toDouble(),
+                    endLocationLongitude!!.toDouble()
+                )
+            } else {
+                null
+            }
+        }
+        set(value) {
+            if (endLocationLatitude == null || endLocationLongitude == null) {
+                endLocationLatitude = value?.latitude?.toFloat()
+                endLocationLongitude = value?.longitude?.toFloat()
+            }
+        }
+}

@@ -22,19 +22,18 @@ import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import androidx.core.graphics.drawable.IconCompat
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationResult
 import dagger.hilt.android.AndroidEntryPoint
+import illyan.jay.data.disk.model.SensorOptions
 import illyan.jay.domain.interactor.SensorInteractor
 import illyan.jay.domain.interactor.SessionInteractor
-import illyan.jay.service.listener.AccelerationSensorEventListener
+import illyan.jay.service.listener.JaySensorEventListener
 import illyan.jay.service.listener.LocationEventListener
-import illyan.jay.service.listener.RotationSensorEventListener
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
 
 /**
  * Jay service used to collect data from all kinds of sensors.
@@ -45,10 +44,7 @@ import kotlinx.coroutines.launch
 class JayService @Inject constructor() : BaseService() {
 
     @Inject
-    lateinit var accelerationSensorEventListener: AccelerationSensorEventListener
-
-    @Inject
-    lateinit var rotationSensorEventListener: RotationSensorEventListener
+    lateinit var jaySensorEventListener: JaySensorEventListener
 
     @Inject
     lateinit var locationEventListener: LocationEventListener
@@ -61,7 +57,8 @@ class JayService @Inject constructor() : BaseService() {
 
     @Inject
     lateinit var icon: IconCompat
-    private var sessionId = -1L
+
+    private var sessionUUID = ""
 
     companion object {
         private const val NOTIFICATION_ID = 333
@@ -77,41 +74,73 @@ class JayService @Inject constructor() : BaseService() {
                 "Starting location service...",
                 CHANNEL_ID,
                 NOTIFICATION_ID,
-                icon
+                icon,
+                "Collecting sensor information to analyze locally."
             )
         )
 
         // Starting sensors right after starting the sessions. Not necessary, but no harm.
         scope.launch {
-            sessionId = sessionInteractor.startSession()
+            sessionUUID = sessionInteractor.startSession()
         }.invokeOnCompletion { startSensors() }
 
         return START_STICKY_COMPATIBILITY
     }
 
     private fun startSensors() {
-        sensorInteractor.registerSensorListener(
-            accelerationSensorEventListener,
-            Sensor.TYPE_LINEAR_ACCELERATION,
-            SensorManager.SENSOR_DELAY_FASTEST
-        )
-        sensorInteractor.registerSensorListener(
-            rotationSensorEventListener,
-            Sensor.TYPE_ROTATION_VECTOR,
-            SensorManager.SENSOR_DELAY_FASTEST
-        )
-        locationEventListener.locationCallback = object : LocationCallback() {
-            override fun onLocationResult(p0: LocationResult) {
-                super.onLocationResult(p0)
-                updateNotification(
-                    "Current location",
-                    "Lat: ${p0.lastLocation?.latitude} Lng: ${p0.lastLocation?.longitude}",
-                    CHANNEL_ID,
-                    NOTIFICATION_ID,
-                    icon
+
+        // 1. Getting present sensors on the device
+        val sensorTypes = sensorInteractor.sensors.map { it.type }
+        Timber.d("Sensors present on the device: ${
+            sensorInteractor.sensors.joinToString { it.stringType }
+        }")
+
+        // 2. Select preferred sensors if found
+        val accelerationSensorType = if (sensorTypes.contains(Sensor.TYPE_LINEAR_ACCELERATION)) {
+            Sensor.TYPE_LINEAR_ACCELERATION to Sensor.STRING_TYPE_LINEAR_ACCELERATION
+        } else {
+            Sensor.TYPE_ACCELEROMETER to Sensor.STRING_TYPE_ACCELEROMETER
+        }
+        val rotationSensorType = if (sensorTypes.contains(Sensor.TYPE_ROTATION_VECTOR)) {
+            Sensor.TYPE_ROTATION_VECTOR to Sensor.STRING_TYPE_ROTATION_VECTOR
+        } else {
+            Sensor.TYPE_ORIENTATION to Sensor.STRING_TYPE_ORIENTATION
+        }
+        val magneticFieldSensorType =
+            Sensor.TYPE_MAGNETIC_FIELD to Sensor.STRING_TYPE_MAGNETIC_FIELD
+
+        // 3. Register listeners
+        // TODO: Use set delay from user preferences in the future, default is NORMAL
+        listOf(
+            SensorOptions(
+                accelerationSensorType.first,
+                accelerationSensorType.second,
+                SensorManager.SENSOR_DELAY_NORMAL
+            ),
+            SensorOptions(
+                rotationSensorType.first,
+                rotationSensorType.second,
+                SensorManager.SENSOR_DELAY_NORMAL
+            ),
+            SensorOptions(
+                magneticFieldSensorType.first,
+                magneticFieldSensorType.second,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        ).forEach {
+            if (sensorTypes.contains(it.sensorType)) {
+                Timber.d("Registering listener to sensor type: ${it.sensorTypeString}")
+                sensorInteractor.registerSensorListener(
+                    jaySensorEventListener,
+                    it.sensorType,
+                    it.sensorDelay
                 )
+            } else {
+                Timber.d("Sensor ${it.sensorTypeString} is not present on the device")
             }
         }
+
+        // Start location requests
         sensorInteractor.requestLocationUpdates(
             locationEventListener.locationRequest,
             locationEventListener.locationCallback
@@ -119,8 +148,7 @@ class JayService @Inject constructor() : BaseService() {
     }
 
     private fun stopSensors() {
-        sensorInteractor.unregisterSensorListener(accelerationSensorEventListener)
-        sensorInteractor.unregisterSensorListener(rotationSensorEventListener)
+        sensorInteractor.unregisterSensorListener(jaySensorEventListener)
         sensorInteractor.removeLocationUpdates(locationEventListener.locationCallback)
     }
 
@@ -134,10 +162,14 @@ class JayService @Inject constructor() : BaseService() {
 
     override fun onDestroy() {
         stopSensors()
-
-        scope.launch { sessionInteractor.stopOngoingSessions() }
+        removeNotification(NOTIFICATION_ID)
+        scope.launch {
+            sessionInteractor.stopOngoingSessions()
+        }
         job.complete()
         isRunning = false
         super.onDestroy()
     }
 }
+
+

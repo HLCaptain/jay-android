@@ -21,10 +21,13 @@ package illyan.jay.domain.interactor
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import illyan.jay.service.BaseService
 import illyan.jay.service.JayService
 import illyan.jay.service.ServiceStateReceiver
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -47,6 +50,11 @@ class ServiceInteractor @Inject constructor(
 ) {
 
     init {
+        serviceStateReceiver.serviceStateListeners.add { isServiceRunning, serviceName ->
+            if (serviceName == JayService::class.simpleName) {
+                _isJayServiceRunning.value = isServiceRunning
+            }
+        }
         localBroadcastManager.registerReceiver(
             serviceStateReceiver,
             IntentFilter(BaseService.KEY_SERVICE_STATE_CHANGE)
@@ -84,7 +92,11 @@ class ServiceInteractor @Inject constructor(
      * Start Jay service in the Foreground.
      */
     fun startJayService() = if (!isJayServiceRunning()) {
-        context.startForegroundService(Intent(context, JayService::class.java))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(Intent(context, JayService::class.java))
+        } else {
+            context.startService(Intent(context, JayService::class.java))
+        }
     } else null
 
     // Ping pong example https://stackoverflow.com/a/39579191/16720445
@@ -100,4 +112,6 @@ class ServiceInteractor @Inject constructor(
      * @return true if Jay is running in the foreground, otherwise false.
      */
     fun isJayServiceRunning() = JayService.isRunning
+    private val _isJayServiceRunning = MutableStateFlow(JayService.isRunning)
+    val isJayServiceRunning = _isJayServiceRunning.asStateFlow()
 }

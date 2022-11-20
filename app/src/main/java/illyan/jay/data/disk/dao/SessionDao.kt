@@ -23,6 +23,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import illyan.jay.data.disk.model.RoomSession
 import kotlinx.coroutines.flow.Flow
@@ -30,7 +31,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SessionDao {
     @Insert
-    fun insertSession(session: RoomSession): Long
+    fun insertSession(session: RoomSession)
 
     @Insert
     fun insertSessions(sessions: List<RoomSession>)
@@ -53,21 +54,99 @@ interface SessionDao {
     @Delete
     fun deleteSessions(sessions: List<RoomSession>)
 
-    @Query("DELETE FROM session")
-    fun deleteSessions()
+    @Transaction
+    @Query("DELETE FROM session WHERE ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL")
+    fun deleteSessions(ownerUserUUID: String? = null)
 
-    @Query("SELECT * FROM session")
-    fun getSessions(): Flow<List<RoomSession>>
+    @Transaction
+    @Query("DELETE FROM session WHERE ownerUserUUID IS NULL")
+    fun deleteNotOwnedSessions()
 
-    @Query("SELECT id FROM session")
-    fun getSessionIds(): Flow<List<Long>>
+    @Transaction
+    @Query("DELETE FROM session WHERE ownerUserUUID IS :ownerUserUUID")
+    fun deleteSessionsByOwner(ownerUserUUID: String? = null)
 
-    @Query("SELECT * FROM session WHERE id = :id LIMIT 1")
-    fun getSession(id: Long): Flow<RoomSession?>
+    @Transaction
+    @Query("DELETE FROM session WHERE ownerUserUUID IS :ownerUserUUID AND endDateTime IS NOT NULL")
+    fun deleteStoppedSessionsByOwner(ownerUserUUID: String? = null)
 
-    @Query("SELECT * FROM session WHERE endTime is NULL")
-    fun getOngoingSessions(): Flow<List<RoomSession>>
+    @Transaction
+    @Query("SELECT * FROM session WHERE ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL")
+    fun getSessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
 
-    @Query("SELECT id FROM session WHERE endTime is NULL")
-    fun getOngoingSessionIds(): Flow<List<Long>>
+    @Transaction
+    @Query("SELECT uuid FROM session WHERE ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL")
+    fun getSessionUUIDs(ownerUserUUID: String? = null): Flow<List<String>>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE uuid = :uuid AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL) LIMIT 1")
+    fun getSession(uuid: String, ownerUserUUID: String? = null): Flow<RoomSession?>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE endDateTime IS NOT NULL AND ownerUserUUID IS :ownerUserUUID")
+    fun getStoppedSessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE endDateTime IS NULL AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
+    fun getOngoingSessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
+
+    @Transaction
+    @Query("SELECT uuid FROM session WHERE endDateTime IS NULL AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
+    fun getOngoingSessionUUIDs(ownerUserUUID: String? = null): Flow<List<String>>
+
+    @Transaction
+    @Query("SELECT uuid FROM session WHERE NOT isSynced AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
+    fun getLocalOnlySessionUUIDs(ownerUserUUID: String? = null): Flow<List<String>>
+
+    @Transaction
+    @Query("SELECT uuid FROM session WHERE isSynced AND ownerUserUUID IS :ownerUserUUID")
+    fun getSyncedSessionUUIDs(ownerUserUUID: String? = null): Flow<List<String>>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE NOT isSynced AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
+    fun getLocalOnlySessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE isSynced AND ownerUserUUID IS :ownerUserUUID")
+    fun getSyncedSessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE ownerUserUUID IS NULL")
+    fun getAllNotOwnedSessions(): Flow<List<RoomSession>>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE ownerUserUUID IS :ownerUserUUID")
+    fun getSessionsByOwner(ownerUserUUID: String? = null): Flow<List<RoomSession>>
+
+    @Transaction
+    @Query("SELECT * FROM session WHERE ownerUserUUID IS :ownerUserUUID AND NOT isSynced")
+    fun getLocalSessionsByOwner(ownerUserUUID: String? = null): Flow<List<RoomSession>>
+
+    @Transaction
+    @Query("UPDATE session SET uuid = :newUUID WHERE uuid IS :currentUUID AND ownerUserUUID IS :ownerUserUUID")
+    fun refreshSessionUUID(currentUUID: String, newUUID: String, ownerUserUUID: String): Int
+
+    @Transaction
+    @Query("UPDATE session SET ownerUserUUID = :ownerUserUUID WHERE ownerUserUUID IS NULL")
+    fun ownAllNotOwnedSessions(ownerUserUUID: String): Int
+
+    @Transaction
+    @Query("UPDATE session SET ownerUserUUID = :ownerUserUUID WHERE ownerUserUUID IS NULL AND uuid = :uuid")
+    fun ownNotOwnedSession(uuid: String, ownerUserUUID: String): Int
+
+    @Transaction
+    @Query("UPDATE session SET isSynced = :isSynced WHERE uuid IN(:uuids)")
+    fun updateSyncOnSessions(uuids: List<String>, isSynced: Boolean)
+
+    @Transaction
+    @Query("UPDATE session SET ownerUserUUID = :ownerUserUUID WHERE uuid IN(:uuids)")
+    fun ownSessions(uuids: List<String>, ownerUserUUID: String)
+
+    @Transaction
+    @Query("UPDATE session SET ownerUserUUID = NULL WHERE uuid IN(:uuids)")
+    fun disownSessions(uuids: List<String>)
+
+    @Transaction
+    @Query("UPDATE session SET ownerUserUUID = NULL WHERE ownerUserUUID IS :ownerUserUUID")
+    fun disownSessions(ownerUserUUID: String)
 }

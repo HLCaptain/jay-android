@@ -2,9 +2,9 @@ name: Android CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature-compose ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, '*feature-*' ]
 
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
         cache: gradle
 
     - name: Cache SonarCloud packages
-      uses: actions/cache@v1
+      uses: actions/cache@v3.0.2
       with:
         path: |
             ~/.sonar/cache
@@ -39,11 +39,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Create blank local.properties file
-      run: touch local.properties
-
-    - name: Put Google Maps Api Key into local.properties
-      run: echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" >> local.properties
+    - name: Put keys into gradle.properties
+      run: |
+        echo -e "\n" >> gradle.properties
+        echo "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" >> gradle.properties
+        echo "MAPBOX_DOWNLOADS_TOKEN=${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}" >> gradle.properties
+        echo "SDK_REGISTRY_TOKEN=${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}" >> gradle.properties
 
     - name: Create blank google-services.json
       run: cat app/google-services.json | base64

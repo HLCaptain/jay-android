@@ -20,41 +20,59 @@ package illyan.jay.data.disk
 
 import android.hardware.SensorEvent
 import android.location.Location
-import com.google.android.gms.maps.model.LatLng
-import illyan.jay.data.disk.model.RoomAcceleration
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import illyan.jay.data.disk.model.RoomLocation
-import illyan.jay.data.disk.model.RoomRotation
+import illyan.jay.data.disk.model.RoomSensorEvent
 import illyan.jay.data.disk.model.RoomSession
-import illyan.jay.domain.model.DomainAcceleration
 import illyan.jay.domain.model.DomainLocation
-import illyan.jay.domain.model.DomainRotation
+import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sensorTimestampToAbsoluteTime
 import java.time.Instant
-import java.util.*
+import java.time.ZoneOffset
 
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
-    id = id,
-    startTime = Date.from(Instant.ofEpochMilli(startTime)),
-    endTime = endTime?.let { Date.from(Instant.ofEpochMilli(it)) },
-    distance = distance
+    uuid = uuid,
+    startDateTime = Instant.ofEpochMilli(startDateTime).atZone(ZoneOffset.UTC),
+    endDateTime = endDateTime?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC) },
+    startLocationLatitude = startLocationLatitude,
+    startLocationLongitude = startLocationLongitude,
+    endLocationLatitude = endLocationLatitude,
+    endLocationLongitude = endLocationLongitude,
+    startLocationName = startLocationName,
+    endLocationName = endLocationName,
+    distance = distance,
+    ownerUserUUID = ownerUserUUID,
+    clientUUID = clientUUID,
+    isSynced = isSynced,
 )
 
 fun DomainSession.toRoomModel() = RoomSession(
-    id = id,
-    startTime = startTime.time,
-    endTime = endTime?.time,
-    distance = distance
+    uuid = uuid,
+    startDateTime = startDateTime.toInstant().toEpochMilli(),
+    endDateTime = endDateTime?.toInstant()?.toEpochMilli(),
+    startLocationLatitude = startLocationLatitude,
+    startLocationLongitude = startLocationLongitude,
+    endLocationLatitude = endLocationLatitude,
+    endLocationLongitude = endLocationLongitude,
+    startLocationName = startLocationName,
+    endLocationName = endLocationName,
+    distance = distance,
+    ownerUserUUID = ownerUserUUID,
+    clientUUID = clientUUID,
+    isSynced = isSynced,
 )
 
 // Location
 fun RoomLocation.toDomainModel() = DomainLocation(
     id = id,
-    latLng = LatLng(latitude, longitude),
+    latitude = latitude,
+    longitude = longitude,
     speed = speed,
-    sessionId = sessionId,
-    time = Date.from(Instant.ofEpochMilli(time)),
+    sessionUUID = sessionUUID,
+    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     accuracy = accuracy,
     bearing = bearing,
     bearingAccuracy = bearingAccuracy,
@@ -64,11 +82,11 @@ fun RoomLocation.toDomainModel() = DomainLocation(
 )
 
 fun DomainLocation.toRoomModel() = RoomLocation(
-    latitude = latLng.latitude,
-    longitude = latLng.longitude,
+    latitude = latitude,
+    longitude = longitude,
     speed = speed,
-    sessionId = sessionId,
-    time = time.time,
+    sessionUUID = sessionUUID,
+    time = zonedDateTime.toInstant().toEpochMilli(),
     accuracy = accuracy,
     bearing = bearing,
     bearingAccuracy = bearingAccuracy,
@@ -77,74 +95,58 @@ fun DomainLocation.toRoomModel() = RoomLocation(
     verticalAccuracy = verticalAccuracy
 )
 
-fun Location.toDomainModel(sessionId: Long) = DomainLocation(
-    latLng = LatLng(latitude, longitude),
-    speed = speed,
-    time = Date.from(Instant.ofEpochMilli(time)),
-    sessionId = sessionId,
-    accuracy = accuracy,
-    bearing = bearing,
-    bearingAccuracy = bearingAccuracyDegrees,
-    altitude = altitude,
-    speedAccuracy = speedAccuracyMetersPerSecond,
-    verticalAccuracy = verticalAccuracyMeters
-)
+fun Location.toDomainModel(
+    sessionUUID: String
+): DomainLocation {
+    val domainLocation = DomainLocation(
+        latitude = latitude.toFloat(),
+        longitude = longitude.toFloat(),
+        zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
+        sessionUUID = sessionUUID
+    )
+
+    if (hasSpeed()) domainLocation.speed = speed
+    if (hasAccuracy()) domainLocation.accuracy = accuracy.toInt().toByte()
+    if (hasBearing()) domainLocation.bearing = bearing.toInt().toShort()
+    if (hasAltitude()) domainLocation.altitude = altitude.toInt().toShort()
+
+    if (VERSION.SDK_INT >= VERSION_CODES.O) {
+        if (hasBearingAccuracy()) domainLocation.bearingAccuracy = bearingAccuracyDegrees.toInt().toShort()
+        if (hasSpeedAccuracy()) domainLocation.speedAccuracy = speedAccuracyMetersPerSecond
+        if (hasVerticalAccuracy()) domainLocation.verticalAccuracy = verticalAccuracyMeters.toInt().toShort()
+    }
+    return domainLocation
+}
 
 // Rotation
-fun RoomRotation.toDomainModel() = DomainRotation(
+fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
     id = id,
-    time = Date.from(Instant.ofEpochMilli(time)),
-    sessionId = sessionId,
+    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
+    sessionUUID = sessionUUID,
     accuracy = accuracy,
     x = x,
     y = y,
-    z = z
+    z = z,
+    type = type
 )
 
-fun DomainRotation.toRoomModel() = RoomRotation(
-    time = time.time,
-    sessionId = sessionId,
+fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
+    time = zonedDateTime.toInstant().toEpochMilli(),
+    sessionUUID = sessionUUID,
     accuracy = accuracy,
     x = x,
     y = y,
-    z = z
-)
-
-// Acceleration
-fun RoomAcceleration.toDomainModel() = DomainAcceleration(
-    id = id,
-    time = Date.from(Instant.ofEpochMilli(time)),
-    sessionId = sessionId,
-    accuracy = accuracy,
-    x = x,
-    y = y,
-    z = z
-)
-
-fun DomainAcceleration.toRoomModel() = RoomAcceleration(
-    time = time.time,
-    sessionId = sessionId,
-    accuracy = accuracy,
-    x = x,
-    y = y,
-    z = z
+    z = z,
+    type = type
 )
 
 // Sensors
-fun SensorEvent.toDomainRotation(sessionId: Long) = DomainRotation(
-    sessionId = sessionId,
-    time = Date.from(Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp))),
-    accuracy = accuracy,
+fun SensorEvent.toDomainModel(sessionUUID: String) = DomainSensorEvent(
+    sessionUUID = sessionUUID,
+    zonedDateTime = Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp)).atZone(ZoneOffset.UTC),
+    accuracy = accuracy.toByte(),
     x = values[0],
     y = values[1],
-    z = values[2]
-)
-
-fun SensorEvent.toDomainAcceleration(sessionId: Long) = DomainAcceleration(
-    sessionId = sessionId,
-    time = Date.from(Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp))),
-    accuracy = accuracy,
-    x = values[0],
-    y = values[1],
-    z = values[2]
+    z = values[2],
+    type = sensor.type.toByte()
 )

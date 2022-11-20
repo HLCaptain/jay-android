@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -19,117 +19,62 @@
 package illyan.jay
 
 import android.content.Intent
-import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.findNavController
-import androidx.navigation.ui.setupActionBarWithNavController
-import co.zsmb.rainbowcake.extensions.exhaustive
-import co.zsmb.rainbowcake.hilt.getViewModelFromFactory
+import android.os.Bundle
+import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.tasks.Task
+import com.ramcosta.composedestinations.DestinationsNavHost
 import dagger.hilt.android.AndroidEntryPoint
-import illyan.jay.databinding.ActivityMainBinding
-import illyan.jay.service.JayService
-import illyan.jay.ui.custom.RainbowCakeActivity
-import timber.log.Timber
+import illyan.jay.domain.interactor.AuthInteractor
+import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.theme.JayTheme
+import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : RainbowCakeActivity<MainViewState, MainViewModel, ActivityMainBinding>() {
-    override fun provideViewModel() = getViewModelFromFactory()
-    override fun provideViewBinding() = ActivityMainBinding.inflate(layoutInflater)
+class MainActivity : AppCompatActivity() {
 
-    private val navControllerDelegateStack = ArrayDeque<NavController>()
+    @Inject
+    lateinit var authInteractor: AuthInteractor
 
-    override fun render(viewState: MainViewState) {
-        when (viewState) {
-            is Initial -> {
-                // show spalsh screen?
-            }
-            is LoggedIn -> {
-                Timber.d("Logged in!")
-            }
-            is LoggedOut -> {
-                Timber.d("Logged out!")
-                stopService(Intent(this, JayService::class.java))
-                // Resetting to the Login screen if needed.
-                val nav = binding.loginNavHostFragment.findNavController()
-                nav.popBackStack(nav.graph.startDestinationId, false)
-                supportActionBar?.title = nav.graph.findStartDestination().label
-            }
-        }.exhaustive
-    }
+    lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    override fun onStart() {
-        super.onStart()
-        // NavController is loaded in onStart, that is why we load the viewModel now.
-        // It may drop an exception for not finding the navController we need,
-        // if we call this load method earlier.
-        viewModel.load()
-    }
-
-    override fun onBackPressed() {
-        if (navControllerDelegateStack.lastOrNull()?.currentDestination?.id ==
-            navControllerDelegateStack.lastOrNull()?.graph?.startDestinationId
+        googleSignInLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
         ) {
-            finish()
-        } else {
-            super.onBackPressed()
+            val task: Task<GoogleSignInAccount> = GoogleSignIn.getSignedInAccountFromIntent(it.data)
+            authInteractor.handleGoogleSignInResult(this, task)
         }
-    }
 
-    override fun onNavigateUp(): Boolean {
-        val nav = binding.loginNavHostFragment.findNavController()
-        if (navControllerDelegateStack.last().currentDestination?.id !=
-            navControllerDelegateStack.last().graph.startDestinationId
-        ) {
-            return navControllerDelegateStack.last().navigateUp()
-        } else {
-            if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
-                finish()
+        setContent {
+            JayTheme {
+                MainScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                )
             }
         }
-        return super.onNavigateUp()
     }
+}
 
-    override fun onSupportNavigateUp(): Boolean {
-        val nav = binding.loginNavHostFragment.findNavController()
-        if (navControllerDelegateStack.last().currentDestination?.id !=
-            navControllerDelegateStack.last().graph.startDestinationId
-        ) {
-            return navControllerDelegateStack.last().navigateUp()
-        } else {
-            if (nav.previousBackStackEntry?.destination?.id == nav.graph.startDestinationId) {
-                finish()
-            }
-        }
-        return super.onSupportNavigateUp()
-    }
-
-    /**
-     * Add navigation controller to the delegate stack.
-     *
-     * @param navController navController becomes the active controller in the navigation graph
-     * and will be used to determine if the app should finish or navigate back further.
-     *
-     * @param doSetActionBar sets action bar with new navController if true.
-     */
-    fun addNavController(navController: NavController, doSetActionBar: Boolean = true) {
-        navControllerDelegateStack.addLast(navController)
-        if (doSetActionBar) {
-            setupActionBarWithNavController(navControllerDelegateStack.last())
-        }
-    }
-
-    /**
-     * Pop a navController on the delegate stack.
-     * The navController before the popped one becomes the active controller.
-     *
-     * @param doSetActionBar sets up the action bar with the last navController
-     * after the pop if true and the stack is not empty.
-     */
-    fun popNavController(doSetActionBar: Boolean = false): NavController {
-        val removedLast = navControllerDelegateStack.removeLast()
-        if (navControllerDelegateStack.isNotEmpty() && doSetActionBar) {
-            setupActionBarWithNavController(navControllerDelegateStack.last())
-        }
-        return removedLast
-    }
+@Preview(showBackground = true)
+@Composable
+fun MainScreen(
+    modifier: Modifier = Modifier
+) {
+    DestinationsNavHost(
+        navGraph = NavGraphs.home,
+        modifier = modifier
+    )
 }

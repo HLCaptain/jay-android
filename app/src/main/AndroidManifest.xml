@@ -1,5 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  ~ Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
   ~
   ~ Jay is a driver behaviour analytics app.
   ~
@@ -16,44 +17,46 @@
   ~ If not, see <https://www.gnu.org/licenses/>.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="illyan.jay">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
         android:name=".MainApplication"
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.Jay">
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
+        android:label="@string/app_name"
+        android:theme="@style/Theme.Jay"
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false">
+
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.Jay"
+            android:windowSoftInputMode="adjustResize">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
+
         <service
             android:name=".service.JayService"
             android:enabled="true"
-            android:exported="true"
-            android:foregroundServiceType="location"
-            android:permission="android.permission.ACCESS_BACKGROUND_LOCATION" />
-        <receiver
-            android:name=".service.ServiceStateReceiver"
-            android:exported="false" /> <!-- App does not receive any broadcasts from outside -->
+            android:foregroundServiceType="location" />
+
+        <receiver android:name=".service.ServiceStateReceiver" />
+        <receiver android:name=".service.BaseReceiver" />
+
     </application>
+
 </manifest>

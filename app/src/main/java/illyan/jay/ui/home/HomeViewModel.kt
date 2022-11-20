@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,17 +18,86 @@
 
 package illyan.jay.ui.home
 
-import co.zsmb.rainbowcake.base.RainbowCakeViewModel
+import android.location.Location
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mapbox.android.core.location.LocationEngineCallback
+import com.mapbox.android.core.location.LocationEngineResult
+import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.AuthInteractor
+import illyan.jay.domain.interactor.MapboxInteractor
+import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.ui.map.ButeK
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val homePresenter: HomePresenter
-) : RainbowCakeViewModel<HomeViewState>(Initial) {
+    private val mapboxInteractor: MapboxInteractor,
+    private val authInteractor: AuthInteractor,
+    private val sessionInteractor: SessionInteractor
+) : ViewModel() {
 
-    fun load() = execute {
-        viewState = Loading
-        viewState = Ready
+    private val _initialLocation = MutableStateFlow<Location?>(null)
+    val initialLocation = _initialLocation.asStateFlow()
+
+    private val _initialLocationLoaded = MutableStateFlow(false)
+    val initialLocationLoaded = _initialLocationLoaded.asStateFlow()
+
+    private val _cameraOptionsBuilder = MutableStateFlow<CameraOptions.Builder?>(null)
+    val cameraOptionsBuilder = _cameraOptionsBuilder.asStateFlow()
+
+    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
+    val userPhotoUrl = authInteractor.userPhotoUrlStateFlow
+
+    private val callback = object : LocationEngineCallback<LocationEngineResult> {
+        override fun onSuccess(result: LocationEngineResult?) {
+            result?.let {
+                if (_initialLocation.value == null) {
+                    _initialLocation.value = it.lastLocation
+                    _initialLocationLoaded.value = true
+                    disposeLocationUpdates(this)
+                }
+            }
+        }
+        override fun onFailure(exception: Exception) { exception.printStackTrace() }
+    }
+
+    fun stopDanglingOngoingSessions() {
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.stopDanglingSessions()
+        }
+    }
+
+    suspend fun loadLastLocation() {
+        mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
+        initialLocation.first { location ->
+            if (location != null) {
+                _cameraOptionsBuilder.value = CameraOptions.Builder()
+                    .zoom(12.0)
+                    .center(Point.fromLngLat(location.longitude, location.latitude))
+                true
+            } else {
+                // Use Bute K building as the default location for now.
+                _cameraOptionsBuilder.value = CameraOptions.Builder()
+                    .zoom(12.0)
+                    .center(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
+                false
+            }
+        }
+    }
+
+    private fun disposeLocationUpdates(callback: LocationEngineCallback<LocationEngineResult>) {
+        mapboxInteractor.removeLocationUpdates(callback)
+    }
+
+    fun dispose() {
+        disposeLocationUpdates(callback)
     }
 }

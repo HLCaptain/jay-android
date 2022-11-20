@@ -19,6 +19,7 @@
 package illyan.jay.data.sensor
 
 import android.annotation.SuppressLint
+import android.hardware.Sensor
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Looper
@@ -26,6 +27,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Sensor data source helps registering SensorEventListeners to sensor events.
@@ -36,6 +38,7 @@ import javax.inject.Inject
  * and setting location request options.
  * @constructor Create empty Sensor data source
  */
+@Singleton
 class SensorDataSource @Inject constructor(
     private val sensorManager: SensorManager,
     private val fusedLocationProviderClient: FusedLocationProviderClient
@@ -103,4 +106,6 @@ class SensorDataSource @Inject constructor(
      */
     fun removeLocationUpdates(callback: LocationCallback) =
         fusedLocationProviderClient.removeLocationUpdates(callback)
+
+    fun getSensors(type: Int = Sensor.TYPE_ALL) = sensorManager.getSensorList(type)
 }

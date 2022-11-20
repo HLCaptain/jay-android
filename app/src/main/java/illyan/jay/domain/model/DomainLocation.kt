@@ -19,17 +19,17 @@
 package illyan.jay.domain.model
 
 import com.google.android.gms.maps.model.LatLng
-import java.util.*
+import java.time.ZonedDateTime
 
 /**
  * Domain location used for general data handling
- * between DataSources, Interactors and Presenters.
+ * between DataSources, Interactors and ViewModels.
  *
  * @property id
  * @property latLng
  * @property speed
  * @property sessionId
- * @property time
+ * @property zonedDateTime
  * @property accuracy
  * @property bearing
  * @property bearingAccuracy
@@ -40,14 +40,17 @@ import java.util.*
  */
 data class DomainLocation(
     val id: Long = -1,
-    val latLng: LatLng,
-    val speed: Float,
-    val sessionId: Long,
-    val time: Date,
-    val accuracy: Float,
-    val bearing: Float,
-    val bearingAccuracy: Float, // in degrees
-    val altitude: Double,
-    val speedAccuracy: Float, // in meters per second
-    val verticalAccuracy: Float // in meters
-)
+    var sessionUUID: String,
+    val zonedDateTime: ZonedDateTime,
+    val latitude: Float,
+    val longitude: Float,
+    var speed: Float = Float.NaN,
+    var accuracy: Byte = Byte.MIN_VALUE,
+    var bearing: Short = Short.MIN_VALUE, // TODO: may change Short to Byte?
+    var bearingAccuracy: Short = Short.MIN_VALUE, // in degrees
+    var altitude: Short = Short.MIN_VALUE,
+    var speedAccuracy: Float = Float.NaN, // in meters per second
+    var verticalAccuracy: Short = Short.MIN_VALUE, // in meters
+) {
+    val latLng = LatLng(latitude.toDouble(), longitude.toDouble())
+}

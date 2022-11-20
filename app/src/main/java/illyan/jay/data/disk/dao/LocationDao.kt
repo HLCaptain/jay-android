@@ -23,6 +23,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import illyan.jay.data.disk.model.RoomLocation
 import kotlinx.coroutines.flow.Flow
@@ -51,20 +52,31 @@ interface LocationDao {
     fun deleteLocation(location: RoomLocation)
 
     @Delete
-    fun deleteLocationsForSession(locations: List<RoomLocation>)
+    fun deleteLocations(locations: List<RoomLocation>)
 
     @Query("DELETE FROM location")
     fun deleteLocations()
 
-    @Query("DELETE FROM location WHERE sessionId = :sessionId")
-    fun deleteLocationsForSession(sessionId: Long)
+    @Query("DELETE FROM location WHERE sessionUUID = :sessionUUID")
+    fun deleteLocations(sessionUUID: String)
 
+    @Transaction
     @Query("SELECT * FROM location WHERE id = :id")
     fun getLocation(id: Long): Flow<RoomLocation?>
 
-    @Query("SELECT * FROM location WHERE sessionId = :sessionId")
-    fun getLocations(sessionId: Long): Flow<List<RoomLocation>>
+    @Transaction
+    @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID")
+    fun getLocations(sessionUUID: String): Flow<List<RoomLocation>>
 
-    @Query("SELECT * FROM location WHERE sessionId = :sessionId ORDER BY id DESC LIMIT :limit")
-    fun getLatestLocations(sessionId: Long, limit: Long): Flow<List<RoomLocation>>
+    @Transaction
+    @Query("SELECT * FROM location WHERE sessionUUID IN(:sessionUUIDs)")
+    fun getLocations(sessionUUIDs: List<String>): Flow<List<RoomLocation>>
+
+    @Transaction
+    @Query("SELECT * FROM location ORDER BY id DESC LIMIT :limit")
+    fun getLatestLocations(limit: Long): Flow<List<RoomLocation>>
+
+    @Transaction
+    @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID ORDER BY id DESC LIMIT :limit")
+    fun getLatestLocations(sessionUUID: String, limit: Long): Flow<List<RoomLocation>>
 }

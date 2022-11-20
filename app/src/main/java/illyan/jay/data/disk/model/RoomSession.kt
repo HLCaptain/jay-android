@@ -19,13 +19,27 @@
 package illyan.jay.data.disk.model
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
-@Entity(tableName = "session")
+@Entity(
+    tableName = "session",
+    indices = [Index(value = ["uuid"])]
+)
 data class RoomSession(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val startTime: Long,
-    var endTime: Long? = null,
-    var distance: Double = 0.0
+    @PrimaryKey
+    val uuid: String = UUID.randomUUID().toString(),
+    val startDateTime: Long,
+    var endDateTime: Long? = null,
+    var startLocationLatitude: Float? = null,
+    var startLocationLongitude: Float? = null,
+    var endLocationLatitude: Float? = null,
+    var endLocationLongitude: Float? = null,
+    var startLocationName: String? = null,
+    var endLocationName: String? = null,
+    val distance: Float? = null,
+    val ownerUserUUID: String? = null,
+    val clientUUID: String? = null,
+    val isSynced: Boolean = false
 )

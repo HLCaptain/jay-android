@@ -19,7 +19,15 @@
 package illyan.jay.domain.interactor
 
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
+import illyan.jay.data.network.datasource.LocationNetworkDataSource
+import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,24 +40,15 @@ import javax.inject.Singleton
  */
 @Singleton
 class LocationInteractor @Inject constructor(
-    private var locationDiskDataSource: LocationDiskDataSource
+    private val locationDiskDataSource: LocationDiskDataSource,
+    private val locationNetworkDataSource: LocationNetworkDataSource,
+    private val authInteractor: AuthInteractor,
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
-
-    companion object {
-        const val LOCATION_REQUEST_INTERVAL_REALTIME = 200L
-        const val LOCATION_REQUEST_INTERVAL_FREQUENT = 500L
-        const val LOCATION_REQUEST_INTERVAL_DEFAULT = 2000L
-        const val LOCATION_REQUEST_INTERVAL_SPARSE = 4000L
-
-        const val LOCATION_REQUEST_DISPLACEMENT_MOST_ACCURATE = 1f
-        const val LOCATION_REQUEST_DISPLACEMENT_DEFAULT = 4f
-        const val LOCATION_REQUEST_DISPLACEMENT_LEAST_ACCURATE = 8f
-    }
-
     /**
      * Get latest (most up to date) locations as a Flow for a particular session.
      *
-     * @param sessionId particular session's ID, which is the
+     * @param sessionUUID particular session's ID, which is the
      * foreign key of location data returned.
      * @param limit number of latest location data returned in order from
      * the freshest location to older location data.
@@ -57,18 +56,37 @@ class LocationInteractor @Inject constructor(
      * @return location data flow for a particular session in order from
      * the freshest location to older location data.
      */
-    fun getLatestLocations(sessionId: Long, limit: Long) =
-        locationDiskDataSource.getLatestLocations(sessionId, limit)
+    fun getLatestLocations(sessionUUID: String, limit: Long): Flow<List<DomainLocation>> {
+        return locationDiskDataSource.getLatestLocations(sessionUUID, limit)
+    }
+
+    fun getLatestLocations(limit: Long) = locationDiskDataSource.getLatestLocations(limit)
 
     /**
      * Get locations' data as a Flow for a particular session.
      *
-     * @param sessionId particular session's ID, which is the
+     * @param sessionUUID particular session's ID, which is the
      * foreign key of location data returned.
      *
      * @return location data flow for a particular session.
      */
-    fun getLocations(sessionId: Long) = locationDiskDataSource.getLocations(sessionId)
+    fun getLocations(sessionUUID: String) = locationDiskDataSource.getLocations(sessionUUID)
+
+    fun getLocations(sessionUUIDs: List<String>) = locationDiskDataSource.getLocations(sessionUUIDs)
+
+    fun getSyncedPath(sessionUUID: String) = getSyncedPaths(listOf(sessionUUID))
+
+    fun getSyncedPaths(sessionUUIDs: List<String>): StateFlow<List<DomainLocation>?> {
+        val syncedPaths = MutableStateFlow<List<DomainLocation>?>(null)
+        if (authInteractor.isUserSignedIn) {
+            locationNetworkDataSource.getLocations(sessionUUIDs) { remoteLocations ->
+                syncedPaths.value = remoteLocations
+            }
+        } else {
+            syncedPaths.value = emptyList()
+        }
+        return syncedPaths.asStateFlow()
+    }
 
     /**
      * Save location's data to Room database.
@@ -86,6 +104,21 @@ class LocationInteractor @Inject constructor(
      *
      * @param locations list of location data saved onto the Room database.
      */
-    fun saveLocations(locations: List<DomainLocation>) =
-        locationDiskDataSource.saveLocations(locations)
+    fun saveLocations(locations: List<DomainLocation>) {
+        coroutineScopeIO.launch {
+            locationDiskDataSource.saveLocations(locations)
+        }
+    }
+
+
+    companion object {
+        const val LOCATION_REQUEST_INTERVAL_REALTIME = 200L
+        const val LOCATION_REQUEST_INTERVAL_FREQUENT = 500L
+        const val LOCATION_REQUEST_INTERVAL_DEFAULT = 2000L
+        const val LOCATION_REQUEST_INTERVAL_SPARSE = 4000L
+
+        const val LOCATION_REQUEST_DISPLACEMENT_MOST_ACCURATE = 1f
+        const val LOCATION_REQUEST_DISPLACEMENT_DEFAULT = 4f
+        const val LOCATION_REQUEST_DISPLACEMENT_LEAST_ACCURATE = 8f
+    }
 }
