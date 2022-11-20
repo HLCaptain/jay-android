@@ -16,25 +16,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.theme
+package illyan.jay.ui.components
 
-import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
-val TealGreen = Color(0xFF006B5B)
-val MineralGreen = Color(0xFF48645C)
-val SlateBlue = Color(0xFF3F627A)
-val CornellRed = Color(0xFFBA1A1A)
-val CarbonGrey = Color(0xFF5C5F5D)
-val CarbonGreyVariant = Color(0xFF57605D)
-val HotPink = Color(0xFFFF63A0)
-val AzureBlue = Color(0xFF1B8FFF)
-
-val AquaMarineGreen = Color(0xFF46DDC0)
-val PowderAsh = Color(0xFFAFCDC4)
-val JeansBlue = Color(0xFFA7CBE6)
-
-val Neutral95 = Color(0xFFF2F2F2)
-val Neutral90 = Color(0xFFE6E6E6)
-
-
-val SignatureTone95 = Color(0xFFEBF1FF)
+@Composable
+fun SmallCircularProgressIndicator(
+    modifier: Modifier = Modifier
+) {
+    CircularProgressIndicator(
+        modifier = modifier.size(16.dp),
+        strokeWidth = 2.dp
+    )
+}

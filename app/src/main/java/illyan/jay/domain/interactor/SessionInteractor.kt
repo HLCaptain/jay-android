@@ -153,7 +153,7 @@ class SessionInteractor @Inject constructor(
     fun uploadNotSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
         coroutineScopeIO.launch {
-            getLocalOnlySessions().first { sessions ->
+            sessionDiskDataSource.getStoppedSessions(authInteractor.userUUID!!).first { sessions ->
                 locationDiskDataSource.getLocations(sessions.map { it.uuid }).first { locations ->
                     uploadSessions(
                         sessions,
@@ -216,10 +216,19 @@ class SessionInteractor @Inject constructor(
 
     fun getSessionUUIDs() = sessionDiskDataSource.getSessionIds(authInteractor.userUUID)
 
+    fun getNotOwnedSessions() = sessionDiskDataSource.getAllNotOwnedSessions()
+
     fun getLocalOnlySessionUUIDs() =
         sessionDiskDataSource.getLocalOnlySessionUUIDs(authInteractor.userUUID)
 
     fun getLocalOnlySessions() = sessionDiskDataSource.getLocalOnlySessions(authInteractor.userUUID)
+
+    fun getOwnSessionsFromDisk() = sessionDiskDataSource.getSessionsByOwner(authInteractor.userUUID)
+
+    fun getOwnLocalSessions(): Flow<List<DomainSession>>? {
+        if (!authInteractor.isUserSignedIn) return null
+        return sessionDiskDataSource.getLocalSessionsByOwner(authInteractor.userUUID!!)
+    }
 
     /**
      * Get ongoing sessions, which have no end date.

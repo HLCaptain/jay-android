@@ -50,18 +50,21 @@ class SessionViewModel @Inject constructor(
         viewModelScope.launch {
             sessionInteractor.getSession(sessionUUID).collectLatest { session ->
                 if (session != null) {
-                    _session.value = session.toUiModel()
+                    _session.value = session.toUiModel(locations = null)
                     locationInteractor.getLocations(session.uuid).collectLatest { localPath ->
-                        _path.value = localPath.sortedBy { it.zonedDateTime.toInstant() }.map { it.toUiModel() }
+                        val sortedLocalPaths = localPath.sortedBy { it.zonedDateTime.toInstant() }
+                        _path.value = sortedLocalPaths.map { it.toUiModel() }
+                        _session.value = session.toUiModel(sortedLocalPaths)
                     }
                 } else {
                     isLoadingSessionFromNetwork.value = true
                     locationInteractor.getSyncedPath(sessionUUID).first { remotePath ->
                         if (remotePath != null) {
-                            _path.value = remotePath.sortedBy { it.zonedDateTime.toInstant() }.map { it.toUiModel() }
+                            val sortedRemotePaths = remotePath.sortedBy { it.zonedDateTime.toInstant() }
+                            _path.value = sortedRemotePaths.map { it.toUiModel() }
                             sessionInteractor.syncedSessions.collectLatest { sessions ->
                                 sessions?.firstOrNull{ it.uuid.contentEquals(sessionUUID) }?.let { session ->
-                                    _session.value = session.toUiModel()
+                                    _session.value = session.toUiModel(sortedRemotePaths)
                                 }
                             }
                         }

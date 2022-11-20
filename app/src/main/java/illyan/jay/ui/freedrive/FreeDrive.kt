@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +65,7 @@ import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
+import illyan.jay.ui.sessions.DefaultScreenOnSheetPadding
 import illyan.jay.util.plus
 import kotlinx.coroutines.launch
 
@@ -109,7 +109,6 @@ fun FreeDriveScreen(
         }
 
         is PermissionStatus.Granted -> {
-            // TODO start session, then wait for new data to be shown by Mapbox Navigation SDK
             val startServiceAutomatically by viewModel.startServiceAutomatically
                 .collectAsState(AppSettings.default.turnOnFreeDriveAutomatically)
             val cameraPadding by cameraPadding.collectAsState()
@@ -152,8 +151,7 @@ fun FreeDriveScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
-                    .padding(32.dp)
+                    .padding(DefaultScreenOnSheetPadding)
             ) {
                 val isServiceRunning by viewModel.isJayServiceRunning.collectAsState()
                 val buttonLabel = if (isServiceRunning) {
@@ -167,9 +165,7 @@ fun FreeDriveScreen(
                     Text(text = buttonLabel)
                 }
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

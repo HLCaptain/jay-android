@@ -66,7 +66,10 @@ class SessionDiskDataSource @Inject constructor(
     fun getAllNotOwnedSessions() = sessionDao.getAllNotOwnedSessions()
         .map { it.map(RoomSession::toDomainModel) }
 
-    fun getSessionsByOwner(ownerUserUUID: String) = sessionDao.getSessionsByOwner(ownerUserUUID)
+    fun getSessionsByOwner(ownerUserUUID: String?) = sessionDao.getSessionsByOwner(ownerUserUUID)
+        .map { it.map(RoomSession::toDomainModel) }
+
+    fun getLocalSessionsByOwner(ownerUserUUID: String) = sessionDao.getLocalSessionsByOwner(ownerUserUUID)
         .map { it.map(RoomSession::toDomainModel) }
 
     fun ownAllNotOwnedSessions(ownerUserUUID: String) =

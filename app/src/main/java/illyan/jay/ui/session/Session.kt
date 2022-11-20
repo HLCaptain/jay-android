@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
@@ -56,6 +55,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.home.tryFlyToPath
@@ -81,14 +81,23 @@ fun SessionScreen(
         viewModel.load(sessionUUID)
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
-    var pathLoaded by remember { mutableStateOf(false) }
+    var flownToPath by remember { mutableStateOf(false) }
     val path by viewModel.path.collectAsState()
+    var fakeStopped by remember { mutableStateOf(false) }
+    LaunchedEffect(sheetState.isAnimationRunning) {
+        if (fakeStopped) {
+            sheetHeightNotSet = sheetState.isAnimationRunning
+        }
+        if (!sheetState.isAnimationRunning) {
+            fakeStopped = true
+        }
+    }
     LaunchedEffect(
         path,
-        sheetState.isAnimationRunning,
+        sheetHeightNotSet
     ) {
         path?.let {
-            if (!pathLoaded) {
+            if (!flownToPath) {
                 tryFlyToPath(
                     path = path!!.map { location ->
                         Point.fromLngLat(
@@ -96,10 +105,9 @@ fun SessionScreen(
                             location.latLng.latitude
                         )
                     },
-                    extraCondition = { !sheetHeightNotSet && !sheetState.isAnimationRunning },
-                    onFly = { pathLoaded = true }
+                    extraCondition = { !sheetHeightNotSet },
+                    onFly = { flownToPath = true }
                 )
-                sheetHeightNotSet = false
             }
         }
     }
@@ -115,6 +123,8 @@ fun SessionScreen(
                         Point.fromLngLat(it.latLng.longitude, it.latLng.latitude)
                     } ?: emptyList()
                 )
+                // TODO: make this drawn line a gradient, showing speed via LineLayer,
+                //  aka https://docs.mapbox.com/android/legacy/maps/examples/line-gradient/
                 // AzureBlue
                 .withLineColor("#1b8fff")
                 .withLineWidth(5.0)
@@ -169,7 +179,7 @@ fun SessionDetailsScreen(
             AnimatedVisibility(
                 visible = isPathLoadingFromNetwork && (path == null || session == null)
             ) {
-                CircularProgressIndicator()
+                SmallCircularProgressIndicator()
             }
         }
         Column {

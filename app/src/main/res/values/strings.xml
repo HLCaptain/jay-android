@@ -62,4 +62,18 @@
     <string name="delete_locally">Delete locally</string>
     <string name="own_all_sessions">Own all sessions</string>
     <string name="own_session">Own session</string>
+    <string name="no_sessions_to_show">No sessions to show</string>
+    <string name="loading_sessions">Loading sessions</string>
+    <string name="loading_sessions_from_cloud">Loading sessions from cloud</string>
+    <string name="own">Own</string>
+    <string name="delete_from_cloud">Delete from cloud</string>
+    <string name="navigate_to_bme">Navigate to BME</string>
+    <string name="start_free_drive_navigation">Start free-drive navigation</string>
+    <string name="sessions">Sessions</string>
+    <string name="menu_item_title">Menu Item Title</string>
+    <string name="menu_item_icon">Menu Item Icon</string>
+    <string name="free_drive">Free drive</string>
+    <string name="bute">Budapest University of Technology and Economics</string>
+    <string name="phone_number">Phone number</string>
+    <string name="name">Name</string>
 </resources>

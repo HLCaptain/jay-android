@@ -124,6 +124,8 @@ class SearchInteractor @Inject constructor(
         searchResult.coordinate?.let {
             navigateTo(
                 Place(
+                    name = searchResult.name,
+                    type = searchResult.types.first(),
                     longitude = it.longitude(),
                     latitude = it.latitude()
                 )
@@ -135,6 +137,8 @@ class SearchInteractor @Inject constructor(
         record.coordinate?.let {
             navigateTo(
                 Place(
+                    name = record.name,
+                    type = record.type,
                     longitude = it.longitude(),
                     latitude = it.latitude()
                 )
@@ -145,6 +149,8 @@ class SearchInteractor @Inject constructor(
     fun navigateTo(place: Place) {
         localBroadcastManager.sendBroadcast(
             Place(
+                name = place.name,
+                type = place.type,
                 latitude = place.latitude,
                 longitude = place.longitude
             ),

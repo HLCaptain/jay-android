@@ -119,6 +119,10 @@ interface SessionDao {
     fun getSessionsByOwner(ownerUserUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
+    @Query("SELECT * FROM session WHERE ownerUserUUID IS :ownerUserUUID AND NOT isSynced")
+    fun getLocalSessionsByOwner(ownerUserUUID: String? = null): Flow<List<RoomSession>>
+
+    @Transaction
     @Query("UPDATE session SET uuid = :newUUID WHERE uuid IS :currentUUID AND ownerUserUUID IS :ownerUserUUID")
     fun refreshSessionUUID(currentUUID: String, newUUID: String, ownerUserUUID: String): Int
 
