@@ -286,7 +286,8 @@ fun SessionsList(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         SmallCircularProgressIndicator()
                         Text(text = stringResource(R.string.loading_sessions))
