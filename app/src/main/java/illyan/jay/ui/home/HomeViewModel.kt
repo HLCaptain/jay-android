@@ -20,6 +20,7 @@ package illyan.jay.ui.home
 
 import android.location.Location
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.geojson.Point
@@ -27,16 +28,20 @@ import com.mapbox.maps.CameraOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.MapboxInteractor
+import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.map.ButeK
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val mapboxInteractor: MapboxInteractor,
-    private val authInteractor: AuthInteractor
+    private val authInteractor: AuthInteractor,
+    private val sessionInteractor: SessionInteractor
 ) : ViewModel() {
 
     private val _initialLocation = MutableStateFlow<Location?>(null)
@@ -62,6 +67,12 @@ class HomeViewModel @Inject constructor(
             }
         }
         override fun onFailure(exception: Exception) { exception.printStackTrace() }
+    }
+
+    fun stopDanglingOngoingSessions() {
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.stopDanglingSessions()
+        }
     }
 
     suspend fun loadLastLocation() {

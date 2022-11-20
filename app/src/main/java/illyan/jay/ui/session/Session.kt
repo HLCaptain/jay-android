@@ -56,16 +56,22 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.SmallCircularProgressIndicator
+import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.home.tryFlyToPath
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.sessions.DefaultScreenOnSheetPadding
 import illyan.jay.util.format
-import illyan.jay.util.plus
 import java.math.RoundingMode
+
+val DefaultScreenOnSheetPadding = PaddingValues(
+    start = MenuItemPadding * 2,
+    end = MenuItemPadding * 2,
+    top = MenuItemPadding,
+    bottom = RoundedCornerRadius + MenuItemPadding * 2
+)
 
 @OptIn(ExperimentalMaterialApi::class)
 @MenuNavGraph
@@ -149,7 +155,7 @@ fun SessionDetailsScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(DefaultScreenOnSheetPadding + PaddingValues(bottom = MenuItemPadding)),
+            .padding(DefaultScreenOnSheetPadding),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(

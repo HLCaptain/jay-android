@@ -311,17 +311,17 @@ class SessionInteractor @Inject constructor(
             val sortedLocations = locations.sortedBy { location ->
                 location.zonedDateTime.toInstant().toEpochMilli()
             }
-            val startLocation = sortedLocations.firstOrNull()?.latLng
-            session.startLocation = startLocation
-            startLocation?.let { coroutineScopeIO.launch { saveSession(session) } }
+            val startLocationLatLng = sortedLocations.firstOrNull()?.latLng
+            session.startLocation = startLocationLatLng
+            startLocationLatLng?.let { coroutineScopeIO.launch { saveSession(session) } }
 
             // Reverse geocoding locations to get names for them.
-            if (startLocation != null && session.startLocationName == null) {
+            if (startLocationLatLng != null && session.startLocationName == null) {
                 searchInteractor.search(
                     reverseGeoOptions = ReverseGeoOptions(
                         center = Point.fromLngLat(
-                            startLocation.longitude,
-                            startLocation.latitude
+                            startLocationLatLng.longitude,
+                            startLocationLatLng.latitude
                         )
                     )
                 ) { results, _ ->
@@ -344,17 +344,19 @@ class SessionInteractor @Inject constructor(
             val sortedLocations = locations.sortedBy { location ->
                 location.zonedDateTime.toInstant().toEpochMilli()
             }
-            val endLocation = sortedLocations.lastOrNull()?.latLng
-            session.endLocation = endLocation
-            endLocation?.let { coroutineScopeIO.launch { saveSession(session) } }
+            val endLocation = sortedLocations.lastOrNull()
+            val endLocationLatLng = endLocation?.latLng
+            session.endLocation = endLocationLatLng
+            if (session.endDateTime == null) session.endDateTime = endLocation?.zonedDateTime
+            endLocationLatLng?.let { coroutineScopeIO.launch { saveSession(session) } }
 
             // Reverse geocoding locations to get names for them.
-            if (endLocation != null && session.endLocationName == null) {
+            if (endLocationLatLng != null && session.endLocationName == null) {
                 searchInteractor.search(
                     reverseGeoOptions = ReverseGeoOptions(
                         center = Point.fromLngLat(
-                            endLocation.longitude,
-                            endLocation.latitude
+                            endLocationLatLng.longitude,
+                            endLocationLatLng.latitude
                         )
                     )
                 ) { results, _ ->
@@ -384,6 +386,21 @@ class SessionInteractor @Inject constructor(
                 }
             }
             true
+        }
+    }
+
+    suspend fun stopDanglingSessions() {
+        if (!serviceInteractor.isJayServiceRunning()) {
+            getOngoingSessions().first { sessions ->
+                refreshDistanceForSessions(sessions)
+                sessions.forEach { session ->
+                    coroutineScopeIO.launch {
+                        refreshSessionStartLocation(session)
+                        refreshSessionEndLocation(session)
+                    }
+                }
+                true
+            }
         }
     }
 
