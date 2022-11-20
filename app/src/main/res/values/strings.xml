@@ -76,4 +76,7 @@
     <string name="bute">Budapest University of Technology and Economics</string>
     <string name="phone_number">Phone number</string>
     <string name="name">Name</string>
+    <string name="authenticate_to_view_account_information">Authenticate to view account information</string>
+    <string name="show_profile_info">Show profile info</string>
+    <string name="hidden_field_string">********</string>
 </resources>
