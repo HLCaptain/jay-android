@@ -85,8 +85,6 @@ val DefaultContentPadding = PaddingValues(
 
 val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding * 2,
-    start = MenuItemPadding * 2,
-    end = MenuItemPadding * 2,
     bottom = RoundedCornerRadius
 )
 
@@ -126,27 +124,33 @@ fun SessionsScreen(
     ) {
         val (column, globalLoadingIndicator) = createRefs()
         AnimatedVisibility(
-            modifier = Modifier.constrainAs(globalLoadingIndicator) {
-                top.linkTo(parent.top)
-                end.linkTo(parent.end)
-            },
+            modifier = Modifier
+                .constrainAs(globalLoadingIndicator) {
+                    top.linkTo(parent.top)
+                    end.linkTo(parent.end)
+                },
             visible = isLoading
         ) {
-            SmallCircularProgressIndicator()
+            SmallCircularProgressIndicator(
+                modifier = Modifier.padding(8.dp)
+            )
         }
         Column(
-            modifier = Modifier.constrainAs(column) {
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            }
+            modifier = Modifier
+                .constrainAs(column) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                }
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
                     AnimatedVisibility(visible = isUserSignedIn && canSyncSessions) {
                         TextButton(
                             onClick = { viewModel.syncSessions() },
@@ -156,7 +160,10 @@ fun SessionsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Icon(imageVector = Icons.Rounded.CloudUpload, contentDescription = "")
+                                Icon(
+                                    imageVector = Icons.Rounded.CloudUpload,
+                                    contentDescription = ""
+                                )
                                 Text(text = stringResource(R.string.sync))
                             }
                         }
@@ -207,6 +214,7 @@ fun SessionsScreen(
             }
             SessionsList(
                 modifier = Modifier
+                    .padding(horizontal = MenuItemPadding * 2)
                     .fillMaxWidth()
                     .clip(
                         RoundedCornerShape(

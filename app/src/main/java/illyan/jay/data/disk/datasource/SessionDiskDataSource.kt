@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -163,9 +164,11 @@ class SessionDiskDataSource @Inject constructor(
      *
      * @return id of the stopped session.
      */
-    fun stopSession(session: DomainSession): Long {
-        if (session.endDateTime == null) session.endDateTime =
-            Instant.now().atZone(ZoneId.systemDefault())
+    fun stopSession(
+        session: DomainSession,
+        endTime: ZonedDateTime = Instant.now().atZone(ZoneId.systemDefault())
+    ): Long {
+        if (session.endDateTime == null) session.endDateTime = endTime
         return saveSession(session)
     }
 
@@ -176,8 +179,10 @@ class SessionDiskDataSource @Inject constructor(
      * @param sessions setting sessions' endTime to now,
      * then saving the modified values to the database.
      */
-    fun stopSessions(sessions: List<DomainSession>) {
-        val endTime = Instant.now().atZone(ZoneId.systemDefault())
+    fun stopSessions(
+        sessions: List<DomainSession>,
+        endTime: ZonedDateTime = Instant.now().atZone(ZoneId.systemDefault())
+    ) {
         sessions.forEach { if (it.endDateTime == null) it.endDateTime = endTime }
         saveSessions(sessions)
     }

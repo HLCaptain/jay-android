@@ -63,13 +63,20 @@ import illyan.jay.ui.home.flyToLocation
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
+import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.sessions.DefaultScreenOnSheetPadding
 import illyan.jay.util.plus
 import kotlinx.coroutines.launch
 
 private const val paddingRatio = 0.25f
+
+val DefaultScreenOnSheetPadding = PaddingValues(
+    start = MenuItemPadding * 2,
+    end = MenuItemPadding * 2,
+    top = MenuItemPadding * 2,
+    bottom = RoundedCornerRadius
+)
 
 fun calculatePaddingOffset(): PaddingValues {
     val layoutHeight = absoluteBottom.value - absoluteTop.value

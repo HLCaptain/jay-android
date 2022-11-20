@@ -435,6 +435,9 @@ fun HomeScreen(
         )
         // setStatusBarColor() and setNavigationBarColor() also exist
     }
+    LaunchedEffect(Unit) {
+        viewModel.stopDanglingOngoingSessions()
+    }
     val cameraPaddingValues by cameraPadding.collectAsState()
     val locationPermissionState = rememberPermissionState(
         permission = Manifest.permission.ACCESS_FINE_LOCATION
