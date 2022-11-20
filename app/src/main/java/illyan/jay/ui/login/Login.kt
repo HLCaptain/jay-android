@@ -50,7 +50,7 @@ fun LoginDialog(
     isDialogOpen: Boolean = true,
     onDialogClosed: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel(),
-    context: Context = LocalContext.current
+    context: Context = LocalContext.current,
 ) {
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     LaunchedEffect(isUserSignedIn) {
@@ -77,6 +77,7 @@ fun LoginDialog(
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
                         value = email,
+                        enabled = false,
                         onValueChange = {
                             email = it
                         },
@@ -88,6 +89,7 @@ fun LoginDialog(
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
                         value = password,
+                        enabled = false,
                         onValueChange = {
                             password = it
                         },
@@ -98,7 +100,12 @@ fun LoginDialog(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { /* TODO: Login via email/password */ }) {
+                TextButton(
+                    onClick = {
+                        // TODO: Login via email/password
+                    },
+                    enabled = false,
+                ) {
                     Text(text = stringResource(R.string.login))
                 }
             },
