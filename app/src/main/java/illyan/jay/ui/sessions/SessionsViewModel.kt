@@ -129,12 +129,12 @@ class SessionsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun loadLocalSessions() {
-        viewModelScope.launch(Dispatchers.IO) {
-            sessionInteractor.getOwnLocalSessions()?.collectLatest { sessions ->
-                _ownedLocalSessionUUIDs.value = sessions.asReversed().map { it.uuid }
-                _localSessionsLoaded.value = true
-            }
-        }
+        _notOwnedSessionUUIDs.value = emptyList()
+        _ongoingSessionUUIDs.value = emptyList()
+        _ownedLocalSessionUUIDs.value = emptyList()
+        _syncedLocalSessionUUIDs.value = emptyList()
+        _localSessionsLoaded.value = false
+
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
                 _notOwnedSessionUUIDs.value = sessions.map { it.uuid }
@@ -146,20 +146,35 @@ class SessionsViewModel @Inject constructor(
                 _ongoingSessionUUIDs.value = it
             }
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            sessionInteractor.getSyncedSessionsFromDisk().collectLatest { sessions ->
-                _syncedLocalSessionUUIDs.value = sessions.map { it.uuid }
+        if (isUserSignedIn.value) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sessionInteractor.getOwnLocalSessions()?.collectLatest { sessions ->
+                    _ownedLocalSessionUUIDs.value = sessions.asReversed().map { it.uuid }
+                    _localSessionsLoaded.value = true
+                }
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                sessionInteractor.getSyncedSessionsFromDisk().collectLatest { sessions ->
+                    _syncedLocalSessionUUIDs.value = sessions.map { it.uuid }
+                }
             }
         }
     }
 
     fun loadCloudSessions(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            sessionInteractor.loadSyncedSessions((context as Activity))
-            sessionInteractor.syncedSessions.collectLatest {
-                _syncedSessions.value = it ?: emptyList()
-                _syncedSessionsLoaded.value = it != null
+        _syncedSessions.value = emptyList()
+        _syncedSessionsLoaded.value = false
+
+        if (isUserSignedIn.value) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sessionInteractor.loadSyncedSessions((context as Activity))
+                sessionInteractor.syncedSessions.collectLatest {
+                    _syncedSessions.value = it ?: emptyList()
+                    _syncedSessionsLoaded.value = it != null
+                }
             }
+        } else {
+            _syncedSessionsLoaded.value = true
         }
     }
 
