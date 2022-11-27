@@ -49,7 +49,7 @@ class SessionsViewModel @Inject constructor(
     private val authInteractor: AuthInteractor,
     private val settingsInteractor: SettingsInteractor
 ) : ViewModel() {
-    private val sessionStateFlows = mutableMapOf<String, StateFlow<UiSession?>>()
+    private val sessionStateFlows = mutableMapOf<String, MutableStateFlow<UiSession?>>()
 
     private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<String>())
     val ownedLocalSessionUUIDs = _ownedLocalSessionUUIDs.asStateFlow()
@@ -186,6 +186,9 @@ class SessionsViewModel @Inject constructor(
 
     fun ownSession(sessionUUID: String) {
         sessionInteractor.ownSession(sessionUUID)
+        sessionStateFlows[sessionUUID]?.let {
+            it.value = it.value?.copy(isNotOwned = false)
+        }
     }
 
     fun ownAllSessions() {
@@ -202,11 +205,10 @@ class SessionsViewModel @Inject constructor(
 
     fun getSessionStateFlow(sessionUUID: String): StateFlow<UiSession?> {
         if (sessionStateFlows.contains(sessionUUID)) {
-            return sessionStateFlows[sessionUUID]!!
+            return sessionStateFlows[sessionUUID]!!.asStateFlow()
         }
         val sessionMutableStateFlow = MutableStateFlow<UiSession?>(null)
-        val sessionStateFlow = sessionMutableStateFlow.asStateFlow()
-        sessionStateFlows[sessionUUID] = sessionStateFlow
+        sessionStateFlows[sessionUUID] = sessionMutableStateFlow
 
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.getSession(sessionUUID).collectLatest { session ->
@@ -227,6 +229,6 @@ class SessionsViewModel @Inject constructor(
                 }
             }
         }
-        return sessionStateFlow
+        return sessionMutableStateFlow.asStateFlow()
     }
 }
