@@ -315,7 +315,7 @@ fun SessionsList(
                     destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
                 }
             ) {
-                if (session != null && isUserSignedIn) {
+                AnimatedVisibility(visible = session != null && isUserSignedIn) {
                     Button(
                         onClick = { viewModel.ownSession(session!!.uuid) },
                     ) {
@@ -396,13 +396,13 @@ fun SessionCard(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (session?.isLocal == true) {
+                    AnimatedVisibility(visible = session?.isLocal == true) {
                         Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
                     }
-                    if (session?.isSynced == true) {
+                    AnimatedVisibility(visible = session?.isSynced == true) {
                         Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
                     }
-                    if (session?.isNotOwned == true) {
+                    AnimatedVisibility(visible = session?.isNotOwned == true) {
                         Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
                     }
                 }
