@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -70,12 +70,18 @@ import illyan.jay.util.plus
 import illyan.jay.util.textPlaceholder
 import java.math.RoundingMode
 
-val DefaultScreenOnSheetPadding = PaddingValues(
-    top = MenuItemPadding,
+val DefaultScreenOnSheetPaddingHorizontal = PaddingValues(
     start = MenuItemPadding * 2,
     end = MenuItemPadding * 2,
-    bottom = RoundedCornerRadius + MenuItemPadding * 2
 )
+
+val DefaultScreenOnSheetPaddingVertical = PaddingValues(
+    top = MenuItemPadding,
+    bottom = RoundedCornerRadius + MenuItemPadding * 2,
+)
+
+val DefaultScreenOnSheetPadding =
+    DefaultScreenOnSheetPaddingHorizontal + DefaultScreenOnSheetPaddingVertical
 
 const val maxZoom = 18.0
 const val largeZoom = 16.0
@@ -154,15 +160,11 @@ fun NavigationScreen(
             )
         }
     }
+    val verticalPadding = DefaultScreenOnSheetPaddingVertical
     Column(
         modifier = Modifier
+            .padding(verticalPadding)
             .fillMaxWidth()
-            .padding(
-                DefaultScreenOnSheetPadding + PaddingValues(
-                    start = 2.dp,
-                    end = 2.dp,
-                )
-            )
     ) {
         PlaceInfoScreen(
             modifier = Modifier.fillMaxWidth(),
@@ -180,17 +182,25 @@ fun PlaceInfoScreen(
     val place by viewModel.place.collectAsState()
     val shouldShowAddress by viewModel.shouldShowAddress.collectAsState()
     val isLoading = placeInfo == null
+    val horizontalPadding = DefaultScreenOnSheetPaddingHorizontal + PaddingValues(
+        start = 2.dp,
+        end = 2.dp,
+    )
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            modifier = Modifier.largeTextPlaceholder(place == null),
+            modifier = Modifier
+                .padding(horizontalPadding)
+                .largeTextPlaceholder(place == null),
             text = place?.name ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.headlineMedium
         )
         AnimatedVisibility(
-            modifier = Modifier.textPlaceholder(isLoading),
+            modifier = Modifier
+                .padding(horizontalPadding)
+                .textPlaceholder(isLoading),
             visible = shouldShowAddress && placeInfo?.address != null
         ) {
             Text(
@@ -200,7 +210,8 @@ fun PlaceInfoScreen(
         AnimatedVisibility(visible = !placeInfo?.categories.isNullOrEmpty()) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = horizontalPadding
             ) {
                 items(placeInfo?.categories ?: emptyList()) {
                     Box(
@@ -223,7 +234,9 @@ fun PlaceInfoScreen(
             }
         }
         Text(
-            modifier = Modifier.textPlaceholder(isLoading),
+            modifier = Modifier
+                .padding(horizontalPadding)
+                .textPlaceholder(isLoading),
             text = placeInfo?.coordinate?.run {
                 latitude()
                     .toBigDecimal()

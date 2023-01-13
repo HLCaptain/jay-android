@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -44,12 +44,12 @@ data class DomainLocation(
     val zonedDateTime: ZonedDateTime,
     val latitude: Float,
     val longitude: Float,
-    var speed: Float = Float.NaN,
+    var speed: Float = Float.MIN_VALUE,
     var accuracy: Byte = Byte.MIN_VALUE,
     var bearing: Short = Short.MIN_VALUE, // TODO: may change Short to Byte?
     var bearingAccuracy: Short = Short.MIN_VALUE, // in degrees
     var altitude: Short = Short.MIN_VALUE,
-    var speedAccuracy: Float = Float.NaN, // in meters per second
+    var speedAccuracy: Float = Float.MIN_VALUE, // in meters per second
     var verticalAccuracy: Short = Short.MIN_VALUE, // in meters
 ) {
     val latLng = LatLng(latitude.toDouble(), longitude.toDouble())
