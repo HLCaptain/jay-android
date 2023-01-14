@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -33,6 +33,8 @@ import illyan.jay.data.network.toPaths
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -117,28 +119,44 @@ class SessionNetworkDataSource @Inject constructor(
         }
     }
 
-    fun deleteUserData() {
+    suspend fun deleteUserData() {
         if (!authInteractor.isUserSignedIn) return
-        firestore
+        val isDeleted = MutableStateFlow(false)
+        var pathSnapshotListener: ListenerRegistration? = null
+        val userSnapshotListener = firestore
             .collection(UsersCollectionPath)
             .document(authInteractor.userUUID!!)
-            .get()
-            .addOnSuccessListener { userSnapshot ->
-                val domainSessionIds = (userSnapshot["sessions"] as List<Map<String, Any>>?)
-                    ?.map { it["uuid"] as String? } ?: emptyList()
-                if (domainSessionIds.firstOrNull() != null) { // at least one not null element
-                    firestore
-                        .collection(PathsCollectionPath)
-                        .whereIn("sessionUUID", domainSessionIds)
-                        .get()
-                        .addOnSuccessListener { pathSnapshot ->
-                            pathSnapshot.documents.forEach {
-                                it.reference.delete()
+            .addSnapshotListener { userSnapshot, userError ->
+                if (userError != null) {
+                    Timber.d("Error while deleting user data: ${userError.message}")
+                } else {
+                    val domainSessionIds = (userSnapshot!!["sessions"] as List<Map<String, Any>>?)
+                        ?.map { it["uuid"] as String? } ?: emptyList()
+                    if (domainSessionIds.firstOrNull() != null) { // at least one not null element
+                        pathSnapshotListener = firestore
+                            .collection(PathsCollectionPath)
+                            .whereIn("sessionUUID", domainSessionIds)
+                            .addSnapshotListener { pathSnapshot, pathError ->
+                                if (pathError != null) {
+                                    Timber.d("Error while deleting user data: ${pathError.message}")
+                                } else {
+                                    Timber.d("Delete data for user ${authInteractor.userUUID}")
+                                    pathSnapshot!!.documents.forEach {
+                                        it.reference.delete()
+                                    }
+                                    userSnapshot.reference.delete()
+                                    isDeleted.value = true
+                                }
                             }
-                            userSnapshot.reference.delete()
-                        }
+                    }
                 }
             }
+        isDeleted.collectLatest {
+            if (it) {
+                userSnapshotListener.remove()
+                pathSnapshotListener?.remove()
+            }
+        }
     }
 
     companion object {

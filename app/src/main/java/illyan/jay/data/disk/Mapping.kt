@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -31,6 +31,7 @@ import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sensorTimestampToAbsoluteTime
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.UUID
 
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
@@ -46,7 +47,6 @@ fun RoomSession.toDomainModel() = DomainSession(
     distance = distance,
     ownerUserUUID = ownerUserUUID,
     clientUUID = clientUUID,
-    isSynced = isSynced,
 )
 
 fun DomainSession.toRoomModel() = RoomSession(
@@ -62,12 +62,11 @@ fun DomainSession.toRoomModel() = RoomSession(
     distance = distance,
     ownerUserUUID = ownerUserUUID,
     clientUUID = clientUUID,
-    isSynced = isSynced,
 )
 
 // Location
 fun RoomLocation.toDomainModel() = DomainLocation(
-    id = id,
+    uuid = uuid,
     latitude = latitude,
     longitude = longitude,
     speed = speed,
@@ -99,6 +98,7 @@ fun Location.toDomainModel(
     sessionUUID: String
 ): DomainLocation {
     val domainLocation = DomainLocation(
+        uuid = UUID.randomUUID().toString(),
         latitude = latitude.toFloat(),
         longitude = longitude.toFloat(),
         zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
@@ -120,7 +120,7 @@ fun Location.toDomainModel(
 
 // Rotation
 fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
-    id = id,
+    uuid = uuid,
     zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     sessionUUID = sessionUUID,
     accuracy = accuracy,
@@ -142,6 +142,7 @@ fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
 
 // Sensors
 fun SensorEvent.toDomainModel(sessionUUID: String) = DomainSensorEvent(
+    uuid = UUID.randomUUID().toString(),
     sessionUUID = sessionUUID,
     zonedDateTime = Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp)).atZone(ZoneOffset.UTC),
     accuracy = accuracy.toByte(),

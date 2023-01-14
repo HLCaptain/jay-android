@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -59,8 +59,8 @@ interface SensorEventDao {
     @Query("DELETE FROM sensor_events WHERE sessionUUID = :sessionUUID")
     fun deleteSensorEventsForSession(sessionUUID: String)
 
-    @Query("SELECT * FROM sensor_events WHERE id = :id")
-    fun getSensorEvent(id: Long): Flow<RoomSensorEvent?>
+    @Query("SELECT * FROM sensor_events WHERE uuid = :uuid")
+    fun getSensorEvent(uuid: String): Flow<RoomSensorEvent?>
 
     @Query("SELECT * FROM sensor_events WHERE sessionUUID = :sessionUUID")
     fun getSensorEvents(sessionUUID: String): Flow<List<RoomSensorEvent>>

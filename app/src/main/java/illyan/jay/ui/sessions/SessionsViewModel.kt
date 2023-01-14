@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -19,7 +19,6 @@
 package illyan.jay.ui.sessions
 
 import android.app.Activity
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +29,7 @@ import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
+import illyan.jay.util.sphericalPathLength
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -47,7 +48,7 @@ class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
     private val authInteractor: AuthInteractor,
-    private val settingsInteractor: SettingsInteractor
+    private val settingsInteractor: SettingsInteractor,
 ) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<String, MutableStateFlow<UiSession?>>()
 
@@ -57,7 +58,7 @@ class SessionsViewModel @Inject constructor(
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
     val signedInUser = authInteractor.currentUserStateFlow
 
-    private val _syncedSessionsLoaded = MutableStateFlow(false)
+    private val _syncedSessionsLoaded = MutableStateFlow(true)
     val syncedSessionsLoaded = _syncedSessionsLoaded.asStateFlow()
     private val _localSessionsLoaded = MutableStateFlow(false)
     val localSessionsLoaded = _localSessionsLoaded.asStateFlow()
@@ -69,8 +70,30 @@ class SessionsViewModel @Inject constructor(
     val syncedLocalSessionUUIDs = _syncedLocalSessionUUIDs.asStateFlow()
 
     private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())
-    val syncedSessions = combine(_syncedSessions, clientUUID, syncedLocalSessionUUIDs) { synced, clientUUID, locals -> synced.map { it.toUiModel(currentClientUUID = clientUUID, isLocal = locals.contains(it.uuid)) } }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, _syncedSessions.value.map { it.toUiModel(currentClientUUID = clientUUID.value, isLocal = false) })
+    val syncedSessions = combine(
+        _syncedSessions,
+        clientUUID,
+        ownedLocalSessionUUIDs
+    ) { synced, clientUUID, locals ->
+        sessionStateFlows.keys.forEach { uuid ->
+            val sessionFlow = sessionStateFlows[uuid]!!
+            val isSynced = synced.any { it.uuid == uuid }
+            val isLocal = locals.any { it == uuid }
+            if (sessionFlow.value?.isSynced != isSynced) {
+                sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
+            }
+            if (sessionFlow.value?.isLocal != isLocal) {
+                sessionFlow.value = sessionFlow.value?.copy(isLocal = isLocal)
+            }
+        }
+        synced.map {
+            it.toUiModel(
+                currentClientUUID = clientUUID,
+                isLocal = locals.contains(it.uuid),
+                isSynced = true
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _notOwnedSessionUUIDs = MutableStateFlow(listOf<String>())
 
@@ -99,7 +122,7 @@ class SessionsViewModel @Inject constructor(
         notOwnedSessionUUIDs,
         ongoingSessionUUIDs,
         isLoading
-    ) { synced, owned, notOwned, ongoing, loading  ->
+    ) { synced, owned, notOwned, ongoing, loading ->
         if (loading) {
             false
         } else {
@@ -120,12 +143,26 @@ class SessionsViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    val allSessionUUIDs = combine(
+        syncedSessions,
+        ownedLocalSessionUUIDs,
+        notOwnedSessionUUIDs,
+    ) { synced, ownedLocal, notOwnedLocal ->
+        val sessions = mutableListOf<String>()
+        sessions.addAll(synced.map { it.uuid })
+        sessions.addAll(ownedLocal)
+        sessions.addAll(notOwnedLocal)
+        sessions.distinct()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     val canSyncSessions = combine(
+        syncedSessions,
         ownedLocalSessionUUIDs,
         ongoingSessionUUIDs
-    ) { ownedLocal, ongoingLocal ->
-        // There is at least 1 session which is stopped and we own it, so it may be synced
-        ownedLocal.size > ongoingLocal.size
+    ) { synced, owned, ongoing ->
+        // There is at least one session which can be synced (not ongoing).
+        // The number of local sessions in the cloud is lower than local not ongoing sessions.
+        synced.map { it.uuid }.intersect(owned.toSet()).size < owned.size - ongoing.size
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun loadLocalSessions() {
@@ -148,26 +185,21 @@ class SessionsViewModel @Inject constructor(
         }
         if (isUserSignedIn.value) {
             viewModelScope.launch(Dispatchers.IO) {
-                sessionInteractor.getOwnLocalSessions()?.collectLatest { sessions ->
+                sessionInteractor.getOwnSessions()?.collectLatest { sessions ->
                     _ownedLocalSessionUUIDs.value = sessions.asReversed().map { it.uuid }
                     _localSessionsLoaded.value = true
-                }
-            }
-            viewModelScope.launch(Dispatchers.IO) {
-                sessionInteractor.getSyncedSessionsFromDisk().collectLatest { sessions ->
-                    _syncedLocalSessionUUIDs.value = sessions.map { it.uuid }
                 }
             }
         }
     }
 
-    fun loadCloudSessions(context: Context) {
+    fun loadCloudSessions(activity: Activity) {
         _syncedSessions.value = emptyList()
-        _syncedSessionsLoaded.value = false
+        //_syncedSessionsLoaded.value = false
 
         if (isUserSignedIn.value) {
             viewModelScope.launch(Dispatchers.IO) {
-                sessionInteractor.loadSyncedSessions((context as Activity))
+                sessionInteractor.loadSyncedSessions(activity)
                 sessionInteractor.syncedSessions.collectLatest {
                     _syncedSessions.value = it ?: emptyList()
                     _syncedSessionsLoaded.value = it != null
@@ -196,11 +228,15 @@ class SessionsViewModel @Inject constructor(
     }
 
     fun syncSessions() {
-        sessionInteractor.uploadNotSyncedSessions()
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.uploadNotSyncedSessions()
+        }
     }
 
     fun deleteSessionsLocally() {
-        sessionInteractor.deleteStoppedSessions()
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.deleteStoppedSessions()
+        }
     }
 
     fun getSessionStateFlow(sessionUUID: String): StateFlow<UiSession?> {
@@ -212,7 +248,7 @@ class SessionsViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.getSession(sessionUUID).collectLatest { session ->
-                session?.let {
+                if (session != null) {
                     if (session.startLocation == null ||
                         session.startLocationName == null
                     ) {
@@ -223,9 +259,17 @@ class SessionsViewModel @Inject constructor(
                     ) {
                         sessionInteractor.refreshSessionEndLocation(session)
                     }
-                    locationInteractor.getLocations(sessionUUID).collectLatest {
-                        sessionMutableStateFlow.value = session.toUiModel(it, clientUUID.value, true)
+                    locationInteractor.getLocations(sessionUUID).first { locations ->
+                        sessionMutableStateFlow.value = session.toUiModel(
+                            totalDistance = locations.sphericalPathLength(),
+                            currentClientUUID = clientUUID.value,
+                            isLocal = locations.isNotEmpty(),
+                            isSynced = syncedSessions.value.any { it.uuid == sessionUUID }
+                        )
+                        true
                     }
+                } else if (syncedSessions.value.any { it.uuid == sessionUUID }) {
+                    sessionMutableStateFlow.value = syncedSessions.value.first { it.uuid == sessionUUID }
                 }
             }
         }

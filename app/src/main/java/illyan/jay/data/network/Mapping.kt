@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -48,7 +48,7 @@ fun DomainSession.toHashMap() = hashMapOf(
 fun List<DomainLocation>.toPaths(
     sessionUUID: String
 ): List<PathDocument> {
-
+    val uuids = mutableListOf<String>()
     val accuracyChangeTimestamps = mutableListOf<Timestamp>()
     val accuracyChanges = mutableListOf<Byte>()
     val altitudes = mutableListOf<Short>()
@@ -68,6 +68,7 @@ fun List<DomainLocation>.toPaths(
     sortedLocations.forEach {
         val timestamp = it.zonedDateTime.toTimestamp()
 
+        uuids.add(it.uuid)
         altitudes.add(it.altitude)
         bearings.add(it.bearing)
         coords.add(it.latLng.toGeoPoint())
@@ -102,6 +103,7 @@ fun List<DomainLocation>.toPaths(
     return listOf(
         PathDocument(
             uuid = UUID.randomUUID().toString(),
+            uuids = uuids.toList(),
             accuracyChangeTimestamps = accuracyChangeTimestamps.toList(),
             accuracyChanges = accuracyChanges.toList(),
             altitudes = altitudes.toList(),
@@ -122,6 +124,7 @@ fun List<DomainLocation>.toPaths(
 
 fun PathDocument.toHashMap() = hashMapOf(
     "uuid" to uuid,
+    "uuids" to uuids,
     "accuracyChangeTimestamps" to accuracyChangeTimestamps,
     "accuracyChanges" to accuracyChanges.map { it.toInt() },
     "altitudes" to altitudes.map { it.toInt() },
@@ -158,7 +161,6 @@ fun Map<String, Any?>.toDomainSession(
         distance = (this["distance"] as Double?)?.toFloat(),
         clientUUID = (this["clientUUID"] as String?),
         ownerUserUUID = userUUID,
-        isSynced = true
     )
 }
 
@@ -166,6 +168,7 @@ fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
 
     forEach { document ->
+        val uuid = document.getString("uuid") ?: ""
         val accuracyChangeTimestamps = document.get("accuracyChangeTimestamps") as List<Timestamp>
         val accuracyChanges = document.get("accuracyChanges") as List<Int>
         val altitudes = document.get("altitudes") as List<Int>
@@ -179,7 +182,7 @@ fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
         val timestamps = document.get("timestamps") as List<Timestamp>
         val verticalAccuracyChangeTimestamps = document.get("verticalAccuracyChangeTimestamps") as List<Timestamp>
         val verticalAccuracyChanges = document.get("verticalAccuracyChanges") as List<Int>
-        val sessionUUID = document.getString("sessionId")
+        val sessionUUID = document.getString("sessionUUID") ?: ""
 
         timestamps.forEachIndexed { index, timestamp ->
             val indexOfLastAccuracyChange = accuracyChangeTimestamps.indexOfLast {
@@ -197,7 +200,8 @@ fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
 
             domainLocations.add(
                 DomainLocation( // FIXME: save speed accuracy next time?
-                    sessionUUID = sessionUUID ?: UUID.randomUUID().toString(),
+                    uuid = uuid,
+                    sessionUUID = sessionUUID,
                     zonedDateTime = timestamp.toZonedDateTime(),
                     latitude = coords[index].latitude.toFloat(),
                     longitude = coords[index].longitude.toFloat(),

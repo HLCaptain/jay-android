@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -20,6 +20,7 @@ package illyan.jay.domain.interactor
 
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
 import illyan.jay.data.network.datasource.LocationNetworkDataSource
+import illyan.jay.data.network.datasource.SessionNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +28,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,6 +46,8 @@ class LocationInteractor @Inject constructor(
     private val locationDiskDataSource: LocationDiskDataSource,
     private val locationNetworkDataSource: LocationNetworkDataSource,
     private val authInteractor: AuthInteractor,
+    private val sessionInteractor: SessionInteractor,
+    private val sessionNetworkDataSource: SessionNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
     /**
@@ -74,16 +79,60 @@ class LocationInteractor @Inject constructor(
 
     fun getLocations(sessionUUIDs: List<String>) = locationDiskDataSource.getLocations(sessionUUIDs)
 
-    fun getSyncedPath(sessionUUID: String) = getSyncedPaths(listOf(sessionUUID))
-
-    fun getSyncedPaths(sessionUUIDs: List<String>): StateFlow<List<DomainLocation>?> {
+    suspend fun getSyncedPath(sessionUUID: String): StateFlow<List<DomainLocation>?> {
         val syncedPaths = MutableStateFlow<List<DomainLocation>?>(null)
-        if (authInteractor.isUserSignedIn) {
-            locationNetworkDataSource.getLocations(sessionUUIDs) { remoteLocations ->
-                syncedPaths.value = remoteLocations
+        Timber.d("Trying to load path for session with ID: $sessionUUID")
+        sessionInteractor.getSession(sessionUUID).first { session ->
+            if (session != null) {
+                Timber.d("Found session on disk")
+                coroutineScopeIO.launch {
+                    getLocations(sessionUUID).first { locations ->
+                        if (locations.isEmpty()) {
+                            Timber.d("Not found path for session on disk, checking cloud")
+                            if (!authInteractor.isUserSignedIn) {
+                                Timber.d("Not authenticated to access cloud, return an empty list")
+                                syncedPaths.value = emptyList()
+                            } else {
+                                locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
+                                    coroutineScopeIO.launch {
+                                        Timber.d("Found location for session, caching it on disk")
+                                        locationDiskDataSource.saveLocations(remoteLocations)
+                                    }
+                                    syncedPaths.value = remoteLocations
+                                }
+                            }
+                        } else {
+                            Timber.d("Found path on disk")
+                            syncedPaths.value = locations
+                        }
+                        true
+                    }
+                }
+            } else {
+                Timber.d("Not found session on disk, checking cloud")
+                if (!authInteractor.isUserSignedIn) {
+                    Timber.d("Not authenticated to access cloud, return an empty list")
+                    syncedPaths.value = emptyList()
+                } else {
+                    sessionNetworkDataSource.getSessions { sessions ->
+                        if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
+                            Timber.d("Found session in cloud, caching it on disk")
+                            coroutineScopeIO.launch {
+                                sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
+                                locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
+                                    coroutineScopeIO.launch {
+                                        Timber.d("Found location for session, caching it on disk")
+                                        locationDiskDataSource.saveLocations(remoteLocations)
+                                    }
+                                    Timber.d("Found path in cloud")
+                                    syncedPaths.value = remoteLocations
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        } else {
-            syncedPaths.value = emptyList()
+            true
         }
         return syncedPaths.asStateFlow()
     }

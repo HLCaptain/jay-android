@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -26,11 +26,12 @@ import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,31 +48,24 @@ class SessionViewModel @Inject constructor(
     val isLoadingSessionFromNetwork = MutableStateFlow(false)
 
     fun load(sessionUUID: String) {
-        viewModelScope.launch {
-            sessionInteractor.getSession(sessionUUID).collectLatest { session ->
-                if (session != null) {
-                    _session.value = session.toUiModel(locations = null)
-                    locationInteractor.getLocations(session.uuid).collectLatest { localPath ->
-                        val sortedLocalPaths = localPath.sortedBy { it.zonedDateTime.toInstant() }
-                        _path.value = sortedLocalPaths.map { it.toUiModel() }
-                        _session.value = session.toUiModel(sortedLocalPaths)
-                    }
-                } else {
-                    isLoadingSessionFromNetwork.value = true
-                    locationInteractor.getSyncedPath(sessionUUID).first { remotePath ->
-                        if (remotePath != null) {
-                            val sortedRemotePaths = remotePath.sortedBy { it.zonedDateTime.toInstant() }
-                            _path.value = sortedRemotePaths.map { it.toUiModel() }
-                            sessionInteractor.syncedSessions.collectLatest { sessions ->
-                                sessions?.firstOrNull{ it.uuid.contentEquals(sessionUUID) }?.let { session ->
-                                    _session.value = session.toUiModel(sortedRemotePaths)
-                                }
+        Timber.d("Trying to load session with ID: $sessionUUID")
+        viewModelScope.launch(Dispatchers.IO) {
+            locationInteractor.getSyncedPath(sessionUUID).collectLatest { locations ->
+                Timber.d("Loaded path with ${locations?.size} locations for session with ID: $sessionUUID")
+                if (!locations.isNullOrEmpty()) {
+                    val sortedPath = locations.sortedBy { it.zonedDateTime.toInstant() }
+                    _path.value = sortedPath.map { it.toUiModel() }
+                    viewModelScope.launch(Dispatchers.IO) {
+                        sessionInteractor.getSession(sessionUUID).collectLatest { session ->
+                            Timber.d("Loaded session with ID: $sessionUUID")
+                            if (session != null) {
+                                _session.value = session.toUiModel(locations = sortedPath)
                             }
                         }
-                        remotePath != null
                     }
                 }
             }
+
         }
     }
 }

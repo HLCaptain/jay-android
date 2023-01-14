@@ -39,7 +39,7 @@ import java.time.ZonedDateTime
  * @constructor Create empty Domain location
  */
 data class DomainLocation(
-    val id: Long = -1,
+    val uuid: String,
     var sessionUUID: String,
     val zonedDateTime: ZonedDateTime,
     val latitude: Float,

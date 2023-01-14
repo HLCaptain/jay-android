@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -20,10 +20,10 @@ package illyan.jay.data.network.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
-import java.util.UUID
 
 data class PathDocument(
-    var uuid: String = UUID.randomUUID().toString(),
+    var uuid: String,
+    var uuids: List<String>,
     val accuracyChangeTimestamps: List<Timestamp>,
     val accuracyChanges: List<Byte>,
     val altitudes: List<Short>,

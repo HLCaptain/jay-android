@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -87,44 +87,20 @@ interface SessionDao {
     fun getStoppedSessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE endDateTime IS NULL AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
+    @Query("SELECT * FROM session WHERE endDateTime IS NULL AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL) ORDER BY startDateTime DESC")
     fun getOngoingSessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT uuid FROM session WHERE endDateTime IS NULL AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
+    @Query("SELECT uuid FROM session WHERE endDateTime IS NULL AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL) ORDER BY startDateTime DESC")
     fun getOngoingSessionUUIDs(ownerUserUUID: String? = null): Flow<List<String>>
 
     @Transaction
-    @Query("SELECT uuid FROM session WHERE NOT isSynced AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
-    fun getLocalOnlySessionUUIDs(ownerUserUUID: String? = null): Flow<List<String>>
-
-    @Transaction
-    @Query("SELECT uuid FROM session WHERE isSynced AND ownerUserUUID IS :ownerUserUUID")
-    fun getSyncedSessionUUIDs(ownerUserUUID: String? = null): Flow<List<String>>
-
-    @Transaction
-    @Query("SELECT * FROM session WHERE NOT isSynced AND (ownerUserUUID IS :ownerUserUUID OR ownerUserUUID IS NULL)")
-    fun getLocalOnlySessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
-
-    @Transaction
-    @Query("SELECT * FROM session WHERE isSynced AND ownerUserUUID IS :ownerUserUUID")
-    fun getSyncedSessions(ownerUserUUID: String? = null): Flow<List<RoomSession>>
-
-    @Transaction
-    @Query("SELECT * FROM session WHERE ownerUserUUID IS NULL")
+    @Query("SELECT * FROM session WHERE ownerUserUUID IS NULL ORDER BY startDateTime DESC")
     fun getAllNotOwnedSessions(): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE ownerUserUUID IS :ownerUserUUID")
+    @Query("SELECT * FROM session WHERE ownerUserUUID IS :ownerUserUUID ORDER BY startDateTime DESC")
     fun getSessionsByOwner(ownerUserUUID: String? = null): Flow<List<RoomSession>>
-
-    @Transaction
-    @Query("SELECT * FROM session WHERE ownerUserUUID IS :ownerUserUUID AND NOT isSynced")
-    fun getLocalSessionsByOwner(ownerUserUUID: String? = null): Flow<List<RoomSession>>
-
-    @Transaction
-    @Query("UPDATE session SET uuid = :newUUID WHERE uuid IS :currentUUID AND ownerUserUUID IS :ownerUserUUID")
-    fun refreshSessionUUID(currentUUID: String, newUUID: String, ownerUserUUID: String): Int
 
     @Transaction
     @Query("UPDATE session SET ownerUserUUID = :ownerUserUUID WHERE ownerUserUUID IS NULL")
@@ -133,10 +109,6 @@ interface SessionDao {
     @Transaction
     @Query("UPDATE session SET ownerUserUUID = :ownerUserUUID WHERE ownerUserUUID IS NULL AND uuid = :uuid")
     fun ownNotOwnedSession(uuid: String, ownerUserUUID: String): Int
-
-    @Transaction
-    @Query("UPDATE session SET isSynced = :isSynced WHERE uuid IN(:uuids)")
-    fun updateSyncOnSessions(uuids: List<String>, isSynced: Boolean)
 
     @Transaction
     @Query("UPDATE session SET ownerUserUUID = :ownerUserUUID WHERE uuid IN(:uuids)")

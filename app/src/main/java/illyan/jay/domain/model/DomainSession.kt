@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -43,8 +43,7 @@ data class DomainSession(
     var endLocationName: String? = null,
     var distance: Float? = null,
     var ownerUserUUID: String? = null,
-    var clientUUID: String? = null,
-    val isSynced: Boolean = false
+    var clientUUID: String? = null
 ) {
     val isOwned = ownerUserUUID != null
 

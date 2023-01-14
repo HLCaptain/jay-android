@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -41,5 +41,4 @@ data class RoomSession(
     val distance: Float? = null,
     val ownerUserUUID: String? = null,
     val clientUUID: String? = null,
-    val isSynced: Boolean = false
 )

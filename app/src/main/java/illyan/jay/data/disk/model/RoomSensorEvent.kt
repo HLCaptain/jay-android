@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -22,6 +22,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(
     tableName = "sensor_events",
@@ -35,8 +36,8 @@ import androidx.room.PrimaryKey
     indices = [Index(value = ["sessionUUID"]), Index(value = ["time"])]
 )
 data class RoomSensorEvent(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey
+    val uuid: String = UUID.randomUUID().toString(),
     val sessionUUID: String,
     val time: Long, // in millis
     val accuracy: Byte, // SensorManager.SENSOR_STATUS_ACCURACY_HIGH

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -34,7 +34,7 @@ import java.time.ZonedDateTime
  * @constructor Create empty Domain acceleration
  */
 data class DomainSensorEvent(
-    val id: Long = -1,
+    val uuid: String,
     val sessionUUID: String,
     val zonedDateTime: ZonedDateTime,
     val accuracy: Byte, // enum

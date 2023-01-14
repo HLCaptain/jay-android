@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -50,27 +50,12 @@ class SessionDiskDataSource @Inject constructor(
     fun getSessions(ownerUserUUID: String?) =
         sessionDao.getSessions(ownerUserUUID).map { it.map(RoomSession::toDomainModel) }
 
-    fun getLocalOnlySessions(ownerUserUUID: String?) =
-        sessionDao.getLocalOnlySessions(ownerUserUUID)
-            .map { it.map(RoomSession::toDomainModel) }
-
-    fun getSyncedSessions(ownerUserUUID: String) = sessionDao.getSyncedSessions(ownerUserUUID)
-        .map { it.map(RoomSession::toDomainModel) }
-
-    fun getSessionIds(ownerUserUUID: String?) = sessionDao.getSessionUUIDs(ownerUserUUID)
-
-    fun getLocalOnlySessionUUIDs(ownerUserUUID: String?) =
-        sessionDao.getLocalOnlySessionUUIDs(ownerUserUUID)
-
-    fun getSyncedSessionUUIDs(ownerUserUUID: String) = sessionDao.getSyncedSessionUUIDs(ownerUserUUID)
+    fun getSessionUUIDs(ownerUserUUID: String?) = sessionDao.getSessionUUIDs(ownerUserUUID)
 
     fun getAllNotOwnedSessions() = sessionDao.getAllNotOwnedSessions()
         .map { it.map(RoomSession::toDomainModel) }
 
     fun getSessionsByOwner(ownerUserUUID: String?) = sessionDao.getSessionsByOwner(ownerUserUUID)
-        .map { it.map(RoomSession::toDomainModel) }
-
-    fun getLocalSessionsByOwner(ownerUserUUID: String) = sessionDao.getLocalSessionsByOwner(ownerUserUUID)
         .map { it.map(RoomSession::toDomainModel) }
 
     fun ownAllNotOwnedSessions(ownerUserUUID: String) =
@@ -196,13 +181,4 @@ class SessionDiskDataSource @Inject constructor(
     fun deleteNotOwnedSessions() = sessionDao.deleteNotOwnedSessions()
 
     fun deleteStoppedSessionsByOwner(ownerUserUUID: String?) = sessionDao.deleteStoppedSessionsByOwner(ownerUserUUID)
-
-    fun refreshSessionUUIDs(sessions: List<DomainSession>, ownerUserUUID: String) =
-        sessions.forEach { refreshSessionUUID(it, ownerUserUUID) }
-
-    fun refreshSessionUUID(session: DomainSession, ownerUserUUID: String) =
-        sessionDao.refreshSessionUUID(session.uuid, session.uuid, ownerUserUUID)
-
-    fun updateSyncOnSessions(sessionUUIDs: List<String>, isSynced: Boolean) =
-        sessionDao.updateSyncOnSessions(sessionUUIDs, isSynced)
 }

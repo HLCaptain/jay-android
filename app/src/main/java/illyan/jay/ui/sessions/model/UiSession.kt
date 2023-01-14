@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -46,12 +46,14 @@ fun DomainSession.toUiModel(
     currentClientUUID: String,
     isLocal: Boolean = clientUUID == currentClientUUID,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
+    isSynced: Boolean = false,
 ): UiSession {
     return toUiModel(
         locations.sphericalPathLength(),
         currentClientUUID,
         isLocal,
-        currentTime
+        currentTime,
+        isSynced
     )
 }
 
@@ -60,6 +62,7 @@ fun DomainSession.toUiModel(
     currentClientUUID: String,
     isLocal: Boolean = clientUUID == currentClientUUID,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
+    isSynced: Boolean = false,
 ): UiSession {
     return UiSession(
         uuid = uuid,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.sessions
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
@@ -109,7 +110,7 @@ fun SessionsScreen(
             canDeleteSessions
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
-        viewModel.loadCloudSessions(context)
+        viewModel.loadCloudSessions(context as Activity)
     }
     ConstraintLayout(
         modifier = Modifier.padding(
@@ -235,13 +236,11 @@ fun SessionsList(
     viewModel: SessionsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator,
 ) {
-    val ownedLocalSessionUUIDs by viewModel.ownedLocalSessionUUIDs.collectAsState()
-    val remoteSessions by viewModel.syncedSessions.collectAsState()
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val noSessionsToShow by viewModel.noSessionsToShow.collectAsState()
     val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsState()
     val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsState()
-    val notOwnedSessionUUIDs by viewModel.notOwnedSessionUUIDs.collectAsState()
+    val allSessionUUIDs by viewModel.allSessionUUIDs.collectAsState()
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
@@ -276,15 +275,6 @@ fun SessionsList(
                 }
             }
         }
-        items(remoteSessions) {
-            SessionCard(
-                modifier = Modifier.fillMaxWidth(),
-                session = it,
-                onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
-                }
-            )
-        }
         if (!localSessionsLoaded) {
             item {
                 Column(
@@ -303,7 +293,7 @@ fun SessionsList(
                 }
             }
         }
-        items(notOwnedSessionUUIDs) {
+        items(allSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
             val isPlaceholderVisible = session == null
             SessionCard(
@@ -312,10 +302,16 @@ fun SessionsList(
                     .cardPlaceholder(isPlaceholderVisible),
                 session = session,
                 onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
+                    destinationsNavigator.navigate(
+                        SessionScreenDestination(
+                            sessionUUID = sessionUUID
+                        )
+                    )
                 }
             ) {
-                AnimatedVisibility(visible = session != null && isUserSignedIn) {
+                AnimatedVisibility(
+                    visible = session != null && isUserSignedIn && session!!.isNotOwned
+                ) {
                     Button(
                         onClick = { viewModel.ownSession(session!!.uuid) },
                     ) {
@@ -329,19 +325,6 @@ fun SessionsList(
                     }
                 }
             }
-        }
-        items(ownedLocalSessionUUIDs) {
-            val session by viewModel.getSessionStateFlow(it).collectAsState()
-            val isPlaceholderVisible = session == null
-            SessionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .cardPlaceholder(isPlaceholderVisible),
-                session = session,
-                onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
-                }
-            )
         }
     }
 }
