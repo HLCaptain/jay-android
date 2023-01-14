@@ -442,7 +442,7 @@ fun HomeScreen(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     LaunchedEffect(density) { _density.value = density }
     LaunchedEffect(screenHeightDp) { _screenHeight.value = screenHeightDp }
-    // FIXME: make insets to accomodate for status bar's padding
+    // FIXME: make insets to accommodate for status bar's padding
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()

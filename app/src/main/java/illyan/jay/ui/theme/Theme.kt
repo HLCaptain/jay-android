@@ -58,7 +58,7 @@ fun JayTheme(
     content: @Composable () -> Unit
 ) {
     val systemUiController = rememberSystemUiController()
-    val useDarkIcons = isSystemInDarkTheme()
+    val useDarkIcons = !isSystemInDarkTheme()
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current

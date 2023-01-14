@@ -260,8 +260,13 @@ class SessionsViewModel @Inject constructor(
                         sessionInteractor.refreshSessionEndLocation(session)
                     }
                     locationInteractor.getLocations(sessionUUID).first { locations ->
+                        val totalDistance = if (locations.isNotEmpty()) {
+                            locations.sphericalPathLength()
+                        } else {
+                            session.distance?.toDouble() ?: 0.0
+                        }
                         sessionMutableStateFlow.value = session.toUiModel(
-                            totalDistance = locations.sphericalPathLength(),
+                            totalDistance = totalDistance,
                             currentClientUUID = clientUUID.value,
                             isLocal = locations.isNotEmpty(),
                             isSynced = syncedSessions.value.any { it.uuid == sessionUUID }
