@@ -38,6 +38,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.UUID
@@ -101,7 +103,23 @@ class SessionInteractor @Inject constructor(
      * @return a flow of the session if it exists in the database,
      * otherwise a flow with null in it.
      */
-    fun getSession(uuid: String) = sessionDiskDataSource.getSession(uuid, authInteractor.userUUID)
+    fun getSession(uuid: String): Flow<DomainSession?> {
+        return sessionDiskDataSource.getSession(uuid, authInteractor.userUUID).map { session ->
+            session?.let {
+                if (session.startLocation == null ||
+                    session.startLocationName == null
+                ) {
+                    refreshSessionStartLocation(session)
+                }
+                if (session.endDateTime != null &&
+                    (session.endLocation == null || session.endLocationName == null)
+                ) {
+                    refreshSessionEndLocation(session)
+                }
+            }
+            session
+        }
+    }
 
     private val _syncedSessionsPerUser =
         hashMapOf<String, MutableStateFlow<List<DomainSession>?>?>()
@@ -209,9 +227,12 @@ class SessionInteractor @Inject constructor(
 
     fun getNotOwnedSessions() = sessionDiskDataSource.getAllNotOwnedSessions()
 
-    fun getOwnSessions(): Flow<List<DomainSession>>? {
-        if (!authInteractor.isUserSignedIn) return null
-        return sessionDiskDataSource.getSessionsByOwner(authInteractor.userUUID)
+    fun getOwnSessions(): Flow<List<DomainSession>> {
+        return if (!authInteractor.isUserSignedIn) {
+            flowOf(emptyList())
+        } else {
+            sessionDiskDataSource.getSessionsByOwner(authInteractor.userUUID)
+        }
     }
 
     /**
@@ -425,8 +446,9 @@ class SessionInteractor @Inject constructor(
      * their endTime properties not null.
      */
     suspend fun deleteStoppedSessions() {
-        sessionDiskDataSource.getStoppedSessions(authInteractor.userUUID).first {
-            deleteSessions(it)
+        sessionDiskDataSource.getStoppedSessions(authInteractor.userUUID).first { sessions ->
+            Timber.d("${authInteractor.userUUID} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
+            deleteSessions(sessions)
             true
         }
     }
@@ -434,6 +456,7 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteOwnedSessions() {
         authInteractor.userUUID?.let {
             sessionDiskDataSource.getSessionsByOwner(it).first { sessions ->
+                Timber.d("${authInteractor.userUUID} deleting (all of its) owned sessions: ${sessions.map { it.uuid.take(4) }}")
                 deleteSessions(sessions)
                 true
             }
@@ -441,8 +464,9 @@ class SessionInteractor @Inject constructor(
     }
 
     suspend fun deleteNotOwnedSessions() {
-        sessionDiskDataSource.getAllNotOwnedSessions().first {
-            deleteSessions(it)
+        sessionDiskDataSource.getAllNotOwnedSessions().first { sessions ->
+            Timber.d("Deleting all not owned sessions: ${sessions.map { it.uuid.take(4) }}")
+            deleteSessions(sessions)
             true
         }
     }

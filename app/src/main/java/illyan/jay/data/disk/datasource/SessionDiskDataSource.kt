@@ -31,7 +31,6 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-
 /**
  * Session disk data source using Room to communicate with the SQLite database.
  *
@@ -58,11 +57,17 @@ class SessionDiskDataSource @Inject constructor(
     fun getSessionsByOwner(ownerUserUUID: String?) = sessionDao.getSessionsByOwner(ownerUserUUID)
         .map { it.map(RoomSession::toDomainModel) }
 
-    fun ownAllNotOwnedSessions(ownerUserUUID: String) =
+    fun ownAllNotOwnedSessions(ownerUserUUID: String) {
+        Timber.d("$ownerUserUUID owns all sessions without an owner")
         sessionDao.ownAllNotOwnedSessions(ownerUserUUID)
+    }
 
-    fun ownNotOwnedSession(sessionUUID: String, ownerUserUUID: String) =
+
+    fun ownNotOwnedSession(sessionUUID: String, ownerUserUUID: String) {
+        Timber.d("$ownerUserUUID owns session with no owner yet: $sessionUUID")
         sessionDao.ownNotOwnedSession(sessionUUID, ownerUserUUID)
+    }
+
 
     /**
      * Get a particular session by its ID.
@@ -95,7 +100,10 @@ class SessionDiskDataSource @Inject constructor(
     fun getOngoingSessionIds(ownerUserUUID: String?) =
         sessionDao.getOngoingSessionUUIDs(ownerUserUUID)
 
-    fun ownSessions(sessionUUIDs: List<String>, ownerUserUUID: String) = sessionDao.ownSessions(sessionUUIDs, ownerUserUUID)
+    fun ownSessions(sessionUUIDs: List<String>, ownerUserUUID: String) {
+        Timber.d("ownerUserUUID owns sessions: ${sessionUUIDs.map { it.take(4) }}")
+        return sessionDao.ownSessions(sessionUUIDs, ownerUserUUID)
+    }
 
     /**
      * Creates a session in the database with the current time as
@@ -130,15 +138,21 @@ class SessionDiskDataSource @Inject constructor(
      *
      * @return id of session updated.
      */
-    fun saveSession(session: DomainSession) = sessionDao.upsertSession(session.toRoomModel())
+    fun saveSession(session: DomainSession): Long {
+        Timber.d("Upserting session: ${session.uuid}")
+        return sessionDao.upsertSession(session.toRoomModel())
+    }
 
     /**
      * Save multiple sessions in the database.
      *
      * @param sessions updates the data of the sessions with the same ID.
      */
-    fun saveSessions(sessions: List<DomainSession>) =
+    fun saveSessions(sessions: List<DomainSession>) {
+        Timber.d("Upserting sessions: ${sessions.map { it.uuid.take(4) }}")
         sessionDao.upsertSessions(sessions.map(DomainSession::toRoomModel))
+    }
+
 
     /**
      * Stop a session.
@@ -172,13 +186,23 @@ class SessionDiskDataSource @Inject constructor(
         saveSessions(sessions)
     }
 
-    fun deleteSessions(sessions: List<DomainSession>) =
+    fun deleteSessions(sessions: List<DomainSession>) {
+        Timber.d("Deleting sessions: ${sessions.map { it.uuid.take(4) }}")
         sessionDao.deleteSessions(sessions.map(DomainSession::toRoomModel))
+    }
 
-    fun deleteSessionsByOwner(ownerUserUUID: String?) =
+    fun deleteSessionsByOwner(ownerUserUUID: String?) {
+        Timber.d("Deleting sessions by owner $ownerUserUUID")
         sessionDao.deleteSessionsByOwner(ownerUserUUID)
+    }
 
-    fun deleteNotOwnedSessions() = sessionDao.deleteNotOwnedSessions()
+    fun deleteNotOwnedSessions() {
+        Timber.d("Deleting not owned sessions")
+        sessionDao.deleteNotOwnedSessions()
+    }
 
-    fun deleteStoppedSessionsByOwner(ownerUserUUID: String?) = sessionDao.deleteStoppedSessionsByOwner(ownerUserUUID)
+    fun deleteStoppedSessionsByOwner(ownerUserUUID: String?) {
+        sessionDao.deleteStoppedSessionsByOwner(ownerUserUUID)
+    }
 }
+

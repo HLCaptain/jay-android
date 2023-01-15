@@ -51,6 +51,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -244,7 +245,8 @@ fun SessionsList(
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
-        verticalArrangement = Arrangement.spacedBy(MenuItemPadding)
+        verticalArrangement = Arrangement.spacedBy(MenuItemPadding),
+        reverseLayout = true
     ) {
         if (noSessionsToShow) {
             item {
@@ -295,6 +297,11 @@ fun SessionsList(
         }
         items(allSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
+            DisposableEffect(true) {
+                onDispose {
+                    viewModel.disposeSessionStateFlow(it)
+                }
+            }
             val isPlaceholderVisible = session == null
             SessionCard(
                 modifier = Modifier
@@ -377,7 +384,7 @@ fun SessionCard(
                     }
                 }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     AnimatedVisibility(visible = session?.isLocal == true) {
                         Icon(imageVector = Icons.Rounded.Save, contentDescription = "")

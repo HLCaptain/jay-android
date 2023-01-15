@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -75,9 +76,15 @@ class LocationInteractor @Inject constructor(
      *
      * @return location data flow for a particular session.
      */
-    fun getLocations(sessionUUID: String) = locationDiskDataSource.getLocations(sessionUUID)
+    fun getLocations(sessionUUID: String): Flow<List<DomainLocation>> {
+        Timber.d("Trying to load path for session with ID from disk: $sessionUUID")
+        return locationDiskDataSource.getLocations(sessionUUID)
+    }
 
-    fun getLocations(sessionUUIDs: List<String>) = locationDiskDataSource.getLocations(sessionUUIDs)
+    fun getLocations(sessionUUIDs: List<String>): Flow<List<DomainLocation>> {
+        Timber.d("Trying to load paths for session with ID from disk: ${sessionUUIDs.map { it.take(4) }}")
+        return locationDiskDataSource.getLocations(sessionUUIDs)
+    }
 
     suspend fun getSyncedPath(sessionUUID: String): StateFlow<List<DomainLocation>?> {
         val syncedPaths = MutableStateFlow<List<DomainLocation>?>(null)
@@ -154,9 +161,12 @@ class LocationInteractor @Inject constructor(
      * @param locations list of location data saved onto the Room database.
      */
     fun saveLocations(locations: List<DomainLocation>) {
-        coroutineScopeIO.launch {
-            locationDiskDataSource.saveLocations(locations)
-        }
+        locationDiskDataSource.saveLocations(locations)
+    }
+
+    fun isPathStoredForSession(sessionUUID: String): Flow<Boolean> {
+        Timber.d("Checking if a path is stored for session $sessionUUID")
+        return locationDiskDataSource.getLatestLocations(sessionUUID, 1).map { it.isNotEmpty() }
     }
 
 

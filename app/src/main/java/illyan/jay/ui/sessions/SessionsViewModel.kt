@@ -37,7 +37,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -66,30 +65,14 @@ class SessionsViewModel @Inject constructor(
     private val clientUUID = settingsInteractor.appSettingsFlow.map { it.clientUUID ?: "" }
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
-    private val _syncedLocalSessionUUIDs = MutableStateFlow(listOf<String>())
-    val syncedLocalSessionUUIDs = _syncedLocalSessionUUIDs.asStateFlow()
-
     private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())
     val syncedSessions = combine(
         _syncedSessions,
-        clientUUID,
-        ownedLocalSessionUUIDs
-    ) { synced, clientUUID, locals ->
-        sessionStateFlows.keys.forEach { uuid ->
-            val sessionFlow = sessionStateFlows[uuid]!!
-            val isSynced = synced.any { it.uuid == uuid }
-            val isLocal = locals.any { it == uuid }
-            if (sessionFlow.value?.isSynced != isSynced) {
-                sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
-            }
-            if (sessionFlow.value?.isLocal != isLocal) {
-                sessionFlow.value = sessionFlow.value?.copy(isLocal = isLocal)
-            }
-        }
+        clientUUID
+    ) { synced, clientUUID ->
         synced.map {
             it.toUiModel(
                 currentClientUUID = clientUUID,
-                isLocal = locals.contains(it.uuid),
                 isSynced = true
             )
         }
@@ -134,15 +117,11 @@ class SessionsViewModel @Inject constructor(
         ownedLocalSessionUUIDs,
         notOwnedSessionUUIDs,
         ongoingSessionUUIDs,
-        syncedLocalSessionUUIDs
-    ) { owned, notOwned, ongoing, syncedLocals ->
-        if (syncedLocals.isNotEmpty()) {
-            true
-        } else {
-            owned.size + notOwned.size - ongoing.size > 0
-        }
+    ) { owned, notOwned, ongoing ->
+        owned.size + notOwned.size - ongoing.size > 0
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    // TODO: make sessions sorted based on start time
     val allSessionUUIDs = combine(
         syncedSessions,
         ownedLocalSessionUUIDs,
@@ -152,7 +131,15 @@ class SessionsViewModel @Inject constructor(
         sessions.addAll(synced.map { it.uuid })
         sessions.addAll(ownedLocal)
         sessions.addAll(notOwnedLocal)
-        sessions.distinct()
+        val distinctSessions = sessions.distinct()
+        distinctSessions.intersect(sessionStateFlows.keys).forEach { uuid ->
+            val sessionFlow = sessionStateFlows[uuid]!!
+            val isSynced = synced.any { it.uuid == uuid }
+            if (sessionFlow.value?.isSynced != isSynced) {
+                sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
+            }
+        }
+        distinctSessions
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val canSyncSessions = combine(
@@ -169,7 +156,6 @@ class SessionsViewModel @Inject constructor(
         _notOwnedSessionUUIDs.value = emptyList()
         _ongoingSessionUUIDs.value = emptyList()
         _ownedLocalSessionUUIDs.value = emptyList()
-        _syncedLocalSessionUUIDs.value = emptyList()
         _localSessionsLoaded.value = false
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -181,12 +167,13 @@ class SessionsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.getOngoingSessionUUIDs().collectLatest {
                 _ongoingSessionUUIDs.value = it
+                _localSessionsLoaded.value = true
             }
         }
         if (isUserSignedIn.value) {
             viewModelScope.launch(Dispatchers.IO) {
-                sessionInteractor.getOwnSessions()?.collectLatest { sessions ->
-                    _ownedLocalSessionUUIDs.value = sessions.asReversed().map { it.uuid }
+                sessionInteractor.getOwnSessions().collectLatest { sessions ->
+                    _ownedLocalSessionUUIDs.value = sessions.map { it.uuid }
                     _localSessionsLoaded.value = true
                 }
             }
@@ -195,7 +182,7 @@ class SessionsViewModel @Inject constructor(
 
     fun loadCloudSessions(activity: Activity) {
         _syncedSessions.value = emptyList()
-        //_syncedSessionsLoaded.value = false
+        _syncedSessionsLoaded.value = false
 
         if (isUserSignedIn.value) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -217,9 +204,8 @@ class SessionsViewModel @Inject constructor(
     }
 
     fun ownSession(sessionUUID: String) {
-        sessionInteractor.ownSession(sessionUUID)
-        sessionStateFlows[sessionUUID]?.let {
-            it.value = it.value?.copy(isNotOwned = false)
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionInteractor.ownSession(sessionUUID)
         }
     }
 
@@ -236,7 +222,12 @@ class SessionsViewModel @Inject constructor(
     fun deleteSessionsLocally() {
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.deleteStoppedSessions()
+            loadLocalSessions()
         }
+    }
+
+    fun disposeSessionStateFlow(sessionUUID: String) {
+        sessionStateFlows.remove(sessionUUID)
     }
 
     fun getSessionStateFlow(sessionUUID: String): StateFlow<UiSession?> {
@@ -249,32 +240,36 @@ class SessionsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.getSession(sessionUUID).collectLatest { session ->
                 if (session != null) {
-                    if (session.startLocation == null ||
-                        session.startLocationName == null
-                    ) {
-                        sessionInteractor.refreshSessionStartLocation(session)
-                    }
-                    if (session.endDateTime != null &&
-                        (session.endLocation == null || session.endLocationName == null)
-                    ) {
-                        sessionInteractor.refreshSessionEndLocation(session)
-                    }
-                    locationInteractor.getLocations(sessionUUID).first { locations ->
-                        val totalDistance = if (locations.isNotEmpty()) {
-                            locations.sphericalPathLength()
-                        } else {
-                            session.distance?.toDouble() ?: 0.0
-                        }
-                        sessionMutableStateFlow.value = session.toUiModel(
-                            totalDistance = totalDistance,
-                            currentClientUUID = clientUUID.value,
-                            isLocal = locations.isNotEmpty(),
-                            isSynced = syncedSessions.value.any { it.uuid == sessionUUID }
-                        )
-                        true
-                    }
-                } else if (syncedSessions.value.any { it.uuid == sessionUUID }) {
-                    sessionMutableStateFlow.value = syncedSessions.value.first { it.uuid == sessionUUID }
+                    sessionMutableStateFlow.value = session.toUiModel(
+                        currentClientUUID = clientUUID.value,
+                        isLocal = false,
+                        isSynced = syncedSessions.value.any { it.uuid == sessionUUID }
+                    )
+                } else {
+                    val remoteSession = syncedSessions.value.firstOrNull { it.uuid == sessionUUID }
+                    sessionMutableStateFlow.value = remoteSession
+                }
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            locationInteractor.getLocations(sessionUUID).collectLatest { locations ->
+                val storingLocations = locations.isNotEmpty()
+                val totalDistance = if (storingLocations) {
+                    locations.sphericalPathLength()
+                } else {
+                    sessionMutableStateFlow.value?.totalDistance ?: -1.0
+                }
+                if (sessionMutableStateFlow.value != null) {
+                    sessionMutableStateFlow.value = sessionMutableStateFlow.value?.copy(
+                        totalDistance = totalDistance,
+                        isLocal = storingLocations,
+                    )
+                }
+                sessionMutableStateFlow.collectLatest { session ->
+                    sessionMutableStateFlow.value = session?.copy(
+                        totalDistance = if (storingLocations) totalDistance else session.totalDistance,
+                        isLocal = storingLocations,
+                    )
                 }
             }
         }
