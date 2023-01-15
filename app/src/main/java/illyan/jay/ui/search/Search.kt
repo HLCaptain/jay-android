@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -21,10 +21,13 @@ package illyan.jay.ui.search
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -88,6 +91,7 @@ val DividerThickness = 1.dp
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel()
 ) {
+    val statusBarTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     DisposableEffect(Unit) {
         viewModel.load()
         onDispose { viewModel.dispose() }
@@ -100,7 +104,7 @@ fun SearchScreen(
             .fillMaxSize()
             .padding(horizontal = SearchPadding),
         contentPadding = PaddingValues(
-            top = SearchPadding,
+            top = SearchPadding + statusBarTopPadding,
             bottom = RoundedCornerRadius + SearchPadding
         )
     ) {
