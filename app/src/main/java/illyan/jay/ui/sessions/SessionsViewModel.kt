@@ -133,7 +133,9 @@ class SessionsViewModel @Inject constructor(
         sessions.addAll(ownedLocal)
         sessions.addAll(notOwnedLocal)
         val distinctSessions = sessions.distinct()
-        val sortedSessions = distinctSessions.sortedByDescending { it.second.toEpochSecond() }
+        val sortedSessions = distinctSessions
+            .sortedByDescending { it.second.toEpochSecond() }
+            .map { it.first }
         sortedSessions.intersect(sessionStateFlows.keys).forEach { uuid ->
             val sessionFlow = sessionStateFlows[uuid]!!
             val isSynced = synced.any { it.uuid == uuid }
@@ -141,7 +143,7 @@ class SessionsViewModel @Inject constructor(
                 sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
             }
         }
-        sortedSessions.map { it.first }
+        sortedSessions
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val canSyncSessions = combine(
