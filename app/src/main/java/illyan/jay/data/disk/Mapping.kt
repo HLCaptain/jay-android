@@ -45,7 +45,7 @@ fun RoomSession.toDomainModel() = DomainSession(
     startLocationName = startLocationName,
     endLocationName = endLocationName,
     distance = distance,
-    ownerUserUUID = ownerUserUUID,
+    ownerUUID = ownerUUID,
     clientUUID = clientUUID,
 )
 
@@ -60,7 +60,7 @@ fun DomainSession.toRoomModel() = RoomSession(
     startLocationName = startLocationName,
     endLocationName = endLocationName,
     distance = distance,
-    ownerUserUUID = ownerUserUUID,
+    ownerUUID = ownerUUID,
     clientUUID = clientUUID,
 )
 

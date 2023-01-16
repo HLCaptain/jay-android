@@ -109,12 +109,16 @@ class SessionInteractor @Inject constructor(
                 if (session.startLocation == null ||
                     session.startLocationName == null
                 ) {
-                    refreshSessionStartLocation(session)
+                    coroutineScopeIO.launch {
+                        refreshSessionStartLocation(session)
+                    }
                 }
                 if (session.endDateTime != null &&
                     (session.endLocation == null || session.endLocationName == null)
                 ) {
-                    refreshSessionEndLocation(session)
+                    coroutineScopeIO.launch {
+                        refreshSessionEndLocation(session)
+                    }
                 }
             }
             session
@@ -278,24 +282,35 @@ class SessionInteractor @Inject constructor(
      */
     suspend fun startSession(): String {
         val sessionUUID = sessionDiskDataSource.startSession(
-            ownerUserUUID = authInteractor.userUUID,
+            ownerUUID = authInteractor.userUUID,
         )
-        getSession(sessionUUID).first { session ->
-            session?.let {
-                settingsInteractor.appSettingsFlow.first { settings ->
-                    if (settings.clientUUID == null) {
-                        val clientUUID = UUID.randomUUID().toString()
-                        settingsInteractor.updateAppSettings {
-                            it.copy(clientUUID = clientUUID)
+        Timber.d("Starting a session with ID: $sessionUUID")
+        coroutineScopeIO.launch {
+            getSession(sessionUUID).first { session ->
+                session?.let {
+                    Timber.d("Trying to assign client to session $sessionUUID")
+                    settingsInteractor.appSettingsFlow.first { settings ->
+                        Timber.d("Client UUID = ${settings.clientUUID}")
+                        if (settings.clientUUID == null) {
+                            val clientUUID = UUID.randomUUID().toString()
+                            settingsInteractor.updateAppSettings {
+                                it.copy(clientUUID = clientUUID)
+                            }
+                            it.clientUUID = clientUUID
+                            Timber.d("Generating new clientUUID: $clientUUID")
+                        } else {
+                            it.clientUUID = settings.clientUUID
                         }
-                        it.clientUUID = clientUUID
+                        Timber.d("Assigned client ${it.clientUUID?.take(4)} to session: $sessionUUID")
+                        coroutineScopeIO.launch {
+                            sessionDiskDataSource.assignClientToSession(sessionUUID, session.clientUUID)
+                            refreshSessionStartLocation(session)
+                        }
+                        true
                     }
-                    it.clientUUID = settings.clientUUID
-                    coroutineScopeIO.launch { refreshSessionStartLocation(session) }
-                    true
                 }
+                session != null
             }
-            session != null
         }
         return sessionUUID
     }
@@ -308,18 +323,29 @@ class SessionInteractor @Inject constructor(
      *
      * @return id of session stopped.
      */
-    fun stopSession(session: DomainSession) = sessionDiskDataSource.stopSession(session)
+    suspend fun stopSession(session: DomainSession): Long {
+        val sessionId = sessionDiskDataSource.stopSession(session)
+        refreshDistanceForSession(session)
+        refreshSessionEndLocation(session)
+        return sessionId
+    }
 
     suspend fun refreshSessionStartLocation(
         session: DomainSession,
     ) {
         locationDiskDataSource.getLocations(session.uuid).first { locations ->
-            val sortedLocations = locations.sortedBy { location ->
-                location.zonedDateTime.toInstant().toEpochMilli()
-            }
-            val startLocationLatLng = sortedLocations.firstOrNull()?.latLng
+            val startLocationLatLng = locations.minByOrNull {
+                it.zonedDateTime.toInstant().toEpochMilli()
+            }?.latLng
             session.startLocation = startLocationLatLng
-            startLocationLatLng?.let { coroutineScopeIO.launch { saveSession(session) } }
+            startLocationLatLng?.let {
+                coroutineScopeIO.launch {
+                    sessionDiskDataSource.saveStartLocationForSession(
+                        session.uuid,
+                        startLocationLatLng
+                    )
+                }
+            }
 
             // Reverse geocoding locations to get names for them.
             if (startLocationLatLng != null && session.startLocationName == null) {
@@ -334,7 +360,12 @@ class SessionInteractor @Inject constructor(
                     results.firstOrNull()?.let {
                         session.startLocationName = it.address?.place
                         session.startLocationName?.let {
-                            coroutineScopeIO.launch { saveSession(session) }
+                            coroutineScopeIO.launch {
+                                sessionDiskDataSource.saveStartLocationNameForSession(
+                                    session.uuid,
+                                    it
+                                )
+                            }
                         }
                     }
                 }
@@ -347,14 +378,20 @@ class SessionInteractor @Inject constructor(
         session: DomainSession,
     ) {
         locationDiskDataSource.getLocations(session.uuid).first { locations ->
-            val sortedLocations = locations.sortedBy { location ->
-                location.zonedDateTime.toInstant().toEpochMilli()
+            val endLocation = locations.maxByOrNull {
+                it.zonedDateTime.toInstant().toEpochMilli()
             }
-            val endLocation = sortedLocations.lastOrNull()
             val endLocationLatLng = endLocation?.latLng
             session.endLocation = endLocationLatLng
             if (session.endDateTime == null) session.endDateTime = endLocation?.zonedDateTime
-            endLocationLatLng?.let { coroutineScopeIO.launch { saveSession(session) } }
+            endLocationLatLng?.let {
+                coroutineScopeIO.launch {
+                    sessionDiskDataSource.saveEndLocationForSession(
+                        session.uuid,
+                        endLocationLatLng
+                    )
+                }
+            }
 
             // Reverse geocoding locations to get names for them.
             if (endLocationLatLng != null && session.endLocationName == null) {
@@ -369,7 +406,12 @@ class SessionInteractor @Inject constructor(
                     results.firstOrNull()?.let {
                         session.endLocationName = it.address?.place
                         session.endLocationName?.let {
-                            coroutineScopeIO.launch { saveSession(session) }
+                            coroutineScopeIO.launch {
+                                sessionDiskDataSource.saveEndLocationNameForSession(
+                                    session.uuid,
+                                    it
+                                )
+                            }
                         }
                     }
                 }
@@ -387,8 +429,7 @@ class SessionInteractor @Inject constructor(
             refreshDistanceForSessions(sessions)
             sessions.forEach { session ->
                 coroutineScopeIO.launch {
-                    refreshSessionStartLocation(session)
-                    refreshSessionEndLocation(session)
+                    stopSession(session)
                 }
             }
             true
@@ -398,11 +439,9 @@ class SessionInteractor @Inject constructor(
     suspend fun stopDanglingSessions() {
         if (!serviceInteractor.isJayServiceRunning()) {
             getOngoingSessions().first { sessions ->
-                refreshDistanceForSessions(sessions)
                 sessions.forEach { session ->
                     coroutineScopeIO.launch {
-                        refreshSessionStartLocation(session)
-                        refreshSessionEndLocation(session)
+                        stopSession(session)
                     }
                 }
                 true
@@ -416,6 +455,18 @@ class SessionInteractor @Inject constructor(
                 it.distance = locations.sphericalPathLength().toFloat()
             }
             saveSessions(sessions)
+            true
+        }
+    }
+
+    suspend fun refreshDistanceForSession(session: DomainSession) {
+        locationDiskDataSource.getLocations(session.uuid).first { locations ->
+            coroutineScopeIO.launch {
+                sessionDiskDataSource.saveDistanceForSession(
+                    session.uuid,
+                    locations.sphericalPathLength().toFloat()
+                )
+            }
             true
         }
     }

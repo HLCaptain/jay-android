@@ -160,7 +160,7 @@ fun Map<String, Any?>.toDomainSession(
         endLocationName = this["endLocationName"] as String?,
         distance = (this["distance"] as Double?)?.toFloat(),
         clientUUID = (this["clientUUID"] as String?),
-        ownerUserUUID = userUUID,
+        ownerUUID = userUUID,
     )
 }
 

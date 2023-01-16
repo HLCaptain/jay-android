@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.ZonedDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,7 +52,7 @@ class SessionsViewModel @Inject constructor(
 ) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<String, MutableStateFlow<UiSession?>>()
 
-    private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<String>())
+    private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
     val ownedLocalSessionUUIDs = _ownedLocalSessionUUIDs.asStateFlow()
 
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
@@ -78,7 +79,7 @@ class SessionsViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val _notOwnedSessionUUIDs = MutableStateFlow(listOf<String>())
+    private val _notOwnedSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
 
     val isLoading = combine(
         localSessionsLoaded,
@@ -127,19 +128,20 @@ class SessionsViewModel @Inject constructor(
         ownedLocalSessionUUIDs,
         notOwnedSessionUUIDs,
     ) { synced, ownedLocal, notOwnedLocal ->
-        val sessions = mutableListOf<String>()
-        sessions.addAll(synced.map { it.uuid })
+        val sessions = mutableListOf<Pair<String, ZonedDateTime>>()
+        sessions.addAll(synced.map { it.uuid to it.startDateTime })
         sessions.addAll(ownedLocal)
         sessions.addAll(notOwnedLocal)
         val distinctSessions = sessions.distinct()
-        distinctSessions.intersect(sessionStateFlows.keys).forEach { uuid ->
+        val sortedSessions = distinctSessions.sortedByDescending { it.second.toEpochSecond() }
+        sortedSessions.intersect(sessionStateFlows.keys).forEach { uuid ->
             val sessionFlow = sessionStateFlows[uuid]!!
             val isSynced = synced.any { it.uuid == uuid }
             if (sessionFlow.value?.isSynced != isSynced) {
                 sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
             }
         }
-        distinctSessions
+        sortedSessions.map { it.first }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val canSyncSessions = combine(
@@ -149,7 +151,7 @@ class SessionsViewModel @Inject constructor(
     ) { synced, owned, ongoing ->
         // There is at least one session which can be synced (not ongoing).
         // The number of local sessions in the cloud is lower than local not ongoing sessions.
-        synced.map { it.uuid }.intersect(owned.toSet()).size < owned.size - ongoing.size
+        synced.size < owned.size - ongoing.size
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun loadLocalSessions() {
@@ -160,7 +162,7 @@ class SessionsViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
-                _notOwnedSessionUUIDs.value = sessions.map { it.uuid }
+                _notOwnedSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
                 _localSessionsLoaded.value = true
             }
         }
@@ -173,7 +175,7 @@ class SessionsViewModel @Inject constructor(
         if (isUserSignedIn.value) {
             viewModelScope.launch(Dispatchers.IO) {
                 sessionInteractor.getOwnSessions().collectLatest { sessions ->
-                    _ownedLocalSessionUUIDs.value = sessions.map { it.uuid }
+                    _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
                     _localSessionsLoaded.value = true
                 }
             }

@@ -39,6 +39,6 @@ data class RoomSession(
     var startLocationName: String? = null,
     var endLocationName: String? = null,
     val distance: Float? = null,
-    val ownerUserUUID: String? = null,
+    val ownerUUID: String? = null,
     val clientUUID: String? = null,
 )

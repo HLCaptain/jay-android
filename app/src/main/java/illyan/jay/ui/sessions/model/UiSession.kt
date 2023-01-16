@@ -38,9 +38,10 @@ data class UiSession(
     val duration: Duration,
     val isLocal: Boolean,
     val isSynced: Boolean,
-    val clientUUID: String?
+    val clientUUID: String?,
+    val ownerUUID: String?
 ) {
-    val isOwned get() = !clientUUID.isNullOrBlank()
+    val isOwned get() = !ownerUUID.isNullOrBlank()
     val isNotOwned get() = !isOwned
 }
 
@@ -85,6 +86,7 @@ fun DomainSession.toUiModel(
         },
         isSynced = isSynced,
         isLocal = isLocal,
-        clientUUID = clientUUID
+        clientUUID = clientUUID,
+        ownerUUID = ownerUUID
     )
 }

@@ -21,15 +21,6 @@ package illyan.jay.domain.model
 import com.google.android.gms.maps.model.LatLng
 import java.time.ZonedDateTime
 
-/**
- * Domain session used for general data handling
- * between DataSources, Interactors and Presenters.
- *
- * @property id
- * @property startDateTime
- * @property endDateTime
- * @constructor Create empty Domain session
- */
 data class DomainSession(
     var uuid: String,
     val startDateTime: ZonedDateTime,
@@ -42,10 +33,10 @@ data class DomainSession(
     var startLocationName: String? = null,
     var endLocationName: String? = null,
     var distance: Float? = null,
-    var ownerUserUUID: String? = null,
+    var ownerUUID: String? = null,
     var clientUUID: String? = null
 ) {
-    val isOwned = ownerUserUUID != null
+    val isOwned get() = ownerUUID != null
 
     var startLocation: LatLng?
         get() {
