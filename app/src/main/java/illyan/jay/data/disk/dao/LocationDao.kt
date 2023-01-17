@@ -61,10 +61,6 @@ interface LocationDao {
     fun deleteLocations(sessionUUID: String)
 
     @Transaction
-    @Query("SELECT * FROM location WHERE uuid = :uuid")
-    fun getLocation(uuid: String): Flow<RoomLocation?>
-
-    @Transaction
     @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID")
     fun getLocations(sessionUUID: String): Flow<List<RoomLocation>>
 

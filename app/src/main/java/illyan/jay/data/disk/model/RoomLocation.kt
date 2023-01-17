@@ -21,8 +21,6 @@ package illyan.jay.data.disk.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import androidx.room.PrimaryKey
-import java.util.UUID
 
 @Entity(
     tableName = "location",
@@ -33,16 +31,15 @@ import java.util.UUID
             childColumns = ["sessionUUID"]
         )
     ],
-    indices = [Index(value = ["sessionUUID"])]
+    indices = [Index(value = ["sessionUUID"])],
+    primaryKeys = ["sessionUUID", "time"]
 )
 data class RoomLocation(
-    @PrimaryKey
-    val uuid: String = UUID.randomUUID().toString(),
     val sessionUUID: String,
+    val time: Long, // in millis
     val latitude: Float,
     val longitude: Float,
     val accuracy: Byte,
-    val time: Long, // in millis
     val speed: Float,
     val speedAccuracy: Float, // in meters per second
     val bearing: Short,

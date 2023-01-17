@@ -19,6 +19,8 @@
 package illyan.jay.data.network.datasource
 
 import android.app.Activity
+import android.os.Parcel
+import android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.FieldValue
@@ -30,11 +32,15 @@ import illyan.jay.data.network.model.PathDocument
 import illyan.jay.data.network.toDomainSession
 import illyan.jay.data.network.toHashMap
 import illyan.jay.data.network.toPaths
+import illyan.jay.di.CoroutineScopeMain
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,6 +49,7 @@ import javax.inject.Singleton
 class SessionNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
+    @CoroutineScopeMain private val coroutineScopeMain: CoroutineScope
 ) {
     fun getSessions(
         activity: Activity? = null,
@@ -106,23 +113,43 @@ class SessionNetworkDataSource @Inject constructor(
             .collection(UsersCollectionPath)
             .document(authInteractor.userUUID!!)
 
+        Timber.d("Running batch to upload ${paths.size} paths for ${domainSessions.size} sessions")
         firestore.runBatch { batch ->
-            pathRefs.forEach { batch.set(it.first, it.second.toHashMap()) }
-
+            pathRefs.forEach {
+                val parcel = Parcel.obtain()
+                it.second.writeToParcel(parcel, PARCELABLE_WRITE_RETURN_VALUE)
+                val dataSizeInBytes = parcel.dataSize()
+                Timber.d("Path ${it.second.uuid.take(4)} size is around $dataSizeInBytes bytes")
+                // TODO: make size calculations more reliable and easier to implement
+                val maxSizeInBytes = 1_048_576
+                if (dataSizeInBytes < maxSizeInBytes) {
+                    batch.set(it.first, it.second.toHashMap())
+                } else {
+                    Timber.d("Not uploading this path, as $dataSizeInBytes bytes exceeds the $maxSizeInBytes byte limit")
+                }
+                parcel.recycle()
+            }
             batch.set(
                 userRef,
                 mapOf("sessions" to FieldValue.arrayUnion(*domainSessions.map { it.toHashMap() }.toTypedArray())),
                 SetOptions.merge()
             )
         }.addOnSuccessListener {
+            Timber.d("Upload success")
             onSuccess(domainSessions)
+        }.addOnFailureListener { exception ->
+            Timber.d("Error: ${exception.message}")
+        }.addOnCanceledListener {
+            Timber.d("Operation canceled")
         }
     }
 
     suspend fun deleteUserData() {
         if (!authInteractor.isUserSignedIn) return
-        val isDeleted = MutableStateFlow(false)
-        var pathSnapshotListener: ListenerRegistration? = null
+        val numberOfSessions = MutableStateFlow(0)
+        val isUserDeleted = MutableStateFlow(false)
+        val pathsToRemove = MutableStateFlow(persistentListOf<ListenerRegistration?>())
+        val pathsDeleted = MutableStateFlow(0)
         val userSnapshotListener = firestore
             .collection(UsersCollectionPath)
             .document(authInteractor.userUUID!!)
@@ -130,31 +157,60 @@ class SessionNetworkDataSource @Inject constructor(
                 if (userError != null) {
                     Timber.d("Error while deleting user data: ${userError.message}")
                 } else {
+                    userSnapshot?.let {
+                        it.reference.delete()
+                        isUserDeleted.value = true
+                    }
                     val domainSessionIds = (userSnapshot!!["sessions"] as List<Map<String, Any>>?)
                         ?.map { it["uuid"] as String? } ?: emptyList()
-                    if (domainSessionIds.firstOrNull() != null) { // at least one not null element
-                        pathSnapshotListener = firestore
+                    numberOfSessions.value = domainSessionIds.size
+                    domainSessionIds.forEach { uuid ->
+                        val pathSnapshotListener = firestore
                             .collection(PathsCollectionPath)
-                            .whereIn("sessionUUID", domainSessionIds)
+                            .whereEqualTo("sessionUUID", uuid)
                             .addSnapshotListener { pathSnapshot, pathError ->
                                 if (pathError != null) {
                                     Timber.d("Error while deleting user data: ${pathError.message}")
                                 } else {
-                                    Timber.d("Delete data for user ${authInteractor.userUUID}")
+                                    Timber.d("Delete path data for session ${uuid?.take(4)}")
                                     pathSnapshot!!.documents.forEach {
                                         it.reference.delete()
                                     }
-                                    userSnapshot.reference.delete()
-                                    isDeleted.value = true
+                                    // There can be multiple PathDocuments referring to the same path
+                                    pathsDeleted.value = pathsDeleted.value + 1
                                 }
                             }
+                        Timber.d("Registering snapshotListener for session ${uuid?.take(4)}")
+                        pathsToRemove.value = pathsToRemove.value.add(pathSnapshotListener)
                     }
                 }
             }
-        isDeleted.collectLatest {
-            if (it) {
-                userSnapshotListener.remove()
-                pathSnapshotListener?.remove()
+        coroutineScopeMain.launch {
+            isUserDeleted.collectLatest {
+                if (it) {
+                    Timber.d("Removing user listener from Firestore")
+                    userSnapshotListener.remove()
+                }
+            }
+        }
+        coroutineScopeMain.launch {
+            pathsDeleted.collectLatest { numberOfPathsDeleted ->
+                Timber.d("$numberOfPathsDeleted paths deleted from Firestore from ${numberOfSessions.value} total")
+                if (numberOfPathsDeleted >= numberOfSessions.value &&
+                    numberOfSessions.value != 0 &&
+                    numberOfPathsDeleted != 0
+                ) {
+                    coroutineScopeMain.launch {
+                        pathsToRemove.collectLatest { registrations ->
+                            if (registrations.size == numberOfPathsDeleted) {
+                                Timber.d("Removing ${registrations.size} path listeners from Firestore")
+                                registrations.forEach { registration ->
+                                    registration?.remove()
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

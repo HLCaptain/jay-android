@@ -59,9 +59,6 @@ interface SensorEventDao {
     @Query("DELETE FROM sensor_events WHERE sessionUUID = :sessionUUID")
     fun deleteSensorEventsForSession(sessionUUID: String)
 
-    @Query("SELECT * FROM sensor_events WHERE uuid = :uuid")
-    fun getSensorEvent(uuid: String): Flow<RoomSensorEvent?>
-
     @Query("SELECT * FROM sensor_events WHERE sessionUUID = :sessionUUID")
     fun getSensorEvents(sessionUUID: String): Flow<List<RoomSensorEvent>>
 }

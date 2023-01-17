@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -141,11 +141,13 @@ fun LatLng.equals(latLng: LatLng, accuracyInMeters: Double): Boolean {
     return SphericalUtil.computeDistanceBetween(this, latLng) <= accuracyInMeters
 }
 
+fun LatLng.toGeoPoint() = GeoPoint(latitude, longitude)
+
+fun GeoPoint.toLatLng() = LatLng(latitude, longitude)
+
 fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
 
 fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()
-
-fun LatLng.toGeoPoint() = GeoPoint(latitude, longitude)
 
 fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 

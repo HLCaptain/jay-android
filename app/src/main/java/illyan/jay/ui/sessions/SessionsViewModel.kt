@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.ZonedDateTime
 import javax.inject.Inject
 
@@ -74,7 +75,8 @@ class SessionsViewModel @Inject constructor(
         synced.map {
             it.toUiModel(
                 currentClientUUID = clientUUID,
-                isSynced = true
+                isSynced = true,
+                isLocal = sessionStateFlows[it.uuid]?.value?.isLocal ?: false
             )
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -134,7 +136,7 @@ class SessionsViewModel @Inject constructor(
         sessions.addAll(notOwnedLocal)
         val distinctSessions = sessions.distinct()
         val sortedSessions = distinctSessions
-            .sortedByDescending { it.second.toEpochSecond() }
+            .sortedByDescending { it.second.toInstant().toEpochMilli() }
             .map { it.first }
         sortedSessions.intersect(sessionStateFlows.keys).forEach { uuid ->
             val sessionFlow = sessionStateFlows[uuid]!!
@@ -192,6 +194,7 @@ class SessionsViewModel @Inject constructor(
             viewModelScope.launch(Dispatchers.IO) {
                 sessionInteractor.loadSyncedSessions(activity)
                 sessionInteractor.syncedSessions.collectLatest {
+                    Timber.d("New number of synced sessions: ${_syncedSessions.value.size} -> ${it?.size}")
                     _syncedSessions.value = it ?: emptyList()
                     _syncedSessionsLoaded.value = it != null
                 }
@@ -246,7 +249,7 @@ class SessionsViewModel @Inject constructor(
                 if (session != null) {
                     sessionMutableStateFlow.value = session.toUiModel(
                         currentClientUUID = clientUUID.value,
-                        isLocal = false,
+                        isLocal = sessionStateFlows[sessionUUID]?.value?.isLocal ?: false,
                         isSynced = syncedSessions.value.any { it.uuid == sessionUUID }
                     )
                 } else {

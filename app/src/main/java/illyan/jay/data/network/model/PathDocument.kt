@@ -18,12 +18,16 @@
 
 package illyan.jay.data.network.model
 
+import android.os.Parcelable
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.TypeParceler
 
+@Parcelize
+@TypeParceler<GeoPoint, GeoPointParceler>
 data class PathDocument(
     var uuid: String,
-    var uuids: List<String>,
     val accuracyChangeTimestamps: List<Timestamp>,
     val accuracyChanges: List<Byte>,
     val altitudes: List<Short>,
@@ -38,4 +42,6 @@ data class PathDocument(
     val timestamps: List<Timestamp>,
     val verticalAccuracyChangeTimestamps: List<Timestamp>,
     val verticalAccuracyChanges: List<Short>
-)
+) : Parcelable
+
+

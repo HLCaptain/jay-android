@@ -31,7 +31,6 @@ import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sensorTimestampToAbsoluteTime
 import java.time.Instant
 import java.time.ZoneOffset
-import java.util.UUID
 
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
@@ -66,12 +65,11 @@ fun DomainSession.toRoomModel() = RoomSession(
 
 // Location
 fun RoomLocation.toDomainModel() = DomainLocation(
-    uuid = uuid,
     latitude = latitude,
+    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     longitude = longitude,
     speed = speed,
     sessionUUID = sessionUUID,
-    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     accuracy = accuracy,
     bearing = bearing,
     bearingAccuracy = bearingAccuracy,
@@ -81,11 +79,11 @@ fun RoomLocation.toDomainModel() = DomainLocation(
 )
 
 fun DomainLocation.toRoomModel() = RoomLocation(
+    sessionUUID = sessionUUID,
+    time = zonedDateTime.toInstant().toEpochMilli(),
     latitude = latitude,
     longitude = longitude,
     speed = speed,
-    sessionUUID = sessionUUID,
-    time = zonedDateTime.toInstant().toEpochMilli(),
     accuracy = accuracy,
     bearing = bearing,
     bearingAccuracy = bearingAccuracy,
@@ -98,11 +96,10 @@ fun Location.toDomainModel(
     sessionUUID: String
 ): DomainLocation {
     val domainLocation = DomainLocation(
-        uuid = UUID.randomUUID().toString(),
-        latitude = latitude.toFloat(),
-        longitude = longitude.toFloat(),
+        sessionUUID = sessionUUID,
         zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
-        sessionUUID = sessionUUID
+        latitude = latitude.toFloat(),
+        longitude = longitude.toFloat()
     )
 
     if (hasSpeed()) domainLocation.speed = speed
@@ -120,7 +117,6 @@ fun Location.toDomainModel(
 
 // Rotation
 fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
-    uuid = uuid,
     zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     sessionUUID = sessionUUID,
     accuracy = accuracy,
@@ -131,23 +127,22 @@ fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
 )
 
 fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
-    time = zonedDateTime.toInstant().toEpochMilli(),
     sessionUUID = sessionUUID,
+    time = zonedDateTime.toInstant().toEpochMilli(),
+    type = type,
     accuracy = accuracy,
     x = x,
     y = y,
-    z = z,
-    type = type
+    z = z
 )
 
 // Sensors
 fun SensorEvent.toDomainModel(sessionUUID: String) = DomainSensorEvent(
-    uuid = UUID.randomUUID().toString(),
     sessionUUID = sessionUUID,
     zonedDateTime = Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp)).atZone(ZoneOffset.UTC),
+    type = sensor.type.toByte(),
     accuracy = accuracy.toByte(),
     x = values[0],
     y = values[1],
-    z = values[2],
-    type = sensor.type.toByte()
+    z = values[2]
 )

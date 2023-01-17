@@ -21,8 +21,6 @@ package illyan.jay.data.disk.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import androidx.room.PrimaryKey
-import java.util.UUID
 
 @Entity(
     tableName = "sensor_events",
@@ -33,16 +31,15 @@ import java.util.UUID
             childColumns = ["sessionUUID"]
         )
     ],
-    indices = [Index(value = ["sessionUUID"]), Index(value = ["time"])]
+    indices = [Index(value = ["sessionUUID"]), Index(value = ["time"])],
+    primaryKeys = ["sessionUUID", "time", "type"]
 )
 data class RoomSensorEvent(
-    @PrimaryKey
-    val uuid: String = UUID.randomUUID().toString(),
     val sessionUUID: String,
     val time: Long, // in millis
+    val type: Byte, // Sensor.TYPE_ACCELEROMETER
     val accuracy: Byte, // SensorManager.SENSOR_STATUS_ACCURACY_HIGH
     val x: Float,
     val y: Float,
     val z: Float,
-    val type: Byte // Sensor.TYPE_ACCELEROMETER
 )

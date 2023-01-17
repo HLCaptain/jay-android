@@ -184,6 +184,7 @@ class SessionInteractor @Inject constructor(
                     true
                 }
             }
+            Timber.d("${localOnlySessions.size} sessions are not synced with IDs: ${localOnlySessions.map { it.uuid.take(4) }}")
             locationDiskDataSource.getLocations(localOnlySessions.map { it.uuid }).first { locations ->
                 uploadSessions(
                     localOnlySessions,
