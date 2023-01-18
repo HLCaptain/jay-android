@@ -31,6 +31,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 
 fun DomainSession.toHashMap() = hashMapOf(
     "uuid" to uuid,
@@ -44,10 +45,9 @@ fun DomainSession.toHashMap() = hashMapOf(
     "clientUUID" to clientUUID
 )
 
-// TODO: Limit size to 1MiB per hashMap
-fun List<DomainLocation>.toPaths(
+fun List<DomainLocation>.toPath(
     sessionUUID: String
-): List<PathDocument> {
+): PathDocument {
     val accuracyChangeTimestamps = mutableListOf<Timestamp>()
     val accuracyChanges = mutableListOf<Byte>()
     val altitudes = mutableListOf<Short>()
@@ -98,25 +98,36 @@ fun List<DomainLocation>.toPaths(
         }
     }
 
-    return listOf(
-        PathDocument(
-            uuid = UUID.randomUUID().toString(),
-            accuracyChangeTimestamps = accuracyChangeTimestamps,
-            accuracyChanges = accuracyChanges,
-            altitudes = altitudes,
-            bearingAccuracyChangeTimestamps = bearingAccuracyChangeTimestamps,
-            bearingAccuracyChanges = bearingAccuracyChanges,
-            bearings = bearings,
-            coords = coords,
-            sessionUUID = sessionUUID,
-            speeds = speeds,
-            speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps,
-            speedAccuracyChanges = speedAccuracyChanges,
-            timestamps = timestamps,
-            verticalAccuracyChangeTimestamps = verticalAccuracyChangeTimestamps,
-            verticalAccuracyChanges = verticalAccuracyChanges,
-        )
+    return PathDocument(
+        uuid = UUID.randomUUID().toString(),
+        accuracyChangeTimestamps = accuracyChangeTimestamps,
+        accuracyChanges = accuracyChanges,
+        altitudes = altitudes,
+        bearingAccuracyChangeTimestamps = bearingAccuracyChangeTimestamps,
+        bearingAccuracyChanges = bearingAccuracyChanges,
+        bearings = bearings,
+        coords = coords,
+        sessionUUID = sessionUUID,
+        speeds = speeds,
+        speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps,
+        speedAccuracyChanges = speedAccuracyChanges,
+        timestamps = timestamps,
+        verticalAccuracyChangeTimestamps = verticalAccuracyChangeTimestamps,
+        verticalAccuracyChanges = verticalAccuracyChanges,
     )
+}
+
+// TODO: Limit size to 1MiB per hashMap
+fun List<DomainLocation>.toPaths(
+    sessionUUID: String,
+    thresholdInMinutes: Int = 30
+): List<PathDocument> {
+    if (isEmpty()) return emptyList()
+    val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
+    val groupedByTime = groupBy {(it.zonedDateTime.toInstant().toEpochMilli() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds }
+    return groupedByTime.map {
+        it.value.toPath(sessionUUID)
+    }
 }
 
 fun PathDocument.toHashMap() = hashMapOf(

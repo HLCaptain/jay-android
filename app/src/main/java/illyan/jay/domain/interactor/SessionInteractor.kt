@@ -27,7 +27,6 @@ import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
 import illyan.jay.data.disk.datasource.SessionDiskDataSource
 import illyan.jay.data.network.datasource.SessionNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
-import illyan.jay.di.CoroutineScopeMain
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sphericalPathLength
@@ -64,7 +63,6 @@ class SessionInteractor @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
     private val serviceInteractor: ServiceInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
-    @CoroutineScopeMain private val coroutineScopeMain: CoroutineScope
 ) {
 
     init {
@@ -133,7 +131,7 @@ class SessionInteractor @Inject constructor(
     private var previousUserUUID = authInteractor.userUUID
 
     init {
-        coroutineScopeMain.launch {
+        coroutineScopeIO.launch {
             authInteractor.currentUserStateFlow.collectLatest {
                 _openSnapshotListeners[previousUserUUID]?.remove()
                 _openSnapshotListeners.remove(previousUserUUID)

@@ -121,18 +121,20 @@ class LocationInteractor @Inject constructor(
                     Timber.d("Not authenticated to access cloud, return an empty list")
                     syncedPaths.value = emptyList()
                 } else {
-                    sessionNetworkDataSource.getSessions { sessions ->
-                        if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
-                            Timber.d("Found session in cloud, caching it on disk")
-                            coroutineScopeIO.launch {
-                                sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
-                                locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
-                                    coroutineScopeIO.launch {
-                                        Timber.d("Found location for session, caching it on disk")
-                                        locationDiskDataSource.saveLocations(remoteLocations)
+                    coroutineScopeIO.launch {
+                        sessionNetworkDataSource.getSessions { sessions ->
+                            if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
+                                Timber.d("Found session in cloud, caching it on disk")
+                                coroutineScopeIO.launch {
+                                    sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
+                                    locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
+                                        coroutineScopeIO.launch {
+                                            Timber.d("Found location for session, caching it on disk")
+                                            locationDiskDataSource.saveLocations(remoteLocations)
+                                        }
+                                        Timber.d("Found path in cloud")
+                                        syncedPaths.value = remoteLocations
                                     }
-                                    Timber.d("Found path in cloud")
-                                    syncedPaths.value = remoteLocations
                                 }
                             }
                         }
