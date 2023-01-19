@@ -50,6 +50,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -60,7 +61,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -68,6 +68,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.LightDarkThemePreview
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -75,19 +76,17 @@ import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
-import illyan.jay.ui.theme.Neutral95
 import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
 import illyan.jay.util.minus
 import java.math.RoundingMode
 
 val DefaultContentPadding = PaddingValues(
-    bottom = MenuItemPadding * 2
+    bottom = MenuItemPadding + RoundedCornerRadius
 )
 
 val DefaultScreenOnSheetPadding = PaddingValues(
-    top = MenuItemPadding * 2,
-    bottom = RoundedCornerRadius
+    top = MenuItemPadding * 2
 )
 
 @MenuNavGraph
@@ -336,7 +335,7 @@ fun SessionsList(
     }
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionCard(
@@ -346,7 +345,8 @@ fun SessionCard(
     content: @Composable () -> Unit = {},
 ) {
     val cardColors = CardDefaults.cardColors(
-        containerColor = Neutral95
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
     Card(
         modifier = modifier,

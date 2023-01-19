@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.BottomSheetState
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Shape
@@ -165,7 +166,8 @@ fun Modifier.textPlaceholder(
     Modifier.placeholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
-        shape = shape
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }
 
@@ -177,7 +179,8 @@ fun Modifier.largeTextPlaceholder(
     Modifier.placeholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
-        shape = shape
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }
 
@@ -189,6 +192,7 @@ fun Modifier.cardPlaceholder(
     Modifier.placeholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
-        shape = shape
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }

@@ -30,8 +30,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -64,7 +64,6 @@ import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.navigation.model.toPoint
 import illyan.jay.ui.sheet.SheetNavGraph
-import illyan.jay.ui.theme.SignatureTone95
 import illyan.jay.util.largeTextPlaceholder
 import illyan.jay.util.plus
 import illyan.jay.util.textPlaceholder
@@ -195,7 +194,8 @@ fun PlaceInfoScreen(
                 .padding(horizontalPadding)
                 .largeTextPlaceholder(place == null),
             text = place?.name ?: stringResource(R.string.unknown),
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
         )
         AnimatedVisibility(
             modifier = Modifier
@@ -204,7 +204,8 @@ fun PlaceInfoScreen(
             visible = shouldShowAddress && placeInfo?.address != null
         ) {
             Text(
-                text = placeInfo?.address?.formattedAddress() ?: stringResource(R.string.unknown)
+                text = placeInfo?.address?.formattedAddress() ?: stringResource(R.string.unknown),
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
         AnimatedVisibility(visible = !placeInfo?.categories.isNullOrEmpty()) {
@@ -217,7 +218,7 @@ fun PlaceInfoScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(SignatureTone95)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
                     ) {
                         Text(
                             modifier = Modifier.padding(
@@ -227,7 +228,8 @@ fun PlaceInfoScreen(
                                 bottom = 4.dp
                             ),
                             text = it.replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                 }
@@ -248,7 +250,8 @@ fun PlaceInfoScreen(
                             .setScale(6, RoundingMode.HALF_UP)
                             .toString()
             } ?: stringResource(R.string.unknown),
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }

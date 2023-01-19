@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -44,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mapbox.geojson.Point
@@ -55,6 +54,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.LightDarkThemePreview
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
@@ -144,7 +144,7 @@ fun SessionScreen(
     )
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @Composable
 fun SessionDetailsScreen(
     viewModel: SessionViewModel = hiltViewModel(),
@@ -168,16 +168,24 @@ fun SessionDetailsScreen(
             ) {
                 Text(
                     text = session?.startLocationName ?: stringResource(R.string.unknown),
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
-                Icon(imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "")
+                Icon(
+                    imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
                 Crossfade(targetState = session?.endDateTime == null) {
                     if (it) {
-                        Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
+                        Icon(
+                            imageVector = Icons.Rounded.MoreHoriz, contentDescription = "",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
                     } else {
                         Text(
                             text = session?.endLocationName ?: stringResource(R.string.unknown),
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
@@ -199,7 +207,8 @@ fun SessionDetailsScreen(
                                 .toBigDecimal()
                                 .setScale(2, RoundingMode.FLOOR)} " +
                                     stringResource(R.string.kilometers)
-                        }
+                        },
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
                 text = "${stringResource(R.string.duration)}: " +
@@ -210,7 +219,8 @@ fun SessionDetailsScreen(
                             hour = stringResource(R.string.hour_short),
                             day = stringResource(R.string.day_short)
                         )
-                            ?: stringResource(R.string.unknown))
+                            ?: stringResource(R.string.unknown)),
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
     }

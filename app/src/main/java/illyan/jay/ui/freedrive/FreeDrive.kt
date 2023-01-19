@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -15,6 +15,40 @@
  * You should have received a copy of the GNU General Public License along with Jay.
  * If not, see <https://www.gnu.org/licenses/>.
  */
+
+pose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
+import com.mapbox.geojson.Point
+import com.mapbox.maps.plugin.animation.camera
+import com.mapbox.maps.plugin.locationcomponent.location
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.R
+import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.home.absoluteBottom
+import illyan.jay.ui.home.absoluteTop
+import illyan.jay.ui.home.cameraPadding
+import illyan.jay.ui.home.density
+import illyan.jay.ui.home.flyToLocation
+import illyan.jay.ui.home.mapView
+import illyan.jay.ui.map.toEdgeInsets
+import illyan.jay.ui.map.turnOnWithDefaultPuck
+import illyan.jay.util.plus
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.launch.*
+
+/
 
 package illyan.jay.ui.freedrive
 
@@ -37,7 +71,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -177,8 +210,9 @@ fun FreeDriveScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
+                        text = stringResource(R.string.automatically_turn_on_free_driving),
                         style = MaterialTheme.typography.labelLarge,
-                        text = stringResource(R.string.automatically_turn_on_free_driving)
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                     Switch(
                         checked = startServiceAutomatically,
@@ -206,11 +240,11 @@ fun LocationPermissionDeniedScreen(
     ) {
         Text(
             text = stringResource(R.string.location_permission_denied_title),
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
             text = stringResource(R.string.location_permission_denied_description),
-            style = MaterialTheme.typography.bodyMedium
         )
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -221,7 +255,6 @@ fun LocationPermissionDeniedScreen(
             ) {
                 Text(
                     text = stringResource(R.string.request_permission),
-                    color = Color.White
                 )
             }
         }
