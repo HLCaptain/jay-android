@@ -36,7 +36,6 @@ import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -102,7 +101,7 @@ class SessionNetworkDataSource @Inject constructor(
                     .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
                     .map { it.latLng }.sphericalPathLength().toFloat()
             }
-            paths.addAll(locationsForThisSession.toPaths(session.uuid))
+            paths.addAll(locationsForThisSession.toPaths(session.uuid, session.ownerUUID!!))
         }
         val pathRefs = paths.map {
             firestore
@@ -146,45 +145,33 @@ class SessionNetworkDataSource @Inject constructor(
 
     suspend fun deleteUserData() {
         if (!authInteractor.isUserSignedIn) return
-        val numberOfSessions = MutableStateFlow(0)
         val isUserDeleted = MutableStateFlow(false)
-        val pathsToRemove = MutableStateFlow(persistentListOf<ListenerRegistration?>())
-        val pathsDeleted = MutableStateFlow(0)
-        val deletedPaths = mutableSetOf<String>()
+        val arePathsDeleted = MutableStateFlow(false)
         val userSnapshotListener = firestore
             .collection(UsersCollectionPath)
             .document(authInteractor.userUUID!!)
             .addSnapshotListener { userSnapshot, userError ->
                 if (userError != null) {
                     Timber.d("Error while deleting user data: ${userError.message}")
-                } else {
+                } else if (!isUserDeleted.value) {
                     userSnapshot?.let {
                         it.reference.delete()
                         isUserDeleted.value = true
                     }
-                    val domainSessionIds = (userSnapshot!!["sessions"] as List<Map<String, Any>>?)
-                        ?.map { it["uuid"] as String? } ?: emptyList()
-                    numberOfSessions.value = domainSessionIds.size
-                    domainSessionIds.forEach { uuid ->
-                        val pathSnapshotListener = firestore
-                            .collection(PathsCollectionPath)
-                            .whereEqualTo("sessionUUID", uuid)
-                            .addSnapshotListener { pathSnapshot, pathError ->
-                                if (pathError != null) {
-                                    Timber.d("Error while deleting user data: ${pathError.message}")
-                                } else if (!deletedPaths.contains(uuid ?: "")) {
-                                    Timber.d("Delete path data for session ${uuid?.take(4)}")
-                                    pathSnapshot!!.documents.forEach {
-                                        it.reference.delete()
-                                    }
-                                    uuid?.let { deletedPaths.add(it) }
-                                    // There can be multiple PathDocuments referring to the same path
-                                    pathsDeleted.value = pathsDeleted.value + 1
-                                }
-                            }
-                        Timber.d("Registering snapshotListener for session ${uuid?.take(4)}")
-                        pathsToRemove.value = pathsToRemove.value.add(pathSnapshotListener)
+                }
+            }
+        val pathSnapshotListener = firestore
+            .collection(PathsCollectionPath)
+            .whereEqualTo("ownerUUID", authInteractor.userUUID)
+            .addSnapshotListener { pathSnapshot, pathError ->
+                if (pathError != null) {
+                    Timber.d("Error while deleting user data: ${pathError.message}")
+                } else if (!arePathsDeleted.value) {
+                    Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${authInteractor.userUUID?.take(4)}")
+                    pathSnapshot.documents.forEach {
+                        it.reference.delete()
                     }
+                    arePathsDeleted.value = true
                 }
             }
         coroutineScopeIO.launch {
@@ -197,30 +184,12 @@ class SessionNetworkDataSource @Inject constructor(
             }
         }
         coroutineScopeIO.launch {
-            pathsDeleted.first { numberOfPathsDeleted ->
-                Timber.d("$numberOfPathsDeleted paths deleted from Firestore from ${numberOfSessions.value} total")
-                if (numberOfPathsDeleted >= numberOfSessions.value &&
-                    numberOfSessions.value != 0 &&
-                    numberOfPathsDeleted != 0
-                ) {
-                    coroutineScopeIO.launch {
-                        pathsToRemove.first { registrations ->
-                            if (registrations.size <= numberOfPathsDeleted) {
-                                Timber.d("Removing ${registrations.size} path listeners from Firestore")
-                                registrations.forEach { registration ->
-                                    registration?.remove()
-                                }
-                                pathsToRemove.value = persistentListOf()
-                                true
-                            } else {
-                                false
-                            }
-                        }
-                    }
-                    true
-                } else {
-                    false
+            arePathsDeleted.first {
+                if (it) {
+                    Timber.d("Removing path listener from Firestore")
+                    pathSnapshotListener.remove()
                 }
+                it
             }
         }
     }

@@ -46,7 +46,8 @@ fun DomainSession.toHashMap() = hashMapOf(
 )
 
 fun List<DomainLocation>.toPath(
-    sessionUUID: String
+    sessionUUID: String,
+    ownerUUID: String
 ): PathDocument {
     val accuracyChangeTimestamps = mutableListOf<Timestamp>()
     val accuracyChanges = mutableListOf<Byte>()
@@ -100,6 +101,8 @@ fun List<DomainLocation>.toPath(
 
     return PathDocument(
         uuid = UUID.randomUUID().toString(),
+        sessionUUID = sessionUUID,
+        ownerUUID = ownerUUID,
         accuracyChangeTimestamps = accuracyChangeTimestamps,
         accuracyChanges = accuracyChanges,
         altitudes = altitudes,
@@ -107,7 +110,6 @@ fun List<DomainLocation>.toPath(
         bearingAccuracyChanges = bearingAccuracyChanges,
         bearings = bearings,
         coords = coords,
-        sessionUUID = sessionUUID,
         speeds = speeds,
         speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps,
         speedAccuracyChanges = speedAccuracyChanges,
@@ -120,18 +122,21 @@ fun List<DomainLocation>.toPath(
 // TODO: Limit size to 1MiB per hashMap
 fun List<DomainLocation>.toPaths(
     sessionUUID: String,
+    ownerUUID: String,
     thresholdInMinutes: Int = 30
 ): List<PathDocument> {
     if (isEmpty()) return emptyList()
     val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
     val groupedByTime = groupBy {(it.zonedDateTime.toInstant().toEpochMilli() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds }
     return groupedByTime.map {
-        it.value.toPath(sessionUUID)
+        it.value.toPath(sessionUUID, ownerUUID)
     }
 }
 
 fun PathDocument.toHashMap() = hashMapOf(
     "uuid" to uuid,
+    "sessionUUID" to sessionUUID,
+    "ownerUUID" to ownerUUID,
     "accuracyChangeTimestamps" to accuracyChangeTimestamps,
     "accuracyChanges" to accuracyChanges.map { it.toInt() },
     "altitudes" to altitudes.map { it.toInt() },
@@ -139,7 +144,6 @@ fun PathDocument.toHashMap() = hashMapOf(
     "bearingAccuracyChanges" to bearingAccuracyChanges.map { it.toInt() },
     "bearings" to bearings.map { it.toInt() },
     "coords" to coords,
-    "sessionUUID" to sessionUUID,
     "speeds" to speeds,
     "speedAccuracyChangeTimestamps" to speedAccuracyChangeTimestamps,
     "speedAccuracyChanges" to speedAccuracyChanges,

@@ -28,6 +28,8 @@ import kotlinx.parcelize.TypeParceler
 @TypeParceler<GeoPoint, GeoPointParceler>
 data class PathDocument(
     var uuid: String,
+    val sessionUUID: String, // reference of the session this path is part of
+    val ownerUUID: String,
     val accuracyChangeTimestamps: List<Timestamp>,
     val accuracyChanges: List<Byte>,
     val altitudes: List<Short>,
@@ -35,7 +37,6 @@ data class PathDocument(
     val bearingAccuracyChanges: List<Short>,
     val bearings: List<Short>,
     val coords: List<GeoPoint>,
-    val sessionUUID: String, // reference of the session this path is part of
     val speeds: List<Float>,
     val speedAccuracyChangeTimestamps: List<Timestamp>,
     val speedAccuracyChanges: List<Float>,
