@@ -156,21 +156,21 @@ fun Map<String, Any?>.toDomainSession(
     uuid: String,
     userUUID: String
 ): DomainSession {
-    val startLocation = this["startLocation"] as GeoPoint?
-    val endLocation = this["endLocation"] as GeoPoint?
+    val startLocation = this["startLocation"] as? GeoPoint
+    val endLocation = this["endLocation"] as? GeoPoint
     return DomainSession(
         uuid = uuid,
-        startDateTime = (this["startDateTime"] as Timestamp?)?.toZonedDateTime() ?: ZonedDateTime
+        startDateTime = (this["startDateTime"] as? Timestamp)?.toZonedDateTime() ?: ZonedDateTime
             .ofInstant(Instant.EPOCH, ZoneOffset.UTC),
-        endDateTime = (this["endDateTime"] as Timestamp?)?.toZonedDateTime(),
+        endDateTime = (this["endDateTime"] as? Timestamp)?.toZonedDateTime(),
         startLocationLatitude = startLocation?.latitude?.toFloat(),
         startLocationLongitude = startLocation?.longitude?.toFloat(),
         endLocationLatitude = endLocation?.latitude?.toFloat(),
         endLocationLongitude = endLocation?.longitude?.toFloat(),
-        startLocationName = this["startLocationName"] as String?,
-        endLocationName = this["endLocationName"] as String?,
-        distance = (this["distance"] as Double?)?.toFloat(),
-        clientUUID = (this["clientUUID"] as String?),
+        startLocationName = this["startLocationName"] as? String,
+        endLocationName = this["endLocationName"] as? String,
+        distance = (this["distance"] as? Double)?.toFloat(),
+        clientUUID = (this["clientUUID"] as? String),
         ownerUUID = userUUID,
     )
 }
@@ -179,39 +179,43 @@ fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
 
     forEach { document ->
-        val accuracyChangeTimestamps = document.get("accuracyChangeTimestamps") as List<Timestamp>
-        val accuracyChanges = document.get("accuracyChanges") as List<Int>
-        val altitudes = document.get("altitudes") as List<Int>
-        val bearingAccuracyChangeTimestamps = document.get("bearingAccuracyChangeTimestamps") as List<Timestamp>
-        val bearingAccuracyChanges = document.get("bearingAccuracyChanges") as List<Int>
-        val bearings = document.get("bearings") as List<Int>
-        val coords = document.get("coords") as List<GeoPoint>
-        val speeds = document.get("speeds") as List<Float>
-        val speedAccuracyChangeTimestamps = document.get("speedAccuracyChangeTimestamps") as List<Timestamp>
-        val speedAccuracyChanges = document.get("speedAccuracyChanges") as List<Float>
-        val timestamps = document.get("timestamps") as List<Timestamp>
-        val verticalAccuracyChangeTimestamps = document.get("verticalAccuracyChangeTimestamps") as List<Timestamp>
-        val verticalAccuracyChanges = document.get("verticalAccuracyChanges") as List<Int>
+        val timestamps = (document.get("timestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
         val sessionUUID = document.getString("sessionUUID") ?: ""
+        val accuracyChangeTimestamps = (document.get("accuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val accuracyChanges = document.get("accuracyChanges") as? List<Int> ?: emptyList()
+        val altitudes = document.get("altitudes") as? List<Int> ?: emptyList()
+        val bearingAccuracyChangeTimestamps = (document.get("bearingAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val bearingAccuracyChanges = document.get("bearingAccuracyChanges") as? List<Int> ?: emptyList()
+        val bearings = document.get("bearings") as? List<Int> ?: emptyList()
+        val coords = document.get("coords") as? List<GeoPoint> ?: emptyList()
+        val speeds = document.get("speeds") as? List<Float> ?: emptyList()
+        val speedAccuracyChangeTimestamps = (document.get("speedAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val speedAccuracyChanges = document.get("speedAccuracyChanges") as? List<Float> ?: emptyList()
+        val verticalAccuracyChangeTimestamps = (document.get("verticalAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val verticalAccuracyChanges = document.get("verticalAccuracyChanges") as? List<Int> ?: emptyList()
 
-        timestamps.forEachIndexed { index, timestamp ->
-            val indexOfLastAccuracyChange = accuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+        timestamps.forEachIndexed { index, zonedDateTime ->
+            val indexOfLastAccuracyChange = accuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
-            val indexOfLastBearingAccuracyChange = bearingAccuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+            val indexOfLastBearingAccuracyChange = bearingAccuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
-            val indexOfLastVerticalAccuracyChange = verticalAccuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+            val indexOfLastVerticalAccuracyChange = verticalAccuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
-            val indexOfLastSpeedAccuracyChange = speedAccuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+            val indexOfLastSpeedAccuracyChange = speedAccuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
 
             domainLocations.add(
                 DomainLocation(
                     sessionUUID = sessionUUID,
-                    zonedDateTime = timestamp.toZonedDateTime(),
+                    zonedDateTime = zonedDateTime,
                     latitude = coords[index].latitude.toFloat(),
                     longitude = coords[index].longitude.toFloat(),
                     speed = speeds[index],

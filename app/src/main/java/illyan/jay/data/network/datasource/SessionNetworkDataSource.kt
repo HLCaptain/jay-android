@@ -58,13 +58,18 @@ class SessionNetworkDataSource @Inject constructor(
         return if (authInteractor.isUserSignedIn) {
             Timber.d("Connecting snapshot listener to Firebase")
             val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
-                val domainSessions = (snapshot?.get("sessions") as List<Map<String, Any>>?)?.map {
-                    it.toDomainSession(it["uuid"] as String, authInteractor.userUUID!!)
-                } ?: emptyList()
-                Timber.d("Firebase got sessions with IDs: ${
-                    domainSessions.map { it.uuid.substring(0..3) }
-                }")
-                listener(domainSessions)
+                if (error != null) {
+                    Timber.d("Error while getting session data: ${error.message}")
+                    listener(null as List<DomainSession>?)
+                } else {
+                    val domainSessions = (snapshot?.get("sessions") as? List<Map<String, Any>>?)?.map {
+                        it.toDomainSession(it["uuid"] as String, authInteractor.userUUID!!)
+                    } ?: emptyList()
+                    Timber.d("Firebase got sessions with IDs: ${
+                        domainSessions.map { it.uuid.substring(0..3) }
+                    }")
+                    listener(domainSessions)
+                }
             }
             firestore
                 .collection(UsersCollectionPath)
@@ -75,8 +80,8 @@ class SessionNetworkDataSource @Inject constructor(
                     addSnapshotListener(snapshotListener)
                 }
         } else {
-            Timber.d("Connecting snapshot listener to Firebase")
-            listener(null)
+            Timber.d("User not signed in, returning with null")
+            listener(null as List<DomainSession>?)
             null
         }
     }
