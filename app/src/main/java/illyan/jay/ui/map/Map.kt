@@ -121,8 +121,8 @@ private fun MapboxMapContainer(
     ) {
         it.gestures.scrollEnabled = true
         // it.logo.enabled = false // Logo is enabled due to Terms of Service
-        it.scalebar.isMetricUnits = true // TODO set this in settings or based on location, etc.
-        it.scalebar.enabled = false // TODO enable it later if needed (though pay attention to ugly design)
+        it.scalebar.isMetricUnits = true // TODO: set this in settings or based on location, etc.
+        it.scalebar.enabled = false // TODO: enable it later if needed (though pay attention to ugly design)
     }
 }
 

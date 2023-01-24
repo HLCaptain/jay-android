@@ -90,11 +90,6 @@ class SessionsViewModel @Inject constructor(
         !localLoaded || !syncedLoaded
     }.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
-    // TODO: make a singular list for every session by combining
-    // 1. synced
-    // 2. local, now owned
-    // 3. local, owned
-
     val notOwnedSessionUUIDs = _notOwnedSessionUUIDs.asStateFlow()
     val areThereSessionsNotOwned = notOwnedSessionUUIDs.map { it.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -124,7 +119,6 @@ class SessionsViewModel @Inject constructor(
         owned.size + notOwned.size - ongoing.size > 0
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    // TODO: make sessions sorted based on start time
     val allSessionUUIDs = combine(
         syncedSessions,
         ownedLocalSessionUUIDs,

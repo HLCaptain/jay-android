@@ -45,8 +45,6 @@ class SessionViewModel @Inject constructor(
     private val _path = MutableStateFlow<List<UiLocation>?>(null)
     val path = _path.asStateFlow()
 
-    val isLoadingSessionFromNetwork = MutableStateFlow(false)
-
     fun load(sessionUUID: String) {
         Timber.d("Trying to load session with ID: $sessionUUID")
         viewModelScope.launch(Dispatchers.IO) {

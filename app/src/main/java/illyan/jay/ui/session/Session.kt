@@ -149,7 +149,6 @@ fun SessionScreen(
 fun SessionDetailsScreen(
     viewModel: SessionViewModel = hiltViewModel(),
 ) {
-    val isPathLoadingFromNetwork by viewModel.isLoadingSessionFromNetwork.collectAsState()
     val session by viewModel.session.collectAsState()
     val path by viewModel.path.collectAsState()
     Column(
@@ -191,7 +190,7 @@ fun SessionDetailsScreen(
                 }
             }
             AnimatedVisibility(
-                visible = isPathLoadingFromNetwork && (path == null || session == null)
+                visible = path == null || session == null
             ) {
                 SmallCircularProgressIndicator()
             }

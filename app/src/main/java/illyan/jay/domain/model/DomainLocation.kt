@@ -45,7 +45,7 @@ data class DomainLocation(
     val longitude: Float,
     var speed: Float = Float.MIN_VALUE,
     var accuracy: Byte = Byte.MIN_VALUE,
-    var bearing: Short = Short.MIN_VALUE, // TODO: may change Short to Byte?
+    var bearing: Short = Short.MIN_VALUE,
     var bearingAccuracy: Short = Short.MIN_VALUE, // in degrees
     var altitude: Short = Short.MIN_VALUE,
     var speedAccuracy: Float = Float.MIN_VALUE, // in meters per second

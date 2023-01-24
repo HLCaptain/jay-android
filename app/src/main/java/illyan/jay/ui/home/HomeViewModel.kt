@@ -75,20 +75,23 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    suspend fun loadLastLocation() {
-        mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
-        initialLocation.first { location ->
-            if (location != null) {
-                _cameraOptionsBuilder.value = CameraOptions.Builder()
-                    .zoom(12.0)
-                    .center(Point.fromLngLat(location.longitude, location.latitude))
-                true
-            } else {
-                // Use Bute K building as the default location for now.
-                _cameraOptionsBuilder.value = CameraOptions.Builder()
-                    .zoom(12.0)
-                    .center(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
-                false
+    fun loadLastLocation() {
+        viewModelScope.launch(Dispatchers.IO) {
+            // TODO: load last location from database first
+            mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
+            initialLocation.first { location ->
+                if (location != null) {
+                    _cameraOptionsBuilder.value = CameraOptions.Builder()
+                        .zoom(12.0)
+                        .center(Point.fromLngLat(location.longitude, location.latitude))
+                    true
+                } else {
+                    // Use Bute K building as the default location for now.
+                    _cameraOptionsBuilder.value = CameraOptions.Builder()
+                        .zoom(12.0)
+                        .center(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
+                    false
+                }
             }
         }
     }

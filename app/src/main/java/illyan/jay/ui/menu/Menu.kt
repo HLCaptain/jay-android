@@ -107,7 +107,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding * 2,
     start = MenuItemPadding * 2,
     end = MenuItemPadding * 2,
-    bottom =  RoundedCornerRadius + MenuItemPadding * 2 // TODO: swap additional padding to contentPadding when it is fixed
+    bottom =  RoundedCornerRadius + MenuItemPadding * 2
 )
 
 @OptIn(ExperimentalFoundationApi::class)

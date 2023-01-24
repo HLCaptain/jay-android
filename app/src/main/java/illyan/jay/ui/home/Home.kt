@@ -443,20 +443,19 @@ fun HomeScreen(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     LaunchedEffect(density) { _density.value = density }
     LaunchedEffect(screenHeightDp) { _screenHeight.value = screenHeightDp }
-    // FIXME: make insets to accommodate for status bar's padding
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()
-            .onGloballyPositioned { coords ->
+            .onGloballyPositioned { coordinates ->
                 var topSet = false
-                val absoluteTopPosition = (coords.positionInWindow().y / density).dp
+                val absoluteTopPosition = (coordinates.positionInWindow().y / density).dp
                 if (_absoluteTop.value != absoluteTopPosition) {
                     _absoluteTop.value = absoluteTopPosition
                     topSet = true
                 }
                 var bottomSet = false
                 val absoluteBottomPosition =
-                    ((coords.positionInWindow().y + coords.size.height) / density).dp
+                    ((coordinates.positionInWindow().y + coordinates.size.height) / density).dp
                 if (_absoluteBottom.value != absoluteBottomPosition) {
                     bottomSet = true
                     _absoluteBottom.value = absoluteBottomPosition
@@ -570,18 +569,7 @@ fun HomeScreen(
                 // Grace period is useful when we would like to initialize the map
                 // with the user's location in focus.
                 // If it ends, it defaults to the middle of the Earth.
-                var initialLocationGrace by remember { mutableStateOf(true) }
-                LaunchedEffect(Unit) {
-                    // The chance of the Grace period is only given if permissions
-                    // are granted beforehand.
-                    // Disabled grace period temporarly due it would be too much to wait for
-                    // a new location. Though loading in one from Room might be inconvenient.
-                    // TODO: decide to remove grace period or not
-//                    if (locationPermissionState.status.isGranted) {
-//                        delay(200)
-//                    }
-                    initialLocationGrace = false
-                }
+
                 var didLoadInLocation by remember { mutableStateOf(false) }
                 var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
                 var isMapInitialized by remember { mutableStateOf(false) }
@@ -611,12 +599,13 @@ fun HomeScreen(
                         didLoadInLocation = true
                         mapView.value?.camera?.flyTo(
                             cameraOptionsBuilder!!
-                                .center(viewModel.initialLocation.value?.let {
-                                    Point.fromLngLat(
-                                        it.longitude,
-                                        it.latitude
-                                    )
-                                }
+                                .center(
+                                    viewModel.initialLocation.value?.let {
+                                        Point.fromLngLat(
+                                            it.longitude,
+                                            it.latitude
+                                        )
+                                    }
                                 )
                                 .padding(
                                     _cameraPadding.value, context
@@ -657,7 +646,7 @@ fun HomeScreen(
                     }
                 }
                 var isMapVisible by remember { mutableStateOf(false) }
-                if (initialLocationLoaded || !initialLocationGrace) {
+                if (initialLocationLoaded) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                         val (foreground, map) = createRefs()
                         Column(modifier = Modifier
@@ -711,6 +700,7 @@ fun HomeScreen(
                                     is PermissionStatus.Granted -> {
                                         it.location.turnOnWithDefaultPuck(context)
                                     }
+
                                     is PermissionStatus.Denied -> {
                                         it.location.enabled = false
                                     }
@@ -949,6 +939,7 @@ fun AvatarAsyncImage(
                                     )
                             )
                         }
+
                         is AsyncImagePainter.State.Error -> Icons.Rounded.BrokenImage
                         is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
                         else -> Icon(

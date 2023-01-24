@@ -119,7 +119,6 @@ fun List<DomainLocation>.toPath(
     )
 }
 
-// TODO: Limit size to 1MiB per hashMap
 fun List<DomainLocation>.toPaths(
     sessionUUID: String,
     ownerUUID: String,
