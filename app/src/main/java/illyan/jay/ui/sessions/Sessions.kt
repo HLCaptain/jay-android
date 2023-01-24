@@ -253,8 +253,15 @@ fun SessionsList(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Rounded.Info, contentDescription = "")
-                    Text(text = stringResource(R.string.no_sessions_to_show))
+                    Icon(
+                        imageVector = Icons.Rounded.Info,
+                        contentDescription = "",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.no_sessions_to_show),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }
