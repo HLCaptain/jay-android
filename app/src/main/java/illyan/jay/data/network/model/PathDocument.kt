@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,12 +18,18 @@
 
 package illyan.jay.data.network.model
 
+import android.os.Parcelable
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
-import java.util.UUID
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.TypeParceler
 
+@Parcelize
+@TypeParceler<GeoPoint, GeoPointParceler>
 data class PathDocument(
-    var uuid: String = UUID.randomUUID().toString(),
+    var uuid: String,
+    val sessionUUID: String, // reference of the session this path is part of
+    val ownerUUID: String,
     val accuracyChangeTimestamps: List<Timestamp>,
     val accuracyChanges: List<Byte>,
     val altitudes: List<Short>,
@@ -31,11 +37,12 @@ data class PathDocument(
     val bearingAccuracyChanges: List<Short>,
     val bearings: List<Short>,
     val coords: List<GeoPoint>,
-    val sessionUUID: String, // reference of the session this path is part of
     val speeds: List<Float>,
     val speedAccuracyChangeTimestamps: List<Timestamp>,
     val speedAccuracyChanges: List<Float>,
     val timestamps: List<Timestamp>,
     val verticalAccuracyChangeTimestamps: List<Timestamp>,
     val verticalAccuracyChanges: List<Short>
-)
+) : Parcelable
+
+

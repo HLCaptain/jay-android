@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -21,10 +21,13 @@ package illyan.jay.ui.search
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -40,10 +43,10 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -53,10 +56,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mapbox.search.record.FavoriteRecord
@@ -66,10 +69,8 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
+import illyan.jay.ui.components.LightDarkThemePreview
 import illyan.jay.ui.home.RoundedCornerRadius
-import illyan.jay.ui.theme.HotPink
-import illyan.jay.ui.theme.Neutral90
-import illyan.jay.ui.theme.Neutral95
 
 @RootNavGraph
 @NavGraph
@@ -88,6 +89,7 @@ val DividerThickness = 1.dp
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel()
 ) {
+    val statusBarTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     DisposableEffect(Unit) {
         viewModel.load()
         onDispose { viewModel.dispose() }
@@ -100,7 +102,7 @@ fun SearchScreen(
             .fillMaxSize()
             .padding(horizontal = SearchPadding),
         contentPadding = PaddingValues(
-            top = SearchPadding,
+            top = SearchPadding + statusBarTopPadding,
             bottom = RoundedCornerRadius + SearchPadding
         )
     ) {
@@ -109,7 +111,8 @@ fun SearchScreen(
                 Text(
                     modifier = Modifier.padding(SearchPadding),
                     text = stringResource(R.string.suggestions),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
             }
             suggestionItems(
@@ -123,7 +126,8 @@ fun SearchScreen(
             Text(
                 modifier = Modifier.padding(SearchPadding),
                 text = stringResource(R.string.favorites),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
         favoriteItems(
@@ -136,7 +140,8 @@ fun SearchScreen(
             Text(
                 modifier = Modifier.padding(SearchPadding),
                 text = stringResource(R.string.history),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
         historyItems(
@@ -155,10 +160,18 @@ fun LazyListScope.historyItems(
     searchItems(
         list = items
     ) { historyRecord, index ->
+        val roundedCornerTop = if (index == 0) SearchItemsCornerRadius else 0.dp
+        val roundedCornerBottom = if (index == items.lastIndex) SearchItemsCornerRadius else 0.dp
         HistoryCard(
             modifier = Modifier.fillMaxWidth(),
             result = historyRecord,
-            onClick = { onClick(historyRecord, index) }
+            onClick = { onClick(historyRecord, index) },
+            shape = RoundedCornerShape(
+                topStart = roundedCornerTop,
+                topEnd = roundedCornerTop,
+                bottomStart = roundedCornerBottom,
+                bottomEnd = roundedCornerBottom
+            )
         )
     }
 }
@@ -170,10 +183,18 @@ fun LazyListScope.favoriteItems(
     searchItems(
         list = items
     ) { favoriteRecord, index ->
+        val roundedCornerTop = if (index == 0) SearchItemsCornerRadius else 0.dp
+        val roundedCornerBottom = if (index == items.lastIndex) SearchItemsCornerRadius else 0.dp
         FavoriteCard(
             modifier = Modifier.fillMaxWidth(),
             result = favoriteRecord,
-            onClick = { onClick(favoriteRecord, index) }
+            onClick = { onClick(favoriteRecord, index) },
+            shape = RoundedCornerShape(
+                topStart = roundedCornerTop,
+                topEnd = roundedCornerTop,
+                bottomStart = roundedCornerBottom,
+                bottomEnd = roundedCornerBottom
+            )
         )
     }
 }
@@ -185,10 +206,18 @@ fun LazyListScope.suggestionItems(
     searchItems(
         list = items
     ) { suggestion, index ->
+        val roundedCornerTop = if (index == 0) SearchItemsCornerRadius else 0.dp
+        val roundedCornerBottom = if (index == items.lastIndex) SearchItemsCornerRadius else 0.dp
         SuggestionCard(
             modifier = Modifier.fillMaxWidth(),
             result = suggestion,
-            onClick = { onClick(suggestion, index) }
+            onClick = { onClick(suggestion, index) },
+            shape = RoundedCornerShape(
+                topStart = roundedCornerTop,
+                topEnd = roundedCornerTop,
+                bottomStart = roundedCornerBottom,
+                bottomEnd = roundedCornerBottom
+            )
         )
     }
 }
@@ -200,7 +229,8 @@ fun <Item> LazyListScope.searchItems(
             modifier = Modifier.fillMaxWidth(),
             title = stringResource(R.string.list_is_empty),
             description = stringResource(R.string.list_is_empty_description),
-            icon = Icons.Rounded.Info
+            icon = Icons.Rounded.Info,
+            shape = RoundedCornerShape(SearchItemsCornerRadius)
         )
     },
     itemProvider: @Composable (Item, Int) -> Unit
@@ -211,33 +241,11 @@ fun <Item> LazyListScope.searchItems(
         }
     }
     itemsIndexed(list) { index, item ->
-        val roundedCornerTop = if (index == 0) {
-            SearchItemsCornerRadius
-        } else {
-            0.dp
-        }
-        val roundedCornerBottom = if (index == list.lastIndex) {
-            SearchItemsCornerRadius
-        } else {
-            0.dp
-        }
-        Surface(
-            modifier = Modifier
-                .clip(
-                    RoundedCornerShape(
-                        topStart = roundedCornerTop,
-                        topEnd = roundedCornerTop,
-                        bottomStart = roundedCornerBottom,
-                        bottomEnd = roundedCornerBottom
-                    )
-                ),
-            // Highlight first item
-            color = if (index == 0) Neutral90 else Neutral95
-        ) {
-            if (index > 0) {
+        if (index > 0) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+            ) {
                 Divider(
-                    thickness = DividerThickness,
-                    color = Neutral90,
                     modifier = Modifier
                         .padding(start = DividerStartPadding)
                         .clip(
@@ -245,19 +253,22 @@ fun <Item> LazyListScope.searchItems(
                                 topStart = DividerThickness / 2f,
                                 bottomStart = DividerThickness / 2f
                             )
-                        )
+                        ),
+                    thickness = DividerThickness,
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp)
                 )
             }
-            itemProvider(item, index)
         }
+        itemProvider(item, index)
     }
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @Composable
 fun SuggestionCard(
     modifier: Modifier = Modifier,
     result: SearchSuggestion? = null,
+    shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {}
 ) {
     SearchCard(
@@ -265,15 +276,17 @@ fun SuggestionCard(
         title = result?.name ?: "Suggestion Title",
         description = result?.address?.region ?: "Suggestion description",
         icon = Icons.Rounded.Search,
+        shape = shape,
         onClick = onClick
     )
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @Composable
 fun HistoryCard(
     modifier: Modifier = Modifier,
     result: HistoryRecord? = null,
+    shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {}
 ) {
     SearchCard(
@@ -281,15 +294,17 @@ fun HistoryCard(
         title = result?.name ?: "History Record Title",
         description = result?.address?.region ?: "History record description",
         icon = Icons.Rounded.YoutubeSearchedFor,
+        shape = shape,
         onClick = onClick
     )
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @Composable
 fun FavoriteCard(
     modifier: Modifier = Modifier,
     result: FavoriteRecord? = null,
+    shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {}
 ) {
     SearchCard(
@@ -297,7 +312,7 @@ fun FavoriteCard(
         title = result?.name ?: "Favorite Record Title",
         description = result?.address?.region ?: "Favorite record description",
         icon = Icons.Rounded.Favorite,
-        tint = HotPink,
+        shape = shape,
         onClick = onClick
     )
 }
@@ -309,18 +324,21 @@ fun SearchCard(
     title: String = "Title",
     description: String = "Description",
     icon: ImageVector = Icons.Rounded.Search,
-    tint: Color = LocalContentColor.current,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {}
 ) {
-    val cardColors = CardDefaults.elevatedCardColors(
-        containerColor = Color.Transparent
-    )
     // Can be widely generalized. Height is prefered
     // to be limited and the same between list items.
+    val cardColors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        contentColor = tint
+    )
     Card(
         modifier = modifier,
         onClick = onClick,
-        colors = cardColors
+        colors = cardColors,
+        shape = shape,
     ) {
         Row(
             modifier = Modifier.padding(4.dp),
@@ -343,12 +361,11 @@ fun SearchCard(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.DarkGray
                 )
             }
         }

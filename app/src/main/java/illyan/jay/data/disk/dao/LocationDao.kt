@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -61,10 +61,6 @@ interface LocationDao {
     fun deleteLocations(sessionUUID: String)
 
     @Transaction
-    @Query("SELECT * FROM location WHERE id = :id")
-    fun getLocation(id: Long): Flow<RoomLocation?>
-
-    @Transaction
     @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID")
     fun getLocations(sessionUUID: String): Flow<List<RoomLocation>>
 
@@ -73,10 +69,10 @@ interface LocationDao {
     fun getLocations(sessionUUIDs: List<String>): Flow<List<RoomLocation>>
 
     @Transaction
-    @Query("SELECT * FROM location ORDER BY id DESC LIMIT :limit")
+    @Query("SELECT * FROM location ORDER BY time DESC LIMIT :limit")
     fun getLatestLocations(limit: Long): Flow<List<RoomLocation>>
 
     @Transaction
-    @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID ORDER BY id DESC LIMIT :limit")
+    @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID ORDER BY time DESC LIMIT :limit")
     fun getLatestLocations(sessionUUID: String, limit: Long): Flow<List<RoomLocation>>
 }

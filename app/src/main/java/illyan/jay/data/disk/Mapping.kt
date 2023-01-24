@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -44,9 +44,8 @@ fun RoomSession.toDomainModel() = DomainSession(
     startLocationName = startLocationName,
     endLocationName = endLocationName,
     distance = distance,
-    ownerUserUUID = ownerUserUUID,
+    ownerUUID = ownerUUID,
     clientUUID = clientUUID,
-    isSynced = isSynced,
 )
 
 fun DomainSession.toRoomModel() = RoomSession(
@@ -60,19 +59,17 @@ fun DomainSession.toRoomModel() = RoomSession(
     startLocationName = startLocationName,
     endLocationName = endLocationName,
     distance = distance,
-    ownerUserUUID = ownerUserUUID,
+    ownerUUID = ownerUUID,
     clientUUID = clientUUID,
-    isSynced = isSynced,
 )
 
 // Location
 fun RoomLocation.toDomainModel() = DomainLocation(
-    id = id,
     latitude = latitude,
+    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     longitude = longitude,
     speed = speed,
     sessionUUID = sessionUUID,
-    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     accuracy = accuracy,
     bearing = bearing,
     bearingAccuracy = bearingAccuracy,
@@ -82,11 +79,11 @@ fun RoomLocation.toDomainModel() = DomainLocation(
 )
 
 fun DomainLocation.toRoomModel() = RoomLocation(
+    sessionUUID = sessionUUID,
+    time = zonedDateTime.toInstant().toEpochMilli(),
     latitude = latitude,
     longitude = longitude,
     speed = speed,
-    sessionUUID = sessionUUID,
-    time = zonedDateTime.toInstant().toEpochMilli(),
     accuracy = accuracy,
     bearing = bearing,
     bearingAccuracy = bearingAccuracy,
@@ -99,10 +96,10 @@ fun Location.toDomainModel(
     sessionUUID: String
 ): DomainLocation {
     val domainLocation = DomainLocation(
-        latitude = latitude.toFloat(),
-        longitude = longitude.toFloat(),
+        sessionUUID = sessionUUID,
         zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
-        sessionUUID = sessionUUID
+        latitude = latitude.toFloat(),
+        longitude = longitude.toFloat()
     )
 
     if (hasSpeed()) domainLocation.speed = speed
@@ -120,7 +117,6 @@ fun Location.toDomainModel(
 
 // Rotation
 fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
-    id = id,
     zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
     sessionUUID = sessionUUID,
     accuracy = accuracy,
@@ -131,22 +127,22 @@ fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
 )
 
 fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
-    time = zonedDateTime.toInstant().toEpochMilli(),
     sessionUUID = sessionUUID,
+    time = zonedDateTime.toInstant().toEpochMilli(),
+    type = type,
     accuracy = accuracy,
     x = x,
     y = y,
-    z = z,
-    type = type
+    z = z
 )
 
 // Sensors
 fun SensorEvent.toDomainModel(sessionUUID: String) = DomainSensorEvent(
     sessionUUID = sessionUUID,
     zonedDateTime = Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp)).atZone(ZoneOffset.UTC),
+    type = sensor.type.toByte(),
     accuracy = accuracy.toByte(),
     x = values[0],
     y = values[1],
-    z = values[2],
-    type = sensor.type.toByte()
+    z = values[2]
 )

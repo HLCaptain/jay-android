@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -31,6 +31,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 
 fun DomainSession.toHashMap() = hashMapOf(
     "uuid" to uuid,
@@ -44,11 +45,10 @@ fun DomainSession.toHashMap() = hashMapOf(
     "clientUUID" to clientUUID
 )
 
-// TODO: Limit size to 1MiB per hashMap
-fun List<DomainLocation>.toPaths(
-    sessionUUID: String
-): List<PathDocument> {
-
+fun List<DomainLocation>.toPath(
+    sessionUUID: String,
+    ownerUUID: String
+): PathDocument {
     val accuracyChangeTimestamps = mutableListOf<Timestamp>()
     val accuracyChanges = mutableListOf<Byte>()
     val altitudes = mutableListOf<Short>()
@@ -99,29 +99,44 @@ fun List<DomainLocation>.toPaths(
         }
     }
 
-    return listOf(
-        PathDocument(
-            uuid = UUID.randomUUID().toString(),
-            accuracyChangeTimestamps = accuracyChangeTimestamps.toList(),
-            accuracyChanges = accuracyChanges.toList(),
-            altitudes = altitudes.toList(),
-            bearingAccuracyChangeTimestamps = bearingAccuracyChangeTimestamps.toList(),
-            bearingAccuracyChanges = bearingAccuracyChanges.toList(),
-            bearings = bearings.toList(),
-            coords = coords.toList(),
-            sessionUUID = sessionUUID,
-            speeds = speeds.toList(),
-            speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps.toList(),
-            speedAccuracyChanges = speedAccuracyChanges.toList(),
-            timestamps = timestamps.toList(),
-            verticalAccuracyChangeTimestamps = verticalAccuracyChangeTimestamps.toList(),
-            verticalAccuracyChanges = verticalAccuracyChanges.toList(),
-        )
+    return PathDocument(
+        uuid = UUID.randomUUID().toString(),
+        sessionUUID = sessionUUID,
+        ownerUUID = ownerUUID,
+        accuracyChangeTimestamps = accuracyChangeTimestamps,
+        accuracyChanges = accuracyChanges,
+        altitudes = altitudes,
+        bearingAccuracyChangeTimestamps = bearingAccuracyChangeTimestamps,
+        bearingAccuracyChanges = bearingAccuracyChanges,
+        bearings = bearings,
+        coords = coords,
+        speeds = speeds,
+        speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps,
+        speedAccuracyChanges = speedAccuracyChanges,
+        timestamps = timestamps,
+        verticalAccuracyChangeTimestamps = verticalAccuracyChangeTimestamps,
+        verticalAccuracyChanges = verticalAccuracyChanges,
     )
+}
+
+// TODO: Limit size to 1MiB per hashMap
+fun List<DomainLocation>.toPaths(
+    sessionUUID: String,
+    ownerUUID: String,
+    thresholdInMinutes: Int = 30
+): List<PathDocument> {
+    if (isEmpty()) return emptyList()
+    val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
+    val groupedByTime = groupBy {(it.zonedDateTime.toInstant().toEpochMilli() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds }
+    return groupedByTime.map {
+        it.value.toPath(sessionUUID, ownerUUID)
+    }
 }
 
 fun PathDocument.toHashMap() = hashMapOf(
     "uuid" to uuid,
+    "sessionUUID" to sessionUUID,
+    "ownerUUID" to ownerUUID,
     "accuracyChangeTimestamps" to accuracyChangeTimestamps,
     "accuracyChanges" to accuracyChanges.map { it.toInt() },
     "altitudes" to altitudes.map { it.toInt() },
@@ -129,7 +144,6 @@ fun PathDocument.toHashMap() = hashMapOf(
     "bearingAccuracyChanges" to bearingAccuracyChanges.map { it.toInt() },
     "bearings" to bearings.map { it.toInt() },
     "coords" to coords,
-    "sessionUUID" to sessionUUID,
     "speeds" to speeds,
     "speedAccuracyChangeTimestamps" to speedAccuracyChangeTimestamps,
     "speedAccuracyChanges" to speedAccuracyChanges,
@@ -142,23 +156,22 @@ fun Map<String, Any?>.toDomainSession(
     uuid: String,
     userUUID: String
 ): DomainSession {
-    val startLocation = this["startLocation"] as GeoPoint?
-    val endLocation = this["endLocation"] as GeoPoint?
+    val startLocation = this["startLocation"] as? GeoPoint
+    val endLocation = this["endLocation"] as? GeoPoint
     return DomainSession(
         uuid = uuid,
-        startDateTime = (this["startDateTime"] as Timestamp?)?.toZonedDateTime() ?: ZonedDateTime
+        startDateTime = (this["startDateTime"] as? Timestamp)?.toZonedDateTime() ?: ZonedDateTime
             .ofInstant(Instant.EPOCH, ZoneOffset.UTC),
-        endDateTime = (this["endDateTime"] as Timestamp?)?.toZonedDateTime(),
+        endDateTime = (this["endDateTime"] as? Timestamp)?.toZonedDateTime(),
         startLocationLatitude = startLocation?.latitude?.toFloat(),
         startLocationLongitude = startLocation?.longitude?.toFloat(),
         endLocationLatitude = endLocation?.latitude?.toFloat(),
         endLocationLongitude = endLocation?.longitude?.toFloat(),
-        startLocationName = this["startLocationName"] as String?,
-        endLocationName = this["endLocationName"] as String?,
-        distance = (this["distance"] as Double?)?.toFloat(),
-        clientUUID = (this["clientUUID"] as String?),
-        ownerUserUUID = userUUID,
-        isSynced = true
+        startLocationName = this["startLocationName"] as? String,
+        endLocationName = this["endLocationName"] as? String,
+        distance = (this["distance"] as? Double)?.toFloat(),
+        clientUUID = (this["clientUUID"] as? String),
+        ownerUUID = userUUID,
     )
 }
 
@@ -166,39 +179,43 @@ fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
 
     forEach { document ->
-        val accuracyChangeTimestamps = document.get("accuracyChangeTimestamps") as List<Timestamp>
-        val accuracyChanges = document.get("accuracyChanges") as List<Int>
-        val altitudes = document.get("altitudes") as List<Int>
-        val bearingAccuracyChangeTimestamps = document.get("bearingAccuracyChangeTimestamps") as List<Timestamp>
-        val bearingAccuracyChanges = document.get("bearingAccuracyChanges") as List<Int>
-        val bearings = document.get("bearings") as List<Int>
-        val coords = document.get("coords") as List<GeoPoint>
-        val speeds = document.get("speeds") as List<Float>
-        val speedAccuracyChangeTimestamps = document.get("speedAccuracyChangeTimestamps") as List<Timestamp>
-        val speedAccuracyChanges = document.get("speedAccuracyChanges") as List<Float>
-        val timestamps = document.get("timestamps") as List<Timestamp>
-        val verticalAccuracyChangeTimestamps = document.get("verticalAccuracyChangeTimestamps") as List<Timestamp>
-        val verticalAccuracyChanges = document.get("verticalAccuracyChanges") as List<Int>
-        val sessionUUID = document.getString("sessionId")
+        val timestamps = (document.get("timestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val sessionUUID = document.getString("sessionUUID") ?: ""
+        val accuracyChangeTimestamps = (document.get("accuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val accuracyChanges = document.get("accuracyChanges") as? List<Int> ?: emptyList()
+        val altitudes = document.get("altitudes") as? List<Int> ?: emptyList()
+        val bearingAccuracyChangeTimestamps = (document.get("bearingAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val bearingAccuracyChanges = document.get("bearingAccuracyChanges") as? List<Int> ?: emptyList()
+        val bearings = document.get("bearings") as? List<Int> ?: emptyList()
+        val coords = document.get("coords") as? List<GeoPoint> ?: emptyList()
+        val speeds = document.get("speeds") as? List<Float> ?: emptyList()
+        val speedAccuracyChangeTimestamps = (document.get("speedAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val speedAccuracyChanges = document.get("speedAccuracyChanges") as? List<Float> ?: emptyList()
+        val verticalAccuracyChangeTimestamps = (document.get("verticalAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
+        val verticalAccuracyChanges = document.get("verticalAccuracyChanges") as? List<Int> ?: emptyList()
 
-        timestamps.forEachIndexed { index, timestamp ->
-            val indexOfLastAccuracyChange = accuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+        timestamps.forEachIndexed { index, zonedDateTime ->
+            val indexOfLastAccuracyChange = accuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
-            val indexOfLastBearingAccuracyChange = bearingAccuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+            val indexOfLastBearingAccuracyChange = bearingAccuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
-            val indexOfLastVerticalAccuracyChange = verticalAccuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+            val indexOfLastVerticalAccuracyChange = verticalAccuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
-            val indexOfLastSpeedAccuracyChange = speedAccuracyChangeTimestamps.indexOfLast {
-                it.toZonedDateTime().isBefore(timestamp.toZonedDateTime())
+            val indexOfLastSpeedAccuracyChange = speedAccuracyChangeTimestamps
+                .indexOfLast {
+                it.isBefore(zonedDateTime)
             }.coerceAtLeast(0)
 
             domainLocations.add(
-                DomainLocation( // FIXME: save speed accuracy next time?
-                    sessionUUID = sessionUUID ?: UUID.randomUUID().toString(),
-                    zonedDateTime = timestamp.toZonedDateTime(),
+                DomainLocation(
+                    sessionUUID = sessionUUID,
+                    zonedDateTime = zonedDateTime,
                     latitude = coords[index].latitude.toFloat(),
                     longitude = coords[index].longitude.toFloat(),
                     speed = speeds[index],

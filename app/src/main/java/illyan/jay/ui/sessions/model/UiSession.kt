@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -38,20 +38,26 @@ data class UiSession(
     val duration: Duration,
     val isLocal: Boolean,
     val isSynced: Boolean,
-    val isNotOwned: Boolean
-)
+    val clientUUID: String?,
+    val ownerUUID: String?
+) {
+    val isOwned get() = !ownerUUID.isNullOrBlank()
+    val isNotOwned get() = !isOwned
+}
 
 fun DomainSession.toUiModel(
     locations: List<DomainLocation>,
     currentClientUUID: String,
     isLocal: Boolean = clientUUID == currentClientUUID,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
+    isSynced: Boolean = false,
 ): UiSession {
     return toUiModel(
         locations.sphericalPathLength(),
         currentClientUUID,
         isLocal,
-        currentTime
+        currentTime,
+        isSynced
     )
 }
 
@@ -60,6 +66,7 @@ fun DomainSession.toUiModel(
     currentClientUUID: String,
     isLocal: Boolean = clientUUID == currentClientUUID,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
+    isSynced: Boolean = false,
 ): UiSession {
     return UiSession(
         uuid = uuid,
@@ -79,6 +86,7 @@ fun DomainSession.toUiModel(
         },
         isSynced = isSynced,
         isLocal = isLocal,
-        isNotOwned = ownerUserUUID == null
+        clientUUID = clientUUID,
+        ownerUUID = ownerUUID
     )
 }

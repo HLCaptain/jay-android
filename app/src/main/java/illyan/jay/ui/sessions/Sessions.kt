@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.sessions
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
@@ -49,7 +50,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,7 +61,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -66,6 +68,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.LightDarkThemePreview
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -73,19 +76,17 @@ import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
-import illyan.jay.ui.theme.Neutral95
 import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
 import illyan.jay.util.minus
 import java.math.RoundingMode
 
 val DefaultContentPadding = PaddingValues(
-    bottom = MenuItemPadding * 2
+    bottom = MenuItemPadding + RoundedCornerRadius
 )
 
 val DefaultScreenOnSheetPadding = PaddingValues(
-    top = MenuItemPadding * 2,
-    bottom = RoundedCornerRadius
+    top = MenuItemPadding * 2
 )
 
 @MenuNavGraph
@@ -109,7 +110,7 @@ fun SessionsScreen(
             canDeleteSessions
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
-        viewModel.loadCloudSessions(context)
+        viewModel.loadCloudSessions(context as Activity)
     }
     ConstraintLayout(
         modifier = Modifier.padding(
@@ -235,17 +236,16 @@ fun SessionsList(
     viewModel: SessionsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator,
 ) {
-    val ownedLocalSessionUUIDs by viewModel.ownedLocalSessionUUIDs.collectAsState()
-    val remoteSessions by viewModel.syncedSessions.collectAsState()
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
     val noSessionsToShow by viewModel.noSessionsToShow.collectAsState()
     val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsState()
     val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsState()
-    val notOwnedSessionUUIDs by viewModel.notOwnedSessionUUIDs.collectAsState()
+    val allSessionUUIDs by viewModel.allSessionUUIDs.collectAsState()
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
-        verticalArrangement = Arrangement.spacedBy(MenuItemPadding)
+        verticalArrangement = Arrangement.spacedBy(MenuItemPadding),
+        reverseLayout = true
     ) {
         if (noSessionsToShow) {
             item {
@@ -253,8 +253,15 @@ fun SessionsList(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Rounded.Info, contentDescription = "")
-                    Text(text = stringResource(R.string.no_sessions_to_show))
+                    Icon(
+                        imageVector = Icons.Rounded.Info,
+                        contentDescription = "",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.no_sessions_to_show),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }
@@ -276,15 +283,6 @@ fun SessionsList(
                 }
             }
         }
-        items(remoteSessions) {
-            SessionCard(
-                modifier = Modifier.fillMaxWidth(),
-                session = it,
-                onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
-                }
-            )
-        }
         if (!localSessionsLoaded) {
             item {
                 Column(
@@ -303,8 +301,13 @@ fun SessionsList(
                 }
             }
         }
-        items(notOwnedSessionUUIDs) {
+        items(allSessionUUIDs) {
             val session by viewModel.getSessionStateFlow(it).collectAsState()
+            DisposableEffect(true) {
+                onDispose {
+                    viewModel.disposeSessionStateFlow(it)
+                }
+            }
             val isPlaceholderVisible = session == null
             SessionCard(
                 modifier = Modifier
@@ -312,10 +315,16 @@ fun SessionsList(
                     .cardPlaceholder(isPlaceholderVisible),
                 session = session,
                 onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
+                    destinationsNavigator.navigate(
+                        SessionScreenDestination(
+                            sessionUUID = sessionUUID
+                        )
+                    )
                 }
             ) {
-                if (session != null && isUserSignedIn) {
+                AnimatedVisibility(
+                    visible = session != null && isUserSignedIn && session!!.isNotOwned
+                ) {
                     Button(
                         onClick = { viewModel.ownSession(session!!.uuid) },
                     ) {
@@ -330,23 +339,10 @@ fun SessionsList(
                 }
             }
         }
-        items(ownedLocalSessionUUIDs) {
-            val session by viewModel.getSessionStateFlow(it).collectAsState()
-            val isPlaceholderVisible = session == null
-            SessionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .cardPlaceholder(isPlaceholderVisible),
-                session = session,
-                onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(SessionScreenDestination(sessionUUID = sessionUUID))
-                }
-            )
-        }
     }
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionCard(
@@ -356,7 +352,8 @@ fun SessionCard(
     content: @Composable () -> Unit = {},
 ) {
     val cardColors = CardDefaults.cardColors(
-        containerColor = Neutral95
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
     Card(
         modifier = modifier,
@@ -394,15 +391,15 @@ fun SessionCard(
                     }
                 }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    if (session?.isLocal == true) {
+                    AnimatedVisibility(visible = session?.isLocal == true) {
                         Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
                     }
-                    if (session?.isSynced == true) {
+                    AnimatedVisibility(visible = session?.isSynced == true) {
                         Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
                     }
-                    if (session?.isNotOwned == true) {
+                    AnimatedVisibility(visible = session?.isNotOwned == true) {
                         Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
                     }
                 }

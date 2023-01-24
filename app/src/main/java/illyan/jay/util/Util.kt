@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.BottomSheetState
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Shape
@@ -141,11 +142,13 @@ fun LatLng.equals(latLng: LatLng, accuracyInMeters: Double): Boolean {
     return SphericalUtil.computeDistanceBetween(this, latLng) <= accuracyInMeters
 }
 
+fun LatLng.toGeoPoint() = GeoPoint(latitude, longitude)
+
+fun GeoPoint.toLatLng() = LatLng(latitude, longitude)
+
 fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
 
 fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()
-
-fun LatLng.toGeoPoint() = GeoPoint(latitude, longitude)
 
 fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 
@@ -163,7 +166,8 @@ fun Modifier.textPlaceholder(
     Modifier.placeholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
-        shape = shape
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }
 
@@ -175,7 +179,8 @@ fun Modifier.largeTextPlaceholder(
     Modifier.placeholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
-        shape = shape
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }
 
@@ -187,6 +192,7 @@ fun Modifier.cardPlaceholder(
     Modifier.placeholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
-        shape = shape
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }

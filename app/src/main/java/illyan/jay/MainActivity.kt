@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -25,10 +25,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.tasks.Task
@@ -36,6 +34,7 @@ import com.ramcosta.composedestinations.DestinationsNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.components.LightDarkThemePreview
 import illyan.jay.ui.theme.JayTheme
 import javax.inject.Inject
 
@@ -59,16 +58,14 @@ class MainActivity : AppCompatActivity() {
         setContent {
             JayTheme {
                 MainScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
     }
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier

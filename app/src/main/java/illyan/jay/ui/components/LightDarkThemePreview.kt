@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,29 +16,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.domain.model
+package illyan.jay.ui.components
 
-import java.time.ZonedDateTime
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.ui.tooling.preview.Preview
 
-/**
- * Domain acceleration used for general data handling
- * between DataSources, Interactors and Presenters.
- *
- * @property id
- * @property sessionUUID
- * @property zonedDateTime
- * @property accuracy
- * @property x
- * @property y
- * @property z
- * @constructor Create empty Domain acceleration
- */
-data class DomainSensorEvent(
-    val sessionUUID: String,
-    val zonedDateTime: ZonedDateTime,
-    val type: Byte,
-    val accuracy: Byte, // enum
-    val x: Float,
-    val y: Float,
-    val z: Float,
+@Preview(
+    name = "Dark theme",
+    group = "themes",
+    uiMode = UI_MODE_NIGHT_YES,
+    showBackground = true,
 )
+@Preview(
+    name = "Light theme",
+    group = "themes",
+    showBackground = true,
+)
+annotation class LightDarkThemePreview

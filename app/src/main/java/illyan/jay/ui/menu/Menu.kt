@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -45,11 +45,13 @@ import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Route
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -59,12 +61,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.mapbox.search.result.SearchResultType
@@ -75,6 +75,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
 import illyan.jay.R
+import illyan.jay.ui.components.LightDarkThemePreview
 import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.destinations.SessionsScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -85,7 +86,6 @@ import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
-import illyan.jay.ui.theme.SignatureTone95
 import illyan.jay.util.isCollapsedOrWillBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -156,7 +156,6 @@ fun MenuScreen(
                         ACTION_QUERY_PLACE
                     )
                 },
-                color = SignatureTone95
             )
         }
         item {
@@ -166,7 +165,6 @@ fun MenuScreen(
                 onClick = {
                     destinationsNavigator.navigate(FreeDriveScreenDestination)
                 },
-                color = SignatureTone95
             )
         }
         item {
@@ -176,30 +174,28 @@ fun MenuScreen(
                 onClick = {
                     destinationsNavigator.navigate(SessionsScreenDestination)
                 },
-                color = SignatureTone95
             )
         }
     }
 }
 
-@Preview(showBackground = true)
+@LightDarkThemePreview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuItemCard(
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.menu_item_title),
     icon: ImageVector? = null,
-    color: Color = MaterialTheme.colorScheme.primaryContainer,
+    cardColors: CardColors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ),
     onClick: () -> Unit = {},
 ) {
-    // Navigate to appropriate screen in whatever
-    val cardColors = CardDefaults.cardColors(
-        containerColor = color
-    )
     Card(
         modifier = modifier,
         onClick = onClick,
-        colors = cardColors
+        colors = cardColors,
     ) {
         Row(
             modifier = Modifier.heightIn(min = 48.dp),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -30,8 +30,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -64,18 +64,23 @@ import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.navigation.model.Place
 import illyan.jay.ui.navigation.model.toPoint
 import illyan.jay.ui.sheet.SheetNavGraph
-import illyan.jay.ui.theme.SignatureTone95
 import illyan.jay.util.largeTextPlaceholder
 import illyan.jay.util.plus
 import illyan.jay.util.textPlaceholder
 import java.math.RoundingMode
 
-val DefaultScreenOnSheetPadding = PaddingValues(
-    top = MenuItemPadding,
+val DefaultScreenOnSheetPaddingHorizontal = PaddingValues(
     start = MenuItemPadding * 2,
     end = MenuItemPadding * 2,
-    bottom = RoundedCornerRadius + MenuItemPadding * 2
 )
+
+val DefaultScreenOnSheetPaddingVertical = PaddingValues(
+    top = MenuItemPadding,
+    bottom = RoundedCornerRadius + MenuItemPadding * 2,
+)
+
+val DefaultScreenOnSheetPadding =
+    DefaultScreenOnSheetPaddingHorizontal + DefaultScreenOnSheetPaddingVertical
 
 const val maxZoom = 18.0
 const val largeZoom = 16.0
@@ -154,15 +159,11 @@ fun NavigationScreen(
             )
         }
     }
+    val verticalPadding = DefaultScreenOnSheetPaddingVertical
     Column(
         modifier = Modifier
+            .padding(verticalPadding)
             .fillMaxWidth()
-            .padding(
-                DefaultScreenOnSheetPadding + PaddingValues(
-                    start = 2.dp,
-                    end = 2.dp,
-                )
-            )
     ) {
         PlaceInfoScreen(
             modifier = Modifier.fillMaxWidth(),
@@ -180,33 +181,44 @@ fun PlaceInfoScreen(
     val place by viewModel.place.collectAsState()
     val shouldShowAddress by viewModel.shouldShowAddress.collectAsState()
     val isLoading = placeInfo == null
+    val horizontalPadding = DefaultScreenOnSheetPaddingHorizontal + PaddingValues(
+        start = 2.dp,
+        end = 2.dp,
+    )
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            modifier = Modifier.largeTextPlaceholder(place == null),
+            modifier = Modifier
+                .padding(horizontalPadding)
+                .largeTextPlaceholder(place == null),
             text = place?.name ?: stringResource(R.string.unknown),
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
         )
         AnimatedVisibility(
-            modifier = Modifier.textPlaceholder(isLoading),
+            modifier = Modifier
+                .padding(horizontalPadding)
+                .textPlaceholder(isLoading),
             visible = shouldShowAddress && placeInfo?.address != null
         ) {
             Text(
-                text = placeInfo?.address?.formattedAddress() ?: stringResource(R.string.unknown)
+                text = placeInfo?.address?.formattedAddress() ?: stringResource(R.string.unknown),
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
         AnimatedVisibility(visible = !placeInfo?.categories.isNullOrEmpty()) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = horizontalPadding
             ) {
                 items(placeInfo?.categories ?: emptyList()) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(SignatureTone95)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
                     ) {
                         Text(
                             modifier = Modifier.padding(
@@ -216,14 +228,17 @@ fun PlaceInfoScreen(
                                 bottom = 4.dp
                             ),
                             text = it.replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                 }
             }
         }
         Text(
-            modifier = Modifier.textPlaceholder(isLoading),
+            modifier = Modifier
+                .padding(horizontalPadding)
+                .textPlaceholder(isLoading),
             text = placeInfo?.coordinate?.run {
                 latitude()
                     .toBigDecimal()
@@ -235,7 +250,8 @@ fun PlaceInfoScreen(
                             .setScale(6, RoundingMode.HALF_UP)
                             .toString()
             } ?: stringResource(R.string.unknown),
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -39,7 +39,7 @@ import illyan.jay.data.disk.model.RoomSession
         RoomLocation::class,
         RoomSensorEvent::class
     ],
-    version = 24,
+    version = 29,
     exportSchema = false
 )
 abstract class JayDatabase : RoomDatabase() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -37,7 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -177,8 +176,9 @@ fun FreeDriveScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
+                        text = stringResource(R.string.automatically_turn_on_free_driving),
                         style = MaterialTheme.typography.labelLarge,
-                        text = stringResource(R.string.automatically_turn_on_free_driving)
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                     Switch(
                         checked = startServiceAutomatically,
@@ -206,11 +206,11 @@ fun LocationPermissionDeniedScreen(
     ) {
         Text(
             text = stringResource(R.string.location_permission_denied_title),
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
             text = stringResource(R.string.location_permission_denied_description),
-            style = MaterialTheme.typography.bodyMedium
         )
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -221,7 +221,6 @@ fun LocationPermissionDeniedScreen(
             ) {
                 Text(
                     text = stringResource(R.string.request_permission),
-                    color = Color.White
                 )
             }
         }
