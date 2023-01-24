@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -71,7 +71,7 @@ val puckScaleExpression = interpolate {
 fun MapboxMap(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    styleUri: String = Style.OUTDOORS,
+    styleUri: () -> String = { Style.OUTDOORS },
     onMapFullyLoaded: (MapView) -> Unit = {},
     onMapInitialized: (MapView) -> Unit = {},
     resourceOptions: ResourceOptions = MapInitOptions.getDefaultResourceOptions(context),
@@ -88,7 +88,7 @@ fun MapboxMap(
     val options = MapInitOptions(
         context = context,
         resourceOptions = resourceOptions,
-        styleUri = styleUri,
+        styleUri = styleUri(),
         mapOptions = mapOptions,
         cameraOptions = cameraOptionsBuilder.build(),
     )

@@ -28,7 +28,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.net.Uri
 import android.os.Parcelable
 import androidx.compose.animation.AnimatedVisibility
@@ -73,9 +72,7 @@ import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.BottomSheetState
 import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.rounded.AccountCircle
@@ -84,9 +81,13 @@ import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -120,7 +121,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
@@ -157,6 +157,7 @@ import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.components.LightDarkThemePreview
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.padding
@@ -168,6 +169,7 @@ import illyan.jay.ui.profile.ProfileDialog
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
+import illyan.jay.ui.theme.mapStyleUrl
 import illyan.jay.util.extraOptions
 import illyan.jay.util.isCollapsedOrWillBe
 import illyan.jay.util.isCollapsing
@@ -206,7 +208,7 @@ val mapView = _mapView.asStateFlow()
 lateinit var sheetState: BottomSheetState
 var isSearching: Boolean = false
 
-val sheetMaxHeight = 600.dp
+val sheetMaxHeight = 680.dp
 val sheetMinHeight = 100.dp
 
 private val _sheetContentHeight = MutableStateFlow(0.dp)
@@ -215,7 +217,7 @@ val sheetContentHeight = _sheetContentHeight.asStateFlow()
 private val _density = MutableStateFlow(2.75f)
 val density = _density.asStateFlow()
 
-private val _screenHeight = MutableStateFlow<Dp>(0.dp)
+private val _screenHeight = MutableStateFlow(0.dp)
 val screenHeight = _screenHeight.asStateFlow()
 
 private val _absoluteTop = MutableStateFlow(0.dp)
@@ -446,30 +448,30 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .onGloballyPositioned { coords ->
-            var topSet = false
-            val absoluteTopPosition = (coords.positionInWindow().y / density).dp
-            if (_absoluteTop.value != absoluteTopPosition) {
-                _absoluteTop.value = absoluteTopPosition
-                topSet = true
+                var topSet = false
+                val absoluteTopPosition = (coords.positionInWindow().y / density).dp
+                if (_absoluteTop.value != absoluteTopPosition) {
+                    _absoluteTop.value = absoluteTopPosition
+                    topSet = true
+                }
+                var bottomSet = false
+                val absoluteBottomPosition =
+                    ((coords.positionInWindow().y + coords.size.height) / density).dp
+                if (_absoluteBottom.value != absoluteBottomPosition) {
+                    bottomSet = true
+                    _absoluteBottom.value = absoluteBottomPosition
+                }
+                if (topSet || bottomSet) {
+                    refreshCameraPadding()
+                    Timber.d(
+                        "Camera bottom padding: ${
+                            absoluteBottomPosition - sheetState.getOffsetAsDp(
+                                density
+                            )
+                        }"
+                    )
+                }
             }
-            var bottomSet = false
-            val absoluteBottomPosition =
-                ((coords.positionInWindow().y + coords.size.height) / density).dp
-            if (_absoluteBottom.value != absoluteBottomPosition) {
-                bottomSet = true
-                _absoluteBottom.value = absoluteBottomPosition
-            }
-            if (topSet || bottomSet) {
-                refreshCameraPadding()
-                Timber.d(
-                    "Camera bottom padding: ${
-                        absoluteBottomPosition - sheetState.getOffsetAsDp(
-                            density
-                        )
-                    }"
-                )
-            }
-        }
     ) {
         val (searchBar, scaffold) = createRefs()
         val scaffoldState = rememberBottomSheetScaffoldState()
@@ -674,10 +676,10 @@ fun HomeScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(MaterialTheme.colorScheme.background)
                                 )
                             }
                         }
+                        val styleUrl by mapStyleUrl.collectAsState()
                         MapboxMap(
                             // Budapest University of Technology and Economics
                             modifier = Modifier
@@ -714,7 +716,7 @@ fun HomeScreen(
                                     }
                                 }
                             },
-                            styleUri = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2",
+                            styleUri = { styleUrl },
                         )
                     }
                 }
@@ -754,15 +756,7 @@ private suspend fun onSheetStateChanged(
     }
 }
 
-@Preview(
-    name = "Light mode",
-    showBackground = true
-)
-@Preview(
-    name = "Dark mode",
-    showBackground = true,
-    uiMode = UI_MODE_NIGHT_YES
-)
+@LightDarkThemePreview
 @Composable
 fun BottomSearchBar(
     modifier: Modifier = Modifier,
@@ -773,9 +767,7 @@ fun BottomSearchBar(
     onDragAreaOffset: Dp = 48.dp,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
-    val cardColors = CardDefaults.elevatedCardColors(
-        containerColor = Color.White
-    )
+    val cardColors = CardDefaults.elevatedCardColors()
     val elevation = 8.dp
     val cardElevation = CardDefaults.cardElevation(
         defaultElevation = elevation,
@@ -845,9 +837,6 @@ fun BottomSearchBar(
                     errorIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    textColor = Color.Black,
-                    focusedLabelColor = Color.DarkGray,
-                    unfocusedLabelColor = Color.LightGray
                 )
                 var searchPlaceText by remember { mutableStateOf("") }
                 TextField(
@@ -902,7 +891,6 @@ fun BottomSearchBar(
                                 Icon(
                                     imageVector = Icons.Filled.Cancel,
                                     contentDescription = stringResource(R.string.delete_text),
-                                    tint = Color.LightGray
                                 )
                             }
                         }
@@ -940,7 +928,7 @@ fun BottomSearchBar(
 fun AvatarAsyncImage(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    userPhotoUrl: Uri?
+    userPhotoUrl: Uri?,
 ) {
     Box(
         modifier = modifier,
@@ -966,7 +954,6 @@ fun AvatarAsyncImage(
                         else -> Icon(
                             modifier = modifier,
                             imageVector = Icons.Rounded.AccountCircle,
-                            tint = Color.LightGray,
                             contentDescription = stringResource(R.string.avatar_profile_picture)
                         )
                     }
@@ -977,7 +964,6 @@ fun AvatarAsyncImage(
             Icon(
                 modifier = modifier,
                 imageVector = Icons.Rounded.AccountCircle,
-                tint = Color.LightGray,
                 contentDescription = stringResource(R.string.avatar_profile_picture)
             )
         }
@@ -990,38 +976,37 @@ fun BottomSheetScreen(
     isSearching: Boolean = false,
     onBottomSheetFractionChange: (Float) -> Unit = {},
 ) {
-    val halfWayFraction = BottomSheetPartialExpendedFraction
-    val fullScreenFraction = BottomSheetPartialMaxFraction
     ConstraintLayout(
-        modifier = modifier.layout { measurable, constraints ->
-            val placeable = measurable.measure(constraints)
-            _sheetContentHeight.value = (placeable.height / density).dp
-            layout(placeable.width, placeable.height) {
-                placeable.placeRelative(0, 0)
-            }
-        }
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp))
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                _sheetContentHeight.value = (placeable.height / density).dp
+                layout(placeable.width, placeable.height) {
+                    placeable.placeRelative(0, 0)
+                }
+            },
     ) {
-        if (!isSearching) {
+        AnimatedVisibility(visible = !isSearching) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Box(
+                Surface(
                     modifier = Modifier
                         .width(24.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.LightGray)
-                )
+                        .height(4.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(4.dp)
+                ) {}
             }
         }
-        if (isSearching) {
-            onBottomSheetFractionChange(fullScreenFraction)
-        } else {
-            onBottomSheetFractionChange(halfWayFraction)
-        }
+        val screenHeight by _screenHeight.collectAsState()
+        val offset by sheetState.offset
+        val density = LocalDensity.current
+        onBottomSheetFractionChange(1 - offset / (screenHeight.value * density.density))
         ConstraintLayout(
             modifier = modifier
         ) {
@@ -1074,11 +1059,6 @@ private fun SheetNavHost(
                     height >= sheetMinHeight &&
                     height != sheetState.getOffsetAsDp(density)
                 ) {
-//                    Timber.d(
-//                        "Density: ${density}\n" +
-//                                "New bottom sheet height: ${sheetState.getOffsetAsDp(density)}\n" +
-//                                "Bottom sheet state:\n${sheetState.asString()}"
-//                    )
                     refreshCameraPadding()
                 }
                 layout(placeable.width, placeable.height) {

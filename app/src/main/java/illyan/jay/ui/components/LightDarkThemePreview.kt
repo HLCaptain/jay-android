@@ -16,9 +16,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.theme
+package illyan.jay.ui.components
 
-import androidx.compose.material3.Typography
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.ui.tooling.preview.Preview
 
-// Set of Material typography styles to start with
-val Typography = Typography()
+@Preview(
+    name = "Dark theme",
+    group = "themes",
+    uiMode = UI_MODE_NIGHT_YES,
+    showBackground = true,
+)
+@Preview(
+    name = "Light theme",
+    group = "themes",
+    showBackground = true,
+)
+annotation class LightDarkThemePreview
