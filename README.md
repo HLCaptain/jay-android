@@ -2,13 +2,11 @@
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=HLCaptain_jay-android&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=HLCaptain_jay-android)
 
-Driver behaviour analytics app.
+In short, Jay is providing data to decide on local problems and in the transportation field. Jay should be easy to use and available to have as much impact as possible.
 
 ## 🚧 Under development 🚧
 
-I am currently porting from XML ➡ [Jetpack Compose] and besides
-only rewriting the whole UI from scratch,
-I had to switch architectures as well from [RainbowCake] 🎂 ➡ [MVVM].
+I am currently porting from XML ➡ [Jetpack Compose] and besides only rewriting the whole UI from scratch, I had to switch architectures as well from [RainbowCake] 🎂 ➡ [MVVM].
 
 A few technologies and features that is ported or will be present:
 
@@ -28,21 +26,15 @@ You need to do 3 things after cloning the repository!
 
 ### Adding Android project to [Firebase] 🔥
 
-You need to modify the package of the project, because
-[Firebase] ***WILL NOT*** let you add Jay as an Android project,
-because I already have a project with this package.
-You might as well change the name of it, but it's optional.
+You need to modify the package of the project, because [Firebase] ***WILL NOT*** let you add Jay as an Android project, because I already have a project with this package. You might as well change the name of it, but it's optional.
 
-After you added the Android project, then you should follow
-the instructions [Firebase] gave you (download `google-services.json`).
+After you added the Android project, then you should follow the instructions [Firebase] gave you (download `google-services.json`).
 
 ### Install [Mapbox] 🗺
 
-You will need a [Mapbox account] in order to get the private and public
-keys to get it up and running.
+You will need a [Mapbox account] in order to get the private and public keys to get it up and running.
 
-Follow the [Mapbox install] guide for further information.
-I placed both of my keys in the `«USER_HOME»/.gradle/gradle.properties` file.
+Follow the [Mapbox install] guide for further information. I placed both of my keys in the `«USER_HOME»/.gradle/gradle.properties` file.
 
 ### Set up [SonarCloud] properly
 
@@ -51,10 +43,7 @@ level `build.gradle` file.
 
 ### ⚠ ATTENTION ⚠
 
-Never add `google-services.json` and `«USER_HOME»/.gradle/gradle.properties`
-into your forked repository and I would recommend keeping
-your `string.xml` file squeaky clean 🧹🧽🧼
-(don't place any keys, either public or private or confidential information there).
+Never add `google-services.json` and `«USER_HOME»/.gradle/gradle.properties` into your forked repository and I would recommend keeping your `string.xml` file squeaky clean 🧹🧽🧼 (don't place any keys, either public or private or confidential information there).
 
 ## License
 
