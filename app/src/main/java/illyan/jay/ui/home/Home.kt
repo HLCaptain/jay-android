@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -48,7 +48,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,7 +64,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -142,7 +140,6 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.placeholder
 import com.google.accompanist.placeholder.material.shimmer
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -424,17 +421,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val systemUiController = rememberSystemUiController()
-    val useDarkIcons = !isSystemInDarkTheme()
-    LaunchedEffect(systemUiController, useDarkIcons) {
-        // Update all of the system bar colors to be transparent
-        // and use dark icons if we're in light theme
-        systemUiController.setSystemBarsColor(
-            color = Color.Transparent,
-            darkIcons = useDarkIcons
-        )
-        // setStatusBarColor() and setNavigationBarColor() also exist
-    }
     LaunchedEffect(Unit) {
         viewModel.stopDanglingOngoingSessions()
     }
@@ -455,8 +441,11 @@ fun HomeScreen(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     LaunchedEffect(density) { _density.value = density }
     LaunchedEffect(screenHeightDp) { _screenHeight.value = screenHeightDp }
+    // FIXME: make insets to accommodate for status bar's padding
     ConstraintLayout(
-        modifier = Modifier.onGloballyPositioned { coords ->
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coords ->
             var topSet = false
             val absoluteTopPosition = (coords.positionInWindow().y / density).dp
             if (_absoluteTop.value != absoluteTopPosition) {
@@ -516,7 +505,6 @@ fun HomeScreen(
                     start.linkTo(parent.start)
                 }
                 .imePadding()
-                .statusBarsPadding()
                 .navigationBarsPadding(),
             onDrag = {
                 onSearchBarDrag(
@@ -1152,8 +1140,8 @@ private fun SearchNavHost(
             .fillMaxHeight(fraction = searchFraction)
             .animateContentSize { _, _ -> }
             .alpha(alpha = searchAlpha)
-            .navigationBarsPadding()
-            .padding(bottom = SearchBarHeight - RoundedCornerRadius),
+            .padding(bottom = SearchBarHeight - RoundedCornerRadius)
+            .navigationBarsPadding(),
     )
 }
 

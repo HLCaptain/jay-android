@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -24,6 +24,7 @@ import illyan.jay.data.disk.toDomainModel
 import illyan.jay.data.disk.toRoomModel
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -86,8 +87,10 @@ class LocationDiskDataSource @Inject constructor(
      *
      * @param locations list of location data saved onto the Room database.
      */
-    fun saveLocations(locations: List<DomainLocation>) =
+    fun saveLocations(locations: List<DomainLocation>) {
+        Timber.d("Saving ${locations.size} locations")
         locationDao.upsertLocations(locations.map(DomainLocation::toRoomModel))
+    }
 
     fun deleteLocationForSession(sessionUUID: String) = locationDao.deleteLocations(sessionUUID)
 }

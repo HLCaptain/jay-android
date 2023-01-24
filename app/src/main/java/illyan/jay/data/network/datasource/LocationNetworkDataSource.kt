@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import illyan.jay.data.network.toDomainLocations
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,27 +32,23 @@ class LocationNetworkDataSource @Inject constructor(
     private val authInteractor: AuthInteractor
 ) {
     fun getLocations(
-        sessionId: String,
-        listener: (List<DomainLocation>) -> Unit
-    ) = getLocations(listOf(sessionId), listener)
-
-    fun getLocations(
-        sessionUUIDs: List<String>,
+        sessionUUID: String,
         listener: (List<DomainLocation>) -> Unit
     ) {
         if (authInteractor.isUserSignedIn) {
             firestore
                 .collection(SessionNetworkDataSource.PathsCollectionPath)
-                .whereIn(
+                .whereEqualTo(
                     "sessionUUID",
-                    sessionUUIDs
+                    sessionUUID
                 )
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    listener(snapshot.documents.toDomainLocations())
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Timber.d("Error while getting path for session $sessionUUID: ${error.message}")
+                    } else {
+                        listener(snapshot!!.documents.toDomainLocations())
+                    }
                 }
-                .addOnCanceledListener { listener(emptyList()) }
-                .addOnFailureListener { listener(emptyList()) }
         } else {
             listener(emptyList())
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -21,7 +21,6 @@ package illyan.jay.data.disk.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "location",
@@ -32,16 +31,15 @@ import androidx.room.PrimaryKey
             childColumns = ["sessionUUID"]
         )
     ],
-    indices = [Index(value = ["sessionUUID"])]
+    indices = [Index(value = ["sessionUUID"])],
+    primaryKeys = ["sessionUUID", "time"]
 )
 data class RoomLocation(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
     val sessionUUID: String,
+    val time: Long, // in millis
     val latitude: Float,
     val longitude: Float,
     val accuracy: Byte,
-    val time: Long, // in millis
     val speed: Float,
     val speedAccuracy: Float, // in meters per second
     val bearing: Short,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,29 +16,17 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.domain.model
+package illyan.jay.data.network.model
 
-import java.time.ZonedDateTime
+import android.os.Parcel
+import com.google.firebase.firestore.GeoPoint
+import kotlinx.parcelize.Parceler
 
-/**
- * Domain acceleration used for general data handling
- * between DataSources, Interactors and Presenters.
- *
- * @property id
- * @property sessionUUID
- * @property zonedDateTime
- * @property accuracy
- * @property x
- * @property y
- * @property z
- * @constructor Create empty Domain acceleration
- */
-data class DomainSensorEvent(
-    val sessionUUID: String,
-    val zonedDateTime: ZonedDateTime,
-    val type: Byte,
-    val accuracy: Byte, // enum
-    val x: Float,
-    val y: Float,
-    val z: Float,
-)
+object GeoPointParceler : Parceler<GeoPoint> {
+    override fun create(parcel: Parcel) = GeoPoint(parcel.readDouble(), parcel.readDouble())
+
+    override fun GeoPoint.write(parcel: Parcel, flags: Int) {
+        parcel.writeDouble(latitude)
+        parcel.writeDouble(longitude)
+    }
+}

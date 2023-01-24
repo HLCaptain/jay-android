@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -21,7 +21,6 @@ package illyan.jay.data.disk.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "sensor_events",
@@ -32,16 +31,15 @@ import androidx.room.PrimaryKey
             childColumns = ["sessionUUID"]
         )
     ],
-    indices = [Index(value = ["sessionUUID"]), Index(value = ["time"])]
+    indices = [Index(value = ["sessionUUID"]), Index(value = ["time"])],
+    primaryKeys = ["sessionUUID", "time", "type"]
 )
 data class RoomSensorEvent(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
     val sessionUUID: String,
     val time: Long, // in millis
+    val type: Byte, // Sensor.TYPE_ACCELEROMETER
     val accuracy: Byte, // SensorManager.SENSOR_STATUS_ACCURACY_HIGH
     val x: Float,
     val y: Float,
     val z: Float,
-    val type: Byte // Sensor.TYPE_ACCELEROMETER
 )

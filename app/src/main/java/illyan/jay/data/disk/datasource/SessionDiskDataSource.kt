@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,6 +18,7 @@
 
 package illyan.jay.data.disk.datasource
 
+import com.google.android.gms.maps.model.LatLng
 import illyan.jay.data.disk.dao.SessionDao
 import illyan.jay.data.disk.model.RoomSession
 import illyan.jay.data.disk.toDomainModel
@@ -31,7 +32,6 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-
 /**
  * Session disk data source using Room to communicate with the SQLite database.
  *
@@ -47,37 +47,28 @@ class SessionDiskDataSource @Inject constructor(
      *
      * @return all session as a flow.
      */
-    fun getSessions(ownerUserUUID: String?) =
-        sessionDao.getSessions(ownerUserUUID).map { it.map(RoomSession::toDomainModel) }
+    fun getSessions(ownerUUID: String?) =
+        sessionDao.getSessions(ownerUUID).map { it.map(RoomSession::toDomainModel) }
 
-    fun getLocalOnlySessions(ownerUserUUID: String?) =
-        sessionDao.getLocalOnlySessions(ownerUserUUID)
-            .map { it.map(RoomSession::toDomainModel) }
-
-    fun getSyncedSessions(ownerUserUUID: String) = sessionDao.getSyncedSessions(ownerUserUUID)
-        .map { it.map(RoomSession::toDomainModel) }
-
-    fun getSessionIds(ownerUserUUID: String?) = sessionDao.getSessionUUIDs(ownerUserUUID)
-
-    fun getLocalOnlySessionUUIDs(ownerUserUUID: String?) =
-        sessionDao.getLocalOnlySessionUUIDs(ownerUserUUID)
-
-    fun getSyncedSessionUUIDs(ownerUserUUID: String) = sessionDao.getSyncedSessionUUIDs(ownerUserUUID)
+    fun getSessionUUIDs(ownerUUID: String?) = sessionDao.getSessionUUIDs(ownerUUID)
 
     fun getAllNotOwnedSessions() = sessionDao.getAllNotOwnedSessions()
         .map { it.map(RoomSession::toDomainModel) }
 
-    fun getSessionsByOwner(ownerUserUUID: String?) = sessionDao.getSessionsByOwner(ownerUserUUID)
+    fun getSessionsByOwner(ownerUUID: String?) = sessionDao.getSessionsByOwner(ownerUUID)
         .map { it.map(RoomSession::toDomainModel) }
 
-    fun getLocalSessionsByOwner(ownerUserUUID: String) = sessionDao.getLocalSessionsByOwner(ownerUserUUID)
-        .map { it.map(RoomSession::toDomainModel) }
+    fun ownAllNotOwnedSessions(ownerUUID: String) {
+        Timber.d("$ownerUUID owns all sessions without an owner")
+        sessionDao.ownAllNotOwnedSessions(ownerUUID)
+    }
 
-    fun ownAllNotOwnedSessions(ownerUserUUID: String) =
-        sessionDao.ownAllNotOwnedSessions(ownerUserUUID)
 
-    fun ownNotOwnedSession(sessionUUID: String, ownerUserUUID: String) =
-        sessionDao.ownNotOwnedSession(sessionUUID, ownerUserUUID)
+    fun ownNotOwnedSession(sessionUUID: String, ownerUUID: String) {
+        Timber.d("$ownerUUID owns session with no owner yet: $sessionUUID")
+        sessionDao.ownNotOwnedSession(sessionUUID, ownerUUID)
+    }
+
 
     /**
      * Get a particular session by its ID.
@@ -87,19 +78,19 @@ class SessionDiskDataSource @Inject constructor(
      * @return a flow of the session if it exists in the database,
      * otherwise a flow with null in it.
      */
-    fun getSession(uuid: String, ownerUserUUID: String?) =
-        sessionDao.getSession(uuid, ownerUserUUID).map { it?.toDomainModel() }
+    fun getSession(uuid: String, ownerUUID: String?) =
+        sessionDao.getSession(uuid, ownerUUID).map { it?.toDomainModel() }
 
-    fun getStoppedSessions(ownerUserUUID: String?) =
-        sessionDao.getStoppedSessions(ownerUserUUID).map { it.map(RoomSession::toDomainModel) }
+    fun getStoppedSessions(ownerUUID: String?) =
+        sessionDao.getStoppedSessions(ownerUUID).map { it.map(RoomSession::toDomainModel) }
 
     /**
      * Get ongoing sessions, which have no end date.
      *
      * @return a flow of ongoing sessions.
      */
-    fun getOngoingSessions(ownerUserUUID: String?) =
-        sessionDao.getOngoingSessions(ownerUserUUID).map { it.map(RoomSession::toDomainModel) }
+    fun getOngoingSessions(ownerUUID: String?) =
+        sessionDao.getOngoingSessions(ownerUUID).map { it.map(RoomSession::toDomainModel) }
 
     /**
      * Get ongoing sessions' IDs in a quicker way than getting all
@@ -107,10 +98,13 @@ class SessionDiskDataSource @Inject constructor(
      *
      * @return a flow of ongoing sessions' IDs.
      */
-    fun getOngoingSessionIds(ownerUserUUID: String?) =
-        sessionDao.getOngoingSessionUUIDs(ownerUserUUID)
+    fun getOngoingSessionIds(ownerUUID: String?) =
+        sessionDao.getOngoingSessionUUIDs(ownerUUID)
 
-    fun ownSessions(sessionUUIDs: List<String>, ownerUserUUID: String) = sessionDao.ownSessions(sessionUUIDs, ownerUserUUID)
+    fun ownSessions(sessionUUIDs: List<String>, ownerUUID: String) {
+        Timber.d("ownerUUID owns sessions: ${sessionUUIDs.map { it.take(4) }}")
+        return sessionDao.ownSessions(sessionUUIDs, ownerUUID)
+    }
 
     /**
      * Creates a session in the database with the current time as
@@ -119,7 +113,7 @@ class SessionDiskDataSource @Inject constructor(
      * @return ID of the newly started session.
      */
     fun startSession(
-        ownerUserUUID: String? = null,
+        ownerUUID: String? = null,
         clientUUID: String? = null,
     ): String {
         val uuid = UUID.randomUUID().toString()
@@ -130,11 +124,10 @@ class SessionDiskDataSource @Inject constructor(
                     .atZone(ZoneId.systemDefault())
                     .toInstant().toEpochMilli(),
                 endDateTime = null,
-                ownerUserUUID = ownerUserUUID,
+                ownerUUID = ownerUUID,
                 clientUUID = clientUUID
             )
         )
-        Timber.d("Starting a session with ID = $uuid!")
         return uuid
     }
 
@@ -145,15 +138,21 @@ class SessionDiskDataSource @Inject constructor(
      *
      * @return id of session updated.
      */
-    fun saveSession(session: DomainSession) = sessionDao.upsertSession(session.toRoomModel())
+    fun saveSession(session: DomainSession): Long {
+        Timber.d("Upserting session: ${session.uuid}")
+        return sessionDao.upsertSession(session.toRoomModel())
+    }
 
     /**
      * Save multiple sessions in the database.
      *
      * @param sessions updates the data of the sessions with the same ID.
      */
-    fun saveSessions(sessions: List<DomainSession>) =
+    fun saveSessions(sessions: List<DomainSession>) {
+        Timber.d("Upserting sessions: ${sessions.map { it.uuid.take(4) }}")
         sessionDao.upsertSessions(sessions.map(DomainSession::toRoomModel))
+    }
+
 
     /**
      * Stop a session.
@@ -187,22 +186,55 @@ class SessionDiskDataSource @Inject constructor(
         saveSessions(sessions)
     }
 
-    fun deleteSessions(sessions: List<DomainSession>) =
+    fun deleteSessions(sessions: List<DomainSession>) {
+        Timber.d("Deleting sessions: ${sessions.map { it.uuid.take(4) }}")
         sessionDao.deleteSessions(sessions.map(DomainSession::toRoomModel))
+    }
 
-    fun deleteSessionsByOwner(ownerUserUUID: String?) =
-        sessionDao.deleteSessionsByOwner(ownerUserUUID)
+    fun deleteSessionsByOwner(ownerUUID: String?) {
+        Timber.d("Deleting sessions by owner $ownerUUID")
+        sessionDao.deleteSessionsByOwner(ownerUUID)
+    }
 
-    fun deleteNotOwnedSessions() = sessionDao.deleteNotOwnedSessions()
+    fun deleteNotOwnedSessions() {
+        Timber.d("Deleting not owned sessions")
+        sessionDao.deleteNotOwnedSessions()
+    }
 
-    fun deleteStoppedSessionsByOwner(ownerUserUUID: String?) = sessionDao.deleteStoppedSessionsByOwner(ownerUserUUID)
+    fun deleteStoppedSessionsByOwner(ownerUUID: String?) {
+        sessionDao.deleteStoppedSessionsByOwner(ownerUUID)
+    }
 
-    fun refreshSessionUUIDs(sessions: List<DomainSession>, ownerUserUUID: String) =
-        sessions.forEach { refreshSessionUUID(it, ownerUserUUID) }
+    fun saveStartLocationForSession(sessionUUID: String, latitude: Double, longitude: Double) {
+        sessionDao.saveStartLocationForSession(sessionUUID, latitude, longitude)
+    }
 
-    fun refreshSessionUUID(session: DomainSession, ownerUserUUID: String) =
-        sessionDao.refreshSessionUUID(session.uuid, session.uuid, ownerUserUUID)
+    fun saveStartLocationForSession(sessionUUID: String, latLng: LatLng) {
+        saveStartLocationForSession(sessionUUID, latLng.latitude, latLng.longitude)
+    }
 
-    fun updateSyncOnSessions(sessionUUIDs: List<String>, isSynced: Boolean) =
-        sessionDao.updateSyncOnSessions(sessionUUIDs, isSynced)
+    fun saveEndLocationForSession(sessionUUID: String, latLng: LatLng) {
+        saveEndLocationForSession(sessionUUID, latLng.latitude, latLng.longitude)
+    }
+
+    fun saveEndLocationForSession(sessionUUID: String, latitude: Double, longitude: Double) {
+        sessionDao.saveEndLocationForSession(sessionUUID, latitude, longitude)
+    }
+
+    fun saveStartLocationNameForSession(sessionUUID: String, name: String) {
+        sessionDao.saveStartLocationNameForSession(sessionUUID, name)
+    }
+
+    fun saveEndLocationNameForSession(sessionUUID: String, name: String) {
+        sessionDao.saveEndLocationNameForSession(sessionUUID, name)
+    }
+
+    fun assignClientToSession(sessionUUID: String, clientUUID: String?) {
+        sessionDao.assignClientToSession(sessionUUID, clientUUID)
+    }
+
+    fun saveDistanceForSession(sessionUUID: String, distance: Float?) {
+        sessionDao.saveDistanceForSession(sessionUUID, distance)
+    }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,6 +18,8 @@
 
 package illyan.jay.data.network.datasource
 
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import dagger.Module
@@ -32,5 +34,11 @@ object FirestoreModule {
 
     @Singleton
     @Provides
-    fun provideFirestore() = Firebase.firestore
+    fun provideFirestore(): FirebaseFirestore {
+        Firebase.firestore.firestoreSettings = FirebaseFirestoreSettings.Builder()
+            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+            .setPersistenceEnabled(true)
+            .build()
+        return Firebase.firestore
+    }
 }
