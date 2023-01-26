@@ -8,25 +8,27 @@
 
 In short, Jay is providing data to decide on local problems and in the transportation field. Jay should be easy to use and available to have as much impact as possible.
 
-## 🚧 Under development 🚧
+### About the app
 
-I am currently porting from XML ➡ [Jetpack Compose] and besides only rewriting the whole UI from scratch, I had to switch architectures as well from [RainbowCake] 🎂 ➡ [MVVM].
+- Save sensory/location data locally and sync it to the cloud
+- Record a session in the background to provide seamless tracking
+- Utilize its capabilities with multiple users on a single device
+- Show information about your session
+- UX/UI centered design, with dark mode theming
 
-A few technologies and features that is ported or will be present:
+### A few technologies Jay implements
 
-- Saving data locally via [Room]
+- Saving tracked data locally via [Room]
 - Dependency Injection with the Compose implementation of [Hilt]
 - Navigation in the app is helped by [Compose Destinations]
 - Authentication, data sync, etc. is handled by [Firebase] services
 - [Mapbox] is used instead of Google Maps to scale better
-- Analyze collected data with [ML Kit] and get statistics on your phone, locally
-- Amazing UX/UI experience (development on [Figma Design Page])
+- Amazing (or at least not bad) UX/UI experience (development on [Figma Design Page])
 - Static code analysis via [SonarCloud]
-- Testing with a Kotlin native mocking library [MockK]
 
-## Setup and run the project 🏃💨
+## Setup and run the project 🏃
 
-You need to do 3 things after cloning the repository!
+You need to do 3 things after cloning the repository to make the app rely only on your services.
 
 ### Adding Android project to [Firebase] 🔥
 
@@ -45,9 +47,10 @@ Follow the [Mapbox install] guide for further information. I placed both of my k
 Don't forget to change your properties in the project
 level `build.gradle` file.
 
-### ⚠ ATTENTION ⚠
+### Few tips for security
 
-Never add `google-services.json` and `«USER_HOME»/.gradle/gradle.properties` into your forked repository and I would recommend keeping your `string.xml` file squeaky clean 🧹🧽🧼 (don't place any keys, either public or private or confidential information there).
+- Never add `google-services.json` and `«USER_HOME»/.gradle/gradle.properties` into your forked repository.
+- I would recommend keeping your `string.xml` file squeaky clean 🧹🧽🧼 (don't place any keys, either public or private or confidential information there), use Firebase's [Remote Config] service or place keys in `local.properties`.
 
 ## License
 
@@ -96,3 +99,5 @@ If not, see <https://www.gnu.org/licenses/>.
 [Mapbox Install]: https://docs.mapbox.com/android/maps/guides/install/
 
 [Mapbox Account]: https://account.mapbox.com/auth/signup/
+
+[Remote Config]: https://firebase.google.com/docs/remote-config
