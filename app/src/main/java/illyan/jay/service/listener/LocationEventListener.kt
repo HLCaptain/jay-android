@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -24,14 +24,16 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import illyan.jay.data.disk.toDomainModel
+import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainLocation
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Location event listener .
+ * Location event listener.
  * On registration, it becomes active and saves data
  * via LocationInteractor and SessionInteractor.
  *
@@ -42,8 +44,9 @@ import javax.inject.Inject
  */
 class LocationEventListener @Inject constructor(
     private val locationInteractor: LocationInteractor,
-    private val sessionInteractor: SessionInteractor
-) : SessionSensorEventListener(sessionInteractor) {
+    private val sessionInteractor: SessionInteractor,
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
+) : SessionSensorEventListener(sessionInteractor, coroutineScopeIO) {
 
     /**
      * Used to be registered to get location updates.
@@ -56,7 +59,7 @@ class LocationEventListener @Inject constructor(
             field = object : LocationCallback() {
                 override fun onLocationResult(locationResult: LocationResult) {
                     super.onLocationResult(locationResult)
-                    scope.launch {
+                    coroutineScopeIO.launch {
                         // Saving locations for every ongoing session
                         val locations = mutableListOf<DomainLocation>()
                         ongoingSessionUUIDs.forEach { sessionUUID ->
