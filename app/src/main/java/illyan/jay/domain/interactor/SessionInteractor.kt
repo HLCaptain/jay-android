@@ -64,7 +64,6 @@ class SessionInteractor @Inject constructor(
     private val serviceInteractor: ServiceInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
-
     init {
         var previousUserUUID = authInteractor.userUUID
         authInteractor.addOnSignOutListener {
@@ -150,7 +149,7 @@ class SessionInteractor @Inject constructor(
         }
         val userUUID = authInteractor.userUUID!!
         if (_openSnapshotListeners[userUUID] == null) {
-            Timber.i("Getting synced sessions for user $userUUID")
+            Timber.i("Getting synced sessions for user ${userUUID.take(4)}")
             _syncedSessionsPerUser[userUUID] = MutableStateFlow(null)
             coroutineScopeIO.launch {
                 _syncedSessionsPerUser[userUUID]!!.collectLatest {
@@ -162,7 +161,7 @@ class SessionInteractor @Inject constructor(
                     activity = activity,
                     userUUID = authInteractor.userUUID!!
                 ) { sessions ->
-                    Timber.i("Got ${sessions?.size} synced sessions for user $userUUID")
+                    Timber.i("Got ${sessions?.size} synced sessions for user ${userUUID.take(4)}")
                     _syncedSessionsPerUser[userUUID]!!.value = sessions
                     coroutineScopeIO.launch {
                         sessionDiskDataSource.saveSessions(sessions ?: emptyList())

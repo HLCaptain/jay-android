@@ -56,7 +56,7 @@ class SessionNetworkDataSource @Inject constructor(
         listener: (List<DomainSession>?) -> Unit,
     ): ListenerRegistration? {
         return if (authInteractor.isUserSignedIn) {
-            Timber.d("Connecting snapshot listener to Firebase to get session data for user $userUUID")
+            Timber.d("Connecting snapshot listener to Firebase to get session data for user ${userUUID.take(4)}")
             val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
                 if (error != null) {
                     Timber.e(error, "Error while getting session data: ${error.message}")

@@ -66,8 +66,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.mapbox.search.result.SearchResultType
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -80,12 +79,7 @@ import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.destinations.SessionsScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.isSearching
-import illyan.jay.ui.home.sendBroadcast
 import illyan.jay.ui.home.sheetState
-import illyan.jay.ui.map.ButeK
-import illyan.jay.ui.navigation.model.Place
-import illyan.jay.ui.search.SearchViewModel.Companion.KeyPlaceQuery
-import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
 import illyan.jay.util.isCollapsedOrWillBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -116,6 +110,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
 @Composable
 fun MenuScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
+    viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     BackPressHandler {
@@ -123,7 +118,6 @@ fun MenuScreen(
         (context as Activity).moveTaskToBack(false)
     }
     val gridState = rememberLazyStaggeredGridState()
-    val localBroadcastManager = LocalBroadcastManager.getInstance(context)
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
         verticalArrangement = Arrangement.spacedBy(MenuItemPadding * 2),
@@ -140,21 +134,12 @@ fun MenuScreen(
         state = gridState
     ) {
         item {
-            val buteName = stringResource(R.string.bute)
+            val localizedNameOfBme = stringResource(R.string.bme)
             MenuItemCard(
                 title = stringResource(R.string.navigate_to_bme),
                 icon = Icons.Default.TravelExplore,
                 onClick = {
-                    localBroadcastManager.sendBroadcast(
-                        Place(
-                            name = buteName,
-                            type = SearchResultType.POI,
-                            latitude = ButeK.latitude,
-                            longitude = ButeK.longitude
-                        ),
-                        KeyPlaceQuery,
-                        ACTION_QUERY_PLACE
-                    )
+                    viewModel.onClickNavigateToBmeButton(localizedNameOfBme)
                 },
             )
         }
@@ -163,6 +148,7 @@ fun MenuScreen(
                 title = stringResource(R.string.free_drive),
                 icon = Icons.Rounded.Navigation,
                 onClick = {
+                    viewModel.onClickFreeDriveButton()
                     destinationsNavigator.navigate(FreeDriveScreenDestination)
                 },
             )
@@ -172,6 +158,7 @@ fun MenuScreen(
                 title = stringResource(R.string.sessions),
                 icon = Icons.Rounded.Route,
                 onClick = {
+                    viewModel.onClickSessionsButton()
                     destinationsNavigator.navigate(SessionsScreenDestination)
                 },
             )

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -29,7 +29,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.domain.interactor.SessionInteractor
-import illyan.jay.ui.map.ButeK
+import illyan.jay.ui.map.BmeK
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -87,7 +87,7 @@ class HomeViewModel @Inject constructor(
                 // Use Bute K building as the default location for now.
                 _cameraOptionsBuilder.value = CameraOptions.Builder()
                     .zoom(12.0)
-                    .center(Point.fromLngLat(ButeK.longitude, ButeK.latitude))
+                    .center(Point.fromLngLat(BmeK.longitude, BmeK.latitude))
                 false
             }
         }
