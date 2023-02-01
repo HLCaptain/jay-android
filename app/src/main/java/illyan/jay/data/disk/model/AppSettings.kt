@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -23,9 +23,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AppSettings(
     val turnOnFreeDriveAutomatically: Boolean = false,
-    val clientUUID: String? = null
+    val clientUUID: String? = null,
+    val analyticsEnabled: Boolean = true, // TODO: turn off as default once we can set it, maybe store it in the cloud as a user preference
 ) {
     companion object {
         val default = AppSettings()
     }
+    // TODO: "Press this <button or screen> to support the project by giving me ad revenue"
+    //  in user preferences screen. This is an easy way to support the project besides
+    //  supporting it directly with donations.
 }

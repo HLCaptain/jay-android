@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -19,10 +19,49 @@
 package illyan.jay.ui.menu
 
 import androidx.lifecycle.ViewModel
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.logEvent
+import com.mapbox.search.result.SearchResultType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.ui.home.sendBroadcast
+import illyan.jay.ui.map.BmeK
+import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.search.SearchViewModel
+import illyan.jay.ui.sheet.SheetViewModel
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class MenuViewModel @Inject constructor(
+    private val analytics: FirebaseAnalytics,
+    private val localBroadcastManager: LocalBroadcastManager,
+) : ViewModel() {
+    private fun onClickButton(buttonName: String) {
+        Timber.i("Clicked \"$buttonName\" button")
+        analytics.logEvent(FirebaseAnalytics.Event.SELECT_ITEM) {
+            param(FirebaseAnalytics.Param.ITEM_ID, buttonName)
+        }
+    }
+    fun onClickFreeDriveButton() {
+        onClickButton("FreeDrive")
+    }
 
-) : ViewModel()
+    fun onClickSessionsButton() {
+        onClickButton("Sessions")
+    }
+
+    fun onClickNavigateToBmeButton(localizedNameOfBme: String) {
+        onClickButton("Navigating to BME")
+        localBroadcastManager.sendBroadcast(
+            Place(
+                name = localizedNameOfBme,
+                type = SearchResultType.POI,
+                latitude = BmeK.latitude,
+                longitude = BmeK.longitude
+            ),
+            SearchViewModel.KeyPlaceQuery,
+            SheetViewModel.ACTION_QUERY_PLACE
+        )
+    }
+}

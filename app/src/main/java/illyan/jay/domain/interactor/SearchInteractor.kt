@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -90,7 +90,7 @@ class SearchInteractor @Inject constructor(
                 }
 
                 override fun onError(e: Exception) {
-                    Timber.d("Error occured while getting favorite records!")
+                    Timber.e(e, "Error occured while getting favorite records: ${e.message}")
                 }
             }
         )
@@ -105,7 +105,7 @@ class SearchInteractor @Inject constructor(
                 }
 
                 override fun onError(e: Exception) {
-                    Timber.d("Error occured while getting history records!")
+                    Timber.e(e, "Error occured while getting history records: ${e.message}")
                 }
             }
         )
@@ -175,9 +175,8 @@ class SearchInteractor @Inject constructor(
                 onResult(suggestion, it, responseInfo)
             }
         },
-        onError: (e: Exception) -> Unit = {
-            Timber.d("Error selecting suggestion \"${suggestionSelected.name}\"")
-            it.printStackTrace()
+        onError: (e: Exception) -> Unit = { e ->
+            Timber.e(e, "Error selecting suggestion \"${suggestionSelected.name}\": ${e.message}")
         },
         onSuggestions: (
             suggestions: List<SearchSuggestion>,
@@ -219,9 +218,8 @@ class SearchInteractor @Inject constructor(
 
     fun search(
         reverseGeoOptions: ReverseGeoOptions,
-        onError: (e: Exception) -> Unit = {
-            Timber.d("Error searching for point ${reverseGeoOptions.center}")
-            it.printStackTrace()
+        onError: (e: Exception) -> Unit = { e ->
+            Timber.e("Error searching for point ${reverseGeoOptions.center}: ${e.message}")
         },
         onSuggestions: (
             results: List<SearchResult>,
@@ -245,9 +243,8 @@ class SearchInteractor @Inject constructor(
     fun search(
         query: String,
         options: SearchOptions = SearchOptions(),
-        onError: (e: Exception) -> Unit = {
-            Timber.d("Error searching for query \"$query\"")
-            it.printStackTrace()
+        onError: (e: Exception) -> Unit = { e ->
+            Timber.e("Error searching for query \"$query\": ${e.message}")
         },
         onSuggestions: (
             suggestions: List<SearchSuggestion>,

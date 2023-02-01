@@ -44,7 +44,7 @@ class LocationNetworkDataSource @Inject constructor(
                 )
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
-                        Timber.d("Error while getting path for session $sessionUUID: ${error.message}")
+                        Timber.e(error, "Error while getting path for session $sessionUUID: ${error.message}")
                     } else {
                         listener(snapshot!!.documents.toDomainLocations())
                     }
