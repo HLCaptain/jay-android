@@ -8,6 +8,13 @@
 
 In short, Jay is providing data to decide on local problems and in the transportation field. Jay should be easy to use and available to have as much impact as possible.
 
+<p align="center">
+<img alt="Sessions Screen" src="assets/SessionsScreen.png" width="40%"/>
+<img alt="Session Screen" src="assets/SessionScreen.png" width="40%"/>
+
+[//]: # (<img alt="Sessions Screen in Dark Mode" src="assets/SessionsScreenDark.png" width="30%"/>)
+</p>
+
 ### About the app
 
 - Save sensory/location data locally and sync it to the cloud
@@ -44,8 +51,7 @@ Follow the [Mapbox install] guide for further information. I placed both of my k
 
 ### Set up [SonarCloud] properly
 
-Don't forget to change your properties in the project
-level `build.gradle` file.
+Don't forget to change your properties in the project level `build.gradle` file.
 
 ### Few tips for security
 
