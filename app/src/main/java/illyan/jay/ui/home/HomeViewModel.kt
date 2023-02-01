@@ -26,10 +26,14 @@ import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.di.CoroutineDispatcherIO
+import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.map.ButeK
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +45,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val mapboxInteractor: MapboxInteractor,
     private val authInteractor: AuthInteractor,
-    private val sessionInteractor: SessionInteractor
+    private val sessionInteractor: SessionInteractor,
+    @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _initialLocation = MutableStateFlow<Location?>(null)
@@ -70,7 +75,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun stopDanglingOngoingSessions() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatcherIO) {
             sessionInteractor.stopDanglingSessions()
         }
     }

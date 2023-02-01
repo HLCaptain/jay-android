@@ -92,6 +92,14 @@ object AppModule {
     @Provides
     @CoroutineScopeMain
     fun provideCoroutineScopeMain() = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    @Provides
+    @CoroutineDispatcherIO
+    fun provideCoroutineDispatcherIO() = Dispatchers.IO
+
+    @Provides
+    @CoroutineDispatcherMain
+    fun provideCoroutineDispatcherMain() = Dispatchers.Main
 }
 
 
