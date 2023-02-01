@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -95,6 +95,14 @@ object AppModule {
     @Provides
     @CoroutineScopeMain
     fun provideCoroutineScopeMain() = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    @Provides
+    @CoroutineDispatcherIO
+    fun provideCoroutineDispatcherIO() = Dispatchers.IO
+
+    @Provides
+    @CoroutineDispatcherMain
+    fun provideCoroutineDispatcherMain() = Dispatchers.Main
 
     @Provides
     @Singleton

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -23,10 +23,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import illyan.jay.domain.interactor.SessionInteractor
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Session sensor event listener
@@ -35,14 +33,9 @@ import kotlinx.coroutines.withContext
  * @constructor Create empty Session sensor event listener
  */
 abstract class SessionSensorEventListener(
-    private val sessionInteractor: SessionInteractor
+    private val sessionInteractor: SessionInteractor,
+    coroutineScopeIO: CoroutineScope
 ) : SensorEventListener {
-
-    /**
-     * Dispatchers.IO scope used to sync ongoing session IDs.
-     */
-    protected val scope = CoroutineScope(Dispatchers.IO)
-
     /**
      * IDs of ongoing sessions. Needed to be private to ensure safety
      * from ConcurrentModificationExceptions.
@@ -55,7 +48,7 @@ abstract class SessionSensorEventListener(
     protected val ongoingSessionUUIDs get() = _ongoingSessionIds.toList()
 
     init {
-        scope.launch {
+        coroutineScopeIO.launch {
             loadOngoingSessionIds()
         }
     }
@@ -63,13 +56,11 @@ abstract class SessionSensorEventListener(
     /**
      * Load ongoing session IDs with IO context on a non UI thread.
      */
-    private suspend fun loadOngoingSessionIds() = withContext(Dispatchers.IO) {
-        sessionInteractor.getOngoingSessionUUIDs()
-            .flowOn(Dispatchers.IO)
-            .collect {
-                _ongoingSessionIds.clear()
-                _ongoingSessionIds.addAll(it)
-            }
+    private suspend fun loadOngoingSessionIds() {
+        sessionInteractor.getOngoingSessionUUIDs().collectLatest {
+            _ongoingSessionIds.clear()
+            _ongoingSessionIds.addAll(it)
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -20,9 +20,11 @@ package illyan.jay.service.listener
 
 import android.hardware.SensorEvent
 import illyan.jay.data.disk.toDomainModel
+import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.SensorEventInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainSensorEvent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,8 +40,9 @@ import javax.inject.Inject
  */
 class JaySensorEventListener @Inject constructor(
     private val sensorEventInteractor: SensorEventInteractor,
-    sessionInteractor: SessionInteractor
-) : SessionSensorEventListener(sessionInteractor) {
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
+    sessionInteractor: SessionInteractor,
+) : SessionSensorEventListener(sessionInteractor, coroutineScopeIO) {
 
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
@@ -48,7 +51,7 @@ class JaySensorEventListener @Inject constructor(
                 sensorEvents += it.toDomainModel(sessionUUID)
             }
             // Saving data for each session
-            scope.launch { sensorEventInteractor.saveSensorEvents(sensorEvents) }
+            coroutineScopeIO.launch { sensorEventInteractor.saveSensorEvents(sensorEvents) }
         }
     }
 }

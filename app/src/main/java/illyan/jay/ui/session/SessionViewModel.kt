@@ -21,12 +21,13 @@ package illyan.jay.ui.session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -38,6 +39,7 @@ import javax.inject.Inject
 class SessionViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
+    @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
     private val _session = MutableStateFlow<UiSession?>(null)
     val session = _session.asStateFlow()
@@ -47,13 +49,13 @@ class SessionViewModel @Inject constructor(
 
     fun load(sessionUUID: String) {
         Timber.d("Trying to load session with ID: $sessionUUID")
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatcherIO) {
             locationInteractor.getSyncedPath(sessionUUID).collectLatest { locations ->
                 Timber.d("Loaded path with ${locations?.size} locations for session with ID: $sessionUUID")
                 if (!locations.isNullOrEmpty()) {
                     val sortedPath = locations.sortedBy { it.zonedDateTime.toInstant() }
                     _path.value = sortedPath.map { it.toUiModel() }
-                    viewModelScope.launch(Dispatchers.IO) {
+                    viewModelScope.launch(dispatcherIO) {
                         sessionInteractor.getSession(sessionUUID).collectLatest { session ->
                             Timber.d("Loaded session with ID: $sessionUUID")
                             if (session != null) {
