@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+  ~ Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
   ~
   ~ Jay is a driver behaviour analytics app.
   ~
@@ -73,7 +73,7 @@
     <string name="menu_item_title">Menu Item Title</string>
     <string name="menu_item_icon">Menu Item Icon</string>
     <string name="free_drive">Free drive</string>
-    <string name="bute">Budapest University of Technology and Economics</string>
+    <string name="bme">Budapest University of Technology and Economics</string>
     <string name="phone_number">Phone number</string>
     <string name="name">Name</string>
     <string name="authenticate_to_view_account_information">Authenticate to view account information</string>

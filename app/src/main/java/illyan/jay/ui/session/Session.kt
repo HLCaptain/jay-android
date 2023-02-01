@@ -54,7 +54,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
-import illyan.jay.ui.components.LightDarkThemePreview
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
@@ -144,7 +144,7 @@ fun SessionScreen(
     )
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @Composable
 fun SessionDetailsScreen(
     viewModel: SessionViewModel = hiltViewModel(),

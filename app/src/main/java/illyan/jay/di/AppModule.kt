@@ -23,7 +23,9 @@ import android.hardware.SensorManager
 import androidx.core.graphics.drawable.IconCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.crashlytics.ktx.crashlytics
 import com.google.firebase.ktx.Firebase
 import com.mapbox.search.MapboxSearchSdk
 import com.mapbox.search.SearchEngineSettings
@@ -37,6 +39,7 @@ import illyan.jay.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import timber.log.Timber
 import javax.inject.Singleton
 
 @Module
@@ -100,6 +103,17 @@ object AppModule {
     @Provides
     @CoroutineDispatcherMain
     fun provideCoroutineDispatcherMain() = Dispatchers.Main
+
+    @Provides
+    @Singleton
+    fun provideCrashlytics() = Firebase.crashlytics
+
+    @Provides
+    fun provideDebugTree() = Timber.DebugTree()
+
+    @Provides
+    @Singleton
+    fun provideAnalytics() = Firebase.analytics
 }
 
 

@@ -49,7 +49,7 @@ import com.mapbox.maps.plugin.scalebar.scalebar
 import illyan.jay.R
 import illyan.jay.ui.navigation.model.Place
 
-val ButeK = Place(
+val BmeK = Place(
     latitude = 47.481491,
     longitude = 19.056219
 )
@@ -79,8 +79,8 @@ fun MapboxMap(
     cameraOptionsBuilder: CameraOptions.Builder = CameraOptions.Builder()
         .center(
             Point.fromLngLat(
-                ButeK.longitude,
-                ButeK.latitude
+                BmeK.longitude,
+                BmeK.latitude
             )
         )
         .zoom(4.0),

@@ -29,9 +29,10 @@ import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.UUID
+import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
+
 /**
  * Session disk data source using Room to communicate with the SQLite database.
  *
@@ -59,13 +60,13 @@ class SessionDiskDataSource @Inject constructor(
         .map { it.map(RoomSession::toDomainModel) }
 
     fun ownAllNotOwnedSessions(ownerUUID: String) {
-        Timber.d("$ownerUUID owns all sessions without an owner")
+        Timber.i("$ownerUUID owns all sessions without an owner")
         sessionDao.ownAllNotOwnedSessions(ownerUUID)
     }
 
 
     fun ownNotOwnedSession(sessionUUID: String, ownerUUID: String) {
-        Timber.d("$ownerUUID owns session with no owner yet: $sessionUUID")
+        Timber.i("$ownerUUID owns session with no owner yet: $sessionUUID")
         sessionDao.ownNotOwnedSession(sessionUUID, ownerUUID)
     }
 
