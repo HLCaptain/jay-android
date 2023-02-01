@@ -75,7 +75,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
 import illyan.jay.R
-import illyan.jay.ui.components.LightDarkThemePreview
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.FreeDriveScreenDestination
 import illyan.jay.ui.destinations.SessionsScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -179,7 +179,7 @@ fun MenuScreen(
     }
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuItemCard(

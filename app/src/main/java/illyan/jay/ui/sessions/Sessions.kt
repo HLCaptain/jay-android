@@ -68,7 +68,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
-import illyan.jay.ui.components.LightDarkThemePreview
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -342,7 +342,7 @@ fun SessionsList(
     }
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionCard(

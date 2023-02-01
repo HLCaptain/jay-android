@@ -88,7 +88,7 @@ class LocationDiskDataSource @Inject constructor(
      * @param locations list of location data saved onto the Room database.
      */
     fun saveLocations(locations: List<DomainLocation>) {
-        Timber.d("Saving ${locations.size} locations")
+        Timber.i("Saving ${locations.size} locations")
         locationDao.upsertLocations(locations.map(DomainLocation::toRoomModel))
     }
 

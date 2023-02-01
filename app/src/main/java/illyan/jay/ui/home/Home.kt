@@ -157,7 +157,7 @@ import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
-import illyan.jay.ui.components.LightDarkThemePreview
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.map.ButeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.padding
@@ -756,7 +756,7 @@ private suspend fun onSheetStateChanged(
     }
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @Composable
 fun BottomSearchBar(
     modifier: Modifier = Modifier,

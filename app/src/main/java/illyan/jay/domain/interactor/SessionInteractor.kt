@@ -41,7 +41,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.UUID
+import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -150,7 +150,7 @@ class SessionInteractor @Inject constructor(
         }
         val userUUID = authInteractor.userUUID!!
         if (_openSnapshotListeners[userUUID] == null) {
-            Timber.d("Getting synced sessions for user $userUUID")
+            Timber.i("Getting synced sessions for user $userUUID")
             _syncedSessionsPerUser[userUUID] = MutableStateFlow(null)
             coroutineScopeIO.launch {
                 _syncedSessionsPerUser[userUUID]!!.collectLatest {
@@ -162,7 +162,7 @@ class SessionInteractor @Inject constructor(
                     activity = activity,
                     userUUID = authInteractor.userUUID!!
                 ) { sessions ->
-                    Timber.d("Got ${sessions?.size} synced sessions for user $userUUID")
+                    Timber.i("Got ${sessions?.size} synced sessions for user $userUUID")
                     _syncedSessionsPerUser[userUUID]!!.value = sessions
                     coroutineScopeIO.launch {
                         sessionDiskDataSource.saveSessions(sessions ?: emptyList())
@@ -182,7 +182,7 @@ class SessionInteractor @Inject constructor(
                     true
                 }
             }
-            Timber.d("${localOnlySessions.size} sessions are not synced with IDs: ${localOnlySessions.map { it.uuid.take(4) }}")
+            Timber.i("${localOnlySessions.size} sessions are not synced with IDs: ${localOnlySessions.map { it.uuid.take(4) }}")
             locationDiskDataSource.getLocations(localOnlySessions.map { it.uuid }).first { locations ->
                 uploadSessions(
                     localOnlySessions,
@@ -196,7 +196,7 @@ class SessionInteractor @Inject constructor(
 
     suspend fun deleteAllSyncedData() {
         if (!authInteractor.isUserSignedIn) return
-        Timber.d("Trying to delete user data for user ${authInteractor.userUUID}")
+        Timber.i("Trying to delete user data for user ${authInteractor.userUUID}")
         sessionNetworkDataSource.deleteUserData()
     }
 
@@ -206,9 +206,9 @@ class SessionInteractor @Inject constructor(
         onSuccess: (List<DomainSession>) -> Unit = {},
     ) {
         if (!authInteractor.isUserSignedIn) return
-        Timber.d("Upload sessions with location info to the cloud")
+        Timber.i("Upload sessions with location info to the cloud")
         sessionNetworkDataSource.insertSessions(sessions, locations) {
-            Timber.d("Upload success ${authInteractor.userUUID}")
+            Timber.i("Upload success ${authInteractor.userUUID}")
             onSuccess(it)
         }
     }
@@ -269,7 +269,7 @@ class SessionInteractor @Inject constructor(
      * @param sessions updates the data of the sessions with the same ID.
      */
     fun saveSessions(sessions: List<DomainSession>) {
-        Timber.d("Saving ${sessions.size} sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
+        Timber.i("Saving ${sessions.size} sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
         sessionDiskDataSource.saveSessions(sessions)
     }
 
@@ -283,20 +283,20 @@ class SessionInteractor @Inject constructor(
         val sessionUUID = sessionDiskDataSource.startSession(
             ownerUUID = authInteractor.userUUID,
         )
-        Timber.d("Starting a session with ID: $sessionUUID")
+        Timber.i("Starting a session with ID: $sessionUUID")
         coroutineScopeIO.launch {
             getSession(sessionUUID).first { session ->
                 session?.let {
-                    Timber.d("Trying to assign client to session $sessionUUID")
+                    Timber.i("Trying to assign client to session $sessionUUID")
                     settingsInteractor.appSettingsFlow.first { settings ->
                         Timber.d("Client UUID = ${settings.clientUUID}")
                         if (settings.clientUUID == null) {
                             val clientUUID = UUID.randomUUID().toString()
+                            Timber.d("Generating new client UUID: $clientUUID")
                             settingsInteractor.updateAppSettings {
                                 it.copy(clientUUID = clientUUID)
                             }
                             it.clientUUID = clientUUID
-                            Timber.d("Generating new clientUUID: $clientUUID")
                         } else {
                             it.clientUUID = settings.clientUUID
                         }
@@ -497,16 +497,16 @@ class SessionInteractor @Inject constructor(
      */
     suspend fun deleteStoppedSessions() {
         sessionDiskDataSource.getStoppedSessions(authInteractor.userUUID).first { sessions ->
-            Timber.d("${authInteractor.userUUID} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
+            Timber.i("${authInteractor.userUUID} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
             deleteSessions(sessions)
             true
         }
     }
 
     suspend fun deleteOwnedSessions() {
-        authInteractor.userUUID?.let {
-            sessionDiskDataSource.getSessionsByOwner(it).first { sessions ->
-                Timber.d("${authInteractor.userUUID} deleting (all of its) owned sessions: ${sessions.map { it.uuid.take(4) }}")
+        authInteractor.userUUID?.let { ownerUUID ->
+            sessionDiskDataSource.getSessionsByOwner(ownerUUID).first { sessions ->
+                Timber.i("${authInteractor.userUUID} deleting (all of its) owned sessions: ${sessions.map { it.uuid.take(4) }}")
                 deleteSessions(sessions)
                 true
             }
@@ -515,7 +515,7 @@ class SessionInteractor @Inject constructor(
 
     suspend fun deleteNotOwnedSessions() {
         sessionDiskDataSource.getAllNotOwnedSessions().first { sessions ->
-            Timber.d("Deleting all not owned sessions: ${sessions.map { it.uuid.take(4) }}")
+            Timber.i("Deleting all not owned sessions: ${sessions.map { it.uuid.take(4) }}")
             deleteSessions(sessions)
             true
         }

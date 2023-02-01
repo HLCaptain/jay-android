@@ -56,10 +56,10 @@ class SessionNetworkDataSource @Inject constructor(
         listener: (List<DomainSession>?) -> Unit,
     ): ListenerRegistration? {
         return if (authInteractor.isUserSignedIn) {
-            Timber.d("Connecting snapshot listener to Firebase")
+            Timber.d("Connecting snapshot listener to Firebase to get session data for user $userUUID")
             val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
                 if (error != null) {
-                    Timber.d("Error while getting session data: ${error.message}")
+                    Timber.e(error, "Error while getting session data: ${error.message}")
                     listener(null as List<DomainSession>?)
                 } else {
                     val domainSessions = (snapshot?.get("sessions") as? List<Map<String, Any>>?)?.map {
@@ -117,13 +117,13 @@ class SessionNetworkDataSource @Inject constructor(
             .collection(UsersCollectionPath)
             .document(authInteractor.userUUID!!)
 
-        Timber.d("Running batch to upload ${paths.size} paths for ${domainSessions.size} sessions")
+        Timber.i("Running batch to upload ${paths.size} paths for ${domainSessions.size} sessions")
         firestore.runBatch { batch ->
             pathRefs.forEach {
                 val parcel = Parcel.obtain()
                 it.second.writeToParcel(parcel, PARCELABLE_WRITE_RETURN_VALUE)
                 val dataSizeInBytes = parcel.dataSize()
-                Timber.d("Path ${it.second.uuid.take(4)} for session ${it.second.sessionUUID.take(4)} size is around $dataSizeInBytes bytes")
+                Timber.i("Path ${it.second.uuid.take(4)} for session ${it.second.sessionUUID.take(4)} size is around $dataSizeInBytes bytes")
                 // TODO: make size calculations more reliable and easier to implement
                 val maxSizeInBytes = 1_048_576
                 if (dataSizeInBytes < maxSizeInBytes) {
@@ -139,12 +139,11 @@ class SessionNetworkDataSource @Inject constructor(
                 SetOptions.merge()
             )
         }.addOnSuccessListener {
-            Timber.d("Upload success")
             onSuccess(domainSessions)
         }.addOnFailureListener { exception ->
-            Timber.d("Error: ${exception.message}")
+            Timber.e(exception, "Error: ${exception.message}")
         }.addOnCanceledListener {
-            Timber.d("Operation canceled")
+            Timber.i("Operation canceled")
         }
     }
 
@@ -157,7 +156,7 @@ class SessionNetworkDataSource @Inject constructor(
             .document(authInteractor.userUUID!!)
             .addSnapshotListener { userSnapshot, userError ->
                 if (userError != null) {
-                    Timber.d("Error while deleting user data: ${userError.message}")
+                    Timber.e(userError, "Error while deleting user data: ${userError.message}")
                 } else if (!isUserDeleted.value) {
                     userSnapshot?.let {
                         it.reference.delete()
@@ -170,7 +169,7 @@ class SessionNetworkDataSource @Inject constructor(
             .whereEqualTo("ownerUUID", authInteractor.userUUID)
             .addSnapshotListener { pathSnapshot, pathError ->
                 if (pathError != null) {
-                    Timber.d("Error while deleting user data: ${pathError.message}")
+                    Timber.e(pathError, "Error while deleting user data: ${pathError.message}")
                 } else if (!arePathsDeleted.value) {
                     Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${authInteractor.userUUID?.take(4)}")
                     pathSnapshot.documents.forEach {

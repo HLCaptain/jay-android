@@ -27,6 +27,7 @@ plugins {
     id 'de.mannodermaus.android-junit5'
     id 'kotlin-parcelize'
     id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'com.google.firebase.crashlytics'
 }
 
 android {
@@ -102,7 +103,8 @@ dependencies {
     // Core
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.21'
     implementation "androidx.core:core-ktx:1.9.0"
-    implementation "androidx.collection:collection-ktx:1.2.0" // The Collection extensions contain utility functions for working with Android's memory-efficient collection libraries, including ArrayMap, LongSparseArray, LruCache, and others.
+    implementation "androidx.collection:collection-ktx:1.2.0"
+    // The Collection extensions contain utility functions for working with Android's memory-efficient collection libraries, including ArrayMap, LongSparseArray, LruCache, and others.
     implementation "androidx.appcompat:appcompat:1.5.1"
     implementation 'androidx.activity:activity-ktx:1.6.1'
     implementation "com.google.android.material:material:1.7.0"
@@ -174,7 +176,8 @@ dependencies {
     kapt "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-rxjava2:$room_version" // optional - RxJava2 support for Room
     implementation "androidx.room:room-rxjava3:$room_version" // optional - RxJava3 support for Room
-    implementation "androidx.room:room-guava:$room_version" // optional - Guava support for Room, including Optional and ListenableFuture
+    implementation "androidx.room:room-guava:$room_version"
+    // optional - Guava support for Room, including Optional and ListenableFuture
     testImplementation "androidx.room:room-testing:$room_version" // optional - Test helpers
     implementation "androidx.room:room-paging:$room_version" // optional - Paging 3 Integration
 
@@ -190,23 +193,18 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
 
     // Google services
-    implementation 'com.google.firebase:firebase-firestore-ktx:24.4.0'
     implementation 'com.google.android.gms:play-services-location:20.0.0'
     implementation 'com.google.android.gms:play-services-auth:20.3.0'
-    implementation 'com.google.firebase:firebase-auth-ktx:21.1.0'
-    implementation 'com.google.firebase:firebase-auth:21.1.0'
     implementation 'com.google.maps.android:android-maps-utils:2.4.0'
-    // KTX for the Maps SDK for Android library
     implementation 'com.google.maps.android:maps-utils-ktx:3.4.0'
-    // KTX for the Maps SDK for Android Utility Library
 
-    // Import the BoM for the Firebase platform
+    // Firebase
     implementation platform('com.google.firebase:firebase-bom:31.0.3')
-
-    // Declare the dependencies for the Remote Config and Analytics libraries
-    // When using the BoM, you don't specify versions in Firebase library dependencies
-    implementation 'com.google.firebase:firebase-config-ktx:21.2.0'
-    implementation 'com.google.firebase:firebase-analytics-ktx:21.2.0'
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-config-ktx'
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
 
     // JUnit5 testing tools
     def junit_version = '5.9.1'
