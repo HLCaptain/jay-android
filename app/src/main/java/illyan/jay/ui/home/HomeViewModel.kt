@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -92,20 +92,6 @@ class HomeViewModel @Inject constructor(
                         .center(Point.fromLngLat(BmeK.longitude, BmeK.latitude))
                     false
                 }
-    suspend fun loadLastLocation() {
-        mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
-        initialLocation.first { location ->
-            if (location != null) {
-                _cameraOptionsBuilder.value = CameraOptions.Builder()
-                    .zoom(12.0)
-                    .center(Point.fromLngLat(location.longitude, location.latitude))
-                true
-            } else {
-                // Use Bute K building as the default location for now.
-                _cameraOptionsBuilder.value = CameraOptions.Builder()
-                    .zoom(12.0)
-                    .center(Point.fromLngLat(BmeK.longitude, BmeK.latitude))
-                false
             }
         }
     }
