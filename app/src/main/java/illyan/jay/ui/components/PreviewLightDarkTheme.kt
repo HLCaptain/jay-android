@@ -32,4 +32,4 @@ import androidx.compose.ui.tooling.preview.Preview
     group = "themes",
     showBackground = true,
 )
-annotation class LightDarkThemePreview
+annotation class PreviewLightDarkTheme

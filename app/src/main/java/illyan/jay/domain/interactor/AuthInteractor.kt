@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -27,6 +27,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
@@ -57,7 +59,8 @@ import javax.inject.Singleton
 class AuthInteractor @Inject constructor(
     private val auth: FirebaseAuth,
     private val context: Context,
-    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
+    private val analytics: FirebaseAnalytics,
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
     private val _currentUserStateFlow = MutableStateFlow(auth.currentUser)
     val currentUserStateFlow = _currentUserStateFlow.asStateFlow()
@@ -81,6 +84,11 @@ class AuthInteractor @Inject constructor(
 
     init {
         addAuthStateListener {
+            if (it.currentUser != null) {
+                Timber.i("User ${it.currentUser!!.uid.take(4)} signed in to Firebase")
+            } else {
+                Timber.i("User ${userUUID?.take(4)} signed out from Firebase")
+            }
             _currentUserStateFlow.value = it.currentUser
             _isUserSignedInStateFlow.value = it.currentUser != null
             _userPhotoUrlStateFlow.value = it.currentUser?.photoUrl
@@ -158,8 +166,12 @@ class AuthInteractor @Inject constructor(
                 "signInResult:failed code = ${e.statusCode}\n" +
                         "Used api key: " +
                         context.getString(R.string.default_web_client_id)
-                            .substring(0, 4) + "..."
+                            .take(4) + "..." +
+                        "\n${e.message}"
             )
+            analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
+                param(FirebaseAnalytics.Param.METHOD, "Google")
+            }
         }
     }
 
@@ -171,10 +183,10 @@ class AuthInteractor @Inject constructor(
             .addOnCompleteListener(activity) { task ->
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
-                    Timber.i("signInWithCredential:success")
+                    Timber.i("Firebase authentication successful")
                 } else {
                     // If sign in fails, display a message to the user.
-                    Timber.e(task.exception, "signInWithCredential:failure")
+                    Timber.e(task.exception, task.exception?.message)
                 }
             }
     }

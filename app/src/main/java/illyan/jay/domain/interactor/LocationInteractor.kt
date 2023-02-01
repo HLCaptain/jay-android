@@ -88,51 +88,51 @@ class LocationInteractor @Inject constructor(
 
     suspend fun getSyncedPath(sessionUUID: String): StateFlow<List<DomainLocation>?> {
         val syncedPaths = MutableStateFlow<List<DomainLocation>?>(null)
-        Timber.d("Trying to load path for session with ID: $sessionUUID")
+        Timber.i("Trying to load path for session with ID: $sessionUUID")
         sessionInteractor.getSession(sessionUUID).first { session ->
             if (session != null) {
-                Timber.d("Found session on disk")
+                Timber.v("Found session on disk")
                 coroutineScopeIO.launch {
                     getLocations(sessionUUID).first { locations ->
                         if (locations.isEmpty()) {
-                            Timber.d("Not found path for session on disk, checking cloud")
+                            Timber.v("Not found path for session on disk, checking cloud")
                             if (!authInteractor.isUserSignedIn) {
-                                Timber.d("Not authenticated to access cloud, return an empty list")
+                                Timber.i("Not authenticated to access cloud, return an empty list")
                                 syncedPaths.value = emptyList()
                             } else {
                                 locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
                                     coroutineScopeIO.launch {
-                                        Timber.d("Found location for session, caching it on disk")
+                                        Timber.v("Found location for session, caching it on disk")
                                         locationDiskDataSource.saveLocations(remoteLocations)
                                     }
                                     syncedPaths.value = remoteLocations
                                 }
                             }
                         } else {
-                            Timber.d("Found path on disk")
+                            Timber.i("Found path on disk")
                             syncedPaths.value = locations
                         }
                         true
                     }
                 }
             } else {
-                Timber.d("Not found session on disk, checking cloud")
+                Timber.v("Not found session on disk, checking cloud")
                 if (!authInteractor.isUserSignedIn) {
-                    Timber.d("Not authenticated to access cloud, return an empty list")
+                    Timber.i("Not authenticated to access cloud, return an empty list")
                     syncedPaths.value = emptyList()
                 } else {
                     coroutineScopeIO.launch {
                         sessionNetworkDataSource.getSessions { sessions ->
                             if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
-                                Timber.d("Found session in cloud, caching it on disk")
+                                Timber.v("Found session in cloud, caching it on disk")
                                 coroutineScopeIO.launch {
                                     sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
                                     locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
                                         coroutineScopeIO.launch {
-                                            Timber.d("Found location for session, caching it on disk")
+                                            Timber.v("Found location for session, caching it on disk")
                                             locationDiskDataSource.saveLocations(remoteLocations)
                                         }
-                                        Timber.d("Found path in cloud")
+                                        Timber.i("Found path in cloud")
                                         syncedPaths.value = remoteLocations
                                     }
                                 }

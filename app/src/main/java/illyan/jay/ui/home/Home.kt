@@ -157,8 +157,8 @@ import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
-import illyan.jay.ui.components.LightDarkThemePreview
-import illyan.jay.ui.map.ButeK
+import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.padding
 import illyan.jay.ui.map.toEdgeInsets
@@ -634,8 +634,8 @@ fun HomeScreen(
                                 .zoom(4.0)
                                 .center(
                                     Point.fromLngLat(
-                                        ButeK.longitude,
-                                        ButeK.latitude
+                                        BmeK.longitude,
+                                        BmeK.latitude
                                     )
                                 )
                                 .padding(
@@ -684,8 +684,8 @@ fun HomeScreen(
                             ) ?: CameraOptions.Builder()
                                 .center(
                                     Point.fromLngLat(
-                                        ButeK.longitude,
-                                        ButeK.latitude
+                                        BmeK.longitude,
+                                        BmeK.latitude
                                     )
                                 )
                                 .zoom(4.0),
@@ -746,7 +746,7 @@ private suspend fun onSheetStateChanged(
     }
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @Composable
 fun BottomSearchBar(
     modifier: Modifier = Modifier,

@@ -69,7 +69,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
-import illyan.jay.ui.components.LightDarkThemePreview
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.home.RoundedCornerRadius
 
 @RootNavGraph
@@ -263,7 +263,7 @@ fun <Item> LazyListScope.searchItems(
     }
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @Composable
 fun SuggestionCard(
     modifier: Modifier = Modifier,
@@ -281,7 +281,7 @@ fun SuggestionCard(
     )
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @Composable
 fun HistoryCard(
     modifier: Modifier = Modifier,
@@ -299,7 +299,7 @@ fun HistoryCard(
     )
 }
 
-@LightDarkThemePreview
+@PreviewLightDarkTheme
 @Composable
 fun FavoriteCard(
     modifier: Modifier = Modifier,
