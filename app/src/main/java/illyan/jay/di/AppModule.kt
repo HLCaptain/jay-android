@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -27,8 +27,9 @@ import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.crashlytics.ktx.crashlytics
 import com.google.firebase.ktx.Firebase
-import com.mapbox.search.MapboxSearchSdk
+import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchEngineSettings
+import com.mapbox.search.ServiceProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -74,19 +75,17 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSearchEngine() =
-        MapboxSearchSdk.createSearchEngineWithBuiltInDataProviders(
+        SearchEngine.createSearchEngineWithBuiltInDataProviders(
             SearchEngineSettings(accessToken = BuildConfig.MapboxSdkRegistryToken)
         )
 
     @Provides
     @Singleton
-    fun provideHistoryDataProvider() =
-        MapboxSearchSdk.serviceProvider.historyDataProvider()
+    fun provideHistoryDataProvider() = ServiceProvider.INSTANCE.historyDataProvider()
 
     @Provides
     @Singleton
-    fun provideFavoritesDataProvider() =
-        MapboxSearchSdk.serviceProvider.favoritesDataProvider()
+    fun provideFavoritesDataProvider() = ServiceProvider.INSTANCE.favoritesDataProvider()
 
     @Provides
     @CoroutineScopeIO
@@ -115,5 +114,3 @@ object AppModule {
     @Singleton
     fun provideAnalytics() = Firebase.analytics
 }
-
-
