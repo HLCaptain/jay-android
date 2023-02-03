@@ -80,7 +80,6 @@ class HomeViewModel @Inject constructor(
     fun loadLastLocation() {
         viewModelScope.launch(dispatcherIO) {
             // TODO: load last location from database first
-            mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
             initialLocation.first { location ->
                 if (location != null) {
                     _cameraOptionsBuilder.value = CameraOptions.Builder()
@@ -96,6 +95,10 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun requestLocationUpdates() {
+        mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
     }
 
     private fun disposeLocationUpdates(callback: LocationEngineCallback<LocationEngineResult>) {

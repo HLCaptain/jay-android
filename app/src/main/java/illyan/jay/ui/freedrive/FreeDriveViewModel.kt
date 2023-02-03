@@ -21,6 +21,7 @@ package illyan.jay.ui.freedrive
 import android.location.Location
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.maps.EdgeInsets
@@ -32,14 +33,17 @@ import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
 import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.domain.interactor.ServiceInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.ui.map.toEdgeInsets
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,11 +51,12 @@ class FreeDriveViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
     private val serviceInteractor: ServiceInteractor,
     private val mapboxInteractor: MapboxInteractor,
+    @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
-
     val isJayServiceRunning = serviceInteractor.isJayServiceRunning
-    val startServiceAutomatically =
-        settingsInteractor.appSettingsFlow.map { it.turnOnFreeDriveAutomatically }
+    val startServiceAutomatically = settingsInteractor.appSettingsFlow.map {
+        it.turnOnFreeDriveAutomatically
+    }
 
     private val _lastLocation = MutableStateFlow<Location?>(null)
     val lastLocation = _lastLocation.asStateFlow()
@@ -65,9 +70,7 @@ class FreeDriveViewModel @Inject constructor(
     var followingPaddingOffset: EdgeInsets?
         get() = viewportDataSource.value?.followingPadding
         set(value) {
-            value?.let{
-                _viewportDataSource.value?.followingPadding = it
-            }
+            value?.let { _viewportDataSource.value?.followingPadding = it }
         }
 
     private val _navigationCamera = MutableStateFlow<NavigationCamera?>(null)
@@ -111,10 +114,12 @@ class FreeDriveViewModel @Inject constructor(
         }
     }
 
-    suspend fun load() {
-        startServiceAutomatically.first {
-            if (it) serviceInteractor.startJayService()
-            true
+    fun load() {
+        viewModelScope.launch(dispatcherIO) {
+            startServiceAutomatically.first {
+                if (it) serviceInteractor.startJayService()
+                true
+            }
         }
     }
 
@@ -173,9 +178,11 @@ class FreeDriveViewModel @Inject constructor(
         }
     }
 
-    suspend fun setAutoStartService(startServiceAutomatically: Boolean) {
-        settingsInteractor.updateAppSettings {
-            it.copy(turnOnFreeDriveAutomatically = startServiceAutomatically)
+    fun setAutoStartService(startServiceAutomatically: Boolean) {
+        viewModelScope.launch(dispatcherIO) {
+            settingsInteractor.updateAppSettings {
+                it.copy(turnOnFreeDriveAutomatically = startServiceAutomatically)
+            }
         }
     }
 }

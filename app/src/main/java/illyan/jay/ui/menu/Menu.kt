@@ -75,7 +75,7 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.destinations.FreeDriveScreenDestination
+import illyan.jay.ui.destinations.FreeDriveDestination
 import illyan.jay.ui.destinations.SessionsScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.isSearching
@@ -149,7 +149,7 @@ fun MenuScreen(
                 icon = Icons.Rounded.Navigation,
                 onClick = {
                     viewModel.onClickFreeDriveButton()
-                    destinationsNavigator.navigate(FreeDriveScreenDestination)
+                    destinationsNavigator.navigate(FreeDriveDestination)
                 },
             )
         }

@@ -168,23 +168,23 @@ fun SessionDetailsScreen(
                 Text(
                     text = session?.startLocationName ?: stringResource(R.string.unknown),
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Icon(
                     imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
                 Crossfade(targetState = session?.endDateTime == null) {
                     if (it) {
                         Icon(
                             imageVector = Icons.Rounded.MoreHoriz, contentDescription = "",
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     } else {
                         Text(
                             text = session?.endLocationName ?: stringResource(R.string.unknown),
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -207,7 +207,7 @@ fun SessionDetailsScreen(
                                 .setScale(2, RoundingMode.FLOOR)} " +
                                     stringResource(R.string.kilometers)
                         },
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = "${stringResource(R.string.duration)}: " +
@@ -219,7 +219,7 @@ fun SessionDetailsScreen(
                             day = stringResource(R.string.day_short)
                         )
                             ?: stringResource(R.string.unknown)),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

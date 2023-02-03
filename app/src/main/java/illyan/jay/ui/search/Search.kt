@@ -112,7 +112,7 @@ fun SearchScreen(
                     modifier = Modifier.padding(SearchPadding),
                     text = stringResource(R.string.suggestions),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             suggestionItems(
@@ -127,7 +127,7 @@ fun SearchScreen(
                 modifier = Modifier.padding(SearchPadding),
                 text = stringResource(R.string.favorites),
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         favoriteItems(
@@ -141,7 +141,7 @@ fun SearchScreen(
                 modifier = Modifier.padding(SearchPadding),
                 text = stringResource(R.string.history),
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         historyItems(

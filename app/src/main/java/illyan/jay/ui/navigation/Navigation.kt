@@ -195,7 +195,7 @@ fun PlaceInfoScreen(
                 .largeTextPlaceholder(place == null),
             text = place?.name ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         AnimatedVisibility(
             modifier = Modifier
@@ -205,7 +205,7 @@ fun PlaceInfoScreen(
         ) {
             Text(
                 text = placeInfo?.address?.formattedAddress() ?: stringResource(R.string.unknown),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         AnimatedVisibility(visible = !placeInfo?.categories.isNullOrEmpty()) {
@@ -251,7 +251,7 @@ fun PlaceInfoScreen(
                             .toString()
             } ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

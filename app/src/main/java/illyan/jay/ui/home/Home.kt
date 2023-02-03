@@ -425,6 +425,7 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         viewModel.stopDanglingOngoingSessions()
+        viewModel.loadLastLocation()
     }
     val cameraPaddingValues by cameraPadding.collectAsStateWithLifecycle()
     val locationPermissionState = rememberPermissionState(
@@ -432,7 +433,7 @@ fun HomeScreen(
     )
     DisposableEffect(locationPermissionState.status.isGranted) {
         if (locationPermissionState.status.isGranted) {
-            coroutineScope.launch { viewModel.loadLastLocation() }
+            viewModel.requestLocationUpdates()
             mapView.value?.location?.turnOnWithDefaultPuck(context)
         } else {
             mapView.value?.location?.enabled = false
@@ -562,6 +563,8 @@ fun HomeScreen(
         ) {
             Column(
                 modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius / 4f)
             ) {
                 val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsStateWithLifecycle()
@@ -645,28 +648,27 @@ fun HomeScreen(
                         )
                     }
                 }
-                var isMapVisible by remember { mutableStateOf(false) }
-                if (initialLocationLoaded) {
+                if (initialLocationLoaded || cameraOptionsBuilder != null) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                         val (foreground, map) = createRefs()
-                        Column(modifier = Modifier
-                            .fillMaxSize()
-                            .constrainAs(foreground) {
-                                top.linkTo(parent.top)
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }
-                            .zIndex(1f)) {
-                            AnimatedVisibility(
-                                visible = !isMapVisible,
-                                exit = fadeOut(animationSpec = tween(800))
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                )
-                            }
+                        var isMapVisible by remember { mutableStateOf(false) }
+                        androidx.compose.animation.AnimatedVisibility(
+                            modifier = Modifier
+                                .zIndex(1f)
+                                .constrainAs(foreground) {
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                },
+                            visible = !isMapVisible,
+                            exit = fadeOut(animationSpec = tween(800))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                            )
                         }
                         val styleUrl by mapStyleUrl.collectAsStateWithLifecycle()
                         MapboxMap(
@@ -700,7 +702,6 @@ fun HomeScreen(
                                     is PermissionStatus.Granted -> {
                                         it.location.turnOnWithDefaultPuck(context)
                                     }
-
                                     is PermissionStatus.Denied -> {
                                         it.location.enabled = false
                                     }
