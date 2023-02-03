@@ -49,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -62,6 +61,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mapbox.search.record.FavoriteRecord
 import com.mapbox.search.record.HistoryRecord
 import com.mapbox.search.result.SearchSuggestion
@@ -95,8 +95,8 @@ fun SearchScreen(
         onDispose { viewModel.dispose() }
     }
     val focusManager = LocalFocusManager.current
-    val favoriteItems by viewModel.favoriteRecords.collectAsState()
-    val historyItems by viewModel.historyRecords.collectAsState()
+    val favoriteItems by viewModel.favoriteRecords.collectAsStateWithLifecycle()
+    val historyItems by viewModel.historyRecords.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

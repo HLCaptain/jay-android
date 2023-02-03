@@ -54,7 +54,6 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +63,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
@@ -98,13 +98,13 @@ fun SessionsScreen(
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     val context = LocalContext.current
-    val signedInUser by viewModel.signedInUser.collectAsState()
-    val areThereSessionsNotOwned by viewModel.areThereSessionsNotOwned.collectAsState()
-    val canDeleteSessions by viewModel.canDeleteSessionsLocally.collectAsState()
-    val syncedSessions by viewModel.syncedSessions.collectAsState()
-    val canSyncSessions by viewModel.canSyncSessions.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val signedInUser by viewModel.signedInUser.collectAsStateWithLifecycle()
+    val areThereSessionsNotOwned by viewModel.areThereSessionsNotOwned.collectAsStateWithLifecycle()
+    val canDeleteSessions by viewModel.canDeleteSessionsLocally.collectAsStateWithLifecycle()
+    val syncedSessions by viewModel.syncedSessions.collectAsStateWithLifecycle()
+    val canSyncSessions by viewModel.canSyncSessions.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val showButtons = isUserSignedIn &&
             (canSyncSessions || syncedSessions.isNotEmpty() || areThereSessionsNotOwned) ||
             canDeleteSessions
@@ -236,11 +236,11 @@ fun SessionsList(
     viewModel: SessionsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator,
 ) {
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
-    val noSessionsToShow by viewModel.noSessionsToShow.collectAsState()
-    val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsState()
-    val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsState()
-    val allSessionUUIDs by viewModel.allSessionUUIDs.collectAsState()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
+    val noSessionsToShow by viewModel.noSessionsToShow.collectAsStateWithLifecycle()
+    val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsStateWithLifecycle()
+    val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsStateWithLifecycle()
+    val allSessionUUIDs by viewModel.allSessionUUIDs.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = modifier,
         contentPadding = DefaultContentPadding,
@@ -302,7 +302,7 @@ fun SessionsList(
             }
         }
         items(allSessionUUIDs) {
-            val session by viewModel.getSessionStateFlow(it).collectAsState()
+            val session by viewModel.getSessionStateFlow(it).collectAsStateWithLifecycle()
             DisposableEffect(true) {
                 onDispose {
                     viewModel.disposeSessionStateFlow(it)

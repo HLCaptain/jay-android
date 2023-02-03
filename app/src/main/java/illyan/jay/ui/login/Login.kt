@@ -31,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import illyan.jay.MainActivity
 import illyan.jay.R
 
@@ -52,7 +52,7 @@ fun LoginDialog(
     viewModel: LoginViewModel = hiltViewModel(),
     context: Context = LocalContext.current,
 ) {
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     LaunchedEffect(isUserSignedIn) {
         if (isUserSignedIn) onDialogClosed()
     }

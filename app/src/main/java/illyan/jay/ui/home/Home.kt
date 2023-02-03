@@ -91,7 +91,6 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -128,6 +127,7 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
@@ -426,7 +426,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         viewModel.stopDanglingOngoingSessions()
     }
-    val cameraPaddingValues by cameraPadding.collectAsState()
+    val cameraPaddingValues by cameraPadding.collectAsStateWithLifecycle()
     val locationPermissionState = rememberPermissionState(
         permission = Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -564,8 +564,8 @@ fun HomeScreen(
                 modifier = Modifier
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius / 4f)
             ) {
-                val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsState()
-                val cameraOptionsBuilder by viewModel.cameraOptionsBuilder.collectAsState()
+                val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsStateWithLifecycle()
+                val cameraOptionsBuilder by viewModel.cameraOptionsBuilder.collectAsStateWithLifecycle()
                 // Grace period is useful when we would like to initialize the map
                 // with the user's location in focus.
                 // If it ends, it defaults to the middle of the Earth.
@@ -573,7 +573,7 @@ fun HomeScreen(
                 var didLoadInLocation by remember { mutableStateOf(false) }
                 var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
                 var isMapInitialized by remember { mutableStateOf(false) }
-                val sheetContentHeight by sheetContentHeight.collectAsState()
+                val sheetContentHeight by sheetContentHeight.collectAsStateWithLifecycle()
                 LaunchedEffect(
                     bottomSheetState.getOffsetAsDp(density),
                     isMapInitialized,
@@ -668,7 +668,7 @@ fun HomeScreen(
                                 )
                             }
                         }
-                        val styleUrl by mapStyleUrl.collectAsState()
+                        val styleUrl by mapStyleUrl.collectAsStateWithLifecycle()
                         MapboxMap(
                             // Budapest University of Technology and Economics
                             modifier = Modifier
@@ -892,8 +892,8 @@ fun BottomSearchBar(
                     modifier = Modifier.padding(AvatarPaddingValues),
                     interactionSource = interactionSource
                 ) {
-                    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
-                    val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
+                    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
+                    val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
                     AvatarAsyncImage(
                         modifier = Modifier
                             .size(RoundedCornerRadius * 2)
@@ -994,7 +994,7 @@ fun BottomSheetScreen(
                 ) {}
             }
         }
-        val screenHeight by _screenHeight.collectAsState()
+        val screenHeight by _screenHeight.collectAsStateWithLifecycle()
         val offset by sheetState.offset
         val density = LocalDensity.current
         onBottomSheetFractionChange(1 - offset / (screenHeight.value * density.density))

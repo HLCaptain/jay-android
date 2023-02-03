@@ -36,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mapbox.geojson.Point
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
@@ -88,7 +88,7 @@ fun SessionScreen(
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     var flownToPath by remember { mutableStateOf(false) }
-    val path by viewModel.path.collectAsState()
+    val path by viewModel.path.collectAsStateWithLifecycle()
     var fakeStopped by remember { mutableStateOf(false) }
     LaunchedEffect(sheetState.isAnimationRunning) {
         if (fakeStopped) {
@@ -149,8 +149,8 @@ fun SessionScreen(
 fun SessionDetailsScreen(
     viewModel: SessionViewModel = hiltViewModel(),
 ) {
-    val session by viewModel.session.collectAsState()
-    val path by viewModel.path.collectAsState()
+    val session by viewModel.session.collectAsStateWithLifecycle()
+    val path by viewModel.path.collectAsStateWithLifecycle()
     Column(
         modifier = Modifier
             .fillMaxWidth()

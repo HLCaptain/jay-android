@@ -35,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
@@ -105,8 +105,8 @@ fun NavigationScreen(
         onDispose { viewModel.dispose() }
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
-    val place by viewModel.place.collectAsState()
-    val placeInfo by viewModel.placeInfo.collectAsState()
+    val place by viewModel.place.collectAsStateWithLifecycle()
+    val placeInfo by viewModel.placeInfo.collectAsStateWithLifecycle()
     LaunchedEffect(sheetState.isAnimationRunning) {
         sheetHeightNotSet = sheetState.isAnimationRunning
     }
@@ -177,9 +177,9 @@ fun PlaceInfoScreen(
     modifier: Modifier = Modifier,
     viewModel: NavigationViewModel = hiltViewModel(),
 ) {
-    val placeInfo by viewModel.placeInfo.collectAsState()
-    val place by viewModel.place.collectAsState()
-    val shouldShowAddress by viewModel.shouldShowAddress.collectAsState()
+    val placeInfo by viewModel.placeInfo.collectAsStateWithLifecycle()
+    val place by viewModel.place.collectAsStateWithLifecycle()
+    val shouldShowAddress by viewModel.shouldShowAddress.collectAsStateWithLifecycle()
     val isLoading = placeInfo == null
     val horizontalPadding = DefaultScreenOnSheetPaddingHorizontal + PaddingValues(
         start = 2.dp,

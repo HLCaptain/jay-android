@@ -38,7 +38,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import illyan.jay.R
 import illyan.jay.ui.home.AvatarAsyncImage
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -69,9 +69,9 @@ fun ProfileDialog(
     val context = LocalContext.current
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
     if (isDialogOpen) {
-        val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+        val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
         var showDialog by remember { mutableStateOf(false) }
-        val isUserSigningOut by viewModel.isUserSigningOut.collectAsState()
+        val isUserSigningOut by viewModel.isUserSigningOut.collectAsStateWithLifecycle()
         AlertDialog(
             properties = DialogProperties(
                 usePlatformDefaultWidth = false
@@ -122,8 +122,8 @@ fun ProfileDialog(
 fun ProfileTitleScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
-    val userPhotoUrl by viewModel.userPhotoUrl.collectAsState()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
+    val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,9 +144,9 @@ fun ProfileDetailsScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     context: Context,
 ) {
-    val email by viewModel.userEmail.collectAsState()
-    val phone by viewModel.userPhoneNumber.collectAsState()
-    val name by viewModel.userName.collectAsState()
+    val email by viewModel.userEmail.collectAsStateWithLifecycle()
+    val phone by viewModel.userPhoneNumber.collectAsStateWithLifecycle()
+    val name by viewModel.userName.collectAsStateWithLifecycle()
     var showConfidentialInfo by remember { mutableStateOf(false) }
     var authenticated by remember { mutableStateOf(false) }
     Row(

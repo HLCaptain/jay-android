@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
@@ -117,7 +118,7 @@ fun FreeDriveScreen(
         is PermissionStatus.Granted -> {
             val startServiceAutomatically by viewModel.startServiceAutomatically
                 .collectAsState(AppSettings.default.turnOnFreeDriveAutomatically)
-            val cameraPadding by cameraPadding.collectAsState()
+            val cameraPadding by cameraPadding.collectAsStateWithLifecycle()
             DisposableEffect(Unit) {
                 coroutineScope.launch {
                     viewModel.load()
@@ -159,7 +160,7 @@ fun FreeDriveScreen(
                     .fillMaxWidth()
                     .padding(DefaultScreenOnSheetPadding)
             ) {
-                val isServiceRunning by viewModel.isJayServiceRunning.collectAsState()
+                val isServiceRunning by viewModel.isJayServiceRunning.collectAsStateWithLifecycle()
                 val buttonLabel = if (isServiceRunning) {
                     stringResource(R.string.stop_free_driving)
                 } else {
