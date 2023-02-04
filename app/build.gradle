@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -50,16 +50,17 @@ android {
 
     buildTypes {
         debug {
+            debuggable true
             buildConfigField 'String', "MapboxAccessToken", "\"$MAPBOX_ACCESS_TOKEN\""
             buildConfigField 'String', "MapboxDownloadsToken", "\"$MAPBOX_DOWNLOADS_TOKEN\""
             buildConfigField 'String', "MapboxSdkRegistryToken", "\"$SDK_REGISTRY_TOKEN\""
         }
         release {
+            initWith debug
+            debuggable false
             minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            buildConfigField 'String', "MapboxAccessToken", "\"$MAPBOX_ACCESS_TOKEN\""
-            buildConfigField 'String', "MapboxDownloadsToken", "\"$MAPBOX_DOWNLOADS_TOKEN\""
-            buildConfigField 'String', "MapboxSdkRegistryToken", "\"$SDK_REGISTRY_TOKEN\""
         }
     }
     compileOptions {

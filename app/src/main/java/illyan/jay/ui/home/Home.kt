@@ -28,7 +28,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Parcelable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -75,8 +74,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -96,7 +93,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -129,17 +125,11 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material.placeholder
-import com.google.accompanist.placeholder.material.shimmer
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -157,6 +147,7 @@ import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.MapboxMap
@@ -899,7 +890,7 @@ fun BottomSearchBar(
                         modifier = Modifier
                             .size(RoundedCornerRadius * 2)
                             .clip(CircleShape),
-                        enabled = isUserSignedIn && userPhotoUrl != null,
+                        placeholderEnabled = !isUserSignedIn || userPhotoUrl == null,
                         userPhotoUrl = userPhotoUrl
                     )
                 }
@@ -911,53 +902,6 @@ fun BottomSearchBar(
                 )
             }
             Spacer(modifier = Modifier.height(onDragAreaOffset))
-        }
-    }
-}
-
-@Composable
-fun AvatarAsyncImage(
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    userPhotoUrl: Uri?,
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        if (enabled) {
-            SubcomposeAsyncImage(
-                modifier = modifier,
-                model = userPhotoUrl?.toString(),
-                loading = {
-                    when (painter.state) {
-                        is AsyncImagePainter.State.Loading -> {
-                            Box(
-                                modifier = modifier
-                                    .placeholder(
-                                        visible = true,
-                                        highlight = PlaceholderHighlight.shimmer()
-                                    )
-                            )
-                        }
-
-                        is AsyncImagePainter.State.Error -> Icons.Rounded.BrokenImage
-                        is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                        else -> Icon(
-                            modifier = modifier,
-                            imageVector = Icons.Rounded.AccountCircle,
-                            contentDescription = stringResource(R.string.avatar_profile_picture)
-                        )
-                    }
-                },
-                contentDescription = stringResource(R.string.avatar_profile_picture)
-            )
-        } else {
-            Icon(
-                modifier = modifier,
-                imageVector = Icons.Rounded.AccountCircle,
-                contentDescription = stringResource(R.string.avatar_profile_picture)
-            )
         }
     }
 }
