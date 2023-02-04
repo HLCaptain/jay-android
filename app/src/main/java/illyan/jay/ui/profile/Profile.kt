@@ -181,7 +181,7 @@ private fun PreviewProfileDialogScreen(
     JayTheme {
         Column {
             ProfileDialogScreen(
-                modifier = Modifier.width(200.dp),
+                modifier = Modifier.width(300.dp),
                 userPhotoUrl = null,
                 confidentialInfo = listOf(
                     stringResource(R.string.name) to name,
