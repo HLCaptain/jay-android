@@ -320,7 +320,7 @@ fun UserInfo(
         Text(text = "$infoName: ")
         Crossfade(targetState = hide) {
             Text(
-                text = if (it) info else stringResource(R.string.hidden_field_string) + "very long segment of text to test out the list capabilities"
+                text = if (it) info else stringResource(R.string.hidden_field_string)
             )
         }
     }

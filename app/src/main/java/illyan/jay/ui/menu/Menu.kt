@@ -109,7 +109,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
 @MenuNavGraph(start = true)
 @Destination
 @Composable
-fun Menu(
+fun MenuScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: MenuViewModel = hiltViewModel(),
 ) {
@@ -119,7 +119,7 @@ fun Menu(
         (context as Activity).moveTaskToBack(false)
     }
     val localizedNameOfBme = stringResource(R.string.bme)
-    MenuScreen(
+    MenuContent(
         onNavigateToBme = {
             viewModel.onClickNavigateToBmeButton(localizedNameOfBme)
         },
@@ -136,7 +136,7 @@ fun Menu(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MenuScreen(
+fun MenuContent(
     onNavigateToBme: () -> Unit = {},
     onFreeDrive: () -> Unit = {},
     onSessions: () -> Unit = {},
@@ -183,9 +183,9 @@ fun MenuScreen(
 
 @PreviewLightDarkTheme
 @Composable
-private fun MenuScreenPreview() {
+private fun MenuContentPreview() {
     JayTheme {
-        MenuScreen()
+        MenuContent()
     }
 }
 

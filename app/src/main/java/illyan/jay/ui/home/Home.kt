@@ -155,7 +155,7 @@ import illyan.jay.ui.map.padding
 import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.profile.ProfileDialog
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery

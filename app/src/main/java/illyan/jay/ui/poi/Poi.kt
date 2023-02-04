@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.navigation
+package illyan.jay.ui.poi
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -49,21 +49,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchResultType
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.home.tryFlyToLocation
+import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.navigation.model.Place
-import illyan.jay.ui.navigation.model.toPoint
+import illyan.jay.ui.poi.model.Place
+import illyan.jay.ui.poi.model.toPoint
 import illyan.jay.ui.sheet.SheetNavGraph
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.largeTextPlaceholder
 import illyan.jay.util.plus
 import illyan.jay.util.textPlaceholder
@@ -94,10 +98,10 @@ const val minZoom = 3.0
 @SheetNavGraph
 @Destination
 @Composable
-fun NavigationScreen(
+fun Poi(
     placeToNavigate: Place,
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
-    viewModel: NavigationViewModel = hiltViewModel(),
+    viewModel: PoiViewModel = hiltViewModel(),
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     DisposableEffect(Unit) {
@@ -165,30 +169,33 @@ fun NavigationScreen(
             .padding(verticalPadding)
             .fillMaxWidth()
     ) {
-        PlaceInfoScreen(
+        val shouldShowAddress by viewModel.shouldShowAddress.collectAsStateWithLifecycle()
+        PoiScreen(
             modifier = Modifier.fillMaxWidth(),
-            viewModel = viewModel
+            placeInfo = placeInfo,
+            place = place,
+            shouldShowAddress = shouldShowAddress,
+            isLoading = placeInfo == null,
         )
     }
 }
 
 @Composable
-fun PlaceInfoScreen(
+fun PoiScreen(
     modifier: Modifier = Modifier,
-    viewModel: NavigationViewModel = hiltViewModel(),
+    placeInfo: SearchResult? = null,
+    place: Place? = null,
+    shouldShowAddress: Boolean = true,
+    isLoading: Boolean = false,
 ) {
-    val placeInfo by viewModel.placeInfo.collectAsStateWithLifecycle()
-    val place by viewModel.place.collectAsStateWithLifecycle()
-    val shouldShowAddress by viewModel.shouldShowAddress.collectAsStateWithLifecycle()
-    val isLoading = placeInfo == null
-    val horizontalPadding = DefaultScreenOnSheetPaddingHorizontal + PaddingValues(
-        start = 2.dp,
-        end = 2.dp,
-    )
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val horizontalPadding = DefaultScreenOnSheetPaddingHorizontal + PaddingValues(
+            start = 2.dp,
+            end = 2.dp,
+        )
         Text(
             modifier = Modifier
                 .padding(horizontalPadding)
@@ -252,6 +259,19 @@ fun PlaceInfoScreen(
             } ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun PoiScreenPreview() {
+    JayTheme {
+        PoiScreen(
+            modifier = Modifier.fillMaxWidth(),
+            place = BmeK,
+            shouldShowAddress = true,
+//            placeInfo = // TODO: pass a SearchResult here
         )
     }
 }
