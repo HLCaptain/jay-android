@@ -18,12 +18,14 @@
 
 package illyan.jay.ui.search
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.YoutubeSearchedFor
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,13 +72,15 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
+import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.theme.JayTheme
 
 @RootNavGraph
 @NavGraph
 annotation class SearchNavGraph(
-    val start: Boolean = false
+    val start: Boolean = false,
 )
 
 val SearchPadding = 8.dp
@@ -87,9 +92,8 @@ val DividerThickness = 1.dp
 @Destination
 @Composable
 fun SearchScreen(
-    viewModel: SearchViewModel = hiltViewModel()
+    viewModel: SearchViewModel = hiltViewModel(),
 ) {
-    val statusBarTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     DisposableEffect(Unit) {
         viewModel.load()
         onDispose { viewModel.dispose() }
@@ -97,17 +101,54 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
     val favoriteItems by viewModel.favoriteRecords.collectAsStateWithLifecycle()
     val historyItems by viewModel.historyRecords.collectAsStateWithLifecycle()
-    LazyColumn(
+    val searchSuggestions by viewModel.searchSuggestions.collectAsStateWithLifecycle()
+    val isLoadingSuggestions by viewModel.isLoadingSuggestions.collectAsStateWithLifecycle()
+    val statusBarTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
+    SearchList(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(horizontal = SearchPadding),
         contentPadding = PaddingValues(
             top = SearchPadding + statusBarTopPadding,
             bottom = RoundedCornerRadius + SearchPadding
-        )
+        ),
+        favoriteItems = favoriteItems,
+        historyItems = historyItems,
+        searchSuggestions = searchSuggestions,
+        isLoadingSuggestions = isLoadingSuggestions,
+        onClickSearchSuggestion = { suggestion, _ ->
+            focusManager.clearFocus()
+            viewModel.navigateTo(suggestion)
+        },
+        onClickFavoriteItem = { favoriteItem, _ ->
+            focusManager.clearFocus()
+            viewModel.navigateTo(favoriteItem)
+        },
+        onClickHistoryItem = { historyItem, _ ->
+            focusManager.clearFocus()
+            viewModel.navigateTo(historyItem)
+        },
+    )
+}
+
+@Composable
+fun SearchList(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
+    favoriteItems: List<FavoriteRecord> = emptyList(),
+    historyItems: List<HistoryRecord> = emptyList(),
+    searchSuggestions: List<SearchSuggestion> = emptyList(),
+    isLoadingSuggestions: Boolean = false,
+    onClickSearchSuggestion: (SearchSuggestion, Int) -> Unit = { _, _ -> },
+    onClickFavoriteItem: (FavoriteRecord, Int) -> Unit = { _, _ -> },
+    onClickHistoryItem: (HistoryRecord, Int) -> Unit = { _, _ -> },
+) {
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = contentPadding
     ) {
-        if (viewModel.searchQuery.isNotBlank()) {
-            item {
+        item {
+            AnimatedVisibility(visible = isLoadingSuggestions || searchSuggestions.isNotEmpty()) {
                 Text(
                     modifier = Modifier.padding(SearchPadding),
                     text = stringResource(R.string.suggestions),
@@ -115,13 +156,12 @@ fun SearchScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            suggestionItems(
-                items = viewModel.searchSuggestions
-            ) { suggestion, _ ->
-                focusManager.clearFocus()
-                viewModel.navigateTo(suggestion)
-            }
         }
+        suggestionItems(
+            items = searchSuggestions,
+            onClick = onClickSearchSuggestion,
+            isLoadingSuggestions = isLoadingSuggestions
+        )
         item {
             Text(
                 modifier = Modifier.padding(SearchPadding),
@@ -131,11 +171,9 @@ fun SearchScreen(
             )
         }
         favoriteItems(
-            items = favoriteItems
-        ) { favoriteRecord, _ ->
-            focusManager.clearFocus()
-            viewModel.navigateTo(favoriteRecord)
-        }
+            items = favoriteItems,
+            onClick = onClickFavoriteItem
+        )
         item {
             Text(
                 modifier = Modifier.padding(SearchPadding),
@@ -145,17 +183,23 @@ fun SearchScreen(
             )
         }
         historyItems(
-            items = historyItems
-        ) { favoriteRecord, _ ->
-            focusManager.clearFocus()
-            viewModel.navigateTo(favoriteRecord)
-        }
+            items = historyItems,
+            onClick = onClickHistoryItem
+        )
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+fun SearchListPreview() {
+    JayTheme {
+        SearchList()
     }
 }
 
 fun LazyListScope.historyItems(
     items: List<HistoryRecord>,
-    onClick: (HistoryRecord, Int) -> Unit = { _, _ -> }
+    onClick: (HistoryRecord, Int) -> Unit = { _, _ -> },
 ) {
     searchItems(
         list = items
@@ -178,7 +222,7 @@ fun LazyListScope.historyItems(
 
 fun LazyListScope.favoriteItems(
     items: List<FavoriteRecord>,
-    onClick: (FavoriteRecord, Int) -> Unit = { _, _ -> }
+    onClick: (FavoriteRecord, Int) -> Unit = { _, _ -> },
 ) {
     searchItems(
         list = items
@@ -201,10 +245,41 @@ fun LazyListScope.favoriteItems(
 
 fun LazyListScope.suggestionItems(
     items: List<SearchSuggestion>,
-    onClick: (SearchSuggestion, Int) -> Unit = { _, _ -> }
+    isLoadingSuggestions: Boolean = false,
+    onClick: (SearchSuggestion, Int) -> Unit = { _, _ -> },
 ) {
     searchItems(
-        list = items
+        list = items,
+        emptyListPlaceholder = {
+            AnimatedVisibility(visible = isLoadingSuggestions || items.isNotEmpty()) {
+                Crossfade(targetState = isLoadingSuggestions) {
+                    if (it) {
+                        SearchCard(
+                            shape = RoundedCornerShape(SearchItemsCornerRadius),
+                            prefixContent = {
+                                MediumCircularProgressIndicator(
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                            }
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(start = 4.dp, end = 12.dp),
+                                text = stringResource(R.string.loading),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    } else {
+                        SearchCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = stringResource(R.string.list_is_empty),
+                            description = stringResource(R.string.list_is_empty_description),
+                            icon = Icons.Rounded.Info,
+                            shape = RoundedCornerShape(SearchItemsCornerRadius)
+                        )
+                    }
+                }
+            }
+        }
     ) { suggestion, index ->
         val roundedCornerTop = if (index == 0) SearchItemsCornerRadius else 0.dp
         val roundedCornerBottom = if (index == items.lastIndex) SearchItemsCornerRadius else 0.dp
@@ -233,10 +308,10 @@ fun <Item> LazyListScope.searchItems(
             shape = RoundedCornerShape(SearchItemsCornerRadius)
         )
     },
-    itemProvider: @Composable (Item, Int) -> Unit
+    itemProvider: @Composable (Item, Int) -> Unit,
 ) {
-    if (list.isEmpty()) {
-        item {
+    item {
+        AnimatedVisibility(visible = list.isEmpty()) {
             emptyListPlaceholder()
         }
     }
@@ -263,13 +338,12 @@ fun <Item> LazyListScope.searchItems(
     }
 }
 
-@PreviewLightDarkTheme
 @Composable
 fun SuggestionCard(
     modifier: Modifier = Modifier,
     result: SearchSuggestion? = null,
     shape: Shape = CardDefaults.shape,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     SearchCard(
         modifier = modifier,
@@ -283,11 +357,18 @@ fun SuggestionCard(
 
 @PreviewLightDarkTheme
 @Composable
+private fun SuggestionCardPreview() {
+    JayTheme {
+        SuggestionCard()
+    }
+}
+
+@Composable
 fun HistoryCard(
     modifier: Modifier = Modifier,
     result: HistoryRecord? = null,
     shape: Shape = CardDefaults.shape,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     SearchCard(
         modifier = modifier,
@@ -301,11 +382,18 @@ fun HistoryCard(
 
 @PreviewLightDarkTheme
 @Composable
+private fun HistoryCardPreview() {
+    JayTheme {
+        HistoryCard()
+    }
+}
+
+@Composable
 fun FavoriteCard(
     modifier: Modifier = Modifier,
     result: FavoriteRecord? = null,
     shape: Shape = CardDefaults.shape,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     SearchCard(
         modifier = modifier,
@@ -317,7 +405,63 @@ fun FavoriteCard(
     )
 }
 
+@PreviewLightDarkTheme
+@Composable
+private fun FavoriteCardPreview() {
+    JayTheme {
+        FavoriteCard()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchCard(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    cardColors: CardColors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ),
+    prefixContent: @Composable () -> Unit = {
+        IconButton(
+            modifier = Modifier.padding(4.dp),
+            onClick = onClick
+        ) {
+            Icon(
+                modifier = Modifier.size(32.dp),
+                imageVector = Icons.Rounded.Search,
+                tint = MaterialTheme.colorScheme.onSurface,
+                contentDescription = "Search Item Icon"
+            )
+        }
+    },
+    suffixContent: @Composable () -> Unit = {},
+    shape: Shape = CardDefaults.shape,
+    content: @Composable () -> Unit = {}
+) {
+    // Can be widely generalized. Height is prefered
+    // to be limited and the same between list items.
+    Card(
+        modifier = modifier,
+        onClick = onClick,
+        colors = cardColors,
+        shape = shape,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                prefixContent()
+                content()
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                suffixContent()
+            }
+        }
+    }
+}
+
 @Composable
 fun SearchCard(
     modifier: Modifier = Modifier,
@@ -326,48 +470,42 @@ fun SearchCard(
     icon: ImageVector = Icons.Rounded.Search,
     tint: Color = MaterialTheme.colorScheme.onSurface,
     shape: Shape = CardDefaults.shape,
-    onClick: () -> Unit = {}
-) {
-    // Can be widely generalized. Height is prefered
-    // to be limited and the same between list items.
-    val cardColors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = tint
-    )
-    Card(
-        modifier = modifier,
-        onClick = onClick,
-        colors = cardColors,
-        shape = shape,
-    ) {
-        Row(
-            modifier = Modifier.padding(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+    onClick: () -> Unit = {},
+    prefixContent: @Composable () -> Unit = {
+        IconButton(
+            modifier = Modifier.padding(horizontal = 4.dp),
+            onClick = onClick
         ) {
-            IconButton(
-                onClick = onClick
-            ) {
-                Icon(
-                    modifier = Modifier.size(32.dp),
-                    imageVector = icon,
-                    tint = tint,
-                    contentDescription = "Search Item Icon"
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+            Icon(
+                modifier = Modifier.size(32.dp),
+                imageVector = icon,
+                tint = tint,
+                contentDescription = "Search Item Icon"
+            )
         }
-    }
-}
+    },
+    suffixContent: @Composable () -> Unit = {},
+    content: @Composable () -> Unit = {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 4.dp, end = 12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    },
+) = SearchCard(
+    modifier = modifier,
+    onClick = onClick,
+    shape = shape,
+    prefixContent = prefixContent,
+    suffixContent = suffixContent,
+    content = content,
+)

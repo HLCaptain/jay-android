@@ -33,3 +33,23 @@ fun SmallCircularProgressIndicator(
         strokeWidth = 2.dp
     )
 }
+
+@Composable
+fun MediumCircularProgressIndicator(
+    modifier: Modifier = Modifier
+) {
+    CircularProgressIndicator(
+        modifier = modifier.size(24.dp),
+        strokeWidth = 2.dp
+    )
+}
+
+@Composable
+fun LargeCircularProgressIndicator(
+    modifier: Modifier = Modifier
+) {
+    CircularProgressIndicator(
+        modifier = modifier.size(32.dp),
+        strokeWidth = 2.dp
+    )
+}
