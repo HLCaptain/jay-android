@@ -163,7 +163,8 @@ private fun Modifier.drawScrollbar(
     bottomPadding = bottomPadding,
 ) { reverseDirection, atEnd, color, alpha, density ->
     val layoutInfo = state.layoutInfo
-    val viewportSize = layoutInfo.viewportEndOffset - bottomPadding.value * density - layoutInfo.viewportStartOffset + topPadding.value * density
+    val paddingSize = (bottomPadding.value + topPadding.value) * density
+    val viewportSize = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset - paddingSize
     val items = layoutInfo.visibleItemsInfo
     val itemsSize = items.fastSumBy { it.size }
     if (items.size < layoutInfo.totalItemsCount || itemsSize > viewportSize) {
