@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddChart
@@ -70,15 +71,18 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
+import illyan.jay.ui.components.drawVerticalScrollbar
 import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
 import illyan.jay.util.minus
+import illyan.jay.util.plus
 import java.math.RoundingMode
 
 val DefaultContentPadding = PaddingValues(
@@ -214,17 +218,12 @@ fun SessionsScreen(
                 }
             }
             SessionsList(
-                modifier = Modifier
-                    .padding(horizontal = MenuItemPadding * 2)
-                    .fillMaxWidth()
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 12.dp,
-                            topEnd = 12.dp
-                        )
-                    ),
+                modifier = Modifier.fillMaxWidth(),
                 viewModel = viewModel,
-                destinationsNavigator = destinationsNavigator
+                destinationsNavigator = destinationsNavigator,
+                contentPadding = DefaultContentPadding + PaddingValues(
+                    horizontal = MenuItemPadding * 2
+                ),
             )
         }
     }
@@ -235,114 +234,138 @@ fun SessionsList(
     modifier: Modifier = Modifier,
     viewModel: SessionsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator,
+    contentPadding: PaddingValues = DefaultContentPadding
 ) {
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val noSessionsToShow by viewModel.noSessionsToShow.collectAsStateWithLifecycle()
     val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsStateWithLifecycle()
     val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsStateWithLifecycle()
     val allSessionUUIDs by viewModel.allSessionUUIDs.collectAsStateWithLifecycle()
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = DefaultContentPadding,
-        verticalArrangement = Arrangement.spacedBy(MenuItemPadding),
-        reverseLayout = true
+    val lazyListState = rememberLazyListState()
+    Column(
+        modifier = modifier
+            .drawVerticalScrollbar(
+                state = lazyListState,
+                reverseScrolling = true,
+                topPadding = contentPadding.calculateTopPadding(),
+                bottomPadding = contentPadding.calculateBottomPadding(),
+            )
     ) {
-        if (noSessionsToShow) {
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Info,
-                        contentDescription = "",
-                        tint = MaterialTheme.colorScheme.onSurface
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp
                     )
-                    Text(
-                        text = stringResource(R.string.no_sessions_to_show),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
-        if (!syncedSessionsLoaded && isUserSignedIn) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                ),
+            contentPadding = contentPadding,
+            verticalArrangement = Arrangement.spacedBy(MenuItemPadding),
+            reverseLayout = true,
+            state = lazyListState,
+        ) {
+            if (noSessionsToShow) {
+                item {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SmallCircularProgressIndicator()
-                        Text(text = stringResource(R.string.loading_sessions_from_cloud))
-                    }
-                }
-            }
-        }
-        if (!localSessionsLoaded) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SmallCircularProgressIndicator()
-                        Text(text = stringResource(R.string.loading_sessions))
-                    }
-                }
-            }
-        }
-        items(allSessionUUIDs) {
-            val session by viewModel.getSessionStateFlow(it).collectAsStateWithLifecycle()
-            DisposableEffect(true) {
-                onDispose {
-                    viewModel.disposeSessionStateFlow(it)
-                }
-            }
-            val isPlaceholderVisible = session == null
-            SessionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .cardPlaceholder(isPlaceholderVisible),
-                session = session,
-                onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(
-                        SessionScreenDestination(
-                            sessionUUID = sessionUUID
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = "",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
-                    )
+                        Text(
+                            text = stringResource(R.string.no_sessions_to_show),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
-            ) {
-                AnimatedVisibility(
-                    visible = session != null && isUserSignedIn && session!!.isNotOwned
-                ) {
-                    Button(
-                        onClick = { viewModel.ownSession(session!!.uuid) },
+            }
+            if (!syncedSessionsLoaded && isUserSignedIn) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = Icons.Rounded.PersonAdd, contentDescription = "")
-                            Text(text = stringResource(R.string.own))
+                            SmallCircularProgressIndicator()
+                            Text(text = stringResource(R.string.loading_sessions_from_cloud))
+                        }
+                    }
+                }
+            }
+            if (!localSessionsLoaded) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SmallCircularProgressIndicator()
+                            Text(text = stringResource(R.string.loading_sessions))
+                        }
+                    }
+                }
+            }
+            items(allSessionUUIDs) {
+                val session by viewModel.getSessionStateFlow(it).collectAsStateWithLifecycle()
+                DisposableEffect(true) {
+                    onDispose {
+                        viewModel.disposeSessionStateFlow(it)
+                    }
+                }
+                val isPlaceholderVisible = session == null
+                SessionCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .cardPlaceholder(isPlaceholderVisible),
+                    session = session,
+                    onClick = { sessionUUID ->
+                        destinationsNavigator.navigate(
+                            SessionScreenDestination(
+                                sessionUUID = sessionUUID
+                            )
+                        )
+                    }
+                ) {
+                    AnimatedVisibility(
+                        visible = session != null && isUserSignedIn && session!!.isNotOwned
+                    ) {
+                        Button(
+                            onClick = { viewModel.ownSession(session!!.uuid) },
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(imageVector = Icons.Rounded.PersonAdd, contentDescription = "")
+                                Text(text = stringResource(R.string.own))
+                            }
                         }
                     }
                 }
             }
         }
     }
+    ConstraintLayout(
+        modifier = modifier
+    ) {
+    }
+
 }
 
-@PreviewLightDarkTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionCard(
@@ -438,5 +461,13 @@ fun SessionCard(
                 content()
             }
         }
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun SessionCardPreview() {
+    JayTheme {
+        SessionCard()
     }
 }

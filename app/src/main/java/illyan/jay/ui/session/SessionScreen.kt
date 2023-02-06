@@ -20,12 +20,16 @@ package illyan.jay.ui.session
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
@@ -54,8 +58,8 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
@@ -63,13 +67,16 @@ import illyan.jay.ui.home.tryFlyToPath
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
+import illyan.jay.ui.session.model.UiLocation
+import illyan.jay.ui.session.model.UiSession
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.format
 import java.math.RoundingMode
 
 val DefaultScreenOnSheetPadding = PaddingValues(
     start = MenuItemPadding * 2,
     end = MenuItemPadding * 2,
-    top = MenuItemPadding,
+    top = MenuItemPadding * 2,
     bottom = RoundedCornerRadius + MenuItemPadding * 2
 )
 
@@ -89,13 +96,13 @@ fun SessionScreen(
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     var flownToPath by remember { mutableStateOf(false) }
     val path by viewModel.path.collectAsStateWithLifecycle()
-    var fakeStopped by remember { mutableStateOf(false) }
+    var fakeStateChangeStopped by remember { mutableStateOf(false) }
     LaunchedEffect(sheetState.isAnimationRunning) {
-        if (fakeStopped) {
+        if (fakeStateChangeStopped) {
             sheetHeightNotSet = sheetState.isAnimationRunning
         }
         if (!sheetState.isAnimationRunning) {
-            fakeStopped = true
+            fakeStateChangeStopped = true
         }
     }
     LaunchedEffect(
@@ -139,50 +146,62 @@ fun SessionScreen(
             annotationsPlugin?.removeAnnotationManager(polylineAnnotationManager!!)
         }
     }
+    val session by viewModel.session.collectAsStateWithLifecycle()
     SessionDetailsScreen(
-        viewModel = viewModel
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(DefaultScreenOnSheetPadding),
+        session = session,
+        path = path,
     )
 }
 
 @PreviewLightDarkTheme
 @Composable
 fun SessionDetailsScreen(
-    viewModel: SessionViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier,
+    session: UiSession? = null,
+    path: List<UiLocation>? = null,
 ) {
-    val session by viewModel.session.collectAsStateWithLifecycle()
-    val path by viewModel.path.collectAsStateWithLifecycle()
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(DefaultScreenOnSheetPadding),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                modifier = Modifier.padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    text = session?.startLocationName ?: stringResource(R.string.unknown),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Crossfade(
+                    modifier = Modifier.animateContentSize(),
+                    targetState = session?.startLocationName
+                ) {
+                    Text(
+                        text = it ?: stringResource(R.string.unknown),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
                 Icon(
                     imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
-                Crossfade(targetState = session?.endDateTime == null) {
-                    if (it) {
+                Crossfade(
+                    modifier = Modifier.animateContentSize(),
+                    targetState = (session?.endDateTime == null) to session?.endLocationName
+                ) {
+                    if (it.first) {
                         Icon(
                             imageVector = Icons.Rounded.MoreHoriz, contentDescription = "",
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     } else {
                         Text(
-                            text = session?.endLocationName ?: stringResource(R.string.unknown),
+                            text = it.second ?: stringResource(R.string.unknown),
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -192,35 +211,69 @@ fun SessionDetailsScreen(
             AnimatedVisibility(
                 visible = path == null || session == null
             ) {
-                SmallCircularProgressIndicator()
+                MediumCircularProgressIndicator()
             }
         }
-        Column {
-            Text(
-                text = "${stringResource(R.string.distance)}: " +
-                        if (session?.totalDistance == null) {
-                            stringResource(R.string.unknown)
-                        } else {
-                            "${session!!.totalDistance!!
-                                .div(1000)
-                                .toBigDecimal()
-                                .setScale(2, RoundingMode.FLOOR)} " +
-                                    stringResource(R.string.kilometers)
-                        },
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "${stringResource(R.string.duration)}: " +
-                        (session?.duration?.format(
-                            separator = " ",
-                            second = stringResource(R.string.second_short),
-                            minute = stringResource(R.string.minute_short),
-                            hour = stringResource(R.string.hour_short),
-                            day = stringResource(R.string.day_short)
+        SessionDetailsList(
+            details = listOf(
+                stringResource(R.string.distance) to if (session?.totalDistance == null) {
+                    stringResource(R.string.unknown)
+                } else {
+                    "${
+                        session.totalDistance
+                            .div(1000)
+                            .toBigDecimal()
+                            .setScale(2, RoundingMode.FLOOR)} " +
+                            stringResource(R.string.kilometers)
+                },
+                stringResource(R.string.duration) to (session?.duration?.format(
+                    separator = " ",
+                    second = stringResource(R.string.second_short),
+                    minute = stringResource(R.string.minute_short),
+                    hour = stringResource(R.string.hour_short),
+                    day = stringResource(R.string.day_short)
+                ) ?: stringResource(R.string.unknown))
+            ),
+        )
+    }
+}
+
+@Composable
+fun SessionDetailsList(
+    details: List<Pair<String, String>> = emptyList()
+) {
+    LazyRow {
+        item {
+            LazyColumn {
+                items(details) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "${it.first}:",
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
-                            ?: stringResource(R.string.unknown)),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+                        Text(
+                            text = it.second,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
         }
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+fun SessionDetailsScreenPreview(
+    session: UiSession? = null,
+    path: List<UiLocation>? = null,
+) {
+    JayTheme {
+        SessionDetailsScreen(
+            session = session,
+            path = path,
+        )
     }
 }

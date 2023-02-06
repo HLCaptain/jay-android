@@ -226,18 +226,22 @@ class SearchInteractor @Inject constructor(
             responseInfo: ResponseInfo
         ) -> Unit
     ) {
-        searchEngine.search(
-            options = reverseGeoOptions,
-            callback = object : SearchCallback {
-                override fun onError(e: Exception) {
-                    onError(e)
-                }
+        try {
+            searchEngine.search(
+                options = reverseGeoOptions,
+                callback = object : SearchCallback {
+                    override fun onError(e: Exception) {
+                        onError(e)
+                    }
 
-                override fun onResults(results: List<SearchResult>, responseInfo: ResponseInfo) {
-                    onSuggestions(results, responseInfo)
+                    override fun onResults(results: List<SearchResult>, responseInfo: ResponseInfo) {
+                        onSuggestions(results, responseInfo)
+                    }
                 }
-            }
-        )
+            )
+        } catch (e: Exception) {
+            onError(e)
+        }
     }
 
     fun search(
