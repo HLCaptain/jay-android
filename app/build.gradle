@@ -126,6 +126,9 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
     implementation "androidx.compose.foundation:foundation:$compose_version"
 
+    // Scrollbar
+    implementation 'com.github.HLCaptain:compose-scrollbar:0.0.3-alpha'
+
     // TODO: implement some way to use bio auth
     // Biometric Auth
     //implementation "androidx.biometric:biometric:1.2.0-alpha05"

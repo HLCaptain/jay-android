@@ -29,11 +29,6 @@ buildscript {
         classpath 'org.jetbrains.kotlin:kotlin-serialization:1.8.0'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'
     }
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
 }
 
 plugins {

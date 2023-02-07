@@ -68,10 +68,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
-import illyan.jay.ui.components.drawVerticalScrollbar
 import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
@@ -359,11 +359,6 @@ fun SessionsList(
             }
         }
     }
-    ConstraintLayout(
-        modifier = modifier
-    ) {
-    }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
