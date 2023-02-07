@@ -77,7 +77,7 @@ import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.FreeDriveDestination
-import illyan.jay.ui.destinations.SessionsScreenDestination
+import illyan.jay.ui.destinations.SessionsDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
@@ -129,7 +129,7 @@ fun MenuScreen(
         },
         onSessions = {
             viewModel.onClickSessionsButton()
-            destinationsNavigator.navigate(SessionsScreenDestination)
+            destinationsNavigator.navigate(SessionsDestination)
         },
     )
 }
