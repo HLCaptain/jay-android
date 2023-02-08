@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -66,6 +68,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -385,6 +388,7 @@ fun SessionsList(
     }
 ) {
     val lazyListState = rememberLazyListState()
+    val layoutDirection = LocalLayoutDirection.current
     Column(
         modifier = modifier
             .drawVerticalScrollbar(
@@ -400,13 +404,20 @@ fun SessionsList(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(
+                    start = contentPadding.calculateStartPadding(layoutDirection),
+                    end = contentPadding.calculateEndPadding(layoutDirection)
+                )
                 .clip(
                     RoundedCornerShape(
                         topStart = 12.dp,
                         topEnd = 12.dp
                     )
                 ),
-            contentPadding = contentPadding,
+            contentPadding = PaddingValues(
+                top = contentPadding.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding()
+            ),
             verticalArrangement = Arrangement.spacedBy(MenuItemPadding),
             reverseLayout = true,
             state = lazyListState,
