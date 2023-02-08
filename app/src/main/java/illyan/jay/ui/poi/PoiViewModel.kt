@@ -34,6 +34,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.SearchInteractor
 import illyan.jay.service.BaseReceiver
 import illyan.jay.ui.poi.model.Place
+import illyan.jay.ui.poi.model.toUiModel
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
 import kotlinx.collections.immutable.persistentHashMapOf
@@ -65,7 +66,7 @@ class PoiViewModel @Inject constructor(
         _places
     ) { infoForPlace, places ->
         places.lastOrNull()?.let { lastPlace ->
-            infoForPlace[lastPlace]
+            infoForPlace[lastPlace]?.toUiModel()
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 

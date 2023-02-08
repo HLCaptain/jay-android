@@ -46,10 +46,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.maps.model.LatLng
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
-import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchResultType
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -65,6 +65,7 @@ import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.poi.model.Place
+import illyan.jay.ui.poi.model.PlaceMetadata
 import illyan.jay.ui.poi.model.toPoint
 import illyan.jay.ui.sheet.SheetNavGraph
 import illyan.jay.ui.theme.JayTheme
@@ -110,14 +111,14 @@ fun Poi(
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     val place by viewModel.place.collectAsStateWithLifecycle()
-    val placeInfo by viewModel.placeInfo.collectAsStateWithLifecycle()
+    val placeMetadata by viewModel.placeInfo.collectAsStateWithLifecycle()
     LaunchedEffect(sheetState.isAnimationRunning) {
         sheetHeightNotSet = sheetState.isAnimationRunning
     }
     val context = LocalContext.current
     DisposableEffect(
         place,
-        placeInfo
+        placeMetadata
     ) {
         if (place != null) {
             val pointAnnotationManager = mapView.value?.annotations?.createPointAnnotationManager()
@@ -172,10 +173,10 @@ fun Poi(
         val shouldShowAddress by viewModel.shouldShowAddress.collectAsStateWithLifecycle()
         PoiScreen(
             modifier = Modifier.fillMaxWidth(),
-            placeInfo = placeInfo,
+            placeMetadata = placeMetadata,
             place = place,
             shouldShowAddress = shouldShowAddress,
-            isLoading = placeInfo == null,
+            isLoading = placeMetadata == null,
         )
     }
 }
@@ -183,7 +184,7 @@ fun Poi(
 @Composable
 fun PoiScreen(
     modifier: Modifier = Modifier,
-    placeInfo: SearchResult? = null,
+    placeMetadata: PlaceMetadata? = null,
     place: Place? = null,
     shouldShowAddress: Boolean = true,
     isLoading: Boolean = false,
@@ -208,20 +209,20 @@ fun PoiScreen(
             modifier = Modifier
                 .padding(horizontalPadding)
                 .textPlaceholder(isLoading),
-            visible = shouldShowAddress && placeInfo?.address != null
+            visible = shouldShowAddress && placeMetadata?.address != null
         ) {
             Text(
-                text = placeInfo?.address?.formattedAddress() ?: stringResource(R.string.unknown),
+                text = placeMetadata?.address ?: stringResource(R.string.unknown),
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
-        AnimatedVisibility(visible = !placeInfo?.categories.isNullOrEmpty()) {
+        AnimatedVisibility(visible = !placeMetadata?.categories.isNullOrEmpty()) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = horizontalPadding
             ) {
-                items(placeInfo?.categories ?: emptyList()) {
+                items(placeMetadata?.categories ?: emptyList()) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -246,13 +247,13 @@ fun PoiScreen(
             modifier = Modifier
                 .padding(horizontalPadding)
                 .textPlaceholder(isLoading),
-            text = placeInfo?.coordinate?.run {
-                latitude()
+            text = placeMetadata?.latLng?.run {
+                latitude
                     .toBigDecimal()
                     .setScale(6, RoundingMode.HALF_UP)
                     .toString() +
                         " " +
-                        longitude()
+                        longitude
                             .toBigDecimal()
                             .setScale(6, RoundingMode.HALF_UP)
                             .toString()
@@ -271,7 +272,11 @@ private fun PoiScreenPreview() {
             modifier = Modifier.fillMaxWidth(),
             place = BmeK,
             shouldShowAddress = true,
-//            placeInfo = // TODO: pass a SearchResult here
+            placeMetadata = PlaceMetadata(
+                categories = listOf("School", "University", "Historical"),
+                latLng = LatLng(BmeK.latitude, BmeK.longitude),
+                address = "Budapest, XI. District, BME K Épület"
+            )
         )
     }
 }
