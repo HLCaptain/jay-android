@@ -80,6 +80,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
+import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.destinations.SessionScreenDestination
@@ -92,7 +93,6 @@ import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
-import illyan.jay.util.minus
 import illyan.jay.util.plus
 import java.math.RoundingMode
 import java.time.ZonedDateTime
@@ -177,19 +177,15 @@ fun SessionsScreen(
     onSessionSelected: (String) -> Unit = {},
     disposeSessionStateFlow: (String) -> Unit = {},
     getSessionStateFlow: @Composable (String) -> State<UiSession?> = { remember { mutableStateOf(null) } }
-    ) {
+) {
     val showButtons = isUserSignedIn &&
             (canSyncSessions || areThereSyncedSessions || areThereSessionsNotOwned) ||
             canDeleteSessions
     ConstraintLayout(
         modifier = Modifier.padding(
-            if (showButtons) {
-                DefaultScreenOnSheetPadding - PaddingValues(
-                    top = DefaultScreenOnSheetPadding.calculateTopPadding()
-                )
-            } else {
+            if (!showButtons) {
                 DefaultScreenOnSheetPadding
-            }
+            } else PaddingValues()
         )
     ) {
         val (column, globalLoadingIndicator) = createRefs()
@@ -201,9 +197,7 @@ fun SessionsScreen(
                 },
             visible = isLoading
         ) {
-            SmallCircularProgressIndicator(
-                modifier = Modifier.padding(8.dp)
-            )
+            MediumCircularProgressIndicator(modifier = Modifier.padding(end = MenuItemPadding * 2))
         }
         Column(
             modifier = Modifier
@@ -306,7 +300,7 @@ fun SessionsInteractorButtonList(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
-            modifier = Modifier.padding(start = 4.dp)
+            modifier = Modifier.padding(start = MenuItemPadding)
         ) {
             SessionInteractionButton(
                 text = stringResource(R.string.sync),
@@ -383,7 +377,7 @@ fun SessionsList(
     getSessionStateFlow: @Composable (String) -> State<UiSession?> = { remember { mutableStateOf(null) } },
     emptyListPlaceholder: @Composable () -> Unit = {
         AnimatedVisibility(visible = showNoSessionPrompt) {
-            NoSessionPrompt()
+            NoSessionPrompt(modifier = Modifier.padding(start = MenuItemPadding * 2, bottom = 8.dp))
         }
     }
 ) {
@@ -526,8 +520,18 @@ fun SessionLoadingIndicator(
             verticalAlignment = Alignment.CenterVertically
         ) {
             SmallCircularProgressIndicator()
-            Text(text = text)
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
+    }
+}
+
+@Composable
+private fun SessionLoadingIndicatorPreview() {
+    JayTheme {
+        SessionLoadingIndicator(text = stringResource(id = R.string.loading_sessions))
     }
 }
 

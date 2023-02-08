@@ -187,13 +187,11 @@ class SessionsViewModel @Inject constructor(
                 loadingOngoingSessions.value = false
             }
         }
-        if (isUserSignedIn.value) {
-            viewModelScope.launch(dispatcherIO) {
-                sessionInteractor.getOwnSessions().collectLatest { sessions ->
-                    _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
-                    Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid}")
-                    loadingOwnedSessions.value = false
-                }
+        viewModelScope.launch(dispatcherIO) {
+            sessionInteractor.getOwnSessions().collectLatest { sessions ->
+                _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
+                Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid}")
+                loadingOwnedSessions.value = false
             }
         }
     }
