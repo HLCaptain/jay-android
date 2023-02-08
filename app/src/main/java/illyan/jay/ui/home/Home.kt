@@ -19,7 +19,8 @@
 @file:OptIn(
     ExperimentalMaterialApi::class,
     ExperimentalComposeUiApi::class,
-    ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class,
+    ExperimentalPermissionsApi::class
 )
 
 package illyan.jay.ui.home
@@ -28,6 +29,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Parcelable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -157,9 +159,9 @@ import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
 import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.profile.ProfileDialog
-import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
+import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
-import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapStyleUrl
 import illyan.jay.util.extraOptions
 import illyan.jay.util.isCollapsedOrWillBe
@@ -405,7 +407,6 @@ fun refreshCameraPadding() {
     )
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @HomeNavGraph(start = true)
 @Destination
 @Composable
@@ -486,19 +487,30 @@ fun HomeScreen(
             )
         }
         // When the bottom sheet reaches its target state, reset onDrag trigger
-        if (bottomSheetState.targetValue == bottomSheetState.currentValue) {
-            // Resetting the trigger to enable bottom sheet toggle
-            shouldTriggerBottomSheetOnDrag = true
+        LaunchedEffect(bottomSheetState.targetValue, bottomSheetState.currentValue) {
+            if (bottomSheetState.targetValue == bottomSheetState.currentValue) {
+                // Resetting the trigger to enable bottom sheet toggle
+                shouldTriggerBottomSheetOnDrag = true
+            }
         }
+        var isProfileDialogShowing by remember { mutableStateOf(false) }
+        ProfileDialog(
+            isDialogOpen = isProfileDialogShowing,
+            onDialogClosed = { isProfileDialogShowing = false }
+        )
+        val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
+        val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
         BottomSearchBar(
             modifier = Modifier
                 .zIndex(1f) // Search bar is in front of everything else
                 .constrainAs(searchBar) {
                     bottom.linkTo(scaffold.bottom)
-                    start.linkTo(parent.start)
                 }
+                .fillMaxWidth()
                 .imePadding()
                 .navigationBarsPadding(),
+            isUserSignedIn = isUserSignedIn,
+            userPhotoUrl = userPhotoUrl,
             onDrag = {
                 onSearchBarDrag(
                     bottomSheetState = bottomSheetState,
@@ -518,7 +530,23 @@ fun HomeScreen(
                     }
                 }
             },
-            viewModel = viewModel
+            onSearchQueryChanged = {
+                LocalBroadcastManager.getInstance(context)
+                    .sendBroadcast(
+                        it,
+                        KeySearchQuery,
+                        Intent.ACTION_SEARCH
+                    )
+            },
+            onSearchQueried = {
+                LocalBroadcastManager.getInstance(context)
+                    .sendBroadcast(
+                        it,
+                        SearchViewModel.KeySearchSelected,
+                        SearchViewModel.ActionSearchSelected
+                    )
+            },
+            onShowProfile = { isProfileDialogShowing = true }
         )
         BottomSheetScaffold(
             modifier = Modifier
@@ -693,6 +721,7 @@ fun HomeScreen(
                                     is PermissionStatus.Granted -> {
                                         it.location.turnOnWithDefaultPuck(context)
                                     }
+
                                     is PermissionStatus.Denied -> {
                                         it.location.enabled = false
                                     }
@@ -738,18 +767,19 @@ private suspend fun onSheetStateChanged(
     }
 }
 
-@PreviewLightDarkTheme
 @Composable
 fun BottomSearchBar(
     modifier: Modifier = Modifier,
     onDrag: (Float) -> Unit = {},
     bottomSheetState: BottomSheetState? = null,
-    context: Context = LocalContext.current,
     onTextFieldFocusChanged: (FocusState) -> Unit = {},
+    onSearchQueryChanged: (String) -> Unit = {},
+    onSearchQueried: (String) -> Unit = {},
+    isUserSignedIn: Boolean = false,
+    userPhotoUrl: Uri? = null,
+    onShowProfile: () -> Unit = {},
     onDragAreaOffset: Dp = 48.dp,
-    viewModel: HomeViewModel = hiltViewModel(),
 ) {
-    val cardColors = CardDefaults.elevatedCardColors()
     val elevation = 8.dp
     val cardElevation = CardDefaults.cardElevation(
         defaultElevation = elevation,
@@ -758,6 +788,10 @@ fun BottomSearchBar(
         focusedElevation = elevation,
         hoveredElevation = elevation,
         pressedElevation = elevation
+    )
+    val cardColors = CardDefaults.elevatedCardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -770,7 +804,6 @@ fun BottomSearchBar(
             }
         }
     }
-
     val interactionSource = remember { MutableInteractionSource() }
     val draggable = Modifier.draggable(
         interactionSource = interactionSource,
@@ -790,27 +823,27 @@ fun BottomSearchBar(
             topStart = RoundedCornerRadius,
             topEnd = RoundedCornerRadius
         ),
-        colors = cardColors,
         onClick = { focusRequester.requestFocus() },
-        interactionSource = interactionSource,
+        colors = cardColors,
         elevation = cardElevation
     ) {
         Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(draggable)
                     .height(SearchBarHeight),
-                horizontalArrangement = Arrangement.spacedBy(SearchBarSpaceBetween)
+                horizontalArrangement = Arrangement.spacedBy(SearchBarSpaceBetween),
             ) {
                 IconButton(
                     onClick = { focusRequester.requestFocus() },
                     modifier = Modifier.padding(SearchMarkerPaddingValues)
                 ) {
                     Image(
+                        modifier = Modifier
+                            .zIndex(1f)
+                            .size(RoundedCornerRadius * 2),
                         painter = painterResource(R.drawable.ic_jay_marker_icon_v3_round),
-                        contentDescription = stringResource(R.string.search_marker_icon),
-                        modifier = Modifier.size(RoundedCornerRadius * 2)
+                        contentDescription = stringResource(R.string.search_marker_icon)
                     )
                 }
                 val colors = TextFieldDefaults.textFieldColors(
@@ -825,7 +858,6 @@ fun BottomSearchBar(
                     modifier = Modifier
                         .weight(1f)
                         .padding(SearchFieldPaddingValues)
-                        .then(draggable)
                         .focusRequester(focusRequester)
                         .onFocusChanged {
                             searchFieldFocusState = it
@@ -834,12 +866,7 @@ fun BottomSearchBar(
                     value = searchPlaceText,
                     onValueChange = {
                         searchPlaceText = it
-                        LocalBroadcastManager.getInstance(context)
-                            .sendBroadcast(
-                                searchPlaceText,
-                                KeySearchQuery,
-                                Intent.ACTION_SEARCH
-                            )
+                        onSearchQueryChanged(searchPlaceText)
                     },
                     label = { Text(stringResource(R.string.search)) },
                     placeholder = { Text(stringResource(R.string.where_to)) },
@@ -853,15 +880,9 @@ fun BottomSearchBar(
                         onGo = { focusManager.clearFocus() },
                         onSearch = {
                             focusManager.clearFocus()
-                            LocalBroadcastManager.getInstance(context)
-                                .sendBroadcast(
-                                    searchPlaceText,
-                                    KeySearchSelected,
-                                    ActionSearchSelected
-                                )
+                            onSearchQueried(searchPlaceText)
                         }
                     ),
-                    interactionSource = interactionSource,
                     trailingIcon = {
                         if (searchPlaceText.isNotBlank()) {
                             IconButton(
@@ -878,31 +899,30 @@ fun BottomSearchBar(
                         }
                     }
                 )
-                var isProfileScreenShowing by remember { mutableStateOf(false) }
                 IconButton(
-                    onClick = { isProfileScreenShowing = true },
+                    onClick = onShowProfile,
                     modifier = Modifier.padding(AvatarPaddingValues),
-                    interactionSource = interactionSource
                 ) {
-                    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
-                    val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
                     AvatarAsyncImage(
                         modifier = Modifier
+                            .zIndex(1f)
                             .size(RoundedCornerRadius * 2)
                             .clip(CircleShape),
                         placeholderEnabled = !isUserSignedIn || userPhotoUrl == null,
                         userPhotoUrl = userPhotoUrl
                     )
                 }
-                ProfileDialog(
-                    isDialogOpen = isProfileScreenShowing,
-                    onDialogClosed = {
-                        isProfileScreenShowing = false
-                    }
-                )
             }
             Spacer(modifier = Modifier.height(onDragAreaOffset))
         }
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+fun BottomSearchBarPreview() {
+    JayTheme {
+        BottomSearchBar()
     }
 }
 

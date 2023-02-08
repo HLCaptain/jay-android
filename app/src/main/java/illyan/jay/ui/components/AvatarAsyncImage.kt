@@ -40,6 +40,7 @@ import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.placeholder
 import com.google.accompanist.placeholder.material.shimmer
 import illyan.jay.R
+import illyan.jay.ui.theme.JayTheme
 
 @Composable
 fun AvatarAsyncImage(
@@ -92,6 +93,14 @@ fun DefaultAvatar(
     }
 }
 
+@PreviewLightDarkTheme
+@Composable
+private fun DefaultAvatarPreview() {
+    JayTheme {
+        DefaultAvatar()
+    }
+}
+
 @Composable
 fun BrokenAvatar(
     modifier: Modifier = Modifier
@@ -101,6 +110,14 @@ fun BrokenAvatar(
         imageVector = Icons.Rounded.BrokenImage,
         contentDescription = stringResource(R.string.avatar_profile_picture)
     )
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun BrokenAvatarPreview() {
+    JayTheme {
+        BrokenAvatar()
+    }
 }
 
 @Composable
@@ -114,4 +131,12 @@ fun PlaceholderAvatar(
                 highlight = PlaceholderHighlight.shimmer()
             )
     )
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun PlaceholderAvatarPreview() {
+    JayTheme {
+        PlaceholderAvatar()
+    }
 }
