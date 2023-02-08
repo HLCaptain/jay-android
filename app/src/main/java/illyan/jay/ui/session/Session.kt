@@ -154,7 +154,6 @@ fun SessionScreen(
     )
 }
 
-@PreviewLightDarkTheme
 @Composable
 fun SessionDetailsScreen(
     modifier: Modifier = Modifier,
@@ -264,7 +263,7 @@ fun SessionDetailsList(
 
 @PreviewLightDarkTheme
 @Composable
-fun SessionDetailsScreenPreview(
+private fun SessionDetailsScreenPreview(
     session: UiSession? = null,
     path: List<UiLocation>? = null,
 ) {

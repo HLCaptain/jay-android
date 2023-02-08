@@ -191,7 +191,7 @@ fun SearchList(
 
 @PreviewLightDarkTheme
 @Composable
-fun SearchListPreview() {
+private fun SearchListPreview() {
     JayTheme {
         SearchList()
     }

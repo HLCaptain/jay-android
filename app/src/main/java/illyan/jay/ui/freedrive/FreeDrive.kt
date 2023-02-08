@@ -242,14 +242,14 @@ fun FreeDriveScreenWithoutPermission(
 
 @PreviewLightDarkTheme
 @Composable
-fun FreeDriveScreenWithPermissionPreview() {
+private fun FreeDriveScreenWithPermissionPreview() {
     JayTheme {
         FreeDriveScreenWithPermission()
     }
 }
 @PreviewLightDarkTheme
 @Composable
-fun FreeDriveScreenWithoutPermissionPreview() {
+private fun FreeDriveScreenWithoutPermissionPreview() {
     JayTheme {
         FreeDriveScreenWithoutPermission()
     }
