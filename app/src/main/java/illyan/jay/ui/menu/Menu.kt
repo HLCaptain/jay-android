@@ -27,6 +27,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,9 +42,9 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Route
+import androidx.compose.material.icons.rounded.TravelExplore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
@@ -75,11 +76,12 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.destinations.FreeDriveScreenDestination
-import illyan.jay.ui.destinations.SessionsScreenDestination
+import illyan.jay.ui.destinations.FreeDriveDestination
+import illyan.jay.ui.destinations.SessionsDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.isCollapsedOrWillBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -104,7 +106,6 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     bottom =  RoundedCornerRadius + MenuItemPadding * 2
 )
 
-@OptIn(ExperimentalFoundationApi::class)
 @MenuNavGraph(start = true)
 @Destination
 @Composable
@@ -117,6 +118,29 @@ fun MenuScreen(
         Timber.d("Intercepted back press!")
         (context as Activity).moveTaskToBack(false)
     }
+    val localizedNameOfBme = stringResource(R.string.bme)
+    MenuContent(
+        onNavigateToBme = {
+            viewModel.onClickNavigateToBmeButton(localizedNameOfBme)
+        },
+        onFreeDrive = {
+            viewModel.onClickFreeDriveButton()
+            destinationsNavigator.navigate(FreeDriveDestination)
+        },
+        onSessions = {
+            viewModel.onClickSessionsButton()
+            destinationsNavigator.navigate(SessionsDestination)
+        },
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun MenuContent(
+    onNavigateToBme: () -> Unit = {},
+    onFreeDrive: () -> Unit = {},
+    onSessions: () -> Unit = {},
+) {
     val gridState = rememberLazyStaggeredGridState()
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
@@ -134,39 +158,37 @@ fun MenuScreen(
         state = gridState
     ) {
         item {
-            val localizedNameOfBme = stringResource(R.string.bme)
             MenuItemCard(
                 title = stringResource(R.string.navigate_to_bme),
-                icon = Icons.Default.TravelExplore,
-                onClick = {
-                    viewModel.onClickNavigateToBmeButton(localizedNameOfBme)
-                },
+                icon = Icons.Rounded.TravelExplore,
+                onClick = onNavigateToBme,
             )
         }
         item {
             MenuItemCard(
                 title = stringResource(R.string.free_drive),
                 icon = Icons.Rounded.Navigation,
-                onClick = {
-                    viewModel.onClickFreeDriveButton()
-                    destinationsNavigator.navigate(FreeDriveScreenDestination)
-                },
+                onClick = onFreeDrive,
             )
         }
         item {
             MenuItemCard(
                 title = stringResource(R.string.sessions),
                 icon = Icons.Rounded.Route,
-                onClick = {
-                    viewModel.onClickSessionsButton()
-                    destinationsNavigator.navigate(SessionsScreenDestination)
-                },
+                onClick = onSessions,
             )
         }
     }
 }
 
 @PreviewLightDarkTheme
+@Composable
+private fun MenuContentPreview() {
+    JayTheme {
+        MenuContent()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuItemCard(
@@ -189,19 +211,21 @@ fun MenuItemCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            if (icon != null) {
-                Icon(
-                    modifier = Modifier.padding(
-                        start = 12.dp,
-                        end = 4.dp,
-                        top = 12.dp,
-                        bottom = 12.dp
-                    ),
-                    imageVector = icon,
-                    contentDescription = stringResource(R.string.menu_item_icon)
-                )
-            } else {
-                Spacer(modifier = Modifier.width(12.dp))
+            Crossfade(targetState = icon) {
+                if (it != null) {
+                    Icon(
+                        modifier = Modifier.padding(
+                            start = 12.dp,
+                            end = 4.dp,
+                            top = 12.dp,
+                            bottom = 12.dp
+                        ),
+                        imageVector = it,
+                        contentDescription = stringResource(R.string.menu_item_icon)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
             }
             Text(
                 modifier = Modifier

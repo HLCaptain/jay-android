@@ -39,7 +39,7 @@ import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import illyan.jay.service.BaseReceiver
 import illyan.jay.ui.home.sendBroadcast
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
@@ -121,7 +121,7 @@ class SearchInteractor @Inject constructor(
     }
 
     fun navigateTo(searchResult: SearchResult) {
-        searchResult.coordinate?.let {
+        searchResult.coordinate.let {
             navigateTo(
                 Place(
                     name = searchResult.name,
@@ -134,7 +134,7 @@ class SearchInteractor @Inject constructor(
     }
 
     fun navigateTo(record: IndexableRecord) {
-        record.coordinate?.let {
+        record.coordinate.let {
             navigateTo(
                 Place(
                     name = record.name,
@@ -226,18 +226,22 @@ class SearchInteractor @Inject constructor(
             responseInfo: ResponseInfo
         ) -> Unit
     ) {
-        searchEngine.search(
-            options = reverseGeoOptions,
-            callback = object : SearchCallback {
-                override fun onError(e: Exception) {
-                    onError(e)
-                }
+        try {
+            searchEngine.search(
+                options = reverseGeoOptions,
+                callback = object : SearchCallback {
+                    override fun onError(e: Exception) {
+                        onError(e)
+                    }
 
-                override fun onResults(results: List<SearchResult>, responseInfo: ResponseInfo) {
-                    onSuggestions(results, responseInfo)
+                    override fun onResults(results: List<SearchResult>, responseInfo: ResponseInfo) {
+                        onSuggestions(results, responseInfo)
+                    }
                 }
-            }
-        )
+            )
+        } catch (e: Exception) {
+            onError(e)
+        }
     }
 
     fun search(

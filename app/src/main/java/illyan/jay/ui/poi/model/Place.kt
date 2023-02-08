@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.navigation.model
+package illyan.jay.ui.poi.model
 
 import android.os.Parcelable
 import com.mapbox.geojson.Point

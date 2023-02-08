@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -39,7 +39,7 @@ android {
         applicationId "illyan.jay"
         minSdk 21
         targetSdk 33
-        versionCode 1
+        versionCode 2
         versionName "0.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -50,16 +50,17 @@ android {
 
     buildTypes {
         debug {
+            debuggable true
             buildConfigField 'String', "MapboxAccessToken", "\"$MAPBOX_ACCESS_TOKEN\""
             buildConfigField 'String', "MapboxDownloadsToken", "\"$MAPBOX_DOWNLOADS_TOKEN\""
             buildConfigField 'String', "MapboxSdkRegistryToken", "\"$SDK_REGISTRY_TOKEN\""
         }
         release {
+            initWith debug
+            debuggable false
             minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            buildConfigField 'String', "MapboxAccessToken", "\"$MAPBOX_ACCESS_TOKEN\""
-            buildConfigField 'String', "MapboxDownloadsToken", "\"$MAPBOX_DOWNLOADS_TOKEN\""
-            buildConfigField 'String', "MapboxSdkRegistryToken", "\"$SDK_REGISTRY_TOKEN\""
         }
     }
     compileOptions {
@@ -115,6 +116,7 @@ dependencies {
     implementation "androidx.compose.material:material:$compose_version"
     implementation 'androidx.compose.material3:material3:1.1.0-alpha05'
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
+    implementation "androidx.compose.ui:ui-util:$compose_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version"
     implementation "androidx.activity:activity-compose:$activity_version"
@@ -123,6 +125,9 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
     implementation "androidx.compose.foundation:foundation:$compose_version"
+
+    // Scrollbar
+    implementation 'com.github.HLCaptain:compose-scrollbar:0.0.3-alpha'
 
     // TODO: implement some way to use bio auth
     // Biometric Auth

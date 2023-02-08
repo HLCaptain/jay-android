@@ -24,7 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.service.BaseReceiver
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import timber.log.Timber
 import javax.inject.Inject

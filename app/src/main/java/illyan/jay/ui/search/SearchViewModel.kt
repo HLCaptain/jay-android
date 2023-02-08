@@ -18,10 +18,6 @@
 
 package illyan.jay.ui.search
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mapbox.search.SearchOptions
@@ -40,8 +36,8 @@ import javax.inject.Inject
 class SearchViewModel @Inject constructor(
     private val searchInteractor: SearchInteractor
 ) : ViewModel() {
-    var searchQuery by mutableStateOf("")
-        private set
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
 
     private val _historyRecords = MutableStateFlow(
         searchInteractor.historyRecords.value.sortedByDescending { it.timestamp }.take(4)
@@ -61,24 +57,28 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    var searchSuggestions = mutableStateListOf<SearchSuggestion>()
-        private set
+    private val _searchSuggestions = MutableStateFlow(listOf<SearchSuggestion>())
+    val searchSuggestions = _searchSuggestions.asStateFlow()
+
+    private val _isLoadingSuggestions = MutableStateFlow(false)
+    val isLoadingSuggestions = _isLoadingSuggestions.asStateFlow()
 
     private val queryReceiver: BaseReceiver = BaseReceiver {
-        searchQuery = it.getStringExtra(KeySearchQuery) ?: ""
+        _searchQuery.value = it.getStringExtra(KeySearchQuery) ?: ""
+        _isLoadingSuggestions.value = true
         searchInteractor.search(
-            searchQuery,
+            _searchQuery.value,
             SearchOptions(
                 limit = 8
             )
         ) { suggestions, _ ->
-            searchSuggestions.clear()
-            searchSuggestions.addAll(suggestions)
+            _searchSuggestions.value = suggestions
+            _isLoadingSuggestions.value = false
         }
     }
 
     private val searchSelectedReceiver = BaseReceiver {
-        searchSuggestions.firstOrNull()?.let {
+        searchSuggestions.value.firstOrNull()?.let {
             navigateTo(it)
             return@BaseReceiver
         }

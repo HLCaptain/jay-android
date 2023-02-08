@@ -21,14 +21,19 @@ package illyan.jay.ui.sessions
 import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddChart
@@ -54,19 +59,26 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.maps.model.LatLng
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
@@ -75,11 +87,18 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
+import illyan.jay.ui.session.SessionDetailsList
 import illyan.jay.ui.sessions.model.UiSession
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
 import illyan.jay.util.minus
+import illyan.jay.util.plus
 import java.math.RoundingMode
+import java.time.ZonedDateTime
+import java.util.UUID
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 val DefaultContentPadding = PaddingValues(
     bottom = MenuItemPadding + RoundedCornerRadius
@@ -92,7 +111,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
 @MenuNavGraph
 @Destination
 @Composable
-fun SessionsScreen(
+fun Sessions(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: SessionsViewModel = hiltViewModel(),
 ) {
@@ -105,13 +124,63 @@ fun SessionsScreen(
     val canSyncSessions by viewModel.canSyncSessions.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
-    val showButtons = isUserSignedIn &&
-            (canSyncSessions || syncedSessions.isNotEmpty() || areThereSessionsNotOwned) ||
-            canDeleteSessions
+    val sessionUUIDs by viewModel.allSessionUUIDs.collectAsStateWithLifecycle()
+    val syncedSessionsLoading by viewModel.syncedSessionsLoading.collectAsStateWithLifecycle()
+    val localSessionsLoading by viewModel.localSessionsLoading.collectAsStateWithLifecycle()
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
         viewModel.loadCloudSessions(context as Activity)
     }
+    SessionsScreen(
+        isUserSignedIn = isUserSignedIn,
+        canSyncSessions = canSyncSessions,
+        areThereSyncedSessions = syncedSessions.isNotEmpty(),
+        areThereSessionsNotOwned = areThereSessionsNotOwned,
+        canDeleteSessions = canDeleteSessions,
+        isLoadingSessionsFromCloud = syncedSessionsLoading,
+        isLoadingSessionsLocally = localSessionsLoading,
+        isLoading = isLoading,
+        sessionUUIDs = sessionUUIDs,
+        ownSession = viewModel::ownSession,
+        syncSessions = viewModel::syncSessions,
+        ownAllSessions = viewModel::ownAllSessions,
+        deleteAllSyncedData = viewModel::deleteAllSyncedData,
+        deleteSessionsLocally = viewModel::deleteSessionsLocally,
+        onSessionSelected = {
+            destinationsNavigator.navigate(
+                SessionScreenDestination(
+                    sessionUUID = it
+                )
+            )
+        },
+        disposeSessionStateFlow = viewModel::disposeSessionStateFlow,
+        getSessionStateFlow = { viewModel.getSessionStateFlow(it).collectAsStateWithLifecycle() }
+    )
+}
+
+@Composable
+fun SessionsScreen(
+    isUserSignedIn: Boolean = false,
+    canSyncSessions: Boolean = false,
+    areThereSyncedSessions: Boolean = false,
+    areThereSessionsNotOwned: Boolean = false,
+    canDeleteSessions: Boolean = false,
+    isLoadingSessionsFromCloud: Boolean = false,
+    isLoadingSessionsLocally: Boolean = false,
+    isLoading: Boolean = isLoadingSessionsFromCloud || isLoadingSessionsLocally,
+    sessionUUIDs: List<String> = emptyList(),
+    ownSession: (String) -> Unit = {},
+    syncSessions: () -> Unit = {},
+    ownAllSessions: () -> Unit = {},
+    deleteAllSyncedData: () -> Unit = {},
+    deleteSessionsLocally: () -> Unit = {},
+    onSessionSelected: (String) -> Unit = {},
+    disposeSessionStateFlow: (String) -> Unit = {},
+    getSessionStateFlow: @Composable (String) -> State<UiSession?> = { remember { mutableStateOf(null) } }
+    ) {
+    val showButtons = isUserSignedIn &&
+            (canSyncSessions || areThereSyncedSessions || areThereSessionsNotOwned) ||
+            canDeleteSessions
     ConstraintLayout(
         modifier = Modifier.padding(
             if (showButtons) {
@@ -145,87 +214,156 @@ fun SessionsScreen(
                     end.linkTo(parent.end)
                 }
         ) {
-            Row(
+            SessionsInteractorButtonList(
+                showSyncButton = isUserSignedIn && canSyncSessions,
+                showOwnAllSessionsButton = isUserSignedIn && areThereSessionsNotOwned,
+                showDeleteSessionsFromCloudButton = isUserSignedIn && areThereSyncedSessions,
+                showDeleteSessionsLocallyButton = canDeleteSessions,
+                onSyncSessions = syncSessions,
+                onOwnAllSession = ownAllSessions,
+                onDeleteSessionsFromCloud = deleteAllSyncedData,
+                onDeleteSessionsLocally = deleteSessionsLocally,
+            )
+
+            SessionsList(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                onSessionSelected = onSessionSelected,
+                contentPadding = DefaultContentPadding + PaddingValues(
+                    horizontal = MenuItemPadding * 2
+                ),
+                isUserSignedIn = isUserSignedIn,
+                sessionUUIDs = sessionUUIDs,
+                ownSession = ownSession,
+                showNoSessionPrompt = sessionUUIDs.isEmpty() && !isLoading,
+                loadingSessionsFromCloud = isLoadingSessionsFromCloud,
+                loadingSessionsLocally = isLoadingSessionsLocally,
+                disposeSessionStateFlow = disposeSessionStateFlow,
+                getSessionStateFlow = getSessionStateFlow,
+            )
+        }
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun SessionsScreenPreview() {
+    val sessions = generateUiSessions(10)
+    val areThereSessionsNotOwned = sessions.any { !it.isOwned }
+    val areThereSyncedSessions = sessions.any { it.isSynced }
+    val canDeleteSessions = sessions.any { it.isLocal }
+    JayTheme {
+        SessionsScreen(
+            isUserSignedIn = true,
+            canSyncSessions = areThereSyncedSessions,
+            areThereSyncedSessions = areThereSyncedSessions,
+            areThereSessionsNotOwned = areThereSessionsNotOwned,
+            canDeleteSessions = canDeleteSessions,
+            isLoadingSessionsFromCloud = false,
+            isLoadingSessionsLocally = false,
+            sessionUUIDs = sessions.map { it.uuid },
+            getSessionStateFlow = { uuid -> remember { mutableStateOf(sessions.first { it.uuid == uuid }) } },
+        )
+    }
+}
+
+private fun generateUiSessions(number: Int): List<UiSession> {
+    return List(number) {
+        val now = ZonedDateTime.now()
+        val startTime = now.minusSeconds(Random.nextLong(5000, 10000))
+        val endTime = if (Random.nextInt(3) == 0) null else now.minusSeconds(Random.nextLong(1000, 4000))
+        val ownerUUID = UUID.randomUUID().toString()
+        UiSession(
+            uuid = UUID.randomUUID().toString(),
+            startDateTime = startTime,
+            endDateTime = endTime,
+            isLocal = Random.nextBoolean(),
+            ownerUUID = if (Random.nextBoolean()) null else ownerUUID,
+            clientUUID = if (Random.nextBoolean()) ownerUUID else UUID.randomUUID().toString(),
+            isSynced = Random.nextBoolean(),
+            startLocationName = "City number $it",
+            endLocationName = "City number ${Random.nextInt(it + 1)}",
+            totalDistance = Random.nextDouble(100.0, 10000.0),
+            duration = ((endTime?.toEpochSecond() ?: now.toEpochSecond()) - startTime.toEpochSecond()).seconds,
+            endCoordinate = LatLng(Random.nextDouble(-90.0, 90.0), Random.nextDouble(-90.0, 90.0)),
+            startCoordinate = LatLng(Random.nextDouble(-90.0, 90.0), Random.nextDouble(-90.0, 90.0)),
+        )
+    }
+}
+
+@Composable
+fun SessionsInteractorButtonList(
+    showSyncButton: Boolean = false,
+    showOwnAllSessionsButton: Boolean = false,
+    showDeleteSessionsFromCloudButton: Boolean = false,
+    showDeleteSessionsLocallyButton: Boolean = false,
+    onSyncSessions: () -> Unit = {},
+    onOwnAllSession: () -> Unit = {},
+    onDeleteSessionsFromCloud: () -> Unit = {},
+    onDeleteSessionsLocally: () -> Unit = {},
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(
+            modifier = Modifier.padding(start = 4.dp)
+        ) {
+            SessionInteractionButton(
+                text = stringResource(R.string.sync),
+                imageVector = Icons.Rounded.CloudUpload,
+                visibility = showSyncButton,
+                enabled = showSyncButton,
+                onClick = onSyncSessions,
+            )
+            SessionInteractionButton(
+                text = stringResource(R.string.delete_from_cloud),
+                imageVector = Icons.Rounded.CloudOff,
+                visibility = showDeleteSessionsFromCloudButton,
+                enabled = showDeleteSessionsFromCloudButton,
+                onClick = onDeleteSessionsFromCloud,
+            )
+            SessionInteractionButton(
+                text = stringResource(R.string.delete_locally),
+                imageVector = Icons.Rounded.Delete,
+                visibility = showDeleteSessionsLocallyButton,
+                enabled = showDeleteSessionsLocallyButton,
+                onClick = onDeleteSessionsLocally,
+            )
+            SessionInteractionButton(
+                text = stringResource(R.string.own_all_sessions),
+                imageVector = Icons.Rounded.AddChart,
+                visibility = showOwnAllSessionsButton,
+                enabled = showOwnAllSessionsButton,
+                onClick = onOwnAllSession,
+            )
+        }
+    }
+}
+
+@Composable
+fun SessionInteractionButton(
+    text: String = stringResource(R.string.unknown),
+    imageVector: ImageVector? = null,
+    visibility: Boolean = true,
+    enabled: Boolean = visibility,
+    onClick: () -> Unit,
+) {
+    AnimatedVisibility(visible = visibility) {
+        TextButton(
+            onClick = onClick,
+            enabled = enabled,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.padding(start = 4.dp)
-                ) {
-                    AnimatedVisibility(visible = isUserSignedIn && canSyncSessions) {
-                        TextButton(
-                            onClick = { viewModel.syncSessions() },
-                            enabled = isUserSignedIn && canSyncSessions,
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.CloudUpload,
-                                    contentDescription = ""
-                                )
-                                Text(text = stringResource(R.string.sync))
-                            }
-                        }
-                    }
-                    AnimatedVisibility(visible = isUserSignedIn && syncedSessions.isNotEmpty()) {
-                        TextButton(
-                            onClick = { viewModel.deleteAllSyncedData() },
-                            enabled = isUserSignedIn && syncedSessions.isNotEmpty(),
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(imageVector = Icons.Rounded.CloudOff, contentDescription = "")
-                                Text(text = stringResource(R.string.delete_from_cloud))
-                            }
-                        }
-                    }
-                    AnimatedVisibility(visible = canDeleteSessions) {
-                        TextButton(
-                            onClick = { viewModel.deleteSessionsLocally() },
-                            enabled = canDeleteSessions
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(imageVector = Icons.Rounded.Delete, contentDescription = "")
-                                Text(text = stringResource(R.string.delete_locally))
-                            }
-                        }
-                    }
-                    AnimatedVisibility(visible = isUserSignedIn && areThereSessionsNotOwned) {
-                        TextButton(
-                            onClick = { viewModel.ownAllSessions() },
-                            enabled = isUserSignedIn && areThereSessionsNotOwned,
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(imageVector = Icons.Rounded.AddChart, contentDescription = "")
-                                Text(text = stringResource(R.string.own_all_sessions))
-                            }
-                        }
+                AnimatedVisibility(visible = imageVector != null) {
+                    if (imageVector != null) {
+                        Icon(imageVector = imageVector, contentDescription = "")
                     }
                 }
+                Text(text = text)
             }
-            SessionsList(
-                modifier = Modifier
-                    .padding(horizontal = MenuItemPadding * 2)
-                    .fillMaxWidth()
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 12.dp,
-                            topEnd = 12.dp
-                        )
-                    ),
-                viewModel = viewModel,
-                destinationsNavigator = destinationsNavigator
-            )
         }
     }
 }
@@ -233,116 +371,166 @@ fun SessionsScreen(
 @Composable
 fun SessionsList(
     modifier: Modifier = Modifier,
-    viewModel: SessionsViewModel = hiltViewModel(),
-    destinationsNavigator: DestinationsNavigator,
+    onSessionSelected: (String) -> Unit,
+    contentPadding: PaddingValues = DefaultContentPadding,
+    isUserSignedIn: Boolean = false,
+    loadingSessionsFromCloud: Boolean = false,
+    loadingSessionsLocally: Boolean = false,
+    sessionUUIDs: List<String> = emptyList(),
+    showNoSessionPrompt: Boolean = sessionUUIDs.isEmpty() && !loadingSessionsFromCloud && !loadingSessionsLocally,
+    ownSession: (String) -> Unit,
+    disposeSessionStateFlow: (String) -> Unit = {},
+    getSessionStateFlow: @Composable (String) -> State<UiSession?> = { remember { mutableStateOf(null) } },
+    emptyListPlaceholder: @Composable () -> Unit = {
+        AnimatedVisibility(visible = showNoSessionPrompt) {
+            NoSessionPrompt()
+        }
+    }
 ) {
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
-    val noSessionsToShow by viewModel.noSessionsToShow.collectAsStateWithLifecycle()
-    val localSessionsLoaded by viewModel.localSessionsLoaded.collectAsStateWithLifecycle()
-    val syncedSessionsLoaded by viewModel.syncedSessionsLoaded.collectAsStateWithLifecycle()
-    val allSessionUUIDs by viewModel.allSessionUUIDs.collectAsStateWithLifecycle()
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = DefaultContentPadding,
-        verticalArrangement = Arrangement.spacedBy(MenuItemPadding),
-        reverseLayout = true
+    val lazyListState = rememberLazyListState()
+    val layoutDirection = LocalLayoutDirection.current
+    Column(
+        modifier = modifier
+            .drawVerticalScrollbar(
+                state = lazyListState,
+                reverseScrolling = true,
+                topPadding = contentPadding.calculateTopPadding(),
+                bottomPadding = contentPadding.calculateBottomPadding(),
+            )
     ) {
-        if (noSessionsToShow) {
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Info,
-                        contentDescription = "",
-                        tint = MaterialTheme.colorScheme.onSurface
+        AnimatedVisibility(visible = showNoSessionPrompt) {
+            emptyListPlaceholder()
+        }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = contentPadding.calculateStartPadding(layoutDirection),
+                    end = contentPadding.calculateEndPadding(layoutDirection)
+                )
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp
                     )
-                    Text(
-                        text = stringResource(R.string.no_sessions_to_show),
-                        color = MaterialTheme.colorScheme.onSurface
+                ),
+            contentPadding = PaddingValues(
+                top = contentPadding.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding()
+            ),
+            verticalArrangement = Arrangement.spacedBy(MenuItemPadding),
+            reverseLayout = true,
+            state = lazyListState,
+        ) {
+            if (loadingSessionsFromCloud) {
+                item {
+                    SessionLoadingIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        text = stringResource(R.string.loading_sessions_from_cloud)
                     )
                 }
             }
-        }
-        if (!syncedSessionsLoaded && isUserSignedIn) {
-            item {
-                Column(
+            if (loadingSessionsLocally) {
+                item {
+                    SessionLoadingIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        text = stringResource(R.string.loading_sessions)
+                    )
+                }
+            }
+            items(sessionUUIDs) {
+                val session by getSessionStateFlow(it)
+                DisposableEffect(Unit) {
+                    onDispose {
+                        disposeSessionStateFlow(it)
+                    }
+                }
+                val isPlaceholderVisible = session == null
+                SessionCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .cardPlaceholder(isPlaceholderVisible),
+                    session = session,
+                    onClick = onSessionSelected
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SmallCircularProgressIndicator()
-                        Text(text = stringResource(R.string.loading_sessions_from_cloud))
-                    }
-                }
-            }
-        }
-        if (!localSessionsLoaded) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SmallCircularProgressIndicator()
-                        Text(text = stringResource(R.string.loading_sessions))
-                    }
-                }
-            }
-        }
-        items(allSessionUUIDs) {
-            val session by viewModel.getSessionStateFlow(it).collectAsStateWithLifecycle()
-            DisposableEffect(true) {
-                onDispose {
-                    viewModel.disposeSessionStateFlow(it)
-                }
-            }
-            val isPlaceholderVisible = session == null
-            SessionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .cardPlaceholder(isPlaceholderVisible),
-                session = session,
-                onClick = { sessionUUID ->
-                    destinationsNavigator.navigate(
-                        SessionScreenDestination(
-                            sessionUUID = sessionUUID
-                        )
+                    OwnButton(
+                        visible = session != null && isUserSignedIn && session!!.isNotOwned,
+                        onClick = { ownSession(it) }
                     )
-                }
-            ) {
-                AnimatedVisibility(
-                    visible = session != null && isUserSignedIn && session!!.isNotOwned
-                ) {
-                    Button(
-                        onClick = { viewModel.ownSession(session!!.uuid) },
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(imageVector = Icons.Rounded.PersonAdd, contentDescription = "")
-                            Text(text = stringResource(R.string.own))
-                        }
-                    }
                 }
             }
         }
     }
 }
 
-@PreviewLightDarkTheme
+@Composable
+fun NoSessionPrompt(
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Info,
+            contentDescription = "",
+            tint = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = stringResource(R.string.no_sessions_to_show),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun OwnButton(
+    modifier: Modifier = Modifier,
+    visible: Boolean,
+    onClick: () -> Unit,
+) {
+    AnimatedVisibility(
+        visible = visible
+    ) {
+        Button(
+            modifier = modifier,
+            onClick = onClick,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(imageVector = Icons.Rounded.PersonAdd, contentDescription = "")
+                Text(text = stringResource(R.string.own))
+            }
+        }
+    }
+}
+
+@Composable
+fun SessionLoadingIndicator(
+    modifier: Modifier = Modifier,
+    text: String
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SmallCircularProgressIndicator()
+            Text(text = text)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionCard(
@@ -361,82 +549,118 @@ fun SessionCard(
         colors = cardColors,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(MenuItemPadding),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(
+                start = 8.dp,
+                end = 6.dp,
+                top = 4.dp,
+                bottom = 4.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Row(
-                    modifier = Modifier.padding(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                LazyRow(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        text = session?.startLocationName ?: stringResource(R.string.unknown),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Icon(imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "")
-                    Crossfade(targetState = session?.endDateTime == null) {
-                        if (it) {
-                            Icon(imageVector = Icons.Rounded.MoreHoriz, contentDescription = "")
-                        } else {
+                    item {
+                        Crossfade(
+                            modifier = Modifier.animateContentSize(),
+                            targetState = session?.startLocationName
+                        ) {
                             Text(
-                                text = session?.endLocationName ?: stringResource(R.string.unknown),
-                                style = MaterialTheme.typography.titleLarge
+                                text = it ?: stringResource(R.string.unknown),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
+                        }
+                    }
+                    item {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    item {
+                        Crossfade(
+                            modifier = Modifier.animateContentSize(),
+                            targetState = (session?.endDateTime == null) to session?.endLocationName
+                        ) {
+                            if (it.first) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreHoriz, contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            } else {
+                                Text(
+                                    text = it.second ?: stringResource(R.string.unknown),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
                         }
                     }
                 }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    AnimatedVisibility(visible = session?.isLocal == true) {
-                        Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
-                    }
-                    AnimatedVisibility(visible = session?.isSynced == true) {
-                        Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
-                    }
-                    AnimatedVisibility(visible = session?.isNotOwned == true) {
-                        Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AnimatedVisibility(visible = session?.isLocal == true) {
+                            Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
+                        }
+                        AnimatedVisibility(visible = session?.isSynced == true) {
+                            Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
+                        }
+                        AnimatedVisibility(visible = session?.isNotOwned == true) {
+                            Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
+                        }
                     }
                 }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "${stringResource(R.string.distance)}: " +
-                                if (session == null) {
-                                    stringResource(R.string.unknown)
-                                } else {
-                                    "${
-                                        session.totalDistance
-                                            .div(1000)
-                                            .toBigDecimal()
-                                            .setScale(2, RoundingMode.FLOOR)
-                                    } " +
-                                            stringResource(R.string.kilometers)
-                                }
-                    )
-                    Text(
-                        text = "${stringResource(R.string.duration)}: " +
-                                (session?.duration?.format(
-                                    separator = " ",
-                                    second = stringResource(R.string.second_short),
-                                    minute = stringResource(R.string.minute_short),
-                                    hour = stringResource(R.string.hour_short),
-                                    day = stringResource(R.string.day_short)
-                                )
-                                    ?: stringResource(R.string.unknown))
-                    )
-                }
+                SessionDetailsList(
+                    details = listOf(
+                        stringResource(R.string.distance) to if (session?.totalDistance == null) {
+                            stringResource(R.string.unknown)
+                        } else {
+                            "${
+                                session.totalDistance
+                                    .div(1000)
+                                    .toBigDecimal()
+                                    .setScale(2, RoundingMode.FLOOR)} " +
+                                    stringResource(R.string.kilometers)
+                        },
+                        stringResource(R.string.duration) to (session?.duration?.format(
+                            separator = " ",
+                            second = stringResource(R.string.second_short),
+                            minute = stringResource(R.string.minute_short),
+                            hour = stringResource(R.string.hour_short),
+                            day = stringResource(R.string.day_short)
+                        ) ?: stringResource(R.string.unknown))
+                    ),
+                )
                 content()
             }
         }
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun SessionCardPreview() {
+    JayTheme {
+        SessionCard()
     }
 }

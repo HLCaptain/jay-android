@@ -26,7 +26,7 @@ import com.mapbox.search.result.SearchResultType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.ui.home.sendBroadcast
 import illyan.jay.ui.map.BmeK
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.sheet.SheetViewModel
 import timber.log.Timber

@@ -19,7 +19,8 @@
 @file:OptIn(
     ExperimentalMaterialApi::class,
     ExperimentalComposeUiApi::class,
-    ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class,
+    ExperimentalPermissionsApi::class
 )
 
 package illyan.jay.ui.home
@@ -75,8 +76,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.rememberBottomSheetScaffoldState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -96,7 +95,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -129,17 +127,11 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material.placeholder
-import com.google.accompanist.placeholder.material.shimmer
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -157,6 +149,7 @@ import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.MapboxMap
@@ -164,11 +157,11 @@ import illyan.jay.ui.map.padding
 import illyan.jay.ui.map.toEdgeInsets
 import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.BackPressHandler
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.profile.ProfileDialog
-import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
+import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
-import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchSelected
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapStyleUrl
 import illyan.jay.util.extraOptions
 import illyan.jay.util.isCollapsedOrWillBe
@@ -414,7 +407,6 @@ fun refreshCameraPadding() {
     )
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @HomeNavGraph(start = true)
 @Destination
 @Composable
@@ -425,6 +417,7 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         viewModel.stopDanglingOngoingSessions()
+        viewModel.loadLastLocation()
     }
     val cameraPaddingValues by cameraPadding.collectAsStateWithLifecycle()
     val locationPermissionState = rememberPermissionState(
@@ -432,7 +425,7 @@ fun HomeScreen(
     )
     DisposableEffect(locationPermissionState.status.isGranted) {
         if (locationPermissionState.status.isGranted) {
-            coroutineScope.launch { viewModel.loadLastLocation() }
+            viewModel.requestLocationUpdates()
             mapView.value?.location?.turnOnWithDefaultPuck(context)
         } else {
             mapView.value?.location?.enabled = false
@@ -494,19 +487,30 @@ fun HomeScreen(
             )
         }
         // When the bottom sheet reaches its target state, reset onDrag trigger
-        if (bottomSheetState.targetValue == bottomSheetState.currentValue) {
-            // Resetting the trigger to enable bottom sheet toggle
-            shouldTriggerBottomSheetOnDrag = true
+        LaunchedEffect(bottomSheetState.targetValue, bottomSheetState.currentValue) {
+            if (bottomSheetState.targetValue == bottomSheetState.currentValue) {
+                // Resetting the trigger to enable bottom sheet toggle
+                shouldTriggerBottomSheetOnDrag = true
+            }
         }
+        var isProfileDialogShowing by remember { mutableStateOf(false) }
+        ProfileDialog(
+            isDialogOpen = isProfileDialogShowing,
+            onDialogClosed = { isProfileDialogShowing = false }
+        )
+        val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
+        val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
         BottomSearchBar(
             modifier = Modifier
                 .zIndex(1f) // Search bar is in front of everything else
                 .constrainAs(searchBar) {
                     bottom.linkTo(scaffold.bottom)
-                    start.linkTo(parent.start)
                 }
+                .fillMaxWidth()
                 .imePadding()
                 .navigationBarsPadding(),
+            isUserSignedIn = isUserSignedIn,
+            userPhotoUrl = userPhotoUrl,
             onDrag = {
                 onSearchBarDrag(
                     bottomSheetState = bottomSheetState,
@@ -526,7 +530,23 @@ fun HomeScreen(
                     }
                 }
             },
-            viewModel = viewModel
+            onSearchQueryChanged = {
+                LocalBroadcastManager.getInstance(context)
+                    .sendBroadcast(
+                        it,
+                        KeySearchQuery,
+                        Intent.ACTION_SEARCH
+                    )
+            },
+            onSearchQueried = {
+                LocalBroadcastManager.getInstance(context)
+                    .sendBroadcast(
+                        it,
+                        SearchViewModel.KeySearchSelected,
+                        SearchViewModel.ActionSearchSelected
+                    )
+            },
+            onShowProfile = { isProfileDialogShowing = true }
         )
         BottomSheetScaffold(
             modifier = Modifier
@@ -562,6 +582,8 @@ fun HomeScreen(
         ) {
             Column(
                 modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius / 4f)
             ) {
                 val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsStateWithLifecycle()
@@ -645,28 +667,27 @@ fun HomeScreen(
                         )
                     }
                 }
-                var isMapVisible by remember { mutableStateOf(false) }
-                if (initialLocationLoaded) {
+                if (initialLocationLoaded || cameraOptionsBuilder != null) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                         val (foreground, map) = createRefs()
-                        Column(modifier = Modifier
-                            .fillMaxSize()
-                            .constrainAs(foreground) {
-                                top.linkTo(parent.top)
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }
-                            .zIndex(1f)) {
-                            AnimatedVisibility(
-                                visible = !isMapVisible,
-                                exit = fadeOut(animationSpec = tween(800))
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                )
-                            }
+                        var isMapVisible by remember { mutableStateOf(false) }
+                        androidx.compose.animation.AnimatedVisibility(
+                            modifier = Modifier
+                                .zIndex(1f)
+                                .constrainAs(foreground) {
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                },
+                            visible = !isMapVisible,
+                            exit = fadeOut(animationSpec = tween(800))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                            )
                         }
                         val styleUrl by mapStyleUrl.collectAsStateWithLifecycle()
                         MapboxMap(
@@ -746,18 +767,19 @@ private suspend fun onSheetStateChanged(
     }
 }
 
-@PreviewLightDarkTheme
 @Composable
 fun BottomSearchBar(
     modifier: Modifier = Modifier,
     onDrag: (Float) -> Unit = {},
     bottomSheetState: BottomSheetState? = null,
-    context: Context = LocalContext.current,
     onTextFieldFocusChanged: (FocusState) -> Unit = {},
+    onSearchQueryChanged: (String) -> Unit = {},
+    onSearchQueried: (String) -> Unit = {},
+    isUserSignedIn: Boolean = false,
+    userPhotoUrl: Uri? = null,
+    onShowProfile: () -> Unit = {},
     onDragAreaOffset: Dp = 48.dp,
-    viewModel: HomeViewModel = hiltViewModel(),
 ) {
-    val cardColors = CardDefaults.elevatedCardColors()
     val elevation = 8.dp
     val cardElevation = CardDefaults.cardElevation(
         defaultElevation = elevation,
@@ -766,6 +788,10 @@ fun BottomSearchBar(
         focusedElevation = elevation,
         hoveredElevation = elevation,
         pressedElevation = elevation
+    )
+    val cardColors = CardDefaults.elevatedCardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -778,7 +804,6 @@ fun BottomSearchBar(
             }
         }
     }
-
     val interactionSource = remember { MutableInteractionSource() }
     val draggable = Modifier.draggable(
         interactionSource = interactionSource,
@@ -798,27 +823,27 @@ fun BottomSearchBar(
             topStart = RoundedCornerRadius,
             topEnd = RoundedCornerRadius
         ),
-        colors = cardColors,
         onClick = { focusRequester.requestFocus() },
-        interactionSource = interactionSource,
+        colors = cardColors,
         elevation = cardElevation
     ) {
         Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(draggable)
                     .height(SearchBarHeight),
-                horizontalArrangement = Arrangement.spacedBy(SearchBarSpaceBetween)
+                horizontalArrangement = Arrangement.spacedBy(SearchBarSpaceBetween),
             ) {
                 IconButton(
                     onClick = { focusRequester.requestFocus() },
                     modifier = Modifier.padding(SearchMarkerPaddingValues)
                 ) {
                     Image(
+                        modifier = Modifier
+                            .zIndex(1f)
+                            .size(RoundedCornerRadius * 2),
                         painter = painterResource(R.drawable.ic_jay_marker_icon_v3_round),
-                        contentDescription = stringResource(R.string.search_marker_icon),
-                        modifier = Modifier.size(RoundedCornerRadius * 2)
+                        contentDescription = stringResource(R.string.search_marker_icon)
                     )
                 }
                 val colors = TextFieldDefaults.textFieldColors(
@@ -833,7 +858,6 @@ fun BottomSearchBar(
                     modifier = Modifier
                         .weight(1f)
                         .padding(SearchFieldPaddingValues)
-                        .then(draggable)
                         .focusRequester(focusRequester)
                         .onFocusChanged {
                             searchFieldFocusState = it
@@ -842,12 +866,7 @@ fun BottomSearchBar(
                     value = searchPlaceText,
                     onValueChange = {
                         searchPlaceText = it
-                        LocalBroadcastManager.getInstance(context)
-                            .sendBroadcast(
-                                searchPlaceText,
-                                KeySearchQuery,
-                                Intent.ACTION_SEARCH
-                            )
+                        onSearchQueryChanged(searchPlaceText)
                     },
                     label = { Text(stringResource(R.string.search)) },
                     placeholder = { Text(stringResource(R.string.where_to)) },
@@ -861,15 +880,9 @@ fun BottomSearchBar(
                         onGo = { focusManager.clearFocus() },
                         onSearch = {
                             focusManager.clearFocus()
-                            LocalBroadcastManager.getInstance(context)
-                                .sendBroadcast(
-                                    searchPlaceText,
-                                    KeySearchSelected,
-                                    ActionSearchSelected
-                                )
+                            onSearchQueried(searchPlaceText)
                         }
                     ),
-                    interactionSource = interactionSource,
                     trailingIcon = {
                         if (searchPlaceText.isNotBlank()) {
                             IconButton(
@@ -886,78 +899,30 @@ fun BottomSearchBar(
                         }
                     }
                 )
-                var isProfileScreenShowing by remember { mutableStateOf(false) }
                 IconButton(
-                    onClick = { isProfileScreenShowing = true },
+                    onClick = onShowProfile,
                     modifier = Modifier.padding(AvatarPaddingValues),
-                    interactionSource = interactionSource
                 ) {
-                    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
-                    val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
                     AvatarAsyncImage(
                         modifier = Modifier
+                            .zIndex(1f)
                             .size(RoundedCornerRadius * 2)
                             .clip(CircleShape),
-                        enabled = isUserSignedIn && userPhotoUrl != null,
+                        placeholderEnabled = !isUserSignedIn || userPhotoUrl == null,
                         userPhotoUrl = userPhotoUrl
                     )
                 }
-                ProfileDialog(
-                    isDialogOpen = isProfileScreenShowing,
-                    onDialogClosed = {
-                        isProfileScreenShowing = false
-                    }
-                )
             }
             Spacer(modifier = Modifier.height(onDragAreaOffset))
         }
     }
 }
 
+@PreviewLightDarkTheme
 @Composable
-fun AvatarAsyncImage(
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    userPhotoUrl: Uri?,
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        if (enabled) {
-            SubcomposeAsyncImage(
-                modifier = modifier,
-                model = userPhotoUrl?.toString(),
-                loading = {
-                    when (painter.state) {
-                        is AsyncImagePainter.State.Loading -> {
-                            Box(
-                                modifier = modifier
-                                    .placeholder(
-                                        visible = true,
-                                        highlight = PlaceholderHighlight.shimmer()
-                                    )
-                            )
-                        }
-
-                        is AsyncImagePainter.State.Error -> Icons.Rounded.BrokenImage
-                        is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                        else -> Icon(
-                            modifier = modifier,
-                            imageVector = Icons.Rounded.AccountCircle,
-                            contentDescription = stringResource(R.string.avatar_profile_picture)
-                        )
-                    }
-                },
-                contentDescription = stringResource(R.string.avatar_profile_picture)
-            )
-        } else {
-            Icon(
-                modifier = modifier,
-                imageVector = Icons.Rounded.AccountCircle,
-                contentDescription = stringResource(R.string.avatar_profile_picture)
-            )
-        }
+fun BottomSearchBarPreview() {
+    JayTheme {
+        BottomSearchBar()
     }
 }
 
