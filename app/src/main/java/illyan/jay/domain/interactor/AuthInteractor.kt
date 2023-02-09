@@ -85,9 +85,9 @@ class AuthInteractor @Inject constructor(
     init {
         addAuthStateListener {
             if (it.currentUser != null) {
-                Timber.i("User ${it.currentUser!!.uid.take(4)} signed in to Firebase")
+                Timber.i("User ${it.currentUser!!.uid.take(4)} signed into Firebase")
             } else {
-                Timber.i("User ${userUUID?.take(4)} signed out from Firebase")
+                Timber.i("User ${userUUID?.take(4)} signed out of Firebase")
             }
             _currentUserStateFlow.value = it.currentUser
             _isUserSignedInStateFlow.value = it.currentUser != null
@@ -96,18 +96,22 @@ class AuthInteractor @Inject constructor(
     }
 
     fun signOut() {
+        Timber.i("Sign out requested for user ${userUUID?.take(4)}")
         _isSigningOut.value = true
         val size = onSignOutListeners.size
         if (size == 0) {
+            Timber.i("No sign out listeners detected, signing out user ${userUUID?.take(4)}")
             auth.signOut()
             googleSignInClient.value?.signOut()
             _isSigningOut.value = false
         } else {
+            Timber.i("Notifying sign out listeners")
             val approvedListeners = MutableStateFlow(0)
             onSignOutListeners.forEach {
                 coroutineScopeIO.launch {
                     it(auth).first {
                         approvedListeners.value++
+                        Timber.d("${approvedListeners.value++} listeners approved sign out")
                         true
                     }
                 }
@@ -115,6 +119,7 @@ class AuthInteractor @Inject constructor(
             coroutineScopeIO.launch {
                 approvedListeners.first {
                     if (it >= size) {
+                        Timber.i("All listeners notified, signing out user ${userUUID?.take(4)}")
                         auth.signOut()
                         googleSignInClient.value?.signOut()
                         _isSigningOut.value = false

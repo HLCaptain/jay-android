@@ -72,8 +72,8 @@ fun ProfileDialog(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     var showLoginDialog by remember { mutableStateOf(false) }
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val isUserSigningOut by viewModel.isUserSigningOut.collectAsStateWithLifecycle()
     val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
     val email by viewModel.userEmail.collectAsStateWithLifecycle()
@@ -131,20 +131,19 @@ fun ProfileDialogScreen(
             )
         },
         confirmButton = {
-            Crossfade(targetState = isUserSignedIn) {
-                if (it) {
-                    TextButton(
-                        enabled = !isUserSigningOut,
-                        onClick = onSignOut
-                    ) {
-                        Text(text = stringResource(R.string.sign_out))
-                    }
-                } else {
-                    Button(
-                        onClick = onShowLoginDialog
-                    ) {
-                        Text(text = stringResource(R.string.sign_in))
-                    }
+            // FIXME: find out why Crossfade does not work here
+            if (isUserSignedIn) {
+                TextButton(
+                    enabled = !isUserSigningOut,
+                    onClick = onSignOut
+                ) {
+                    Text(text = stringResource(R.string.sign_out))
+                }
+            } else {
+                Button(
+                    onClick = onShowLoginDialog
+                ) {
+                    Text(text = stringResource(R.string.sign_in))
                 }
             }
         },
