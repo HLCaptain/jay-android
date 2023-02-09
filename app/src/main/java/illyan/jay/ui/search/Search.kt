@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.YoutubeSearchedFor
@@ -65,9 +66,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mapbox.search.record.FavoriteRecord
-import com.mapbox.search.record.HistoryRecord
-import com.mapbox.search.result.SearchSuggestion
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -75,7 +73,10 @@ import illyan.jay.R
 import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.search.model.UiRecord
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.signaturePink
+import java.util.UUID
 
 @RootNavGraph
 @NavGraph
@@ -118,16 +119,19 @@ fun SearchScreen(
         isLoadingSuggestions = isLoadingSuggestions,
         onClickSearchSuggestion = { suggestion, _ ->
             focusManager.clearFocus()
-            viewModel.navigateTo(suggestion)
+            viewModel.navigateTo(suggestion.id)
         },
         onClickFavoriteItem = { favoriteItem, _ ->
             focusManager.clearFocus()
-            viewModel.navigateTo(favoriteItem)
+            viewModel.navigateTo(favoriteItem.id)
         },
         onClickHistoryItem = { historyItem, _ ->
             focusManager.clearFocus()
-            viewModel.navigateTo(historyItem)
+            viewModel.navigateTo(historyItem.id)
         },
+        onToggleFavorite = {
+            viewModel.toggleFavorite(it)
+        }
     )
 }
 
@@ -135,13 +139,14 @@ fun SearchScreen(
 fun SearchList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
-    favoriteItems: List<FavoriteRecord> = emptyList(),
-    historyItems: List<HistoryRecord> = emptyList(),
-    searchSuggestions: List<SearchSuggestion> = emptyList(),
+    favoriteItems: List<UiRecord> = emptyList(),
+    historyItems: List<UiRecord> = emptyList(),
+    searchSuggestions: List<UiRecord> = emptyList(),
     isLoadingSuggestions: Boolean = false,
-    onClickSearchSuggestion: (SearchSuggestion, Int) -> Unit = { _, _ -> },
-    onClickFavoriteItem: (FavoriteRecord, Int) -> Unit = { _, _ -> },
-    onClickHistoryItem: (HistoryRecord, Int) -> Unit = { _, _ -> },
+    onClickSearchSuggestion: (UiRecord, Int) -> Unit = { _, _ -> },
+    onClickFavoriteItem: (UiRecord, Int) -> Unit = { _, _ -> },
+    onClickHistoryItem: (UiRecord, Int) -> Unit = { _, _ -> },
+    onToggleFavorite: (String) -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier,
@@ -160,7 +165,8 @@ fun SearchList(
         suggestionItems(
             items = searchSuggestions,
             onClick = onClickSearchSuggestion,
-            isLoadingSuggestions = isLoadingSuggestions
+            isLoadingSuggestions = isLoadingSuggestions,
+            onToggleFavorite = onToggleFavorite,
         )
         item {
             Text(
@@ -172,7 +178,8 @@ fun SearchList(
         }
         favoriteItems(
             items = favoriteItems,
-            onClick = onClickFavoriteItem
+            onClick = onClickFavoriteItem,
+            onRemoveFromFavorites = onToggleFavorite,
         )
         item {
             Text(
@@ -184,7 +191,8 @@ fun SearchList(
         }
         historyItems(
             items = historyItems,
-            onClick = onClickHistoryItem
+            onClick = onClickHistoryItem,
+            onToggleFavorite = onToggleFavorite,
         )
     }
 }
@@ -198,8 +206,9 @@ private fun SearchListPreview() {
 }
 
 fun LazyListScope.historyItems(
-    items: List<HistoryRecord>,
-    onClick: (HistoryRecord, Int) -> Unit = { _, _ -> },
+    items: List<UiRecord>,
+    onClick: (UiRecord, Int) -> Unit = { _, _ -> },
+    onToggleFavorite: (String) -> Unit = {},
 ) {
     searchItems(
         list = items
@@ -208,21 +217,23 @@ fun LazyListScope.historyItems(
         val roundedCornerBottom = if (index == items.lastIndex) SearchItemsCornerRadius else 0.dp
         HistoryCard(
             modifier = Modifier.fillMaxWidth(),
-            result = historyRecord,
+            record = historyRecord,
             onClick = { onClick(historyRecord, index) },
             shape = RoundedCornerShape(
                 topStart = roundedCornerTop,
                 topEnd = roundedCornerTop,
                 bottomStart = roundedCornerBottom,
                 bottomEnd = roundedCornerBottom
-            )
+            ),
+            onToggleFavorite = { onToggleFavorite(historyRecord.id) },
         )
     }
 }
 
 fun LazyListScope.favoriteItems(
-    items: List<FavoriteRecord>,
-    onClick: (FavoriteRecord, Int) -> Unit = { _, _ -> },
+    items: List<UiRecord>,
+    onClick: (UiRecord, Int) -> Unit = { _, _ -> },
+    onRemoveFromFavorites: (String) -> Unit = {},
 ) {
     searchItems(
         list = items
@@ -231,22 +242,24 @@ fun LazyListScope.favoriteItems(
         val roundedCornerBottom = if (index == items.lastIndex) SearchItemsCornerRadius else 0.dp
         FavoriteCard(
             modifier = Modifier.fillMaxWidth(),
-            result = favoriteRecord,
+            record = favoriteRecord,
             onClick = { onClick(favoriteRecord, index) },
             shape = RoundedCornerShape(
                 topStart = roundedCornerTop,
                 topEnd = roundedCornerTop,
                 bottomStart = roundedCornerBottom,
                 bottomEnd = roundedCornerBottom
-            )
+            ),
+            onRemoveFromFavorites = { onRemoveFromFavorites(favoriteRecord.id) },
         )
     }
 }
 
 fun LazyListScope.suggestionItems(
-    items: List<SearchSuggestion>,
+    items: List<UiRecord>,
     isLoadingSuggestions: Boolean = false,
-    onClick: (SearchSuggestion, Int) -> Unit = { _, _ -> },
+    onClick: (UiRecord, Int) -> Unit = { _, _ -> },
+    onToggleFavorite: (String) -> Unit = {},
 ) {
     searchItems(
         list = items,
@@ -285,14 +298,15 @@ fun LazyListScope.suggestionItems(
         val roundedCornerBottom = if (index == items.lastIndex) SearchItemsCornerRadius else 0.dp
         SuggestionCard(
             modifier = Modifier.fillMaxWidth(),
-            result = suggestion,
+            record = suggestion,
             onClick = { onClick(suggestion, index) },
             shape = RoundedCornerShape(
                 topStart = roundedCornerTop,
                 topEnd = roundedCornerTop,
                 bottomStart = roundedCornerBottom,
                 bottomEnd = roundedCornerBottom
-            )
+            ),
+            onToggleFavorite = { onToggleFavorite(suggestion.id) },
         )
     }
 }
@@ -341,42 +355,87 @@ fun <Item> LazyListScope.searchItems(
 @Composable
 fun SuggestionCard(
     modifier: Modifier = Modifier,
-    result: SearchSuggestion? = null,
+    record: UiRecord,
     shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {},
+    onToggleFavorite: () -> Unit = {}
 ) {
     SearchCard(
         modifier = modifier,
-        title = result?.name ?: "Suggestion Title",
-        description = result?.address?.region ?: "Suggestion description",
+        title = record.title,
+        description = record.description ?: "Suggestion description",
         icon = Icons.Rounded.Search,
         shape = shape,
-        onClick = onClick
+        onClick = onClick,
+        suffixContent = {
+            FavoriteButton(
+                isFavorite = record.isFavorite,
+                onToggleFavorite = onToggleFavorite
+            )
+        }
     )
+}
+
+@Composable
+fun FavoriteButton(
+    modifier: Modifier = Modifier,
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {}
+) {
+    IconButton(
+        modifier = modifier.padding(horizontal = 4.dp),
+        onClick = onToggleFavorite
+    ) {
+        Crossfade(targetState = isFavorite) {
+            Icon(
+                modifier = Modifier.size(32.dp),
+                imageVector = if (it) {
+                    Icons.Rounded.Favorite
+                } else {
+                    Icons.Rounded.FavoriteBorder
+                },
+                tint = if (it) {
+                    MaterialTheme.signaturePink
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                contentDescription = "Favorite icon"
+            )
+        }
+    }
 }
 
 @PreviewLightDarkTheme
 @Composable
 private fun SuggestionCardPreview() {
     JayTheme {
-        SuggestionCard()
+        SuggestionCard(
+            record = previewRecord
+        )
     }
 }
 
 @Composable
 fun HistoryCard(
     modifier: Modifier = Modifier,
-    result: HistoryRecord? = null,
+    record: UiRecord,
     shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {},
+    onToggleFavorite: () -> Unit = {}
 ) {
     SearchCard(
         modifier = modifier,
-        title = result?.name ?: "History Record Title",
-        description = result?.address?.region ?: "History record description",
+        title = record.title,
+        description = record.description ?: "History record description",
         icon = Icons.Rounded.YoutubeSearchedFor,
         shape = shape,
-        onClick = onClick
+        onClick = onClick,
+        suffixContent = {
+            FavoriteButton(
+                isFavorite = record.isFavorite,
+                onToggleFavorite = onToggleFavorite
+            )
+        }
     )
 }
 
@@ -384,24 +443,33 @@ fun HistoryCard(
 @Composable
 private fun HistoryCardPreview() {
     JayTheme {
-        HistoryCard()
+        HistoryCard(
+            record = previewRecord
+        )
     }
 }
 
 @Composable
 fun FavoriteCard(
     modifier: Modifier = Modifier,
-    result: FavoriteRecord? = null,
+    record: UiRecord,
     shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {},
+    onRemoveFromFavorites: (String) -> Unit = {},
 ) {
     SearchCard(
         modifier = modifier,
-        title = result?.name ?: "Favorite Record Title",
-        description = result?.address?.region ?: "Favorite record description",
+        title = record.title,
+        description = record.description ?: "Favorite record description",
         icon = Icons.Rounded.Favorite,
         shape = shape,
-        onClick = onClick
+        onClick = onClick,
+        prefixContent = {
+            FavoriteButton(
+                isFavorite = true,
+                onToggleFavorite = { onRemoveFromFavorites(record.id) }
+            )
+        }
     )
 }
 
@@ -409,9 +477,18 @@ fun FavoriteCard(
 @Composable
 private fun FavoriteCardPreview() {
     JayTheme {
-        FavoriteCard()
+        FavoriteCard(
+            record = previewRecord
+        )
     }
 }
+
+private val previewRecord = UiRecord(
+    id = UUID.randomUUID().toString(),
+    title = "Budapest",
+    description = "Hungary",
+    isFavorite = true
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -451,7 +528,10 @@ fun SearchCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 prefixContent()
                 content()
             }

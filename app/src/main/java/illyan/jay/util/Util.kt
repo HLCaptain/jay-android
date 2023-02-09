@@ -146,6 +146,8 @@ fun LatLng.toGeoPoint() = GeoPoint(latitude, longitude)
 
 fun GeoPoint.toLatLng() = LatLng(latitude, longitude)
 
+fun Point.toLatLng() = LatLng(latitude(), longitude())
+
 fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
 
 fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()

@@ -168,6 +168,7 @@ import illyan.jay.util.isCollapsedOrWillBe
 import illyan.jay.util.isCollapsing
 import illyan.jay.util.isExpanding
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -500,6 +501,19 @@ fun HomeScreen(
         )
         val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
         val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
+        var searchQuery by remember { mutableStateOf("") }
+        LaunchedEffect(searchQuery) {
+            if (searchQuery.isBlank()) return@LaunchedEffect
+
+            // Wait 400ms before querying anything
+            delay(400)
+            LocalBroadcastManager.getInstance(context)
+                .sendBroadcast(
+                    searchQuery,
+                    KeySearchQuery,
+                    Intent.ACTION_SEARCH
+                )
+        }
         BottomSearchBar(
             modifier = Modifier
                 .zIndex(1f) // Search bar is in front of everything else
@@ -530,14 +544,7 @@ fun HomeScreen(
                     }
                 }
             },
-            onSearchQueryChanged = {
-                LocalBroadcastManager.getInstance(context)
-                    .sendBroadcast(
-                        it,
-                        KeySearchQuery,
-                        Intent.ACTION_SEARCH
-                    )
-            },
+            onSearchQueryChanged = {searchQuery = it },
             onSearchQueried = {
                 LocalBroadcastManager.getInstance(context)
                     .sendBroadcast(
