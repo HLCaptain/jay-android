@@ -244,13 +244,24 @@ class SessionsViewModel @Inject constructor(
     }
 
     fun disposeSessionStateFlow(sessionUUID: String) {
-        sessionStateFlows.remove(sessionUUID)
+        // Disabled due to getting sessions one-by-one are not performant enough
+        //sessionStateFlows.remove(sessionUUID)
+    }
+
+    fun loadSessionStateFlows() {
+        // FIXME: make loading sessions a constant time-like instead of O(n)
+        //  (one query to DB and cloud instead of N)
+        viewModelScope.launch(dispatcherIO) {
+            allSessionUUIDs.collectLatest { sessionUUIDs ->
+                sessionUUIDs.subtract(sessionStateFlows.keys).forEach { getSessionStateFlow(it) }
+            }
+        }
     }
 
     fun getSessionStateFlow(sessionUUID: String): StateFlow<UiSession?> {
         Timber.d("Requesting session state flow with id: ${sessionUUID.take(4)}")
         if (sessionStateFlows.contains(sessionUUID)) {
-            Timber.d("Session flow found ${sessionUUID.take(4)}")
+            Timber.d("Session flow for session ${sessionUUID.take(4)} found in memory")
             return sessionStateFlows[sessionUUID]!!.asStateFlow()
         }
         val sessionMutableStateFlow = MutableStateFlow<UiSession?>(null)

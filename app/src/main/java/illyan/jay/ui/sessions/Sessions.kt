@@ -130,6 +130,7 @@ fun Sessions(
     LaunchedEffect(signedInUser) {
         viewModel.loadLocalSessions()
         viewModel.loadCloudSessions(context as Activity)
+        viewModel.loadSessionStateFlows()
     }
     SessionsScreen(
         isUserSignedIn = isUserSignedIn,
