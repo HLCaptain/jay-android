@@ -19,6 +19,8 @@
 package illyan.jay.ui.freedrive
 
 import android.Manifest
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,17 +34,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 import com.mapbox.geojson.Point
@@ -53,6 +53,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.absoluteBottom
 import illyan.jay.ui.home.absoluteTop
@@ -65,8 +66,8 @@ import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.plus
-import kotlinx.coroutines.launch
 
 private const val paddingRatio = 0.25f
 
@@ -89,45 +90,32 @@ fun calculatePaddingOffset(): PaddingValues {
 @MenuNavGraph
 @Destination
 @Composable
-fun FreeDriveScreen(
+fun FreeDrive(
     viewModel: FreeDriveViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
-    SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
-    val locationPermissionState = rememberPermissionState(
-        Manifest.permission.ACCESS_FINE_LOCATION
+    val isServiceRunning by viewModel.isJayServiceRunning.collectAsStateWithLifecycle()
+    val startServiceAutomatically by viewModel.startServiceAutomatically.collectAsStateWithLifecycle(
+        AppSettings.default.turnOnFreeDriveAutomatically
     )
-    val coroutineScope = rememberCoroutineScope()
+    val cameraPadding by cameraPadding.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    LaunchedEffect(cameraPadding) {
+        viewModel.followingPaddingOffset =
+            (cameraPadding + calculatePaddingOffset()).toEdgeInsets(density.value)
+    }
+    SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
+    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     when (locationPermissionState.status) {
-        is PermissionStatus.Denied -> {
-            LocationPermissionDeniedScreen(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        top = 8.dp,
-                        bottom = 8.dp + RoundedCornerRadius,
-                        start = 8.dp,
-                        end = 8.dp
-                    ),
-                locationPermissionState = locationPermissionState
-            )
-        }
-
         is PermissionStatus.Granted -> {
-            val startServiceAutomatically by viewModel.startServiceAutomatically
-                .collectAsState(AppSettings.default.turnOnFreeDriveAutomatically)
-            val cameraPadding by cameraPadding.collectAsState()
             DisposableEffect(Unit) {
-                coroutineScope.launch {
-                    viewModel.load()
-                    mapView.value?.let {
-                        viewModel.loadViewport(
-                            it.getMapboxMap(),
-                            it.camera,
-                            cameraPadding + calculatePaddingOffset()
-                        )
-                    }
+                viewModel.load()
+                mapView.value?.let {
+                    viewModel.loadViewport(
+                        it.getMapboxMap(),
+                        it.camera,
+                        cameraPadding + calculatePaddingOffset()
+                    )
                 }
                 mapView.value?.location?.turnOnWithDefaultPuck(context)
                 onDispose {
@@ -150,55 +138,78 @@ fun FreeDriveScreen(
                     }
                 }
             }
-            LaunchedEffect(cameraPadding) {
-                viewModel.followingPaddingOffset =
-                    (cameraPadding + calculatePaddingOffset()).toEdgeInsets(density.value)
-            }
-            Column(
+            FreeDriveScreenWithPermission(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(DefaultScreenOnSheetPadding)
-            ) {
-                val isServiceRunning by viewModel.isJayServiceRunning.collectAsState()
-                val buttonLabel = if (isServiceRunning) {
-                    stringResource(R.string.stop_free_driving)
-                } else {
-                    stringResource(R.string.start_free_driving)
-                }
-                Button(
-                    onClick = { viewModel.toggleService() }
-                ) {
-                    Text(text = buttonLabel)
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.automatically_turn_on_free_driving),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Switch(
-                        checked = startServiceAutomatically,
-                        onCheckedChange = {
-                            coroutineScope.launch {
-                                viewModel.setAutoStartService(it)
-                            }
-                        }
-                    )
-                }
-            }
+                    .padding(DefaultScreenOnSheetPadding),
+                startServiceAutomatically = startServiceAutomatically,
+                isServiceRunning = isServiceRunning,
+                onToggleService = viewModel::toggleService,
+                setStartServiceAutomatically = viewModel::setAutoStartService,
+            )
+        }
+        is PermissionStatus.Denied -> {
+            FreeDriveScreenWithoutPermission(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(DefaultScreenOnSheetPadding),
+                onRequestPermission = locationPermissionState::launchPermissionRequest
+            )
         }
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun LocationPermissionDeniedScreen(
+fun FreeDriveScreenWithPermission(
     modifier: Modifier = Modifier,
-    locationPermissionState: PermissionState,
+    startServiceAutomatically: Boolean = AppSettings.default.turnOnFreeDriveAutomatically,
+    isServiceRunning: Boolean = false,
+    onToggleService: () -> Unit = {},
+    setStartServiceAutomatically: (Boolean) -> Unit = {},
+) {
+    Column(
+        modifier = modifier
+    ) {
+        Button(
+            modifier = Modifier.animateContentSize(),
+            onClick = { onToggleService() }
+        ) {
+            Crossfade(
+                modifier = Modifier.animateContentSize(),
+                targetState = isServiceRunning
+            ) {
+                Text(
+                    modifier = Modifier.animateContentSize(),
+                    text = if (it) {
+                        stringResource(R.string.stop_free_driving)
+                    } else {
+                        stringResource(R.string.start_free_driving)
+                    }
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.automatically_turn_on_free_driving),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Switch(
+                checked = startServiceAutomatically,
+                onCheckedChange = { setStartServiceAutomatically(it) }
+            )
+        }
+    }
+}
+
+@Composable
+fun FreeDriveScreenWithoutPermission(
+    modifier: Modifier = Modifier,
+    onRequestPermission: () -> Unit = {},
 ) {
     Column(
         modifier = modifier,
@@ -207,22 +218,39 @@ fun LocationPermissionDeniedScreen(
         Text(
             text = stringResource(R.string.location_permission_denied_title),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = stringResource(R.string.location_permission_denied_description),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                onClick = { locationPermissionState.launchPermissionRequest() },
+                onClick = onRequestPermission,
             ) {
                 Text(
                     text = stringResource(R.string.request_permission),
                 )
             }
         }
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun FreeDriveScreenWithPermissionPreview() {
+    JayTheme {
+        FreeDriveScreenWithPermission()
+    }
+}
+@PreviewLightDarkTheme
+@Composable
+private fun FreeDriveScreenWithoutPermissionPreview() {
+    JayTheme {
+        FreeDriveScreenWithoutPermission()
     }
 }

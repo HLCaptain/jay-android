@@ -144,3 +144,9 @@ fun JayTheme(
         content = content
     )
 }
+
+val MaterialTheme.signatureBlue: Color
+    get() = Color(0xFF1B8FFF)
+
+val MaterialTheme.signaturePink: Color
+    get() = Color(0xFFFF63A0)

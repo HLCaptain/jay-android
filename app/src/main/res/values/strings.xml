@@ -74,9 +74,11 @@
     <string name="menu_item_icon">Menu Item Icon</string>
     <string name="free_drive">Free drive</string>
     <string name="bme">Budapest University of Technology and Economics</string>
-    <string name="phone_number">Phone number</string>
+    <string name="phone">Phone</string>
     <string name="name">Name</string>
     <string name="authenticate_to_view_account_information">Authenticate to view account information</string>
     <string name="show_profile_info">Show profile info</string>
     <string name="hidden_field_string">********</string>
+    <string name="searching">Searching</string>
+    <string name="loading">Loading</string>
 </resources>

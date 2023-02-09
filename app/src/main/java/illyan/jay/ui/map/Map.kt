@@ -47,7 +47,7 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.scalebar.scalebar
 import illyan.jay.R
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
 
 val BmeK = Place(
     latitude = 47.481491,

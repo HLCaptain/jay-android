@@ -16,23 +16,19 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.sensor
+package illyan.jay.ui.poi.model
 
-import android.content.Context
-import com.mapbox.android.core.location.LocationEngineProvider
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import android.os.Parcelable
+import com.mapbox.geojson.Point
+import com.mapbox.search.result.SearchResultType
+import kotlinx.parcelize.Parcelize
 
-@Module
-@InstallIn(SingletonComponent::class)
-object MapboxModule {
+@Parcelize
+data class Place(
+    val name: String? = null,
+    val type: SearchResultType? = null,
+    val longitude: Double,
+    val latitude: Double
+) : Parcelable
 
-    @Provides
-    @Singleton
-    fun provideLocationEngine(@ApplicationContext context: Context) =
-        LocationEngineProvider.getBestLocationEngine(context)
-}
+fun Place.toPoint() = Point.fromLngLat(longitude, latitude)

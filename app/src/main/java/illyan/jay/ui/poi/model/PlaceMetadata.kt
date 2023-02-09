@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,19 +16,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.navigation.model
+package illyan.jay.ui.poi.model
 
-import android.os.Parcelable
-import com.mapbox.geojson.Point
-import com.mapbox.search.result.SearchResultType
-import kotlinx.parcelize.Parcelize
+import com.google.android.gms.maps.model.LatLng
+import com.mapbox.search.result.SearchResult
+import illyan.jay.util.toLatLng
 
-@Parcelize
-data class Place(
-    val name: String? = null,
-    val type: SearchResultType? = null,
-    val longitude: Double,
-    val latitude: Double
-) : Parcelable
+data class PlaceMetadata(
+    val address: String? = null,
+    val categories: List<String> = emptyList(),
+    val latLng: LatLng? = null
+)
 
-fun Place.toPoint() = Point.fromLngLat(longitude, latitude)
+fun SearchResult.toUiModel() = PlaceMetadata(
+    address = address?.formattedAddress(),
+    categories = categories ?: emptyList(),
+    latLng = coordinate.toLatLng()
+)

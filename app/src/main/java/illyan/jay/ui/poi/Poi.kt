@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.navigation
+package illyan.jay.ui.poi
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -35,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +45,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.maps.model.LatLng
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
@@ -54,16 +55,20 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.home.tryFlyToLocation
+import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.navigation.model.Place
-import illyan.jay.ui.navigation.model.toPoint
+import illyan.jay.ui.poi.model.Place
+import illyan.jay.ui.poi.model.PlaceMetadata
+import illyan.jay.ui.poi.model.toPoint
 import illyan.jay.ui.sheet.SheetNavGraph
+import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.largeTextPlaceholder
 import illyan.jay.util.plus
 import illyan.jay.util.textPlaceholder
@@ -94,10 +99,10 @@ const val minZoom = 3.0
 @SheetNavGraph
 @Destination
 @Composable
-fun NavigationScreen(
+fun Poi(
     placeToNavigate: Place,
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
-    viewModel: NavigationViewModel = hiltViewModel(),
+    viewModel: PoiViewModel = hiltViewModel(),
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     DisposableEffect(Unit) {
@@ -105,15 +110,15 @@ fun NavigationScreen(
         onDispose { viewModel.dispose() }
     }
     var sheetHeightNotSet by remember { mutableStateOf(true) }
-    val place by viewModel.place.collectAsState()
-    val placeInfo by viewModel.placeInfo.collectAsState()
+    val place by viewModel.place.collectAsStateWithLifecycle()
+    val placeMetadata by viewModel.placeInfo.collectAsStateWithLifecycle()
     LaunchedEffect(sheetState.isAnimationRunning) {
         sheetHeightNotSet = sheetState.isAnimationRunning
     }
     val context = LocalContext.current
     DisposableEffect(
         place,
-        placeInfo
+        placeMetadata
     ) {
         if (place != null) {
             val pointAnnotationManager = mapView.value?.annotations?.createPointAnnotationManager()
@@ -165,56 +170,59 @@ fun NavigationScreen(
             .padding(verticalPadding)
             .fillMaxWidth()
     ) {
-        PlaceInfoScreen(
+        val shouldShowAddress by viewModel.shouldShowAddress.collectAsStateWithLifecycle()
+        PoiScreen(
             modifier = Modifier.fillMaxWidth(),
-            viewModel = viewModel
+            placeMetadata = placeMetadata,
+            place = place,
+            shouldShowAddress = shouldShowAddress,
+            isLoading = placeMetadata == null,
         )
     }
 }
 
 @Composable
-fun PlaceInfoScreen(
+fun PoiScreen(
     modifier: Modifier = Modifier,
-    viewModel: NavigationViewModel = hiltViewModel(),
+    placeMetadata: PlaceMetadata? = null,
+    place: Place? = null,
+    shouldShowAddress: Boolean = true,
+    isLoading: Boolean = false,
 ) {
-    val placeInfo by viewModel.placeInfo.collectAsState()
-    val place by viewModel.place.collectAsState()
-    val shouldShowAddress by viewModel.shouldShowAddress.collectAsState()
-    val isLoading = placeInfo == null
-    val horizontalPadding = DefaultScreenOnSheetPaddingHorizontal + PaddingValues(
-        start = 2.dp,
-        end = 2.dp,
-    )
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val horizontalPadding = DefaultScreenOnSheetPaddingHorizontal + PaddingValues(
+            start = 2.dp,
+            end = 2.dp,
+        )
         Text(
             modifier = Modifier
                 .padding(horizontalPadding)
                 .largeTextPlaceholder(place == null),
             text = place?.name ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         AnimatedVisibility(
             modifier = Modifier
                 .padding(horizontalPadding)
                 .textPlaceholder(isLoading),
-            visible = shouldShowAddress && placeInfo?.address != null
+            visible = shouldShowAddress && placeMetadata?.address != null
         ) {
             Text(
-                text = placeInfo?.address?.formattedAddress() ?: stringResource(R.string.unknown),
-                color = MaterialTheme.colorScheme.onBackground,
+                text = placeMetadata?.address ?: stringResource(R.string.unknown),
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
-        AnimatedVisibility(visible = !placeInfo?.categories.isNullOrEmpty()) {
+        AnimatedVisibility(visible = !placeMetadata?.categories.isNullOrEmpty()) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = horizontalPadding
             ) {
-                items(placeInfo?.categories ?: emptyList()) {
+                items(placeMetadata?.categories ?: emptyList()) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -239,19 +247,36 @@ fun PlaceInfoScreen(
             modifier = Modifier
                 .padding(horizontalPadding)
                 .textPlaceholder(isLoading),
-            text = placeInfo?.coordinate?.run {
-                latitude()
+            text = placeMetadata?.latLng?.run {
+                latitude
                     .toBigDecimal()
                     .setScale(6, RoundingMode.HALF_UP)
                     .toString() +
                         " " +
-                        longitude()
+                        longitude
                             .toBigDecimal()
                             .setScale(6, RoundingMode.HALF_UP)
                             .toString()
             } ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun PoiScreenPreview() {
+    JayTheme {
+        PoiScreen(
+            modifier = Modifier.fillMaxWidth(),
+            place = BmeK,
+            shouldShowAddress = true,
+            placeMetadata = PlaceMetadata(
+                categories = listOf("School", "University", "Historical"),
+                latLng = LatLng(BmeK.latitude, BmeK.longitude),
+                address = "Budapest, XI. District, BME K Épület"
+            )
         )
     }
 }

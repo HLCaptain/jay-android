@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -38,7 +38,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.ui.NavGraphs
-import illyan.jay.ui.destinations.NavigationScreenDestination
+import illyan.jay.ui.destinations.PoiDestination
 
 @RootNavGraph
 @NavGraph
@@ -58,7 +58,7 @@ fun SheetScreen(
     DisposableEffect(Unit) {
         viewModel.loadReceiver {
             destinationsNavigator.navigate(
-                NavigationScreenDestination(it)
+                PoiDestination(it)
             )
         }
         onDispose { viewModel.dispose() }

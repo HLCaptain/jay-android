@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.login
 
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,81 +39,104 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import illyan.jay.MainActivity
 import illyan.jay.R
+import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.theme.JayTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginDialog(
     isDialogOpen: Boolean = true,
     onDialogClosed: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel(),
-    context: Context = LocalContext.current,
 ) {
-    val isUserSignedIn by viewModel.isUserSignedIn.collectAsState()
+    val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     LaunchedEffect(isUserSignedIn) {
         if (isUserSignedIn) onDialogClosed()
     }
     if (isDialogOpen) {
-        AlertDialog(
-            onDismissRequest = { onDialogClosed() },
-            title = { Text(text = stringResource(R.string.login_to_jay)) },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { viewModel.signInViaGoogle((context as MainActivity)) }) {
-                        Text(text = stringResource(R.string.google_sign_in))
-                    }
-                    // TODO: make login via email/password combo
-                    var email by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        value = email,
-                        enabled = false,
-                        onValueChange = {
-                            email = it
-                        },
-                        label = {
-                            Text(text = stringResource(R.string.email))
-                        }
-                    )
-                    var password by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        value = password,
-                        enabled = false,
-                        onValueChange = {
-                            password = it
-                        },
-                        label = {
-                            Text(text = stringResource(R.string.password))
-                        }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        // TODO: Login via email/password
-                    },
-                    enabled = false,
-                ) {
-                    Text(text = stringResource(R.string.login))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    onDialogClosed()
-                }) {
-                    Text(text = stringResource(R.string.cancel))
-                }
-            }
+        LoginDialogScreen(
+            onDialogClosed = onDialogClosed,
+            signInViaGoogle = { viewModel.signInViaGoogle(context as MainActivity) }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginDialogScreen(
+    onDialogClosed: () -> Unit = {},
+    signInViaGoogle: () -> Unit = {},
+) {
+    AlertDialog(
+        onDismissRequest = { onDialogClosed() },
+        title = { Text(text = stringResource(R.string.login_to_jay)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = signInViaGoogle
+                ) {
+                    Text(text = stringResource(R.string.google_sign_in))
+                }
+                // TODO: make login via email/password combo
+                var email by remember { mutableStateOf("") }
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = email,
+                    enabled = false,
+                    onValueChange = {
+                        email = it
+                    },
+                    label = {
+                        Text(text = stringResource(R.string.email))
+                    }
+                )
+                var password by remember { mutableStateOf("") }
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = password,
+                    enabled = false,
+                    onValueChange = {
+                        password = it
+                    },
+                    label = {
+                        Text(text = stringResource(R.string.password))
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    // TODO: Login via email/password
+                },
+                enabled = false,
+            ) {
+                Text(text = stringResource(R.string.login))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDialogClosed() }
+            ) {
+                Text(text = stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun PreviewLoginDialog() {
+    JayTheme {
+        LoginDialogScreen()
     }
 }

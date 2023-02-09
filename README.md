@@ -3,7 +3,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=HLCaptain_jay-android&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=HLCaptain_jay-android)
 
 <p align="center">
-<img alt="Jay app's icon" src="assets/JayIcon.png" width="40%"/>
+<img alt="Jay app's icon" src="assets/JayIcon.png" width="20%"/>
 </p>
 
 In short, Jay is providing data to decide on local problems and in the transportation field. Jay should be easy to use and available to have as much impact as possible.

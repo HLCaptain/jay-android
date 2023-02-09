@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.navigation
+package illyan.jay.ui.poi
 
 import android.content.IntentFilter
 import android.os.Build
@@ -33,7 +33,8 @@ import com.mapbox.search.result.SearchResultType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.SearchInteractor
 import illyan.jay.service.BaseReceiver
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
+import illyan.jay.ui.poi.model.toUiModel
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
 import kotlinx.collections.immutable.persistentHashMapOf
@@ -47,7 +48,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
-class NavigationViewModel @Inject constructor(
+class PoiViewModel @Inject constructor(
     private val localBroadcastManager: LocalBroadcastManager,
     private val searchInteractor: SearchInteractor
 ) : ViewModel() {
@@ -65,7 +66,7 @@ class NavigationViewModel @Inject constructor(
         _places
     ) { infoForPlace, places ->
         places.lastOrNull()?.let { lastPlace ->
-            infoForPlace[lastPlace]
+            infoForPlace[lastPlace]?.toUiModel()
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 

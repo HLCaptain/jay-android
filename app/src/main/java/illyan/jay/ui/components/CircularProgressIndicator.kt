@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -30,6 +30,26 @@ fun SmallCircularProgressIndicator(
 ) {
     CircularProgressIndicator(
         modifier = modifier.size(16.dp),
+        strokeWidth = 2.dp
+    )
+}
+
+@Composable
+fun MediumCircularProgressIndicator(
+    modifier: Modifier = Modifier
+) {
+    CircularProgressIndicator(
+        modifier = modifier.size(24.dp),
+        strokeWidth = 2.dp
+    )
+}
+
+@Composable
+fun LargeCircularProgressIndicator(
+    modifier: Modifier = Modifier
+) {
+    CircularProgressIndicator(
+        modifier = modifier.size(32.dp),
         strokeWidth = 2.dp
     )
 }

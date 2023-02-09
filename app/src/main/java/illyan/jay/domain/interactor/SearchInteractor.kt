@@ -39,7 +39,7 @@ import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import illyan.jay.service.BaseReceiver
 import illyan.jay.ui.home.sendBroadcast
-import illyan.jay.ui.navigation.model.Place
+import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.ActionSearchSelected
 import illyan.jay.ui.sheet.SheetViewModel.Companion.ACTION_QUERY_PLACE
@@ -54,7 +54,7 @@ class SearchInteractor @Inject constructor(
     private val localBroadcastManager: LocalBroadcastManager,
     private val searchEngine: SearchEngine,
     private val historyDataProvider: HistoryDataProvider,
-    private val favoritesDataProvider: FavoritesDataProvider
+    private val favoritesDataProvider: FavoritesDataProvider,
 ) {
     private val _historyRecords = MutableStateFlow(listOf<HistoryRecord>())
     val historyRecords = _historyRecords.asStateFlow()
@@ -65,6 +65,7 @@ class SearchInteractor @Inject constructor(
     private val historyDataChangedListener =
         object : LocalDataProvider.OnDataChangedListener<HistoryRecord> {
             override fun onDataChanged(newData: List<HistoryRecord>) {
+                Timber.v("History records size = ${newData.size}")
                 _historyRecords.value = newData
             }
         }
@@ -72,6 +73,7 @@ class SearchInteractor @Inject constructor(
     private val favoritesDataChangedListener =
         object : LocalDataProvider.OnDataChangedListener<FavoriteRecord> {
             override fun onDataChanged(newData: List<FavoriteRecord>) {
+                Timber.v("Favorite records size = ${newData.size}")
                 _favoriteRecords.value = newData
             }
         }
@@ -111,6 +113,80 @@ class SearchInteractor @Inject constructor(
         )
     }
 
+    fun addRecordToFavorites(
+        favoriteRecord: FavoriteRecord,
+        onError: (Exception) -> Unit = { Timber.e(it) },
+        onComplete: () -> Unit = {},
+    ) = addRecordsToFavorites(
+        favoriteRecords = listOf(favoriteRecord),
+        onError = onError,
+        onComplete = onComplete,
+    )
+
+    fun addRecordsToFavorites(
+        favoriteRecords: List<FavoriteRecord>,
+        onError: (Exception) -> Unit = { Timber.e(it) },
+        onComplete: () -> Unit = {},
+    ) {
+        Timber.i(
+            "Adding ${favoriteRecords.size} records to favorites with IDs: ${
+                favoriteRecords.joinToString {
+                    it.id.take(
+                        4
+                    )
+                }
+            }"
+        )
+        favoritesDataProvider.upsertAll(
+            records = favoriteRecords,
+            callback = object : CompletionCallback<Unit> {
+                override fun onComplete(result: Unit) {
+                    Timber.i("Successfully added ${favoriteRecords.size} records to favorites")
+                    onComplete()
+                }
+
+                override fun onError(e: Exception) = onError(e)
+            }
+        )
+    }
+
+    fun removeRecordFromFavorites(
+        id: String,
+        onError: (Exception) -> Unit = { Timber.e(it) },
+        onComplete: (Boolean) -> Unit = {},
+    ) {
+        Timber.i("Removing ${id.take(4)} record from favorites")
+        favoritesDataProvider.remove(
+            id = id,
+            callback = object : CompletionCallback<Boolean> {
+                override fun onComplete(result: Boolean) {
+                    if (result) {
+                        Timber.i("Successfully removed ${id.take(4)} record from favorites")
+                    } else {
+                        Timber.i("Not removed ${id.take(4)} record from favorites")
+                    }
+                    onComplete(result)
+                }
+
+                override fun onError(e: Exception) = onError(e)
+            }
+        )
+    }
+
+    fun removeRecordsFromFavorites(
+        ids: List<String>,
+        onError: (Exception) -> Unit = { Timber.e(it) },
+        onComplete: (Boolean) -> Unit = {},
+    ) {
+        ids.forEach {
+            removeRecordFromFavorites(
+                id = it,
+                onError = onError,
+                onComplete = onComplete
+            )
+        }
+    }
+
     fun navigateTo(searchSuggestion: SearchSuggestion) {
         select(
             searchSuggestion,
@@ -121,7 +197,7 @@ class SearchInteractor @Inject constructor(
     }
 
     fun navigateTo(searchResult: SearchResult) {
-        searchResult.coordinate?.let {
+        searchResult.coordinate.let {
             navigateTo(
                 Place(
                     name = searchResult.name,
@@ -134,7 +210,7 @@ class SearchInteractor @Inject constructor(
     }
 
     fun navigateTo(record: IndexableRecord) {
-        record.coordinate?.let {
+        record.coordinate.let {
             navigateTo(
                 Place(
                     name = record.name,
@@ -160,111 +236,99 @@ class SearchInteractor @Inject constructor(
     }
 
     fun select(
-        suggestionSelected: SearchSuggestion,
+        selectedSuggestion: SearchSuggestion,
         onResult: (
             suggestion: SearchSuggestion,
             result: SearchResult,
-            responseInfo: ResponseInfo
+            responseInfo: ResponseInfo,
         ) -> Unit,
         onCategoryResult: (
             suggestion: SearchSuggestion,
             results: List<SearchResult>,
-            responseInfo: ResponseInfo
+            responseInfo: ResponseInfo,
         ) -> Unit = { suggestion, results, responseInfo ->
             results.firstOrNull()?.let {
                 onResult(suggestion, it, responseInfo)
             }
         },
-        onError: (e: Exception) -> Unit = { e ->
-            Timber.e(e, "Error selecting suggestion \"${suggestionSelected.name}\": ${e.message}")
+        onError: (Exception) -> Unit = {
+            Timber.e(it, "Error selecting suggestion \"${selectedSuggestion.name}\": ${it.message}")
         },
         onSuggestions: (
             suggestions: List<SearchSuggestion>,
-            responseInfo: ResponseInfo
-        ) -> Unit = { _, _ -> }
+            responseInfo: ResponseInfo,
+        ) -> Unit = { _, _ -> },
     ) {
         searchEngine.select(
-            suggestionSelected,
+            selectedSuggestion,
             object : SearchSelectionCallback {
                 override fun onCategoryResult(
                     suggestion: SearchSuggestion,
                     results: List<SearchResult>,
-                    responseInfo: ResponseInfo
-                ) {
-                    onCategoryResult(suggestion, results, responseInfo)
-                }
+                    responseInfo: ResponseInfo,
+                ) = onCategoryResult(suggestion, results, responseInfo)
 
-                override fun onError(e: Exception) {
-                    onError(e)
-                }
-
+                override fun onError(e: Exception) = onError(e)
                 override fun onResult(
                     suggestion: SearchSuggestion,
                     result: SearchResult,
-                    responseInfo: ResponseInfo
-                ) {
-                    onResult(suggestion, result, responseInfo)
-                }
+                    responseInfo: ResponseInfo,
+                ) = onResult(suggestion, result, responseInfo)
 
                 override fun onSuggestions(
                     suggestions: List<SearchSuggestion>,
-                    responseInfo: ResponseInfo
-                ) {
-                    onSuggestions(suggestions, responseInfo)
-                }
+                    responseInfo: ResponseInfo,
+                ) = onSuggestions(suggestions, responseInfo)
             }
         )
     }
 
     fun search(
         reverseGeoOptions: ReverseGeoOptions,
-        onError: (e: Exception) -> Unit = { e ->
-            Timber.e("Error searching for point ${reverseGeoOptions.center}: ${e.message}")
+        onError: (Exception) -> Unit = {
+            Timber.e(it, "Error searching for point ${reverseGeoOptions.center}: ${it.message}")
         },
         onSuggestions: (
             results: List<SearchResult>,
-            responseInfo: ResponseInfo
-        ) -> Unit
+            responseInfo: ResponseInfo,
+        ) -> Unit,
     ) {
-        searchEngine.search(
-            options = reverseGeoOptions,
-            callback = object : SearchCallback {
-                override fun onError(e: Exception) {
-                    onError(e)
+        try {
+            searchEngine.search(
+                options = reverseGeoOptions,
+                callback = object : SearchCallback {
+                    override fun onError(e: Exception) = onError(e)
+                    override fun onResults(
+                        results: List<SearchResult>,
+                        responseInfo: ResponseInfo,
+                    ) = onSuggestions(results, responseInfo)
                 }
-
-                override fun onResults(results: List<SearchResult>, responseInfo: ResponseInfo) {
-                    onSuggestions(results, responseInfo)
-                }
-            }
-        )
+            )
+        } catch (e: Exception) {
+            onError(e)
+        }
     }
 
     fun search(
         query: String,
         options: SearchOptions = SearchOptions(),
-        onError: (e: Exception) -> Unit = { e ->
-            Timber.e("Error searching for query \"$query\": ${e.message}")
+        onError: (Exception) -> Unit = {
+            Timber.e(it, "Error searching for query \"$query\": ${it.message}")
         },
         onSuggestions: (
             suggestions: List<SearchSuggestion>,
-            responseInfo: ResponseInfo
-        ) -> Unit
+            responseInfo: ResponseInfo,
+        ) -> Unit,
     ) {
         searchEngine.search(
             query = query,
             options = options,
             object : SearchSuggestionsCallback {
-                override fun onError(e: Exception) {
-                    onError(e)
-                }
-
+                override fun onError(e: Exception) = onError(e)
                 override fun onSuggestions(
                     suggestions: List<SearchSuggestion>,
-                    responseInfo: ResponseInfo
-                ) {
-                    onSuggestions(suggestions, responseInfo)
-                }
+                    responseInfo: ResponseInfo,
+                ) = onSuggestions(suggestions, responseInfo)
             }
         )
     }
@@ -287,3 +351,5 @@ class SearchInteractor @Inject constructor(
         localBroadcastManager.unregisterReceiver(listener)
     }
 }
+
+
