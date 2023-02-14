@@ -43,6 +43,7 @@ data class UiSession(
 ) {
     val isOwned get() = !ownerUUID.isNullOrBlank()
     val isNotOwned get() = !isOwned
+    val canDelete get() = isLocal || isSynced
 }
 
 fun DomainSession.toUiModel(

@@ -75,6 +75,10 @@ interface SessionDao {
     fun getSessions(ownerUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
+    @Query("SELECT * FROM session WHERE uuid IN (:sessionUUIDs)")
+    fun getSessions(sessionUUIDs: List<String>): Flow<List<RoomSession>>
+
+    @Transaction
     @Query("SELECT uuid FROM session WHERE ownerUUID IS :ownerUUID OR ownerUUID IS NULL")
     fun getSessionUUIDs(ownerUUID: String? = null): Flow<List<String>>
 

@@ -22,6 +22,8 @@ import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,7 +33,6 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.SyncAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -88,12 +90,14 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.session.SessionDetailsList
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.signatureBlue
 import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
 import illyan.jay.util.plus
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
 import java.math.RoundingMode
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -127,10 +131,9 @@ fun Sessions(
     val sessionUUIDs by viewModel.allSessionUUIDs.collectAsStateWithLifecycle()
     val syncedSessionsLoading by viewModel.syncedSessionsLoading.collectAsStateWithLifecycle()
     val localSessionsLoading by viewModel.localSessionsLoading.collectAsStateWithLifecycle()
-    LaunchedEffect(signedInUser) {
-        viewModel.loadLocalSessions()
-        viewModel.loadCloudSessions(context as Activity)
-        viewModel.loadSessionStateFlows()
+    val isSystemInDarkTheme = isSystemInDarkTheme()
+    LaunchedEffect(signedInUser, isSystemInDarkTheme) {
+        viewModel.reloadData(context as Activity)
     }
     SessionsScreen(
         isUserSignedIn = isUserSignedIn,
@@ -144,9 +147,12 @@ fun Sessions(
         sessionUUIDs = sessionUUIDs,
         ownSession = viewModel::ownSession,
         syncSessions = viewModel::syncSessions,
+        syncSession = viewModel::syncSession,
+        deleteSession = viewModel::deleteSession,
         ownAllSessions = viewModel::ownAllSessions,
         deleteAllSyncedData = viewModel::deleteAllSyncedData,
         deleteSessionsLocally = viewModel::deleteSessionsLocally,
+        deleteSessionFromCloud = viewModel::deleteSessionFromCloud,
         onSessionSelected = {
             destinationsNavigator.navigate(
                 SessionScreenDestination(
@@ -172,12 +178,21 @@ fun SessionsScreen(
     sessionUUIDs: List<String> = emptyList(),
     ownSession: (String) -> Unit = {},
     syncSessions: () -> Unit = {},
+    syncSession: (String) -> Unit = {},
+    deleteSession: (String) -> Unit = {},
     ownAllSessions: () -> Unit = {},
     deleteAllSyncedData: () -> Unit = {},
     deleteSessionsLocally: () -> Unit = {},
+    deleteSessionFromCloud: (String) -> Unit = {},
     onSessionSelected: (String) -> Unit = {},
     disposeSessionStateFlow: (String) -> Unit = {},
-    getSessionStateFlow: @Composable (String) -> State<UiSession?> = { remember { mutableStateOf(null) } }
+    getSessionStateFlow: @Composable (String) -> State<UiSession?> = {
+        remember {
+            mutableStateOf(
+                null
+            )
+        }
+    },
 ) {
     val showButtons = isUserSignedIn &&
             (canSyncSessions || areThereSyncedSessions || areThereSessionsNotOwned) ||
@@ -229,6 +244,9 @@ fun SessionsScreen(
                 isUserSignedIn = isUserSignedIn,
                 sessionUUIDs = sessionUUIDs,
                 ownSession = ownSession,
+                syncSession = syncSession,
+                deleteSession = deleteSession,
+                deleteSessionFromCloud = deleteSessionFromCloud,
                 showNoSessionPrompt = sessionUUIDs.isEmpty() && !isLoading,
                 loadingSessionsFromCloud = isLoadingSessionsFromCloud,
                 loadingSessionsLocally = isLoadingSessionsLocally,
@@ -265,7 +283,8 @@ private fun generateUiSessions(number: Int): List<UiSession> {
     return List(number) {
         val now = ZonedDateTime.now()
         val startTime = now.minusSeconds(Random.nextLong(5000, 10000))
-        val endTime = if (Random.nextInt(3) == 0) null else now.minusSeconds(Random.nextLong(1000, 4000))
+        val endTime =
+            if (Random.nextInt(3) == 0) null else now.minusSeconds(Random.nextLong(1000, 4000))
         val ownerUUID = UUID.randomUUID().toString()
         UiSession(
             uuid = UUID.randomUUID().toString(),
@@ -278,9 +297,13 @@ private fun generateUiSessions(number: Int): List<UiSession> {
             startLocationName = "City number $it",
             endLocationName = "City number ${Random.nextInt(it + 1)}",
             totalDistance = Random.nextDouble(100.0, 10000.0),
-            duration = ((endTime?.toEpochSecond() ?: now.toEpochSecond()) - startTime.toEpochSecond()).seconds,
+            duration = ((endTime?.toEpochSecond()
+                ?: now.toEpochSecond()) - startTime.toEpochSecond()).seconds,
             endCoordinate = LatLng(Random.nextDouble(-90.0, 90.0), Random.nextDouble(-90.0, 90.0)),
-            startCoordinate = LatLng(Random.nextDouble(-90.0, 90.0), Random.nextDouble(-90.0, 90.0)),
+            startCoordinate = LatLng(
+                Random.nextDouble(-90.0, 90.0),
+                Random.nextDouble(-90.0, 90.0)
+            ),
         )
     }
 }
@@ -373,14 +396,23 @@ fun SessionsList(
     loadingSessionsLocally: Boolean = false,
     sessionUUIDs: List<String> = emptyList(),
     showNoSessionPrompt: Boolean = sessionUUIDs.isEmpty() && !loadingSessionsFromCloud && !loadingSessionsLocally,
-    ownSession: (String) -> Unit,
+    ownSession: (String) -> Unit = {},
+    deleteSession: (String) -> Unit = {},
+    deleteSessionFromCloud: (String) -> Unit = {},
+    syncSession: (String) -> Unit = {},
     disposeSessionStateFlow: (String) -> Unit = {},
-    getSessionStateFlow: @Composable (String) -> State<UiSession?> = { remember { mutableStateOf(null) } },
+    getSessionStateFlow: @Composable (String) -> State<UiSession?> = {
+        remember {
+            mutableStateOf(
+                null
+            )
+        }
+    },
     emptyListPlaceholder: @Composable () -> Unit = {
         AnimatedVisibility(visible = showNoSessionPrompt) {
             NoSessionPrompt(modifier = Modifier.padding(start = MenuItemPadding * 2, bottom = 8.dp))
         }
-    }
+    },
 ) {
     val lazyListState = rememberLazyListState()
     val layoutDirection = LocalLayoutDirection.current
@@ -450,7 +482,10 @@ fun SessionsList(
                         .fillMaxWidth()
                         .cardPlaceholder(isPlaceholderVisible),
                     session = session,
-                    onClick = onSessionSelected
+                    onClick = onSessionSelected,
+                    onSync = { syncSession(it) },
+                    onDelete = { deleteSession(it) },
+                    onDeleteFromCloud = { deleteSessionFromCloud(it) }
                 ) {
                     OwnButton(
                         visible = session != null && isUserSignedIn && session!!.isNotOwned,
@@ -464,7 +499,7 @@ fun SessionsList(
 
 @Composable
 fun NoSessionPrompt(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier,
@@ -510,7 +545,7 @@ fun OwnButton(
 @Composable
 fun SessionLoadingIndicator(
     modifier: Modifier = Modifier,
-    text: String
+    text: String,
 ) {
     Column(
         modifier = modifier,
@@ -542,10 +577,50 @@ fun SessionCard(
     modifier: Modifier = Modifier,
     session: UiSession? = null,
     onClick: (String) -> Unit = {},
+    onDelete: () -> Unit = {},
+    onDeleteFromCloud: () -> Unit = {},
+    onSync: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
+    val deleteFromCloudAction = SwipeAction(
+        icon = {
+            Icon(
+                modifier = Modifier.padding(horizontal = 32.dp),
+                imageVector = Icons.Rounded.CloudOff,
+                contentDescription = "",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        background = if (session?.isSynced == true) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surface,
+        onSwipe = onDeleteFromCloud
+    )
+    val deleteAction = SwipeAction(
+        icon = {
+            Icon(
+                modifier = Modifier.padding(horizontal = 32.dp),
+                imageVector = Icons.Rounded.Delete,
+                contentDescription = "",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        background = if (session?.canDelete == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surface,
+        onSwipe = onDelete,
+    )
+    val syncAction = SwipeAction(
+        icon = {
+            Icon(
+                modifier = Modifier.padding(horizontal = 32.dp),
+                imageVector = Icons.Rounded.SyncAlt,
+                contentDescription = "",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        background = if (session?.isSynced == false) MaterialTheme.signatureBlue else MaterialTheme.colorScheme.surface,
+        onSwipe = if (session?.isSynced == false) onSync else null ?: {}
+    )
+    val containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
     val cardColors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        containerColor = containerColor,
         contentColor = MaterialTheme.colorScheme.onSurface
     )
     Card(
@@ -553,110 +628,187 @@ fun SessionCard(
         onClick = { session?.let { onClick(it.uuid) } },
         colors = cardColors,
     ) {
-        Column(
-            modifier = Modifier.padding(
-                start = 8.dp,
-                end = 6.dp,
-                top = 4.dp,
-                bottom = 4.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        SwipeableActionsBox(
+            startActions = listOf(syncAction),
+            endActions = listOf(deleteFromCloudAction, deleteAction),
+            backgroundUntilSwipeThreshold = containerColor,
+            swipeThreshold = 80.dp,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(containerColor)
             ) {
-                LazyRow(
+                Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        .padding(
+                            start = 8.dp,
+                            end = 6.dp,
+                            top = 4.dp,
+                            bottom = 4.dp
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    item {
-                        Crossfade(
-                            modifier = Modifier.animateContentSize(),
-                            targetState = session?.startLocationName
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+//                        LazyRow(
+//                            modifier = Modifier
+//                                .weight(1f)
+//                                .padding(horizontal = 8.dp),
+//                            verticalAlignment = Alignment.CenterVertically,
+//                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+//                        ) {
+//                            item {
+//                                Crossfade(
+//                                    modifier = Modifier.animateContentSize(),
+//                                    targetState = session?.startLocationName
+//                                ) {
+//                                    Text(
+//                                        text = it ?: stringResource(R.string.unknown),
+//                                        style = MaterialTheme.typography.titleLarge,
+//                                        color = MaterialTheme.colorScheme.onSurface,
+//                                    )
+//                                }
+//                            }
+//                            item {
+//                                Icon(
+//                                    imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
+//                                    tint = MaterialTheme.colorScheme.onSurface,
+//                                )
+//                            }
+//                            item {
+//                                Crossfade(
+//                                    modifier = Modifier.animateContentSize(),
+//                                    targetState = (session?.endDateTime == null) to session?.endLocationName
+//                                ) {
+//                                    if (it.first) {
+//                                        Icon(
+//                                            imageVector = Icons.Rounded.MoreHoriz,
+//                                            contentDescription = "",
+//                                            tint = MaterialTheme.colorScheme.onSurface,
+//                                        )
+//                                    } else {
+//                                        Text(
+//                                            text = it.second ?: stringResource(R.string.unknown),
+//                                            style = MaterialTheme.typography.titleLarge,
+//                                            color = MaterialTheme.colorScheme.onSurface,
+//                                        )
+//                                    }
+//                                }
+//                            }
+//                        }
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(
-                                text = it ?: stringResource(R.string.unknown),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                    item {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                    item {
-                        Crossfade(
-                            modifier = Modifier.animateContentSize(),
-                            targetState = (session?.endDateTime == null) to session?.endLocationName
-                        ) {
-                            if (it.first) {
-                                Icon(
-                                    imageVector = Icons.Rounded.MoreHoriz, contentDescription = "",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            } else {
+                            Crossfade(
+                                modifier = Modifier.animateContentSize(),
+                                targetState = session?.startLocationName
+                            ) {
                                 Text(
-                                    text = it.second ?: stringResource(R.string.unknown),
+                                    text = it ?: stringResource(R.string.unknown),
                                     style = MaterialTheme.typography.titleLarge,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Crossfade(
+                                modifier = Modifier.animateContentSize(),
+                                targetState = (session?.endDateTime == null) to session?.endLocationName
+                            ) {
+                                if (it.first) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.MoreHoriz,
+                                        contentDescription = "",
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                } else {
+                                    Text(
+                                        text = it.second ?: stringResource(R.string.unknown),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                            }
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                AnimatedVisibility(visible = session?.isLocal == true) {
+                                    Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
+                                }
+                                AnimatedVisibility(visible = session?.isSynced == true) {
+                                    Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
+                                }
+                                AnimatedVisibility(visible = session?.isNotOwned == true) {
+                                    Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
+                                }
+                            }
                         }
                     }
-                }
-                Row(
-                    horizontalArrangement = Arrangement.End
-                ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AnimatedVisibility(visible = session?.isLocal == true) {
-                            Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
-                        }
-                        AnimatedVisibility(visible = session?.isSynced == true) {
-                            Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
-                        }
-                        AnimatedVisibility(visible = session?.isNotOwned == true) {
-                            Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
-                        }
+                        SessionDetailsList(
+                            details = listOf(
+                                stringResource(R.string.distance) to if (session?.totalDistance == null) {
+                                    stringResource(R.string.unknown)
+                                } else {
+                                    "${
+                                        session.totalDistance
+                                            .div(1000)
+                                            .toBigDecimal()
+                                            .setScale(2, RoundingMode.FLOOR)
+                                    } " + stringResource(R.string.kilometers)
+                                },
+                                stringResource(R.string.duration) to (session?.duration?.format(
+                                    separator = " ",
+                                    second = stringResource(R.string.second_short),
+                                    minute = stringResource(R.string.minute_short),
+                                    hour = stringResource(R.string.hour_short),
+                                    day = stringResource(R.string.day_short)
+                                ) ?: stringResource(R.string.unknown))
+                            ),
+                        )
+                        content()
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SessionDetailsList(
+    details: List<Pair<String, String>> = emptyList()
+) {
+    Column {
+        details.forEach {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                SessionDetailsList(
-                    details = listOf(
-                        stringResource(R.string.distance) to if (session?.totalDistance == null) {
-                            stringResource(R.string.unknown)
-                        } else {
-                            "${
-                                session.totalDistance
-                                    .div(1000)
-                                    .toBigDecimal()
-                                    .setScale(2, RoundingMode.FLOOR)} " +
-                                    stringResource(R.string.kilometers)
-                        },
-                        stringResource(R.string.duration) to (session?.duration?.format(
-                            separator = " ",
-                            second = stringResource(R.string.second_short),
-                            minute = stringResource(R.string.minute_short),
-                            hour = stringResource(R.string.hour_short),
-                            day = stringResource(R.string.day_short)
-                        ) ?: stringResource(R.string.unknown))
-                    ),
+                Text(
+                    text = "${it.first}:",
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                content()
+                Text(
+                    text = it.second,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
     }
