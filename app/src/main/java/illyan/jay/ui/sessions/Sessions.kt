@@ -22,6 +22,7 @@ import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -187,11 +188,7 @@ fun SessionsScreen(
     onSessionSelected: (String) -> Unit = {},
     disposeSessionStateFlow: (String) -> Unit = {},
     getSessionStateFlow: @Composable (String) -> State<UiSession?> = {
-        remember {
-            mutableStateOf(
-                null
-            )
-        }
+        remember { mutableStateOf(null) }
     },
 ) {
     val showButtons = isUserSignedIn &&
@@ -386,6 +383,7 @@ fun SessionInteractionButton(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SessionsList(
     modifier: Modifier = Modifier,
@@ -469,7 +467,7 @@ fun SessionsList(
                     )
                 }
             }
-            items(sessionUUIDs) {
+            items(sessionUUIDs, key = { it }) {
                 val session by getSessionStateFlow(it)
                 DisposableEffect(Unit) {
                     onDispose {
@@ -480,7 +478,8 @@ fun SessionsList(
                 SessionCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .cardPlaceholder(isPlaceholderVisible),
+                        .cardPlaceholder(isPlaceholderVisible)
+                        .animateItemPlacement(),
                     session = session,
                     onClick = onSessionSelected,
                     onSync = { syncSession(it) },

@@ -31,6 +31,7 @@ import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
 import illyan.jay.util.sphericalPathLength
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,6 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -55,6 +57,10 @@ class SessionsViewModel @Inject constructor(
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<String, MutableStateFlow<UiSession?>>()
+
+    // FIXME: deleteRequestedOnSessions may be aware of sessions's sync state, so
+    //  they would only be present in this list, if their deletion is pending
+    private val deleteRequestedOnSessions = MutableStateFlow(persistentListOf<String>())
 
     private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
     val ownedLocalSessionUUIDs = _ownedLocalSessionUUIDs.asStateFlow()
@@ -114,7 +120,8 @@ class SessionsViewModel @Inject constructor(
         syncedSessions,
         ownedLocalSessionUUIDs,
         notOwnedSessionUUIDs,
-    ) { synced, ownedLocal, notOwnedLocal ->
+        deleteRequestedOnSessions,
+    ) { synced, ownedLocal, notOwnedLocal, deleting ->
         val sessions = mutableListOf<Pair<String, ZonedDateTime>>()
         sessions.addAll(synced.map { it.uuid to it.startDateTime })
         sessions.addAll(ownedLocal)
@@ -130,7 +137,8 @@ class SessionsViewModel @Inject constructor(
                 sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
             }
         }
-        sortedSessions
+        // Session is not being deleted
+        sortedSessions.filter { !deleting.contains(it) }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val noSessionsToShow = combine(
@@ -261,6 +269,7 @@ class SessionsViewModel @Inject constructor(
     }
 
     fun deleteSession(uuid: String) {
+        deleteRequestedOnSessions.getAndUpdate { it.add(uuid) }
         deleteSessionLocally(uuid)
         deleteSessionFromCloud(uuid)
     }
