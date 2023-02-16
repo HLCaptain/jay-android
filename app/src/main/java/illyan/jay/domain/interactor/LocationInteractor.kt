@@ -77,7 +77,7 @@ class LocationInteractor @Inject constructor(
      * @return location data flow for a particular session.
      */
     fun getLocations(sessionUUID: String): Flow<List<DomainLocation>> {
-        Timber.d("Trying to load path for session with ID from disk: $sessionUUID")
+        Timber.d("Trying to load path for session with ID from disk: ${sessionUUID.take(4)}")
         return locationDiskDataSource.getLocations(sessionUUID)
     }
 
