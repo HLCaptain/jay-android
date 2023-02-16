@@ -18,13 +18,7 @@
 
 package illyan.jay.data.network.model
 
-data class FirestoreUser(
-
-    val sessions: List<FirestoreSession> = emptyList(),
-    val userPreferences: FirestoreUserPreferences = FirestoreUserPreferences()
-) {
-    companion object {
-        const val CollectionName = "users"
-        const val FieldSessions = "sessions"
-    }
-}
+data class FirestoreUserWithUUID(
+    val uuid: String,
+    val firebaseUser: FirestoreUser
+)

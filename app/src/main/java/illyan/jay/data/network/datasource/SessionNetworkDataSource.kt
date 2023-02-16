@@ -18,27 +18,25 @@
 
 package illyan.jay.data.network.datasource
 
-import android.app.Activity
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.ktx.toObject
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.data.network.toDomainModel
-import illyan.jay.data.network.toHashMap
+import illyan.jay.data.network.toFirestoreModel
 import illyan.jay.data.network.toPaths
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -49,40 +47,20 @@ class SessionNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
     private val locationNetworkDataSource: LocationNetworkDataSource,
+    private val userNetworkDataSource: UserNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
-    fun getSessions(
-        activity: Activity? = null,
-        userUUID: String = authInteractor.userUUID.toString(),
-        listener: (List<DomainSession>?) -> Unit,
-    ): ListenerRegistration? {
-        return if (authInteractor.isUserSignedIn) {
-            Timber.d("Connecting snapshot listener to Firebase to get session data for user ${userUUID.take(4)}")
-            val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
-                if (error != null) {
-                    Timber.e(error, "Error while getting session data: ${error.message}")
-                    listener(null as List<DomainSession>?)
-                } else {
-                    val user = snapshot?.toObject<FirestoreUser>()
-                    val domainSessions = user?.sessions?.map { it.toDomainModel(userUUID) } ?: emptyList()
-                    Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
-                    listener(domainSessions)
-                }
+    val sessions: StateFlow<List<DomainSession>?> get() = userNetworkDataSource.user
+        .map { user ->
+            if (user != null) {
+                val domainSessions = user.firebaseUser.sessions.map { it.toDomainModel(authInteractor.userUUID!!) }
+                Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
+                domainSessions
+            } else {
+                null
             }
-            firestore
-                .collection(FirestoreUser.CollectionName)
-                .document(userUUID)
-                .run { if (activity != null)
-                    addSnapshotListener(activity, snapshotListener)
-                else
-                    addSnapshotListener(snapshotListener)
-                }
-        } else {
-            Timber.d("User not signed in, returning with null")
-            listener(null as List<DomainSession>?)
-            null
         }
-    }
+        .stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
 
     fun deleteSession(
         sessionUUID: String,
@@ -96,31 +74,24 @@ class SessionNetworkDataSource @Inject constructor(
     fun deleteSessions(
         sessionUUIDs: List<String>,
         userUUID: String = authInteractor.userUUID.toString(),
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while deleting sessions for user: ${it.message}") },
         onSuccess: () -> Unit = { Timber.i("Deleted ${sessionUUIDs.size} sessions") }
     ) {
         if (!authInteractor.isUserSignedIn || sessionUUIDs.isEmpty()) return
-        val deletedSessions = MutableStateFlow(false)
-        val userRef = firestore
-            .collection(FirestoreUser.CollectionName)
-            .document(userUUID)
         Timber.i("Deleting ${sessionUUIDs.size} sessions for user ${userUUID.take(4)} from the cloud")
-        val userListener = userRef.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                Timber.e(error, "Error while deleting sessions for user: ${error.message}")
-            } else {
-                val user = snapshot?.toObject<FirestoreUser>()
-                val domainSessions = user?.sessions?.map { it.toDomainModel(userUUID) } ?: emptyList()
-                val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
-                deleteSessions(sessionsToDelete) {
-                    deletedSessions.value = true
-                    onSuccess()
-                }
-            }
-        }
         coroutineScopeIO.launch {
-            deletedSessions.first {
-                if (it) userListener.remove()
-                it
+            userNetworkDataSource.user.first { user ->
+                user?.let {
+                    val domainSessions = user.firebaseUser.sessions.map { it.toDomainModel(userUUID) }
+                    val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
+                    deleteSessions(
+                        domainSessions = sessionsToDelete,
+                        userUUID = userUUID,
+                        onFailure = onFailure,
+                        onSuccess = onSuccess
+                    )
+                }
+                user != null
             }
         }
     }
@@ -128,6 +99,8 @@ class SessionNetworkDataSource @Inject constructor(
     fun deleteSessions(
         domainSessions: List<DomainSession>,
         userUUID: String = authInteractor.userUUID.toString(),
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Operation canceled") },
         onSuccess: () -> Unit = { Timber.i("Deleted ${domainSessions.size} sessions") }
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
@@ -138,15 +111,15 @@ class SessionNetworkDataSource @Inject constructor(
         firestore.runBatch { batch ->
             batch.set(
                 userRef,
-                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayRemove(*domainSessions.map { it.toHashMap() }.toTypedArray())),
+                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayRemove(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),
                 SetOptions.merge()
             )
         }.addOnSuccessListener {
             onSuccess()
         }.addOnFailureListener { exception ->
-            Timber.e(exception, "Error: ${exception.message}")
+            onFailure(exception)
         }.addOnCanceledListener {
-            Timber.i("Operation canceled")
+            onCancel()
         }
     }
 
@@ -180,11 +153,10 @@ class SessionNetworkDataSource @Inject constructor(
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
-
         firestore.runBatch { batch ->
             batch.set(
                 userRef,
-                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayUnion(*domainSessions.map { it.toHashMap() }.toTypedArray())),
+                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayUnion(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),
                 SetOptions.merge()
             )
         }.addOnSuccessListener {
@@ -193,33 +165,6 @@ class SessionNetworkDataSource @Inject constructor(
             Timber.e(exception, "Error: ${exception.message}")
         }.addOnCanceledListener {
             Timber.i("Operation canceled")
-        }
-    }
-
-    fun deleteUserData() {
-        if (!authInteractor.isUserSignedIn) return
-        val isUserDeleted = MutableStateFlow(false)
-        val userSnapshotListener = firestore
-            .collection(FirestoreUser.CollectionName)
-            .document(authInteractor.userUUID!!)
-            .addSnapshotListener { userSnapshot, userError ->
-                if (userError != null) {
-                    Timber.e(userError, "Error while deleting user data: ${userError.message}")
-                } else if (!isUserDeleted.value) {
-                    userSnapshot?.let {
-                        it.reference.delete()
-                        isUserDeleted.value = true
-                    }
-                }
-            }
-        coroutineScopeIO.launch {
-            isUserDeleted.first {
-                if (it) {
-                    Timber.d("Removing user listener from Firestore")
-                    userSnapshotListener.remove()
-                }
-                it
-            }
         }
     }
 }

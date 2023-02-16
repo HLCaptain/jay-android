@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.sessions
 
-import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -162,11 +161,11 @@ class SessionsViewModel @Inject constructor(
         synced.size < owned.size - ongoing.size
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    fun reloadData(activity: Activity) {
+    fun reloadData() {
         Timber.v("Requested data reload")
         disposeSessionStateFlows()
         loadLocalSessions()
-        loadCloudSessions(activity)
+        loadCloudSessions()
         loadSessionStateFlows()
     }
 
@@ -214,13 +213,12 @@ class SessionsViewModel @Inject constructor(
         }
     }
 
-    fun loadCloudSessions(activity: Activity) {
+    fun loadCloudSessions() {
         _syncedSessions.value = emptyList()
         _syncedSessionsLoading.value = true
 
         if (isUserSignedIn.value) {
             viewModelScope.launch(dispatcherIO) {
-                sessionInteractor.reloadSyncedSessionsForCurrentUser(activity)
                 sessionInteractor.syncedSessions.collectLatest {
                     Timber.d("New number of synced sessions: ${_syncedSessions.value.size} -> ${it?.size}")
                     _syncedSessions.value = it ?: emptyList()

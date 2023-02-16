@@ -122,7 +122,7 @@ class LocationInteractor @Inject constructor(
                     syncedPaths.value = emptyList()
                 } else {
                     coroutineScopeIO.launch {
-                        sessionNetworkDataSource.getSessions { sessions ->
+                        sessionNetworkDataSource.sessions.first { sessions ->
                             if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
                                 Timber.v("Found session in cloud, caching it on disk")
                                 coroutineScopeIO.launch {
@@ -137,6 +137,7 @@ class LocationInteractor @Inject constructor(
                                     }
                                 }
                             }
+                            sessions != null
                         }
                     }
                 }

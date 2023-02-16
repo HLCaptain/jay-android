@@ -31,30 +31,6 @@ import illyan.jay.util.toZonedDateTime
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
-fun DomainSession.toHashMap() = hashMapOf(
-    "uuid" to uuid,
-    "distance" to distance,
-    "endDateTime" to endDateTime,
-    "endLocation" to endLocation,
-    "endLocationName" to endLocationName,
-    "startDateTime" to startDateTime,
-    "startLocation" to startLocation,
-    "startLocationName" to startLocationName,
-    "clientUUID" to clientUUID
-)
-
-fun FirestoreSession.toHashMap() = hashMapOf(
-    "uuid" to uuid,
-    "distance" to distance,
-    "endDateTime" to endDateTime,
-    "endLocation" to endLocation,
-    "endLocationName" to endLocationName,
-    "startDateTime" to startDateTime,
-    "startLocation" to startLocation,
-    "startLocationName" to startLocationName,
-    "clientUUID" to clientUUID
-)
-
 fun DomainSession.toFirestoreModel() = FirestoreSession(
     uuid = uuid,
     startDateTime = startDateTime.toTimestamp(),
