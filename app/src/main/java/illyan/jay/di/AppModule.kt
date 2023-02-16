@@ -27,6 +27,7 @@ import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.crashlytics.ktx.crashlytics
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.perf.ktx.performance
 import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchEngineSettings
 import com.mapbox.search.ServiceProvider
@@ -113,4 +114,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAnalytics() = Firebase.analytics
+
+    @Provides
+    @Singleton
+    fun providePerformance() = Firebase.performance
 }

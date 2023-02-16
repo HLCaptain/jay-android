@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+  ~ Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
   ~
   ~ Jay is a driver behaviour analytics app.
   ~
@@ -17,7 +17,8 @@
   ~ If not, see <https://www.gnu.org/licenses/>.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature android:name="android.hardware.telephony" />
 
@@ -29,26 +30,27 @@
 
     <application
         android:name=".MainApplication"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="@string/app_name"
-        android:theme="@style/Theme.Jay"
-        android:enableOnBackInvokedCallback="true"
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.Jay"
         android:usesCleartextTraffic="false">
+        <profileable
+            android:shell="true"
+            tools:targetApi="33" />
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Jay"
             android:windowSoftInputMode="adjustResize">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
         <service
@@ -58,7 +60,6 @@
 
         <receiver android:name=".service.ServiceStateReceiver" />
         <receiver android:name=".service.BaseReceiver" />
-
     </application>
 
 </manifest>
