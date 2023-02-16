@@ -20,11 +20,13 @@ package illyan.jay.data.network.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import illyan.jay.util.toTimestamp
+import java.time.Instant
 
 data class FirestoreSession(
-    val uuid: String,
-    val startDateTime: Timestamp,
-    val endDateTime: Timestamp?,
+    val uuid: String = "",
+    val startDateTime: Timestamp = Instant.EPOCH.toTimestamp(),
+    val endDateTime: Timestamp? = null,
     val startLocation: GeoPoint? = null,
     val endLocation: GeoPoint? = null,
     val startLocationName: String? = null,

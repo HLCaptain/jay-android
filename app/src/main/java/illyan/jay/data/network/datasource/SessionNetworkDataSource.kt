@@ -64,7 +64,7 @@ class SessionNetworkDataSource @Inject constructor(
                     listener(null as List<DomainSession>?)
                 } else {
                     val user = snapshot?.toObject<FirestoreUser>()
-                    val domainSessions = user?.sessions?.map { it.toDomainModel(user.uuid) } ?: emptyList()
+                    val domainSessions = user?.sessions?.map { it.toDomainModel(userUUID) } ?: emptyList()
                     Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
                     listener(domainSessions)
                 }
@@ -95,20 +95,21 @@ class SessionNetworkDataSource @Inject constructor(
     @JvmName("deleteSessionsByUUIDs")
     fun deleteSessions(
         sessionUUIDs: List<String>,
+        userUUID: String = authInteractor.userUUID.toString(),
         onSuccess: () -> Unit = { Timber.i("Deleted ${sessionUUIDs.size} sessions") }
     ) {
         if (!authInteractor.isUserSignedIn || sessionUUIDs.isEmpty()) return
         val deletedSessions = MutableStateFlow(false)
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
-            .document(authInteractor.userUUID!!)
-        Timber.i("Deleting ${sessionUUIDs.size} sessions for user ${authInteractor.userUUID?.take(4)} from the cloud")
+            .document(userUUID)
+        Timber.i("Deleting ${sessionUUIDs.size} sessions for user ${userUUID.take(4)} from the cloud")
         val userListener = userRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 Timber.e(error, "Error while deleting sessions for user: ${error.message}")
             } else {
                 val user = snapshot?.toObject<FirestoreUser>()
-                val domainSessions = user?.sessions?.map { it.toDomainModel(user.uuid) } ?: emptyList()
+                val domainSessions = user?.sessions?.map { it.toDomainModel(userUUID) } ?: emptyList()
                 val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
                 deleteSessions(sessionsToDelete) {
                     deletedSessions.value = true
@@ -126,13 +127,14 @@ class SessionNetworkDataSource @Inject constructor(
 
     fun deleteSessions(
         domainSessions: List<DomainSession>,
+        userUUID: String = authInteractor.userUUID.toString(),
         onSuccess: () -> Unit = { Timber.i("Deleted ${domainSessions.size} sessions") }
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
-            .document(authInteractor.userUUID!!)
-        Timber.i("Deleting ${domainSessions.size} sessions for user ${authInteractor.userUUID?.take(4)} from the cloud")
+            .document(userUUID)
+        Timber.i("Deleting ${domainSessions.size} sessions for user ${userUUID.take(4)} from the cloud")
         firestore.runBatch { batch ->
             batch.set(
                 userRef,

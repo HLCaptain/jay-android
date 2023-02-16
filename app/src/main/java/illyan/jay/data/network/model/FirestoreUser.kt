@@ -19,8 +19,7 @@
 package illyan.jay.data.network.model
 
 data class FirestoreUser(
-    val uuid: String,
-    val sessions: List<FirestoreSession>
+    val sessions: List<FirestoreSession> = emptyList()
 ) {
     companion object {
         const val CollectionName = "users"

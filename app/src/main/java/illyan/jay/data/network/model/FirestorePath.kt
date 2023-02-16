@@ -27,22 +27,22 @@ import kotlinx.parcelize.TypeParceler
 @Parcelize
 @TypeParceler<GeoPoint, GeoPointParceler>
 data class FirestorePath(
-    var uuid: String,
-    val sessionUUID: String, // reference of the session this path is part of
-    val ownerUUID: String,
-    val accuracyChangeTimestamps: List<Timestamp>,
-    val accuracyChanges: List<Byte>,
-    val altitudes: List<Short>,
-    val bearingAccuracyChangeTimestamps: List<Timestamp>,
-    val bearingAccuracyChanges: List<Short>,
-    val bearings: List<Short>,
-    val coords: List<GeoPoint>,
-    val speeds: List<Float>,
-    val speedAccuracyChangeTimestamps: List<Timestamp>,
-    val speedAccuracyChanges: List<Float>,
-    val timestamps: List<Timestamp>,
-    val verticalAccuracyChangeTimestamps: List<Timestamp>,
-    val verticalAccuracyChanges: List<Short>
+    var uuid: String = "",
+    val sessionUUID: String = "", // reference of the session this path is part of
+    val ownerUUID: String = "",
+    val accuracyChangeTimestamps: List<Timestamp> = emptyList(),
+    val accuracyChanges: List<Byte> = emptyList(),
+    val altitudes: List<Short> = emptyList(),
+    val bearingAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
+    val bearingAccuracyChanges: List<Short> = emptyList(),
+    val bearings: List<Short> = emptyList(),
+    val coords: List<GeoPoint> = emptyList(),
+    val speeds: List<Float> = emptyList(),
+    val speedAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
+    val speedAccuracyChanges: List<Float> = emptyList(),
+    val timestamps: List<Timestamp> = emptyList(),
+    val verticalAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
+    val verticalAccuracyChanges: List<Short> = emptyList()
 ) : Parcelable {
     companion object {
         const val CollectionName = "paths"
