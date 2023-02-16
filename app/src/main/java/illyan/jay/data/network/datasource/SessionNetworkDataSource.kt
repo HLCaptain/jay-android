@@ -62,7 +62,7 @@ class SessionNetworkDataSource @Inject constructor(
                     listener(null as List<DomainSession>?)
                 } else {
                     val domainSessions = (snapshot?.get(SessionsCollectionPath) as? List<Map<String, Any>>?)?.map {
-                        it.toDomainSession(it["uuid"] as String, authInteractor.userUUID!!)
+                        it.toDomainSession(it["uuid"] as String, userUUID)
                     } ?: emptyList()
                     Timber.d("Firebase got sessions with IDs: ${
                         domainSessions.map { it.uuid.substring(0..3) }

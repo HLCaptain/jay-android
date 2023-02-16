@@ -45,16 +45,13 @@ class LocationNetworkDataSource @Inject constructor(
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
     fun getLocations(
-        sessionUUID: String,
+        sessionUUID: String = authInteractor.userUUID.toString(),
         listener: (List<DomainLocation>) -> Unit
     ) {
         if (authInteractor.isUserSignedIn) {
             firestore
                 .collection(SessionNetworkDataSource.PathsCollectionPath)
-                .whereEqualTo(
-                    "sessionUUID",
-                    sessionUUID
-                )
+                .whereEqualTo("sessionUUID", sessionUUID)
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         Timber.e(error, "Error while getting path for session $sessionUUID: ${error.message}")
@@ -125,17 +122,19 @@ class LocationNetworkDataSource @Inject constructor(
         }
     }
 
-    fun deleteLocationsForUser() {
+    fun deleteLocationsForUser(
+        userUUID: String = authInteractor.userUUID.toString()
+    ) {
         if (!authInteractor.isUserSignedIn) return
         val arePathsDeleted = MutableStateFlow(false)
         val pathSnapshotListener = firestore
             .collection(SessionNetworkDataSource.PathsCollectionPath)
-            .whereEqualTo("ownerUUID", authInteractor.userUUID)
+            .whereEqualTo("ownerUUID", userUUID)
             .addSnapshotListener { pathSnapshot, pathError ->
                 if (pathError != null) {
                     Timber.e(pathError, "Error while deleting user data: ${pathError.message}")
                 } else if (!arePathsDeleted.value) {
-                    Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${authInteractor.userUUID?.take(4)}")
+                    Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${userUUID.take(4)}")
                     pathSnapshot.documents.forEach {
                         it.reference.delete()
                     }
