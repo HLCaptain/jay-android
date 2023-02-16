@@ -25,9 +25,11 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.ktx.toObject
 import com.google.maps.android.ktx.utils.sphericalPathLength
-import illyan.jay.data.network.model.PathDocument
-import illyan.jay.data.network.toDomainSession
+import illyan.jay.data.network.model.FirestorePath
+import illyan.jay.data.network.model.FirestoreUser
+import illyan.jay.data.network.toDomainModel
 import illyan.jay.data.network.toHashMap
 import illyan.jay.data.network.toPaths
 import illyan.jay.di.CoroutineScopeIO
@@ -61,17 +63,14 @@ class SessionNetworkDataSource @Inject constructor(
                     Timber.e(error, "Error while getting session data: ${error.message}")
                     listener(null as List<DomainSession>?)
                 } else {
-                    val domainSessions = (snapshot?.get(SessionsCollectionPath) as? List<Map<String, Any>>?)?.map {
-                        it.toDomainSession(it["uuid"] as String, userUUID)
-                    } ?: emptyList()
-                    Timber.d("Firebase got sessions with IDs: ${
-                        domainSessions.map { it.uuid.substring(0..3) }
-                    }")
+                    val user = snapshot?.toObject<FirestoreUser>()
+                    val domainSessions = user?.sessions?.map { it.toDomainModel(user.uuid) } ?: emptyList()
+                    Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
                     listener(domainSessions)
                 }
             }
             firestore
-                .collection(UsersCollectionPath)
+                .collection(FirestoreUser.CollectionName)
                 .document(userUUID)
                 .run { if (activity != null)
                     addSnapshotListener(activity, snapshotListener)
@@ -101,16 +100,15 @@ class SessionNetworkDataSource @Inject constructor(
         if (!authInteractor.isUserSignedIn || sessionUUIDs.isEmpty()) return
         val deletedSessions = MutableStateFlow(false)
         val userRef = firestore
-            .collection(UsersCollectionPath)
+            .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
         Timber.i("Deleting ${sessionUUIDs.size} sessions for user ${authInteractor.userUUID?.take(4)} from the cloud")
-        val userListener = userRef.addSnapshotListener { value, error ->
+        val userListener = userRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 Timber.e(error, "Error while deleting sessions for user: ${error.message}")
             } else {
-                val domainSessions = (value?.get(SessionsCollectionPath) as? List<Map<String, Any>>?)?.map {
-                    it.toDomainSession(it["uuid"] as String, authInteractor.userUUID!!)
-                } ?: emptyList()
+                val user = snapshot?.toObject<FirestoreUser>()
+                val domainSessions = user?.sessions?.map { it.toDomainModel(user.uuid) } ?: emptyList()
                 val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
                 deleteSessions(sessionsToDelete) {
                     deletedSessions.value = true
@@ -132,13 +130,13 @@ class SessionNetworkDataSource @Inject constructor(
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
         val userRef = firestore
-            .collection(UsersCollectionPath)
+            .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
         Timber.i("Deleting ${domainSessions.size} sessions for user ${authInteractor.userUUID?.take(4)} from the cloud")
         firestore.runBatch { batch ->
             batch.set(
                 userRef,
-                mapOf(SessionsCollectionPath to FieldValue.arrayRemove(*domainSessions.map { it.toHashMap() }.toTypedArray())),
+                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayRemove(*domainSessions.map { it.toHashMap() }.toTypedArray())),
                 SetOptions.merge()
             )
         }.addOnSuccessListener {
@@ -166,7 +164,7 @@ class SessionNetworkDataSource @Inject constructor(
         onSuccess: (List<DomainSession>) -> Unit
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
-        val paths = mutableListOf<PathDocument>()
+        val paths = mutableListOf<FirestorePath>()
         domainSessions.forEach { session ->
             val locationsForThisSession = domainLocations.filter { it.sessionUUID.contentEquals(session.uuid) }
             if (session.distance == null) {
@@ -178,13 +176,13 @@ class SessionNetworkDataSource @Inject constructor(
         }
         locationNetworkDataSource.insertPaths(paths)
         val userRef = firestore
-            .collection(UsersCollectionPath)
+            .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
 
         firestore.runBatch { batch ->
             batch.set(
                 userRef,
-                mapOf(SessionsCollectionPath to FieldValue.arrayUnion(*domainSessions.map { it.toHashMap() }.toTypedArray())),
+                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayUnion(*domainSessions.map { it.toHashMap() }.toTypedArray())),
                 SetOptions.merge()
             )
         }.addOnSuccessListener {
@@ -200,7 +198,7 @@ class SessionNetworkDataSource @Inject constructor(
         if (!authInteractor.isUserSignedIn) return
         val isUserDeleted = MutableStateFlow(false)
         val userSnapshotListener = firestore
-            .collection(UsersCollectionPath)
+            .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
             .addSnapshotListener { userSnapshot, userError ->
                 if (userError != null) {
@@ -221,11 +219,5 @@ class SessionNetworkDataSource @Inject constructor(
                 it
             }
         }
-    }
-
-    companion object {
-        const val UsersCollectionPath = "users"
-        const val SessionsCollectionPath = "sessions"
-        const val PathsCollectionPath = "paths"
     }
 }

@@ -21,34 +21,73 @@ package illyan.jay.data.network
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.GeoPoint
-import illyan.jay.data.network.model.PathDocument
+import illyan.jay.data.network.model.FirestorePath
+import illyan.jay.data.network.model.FirestoreSession
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.toGeoPoint
 import illyan.jay.util.toTimestamp
 import illyan.jay.util.toZonedDateTime
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
 fun DomainSession.toHashMap() = hashMapOf(
     "uuid" to uuid,
     "distance" to distance,
-    "endDateTime" to endDateTime?.toTimestamp(),
-    "endLocation" to endLocation?.toGeoPoint(),
+    "endDateTime" to endDateTime,
+    "endLocation" to endLocation,
     "endLocationName" to endLocationName,
-    "startDateTime" to startDateTime.toTimestamp(),
-    "startLocation" to startLocation?.toGeoPoint(),
+    "startDateTime" to startDateTime,
+    "startLocation" to startLocation,
     "startLocationName" to startLocationName,
     "clientUUID" to clientUUID
+)
+
+fun FirestoreSession.toHashMap() = hashMapOf(
+    "uuid" to uuid,
+    "distance" to distance,
+    "endDateTime" to endDateTime,
+    "endLocation" to endLocation,
+    "endLocationName" to endLocationName,
+    "startDateTime" to startDateTime,
+    "startLocation" to startLocation,
+    "startLocationName" to startLocationName,
+    "clientUUID" to clientUUID
+)
+
+fun DomainSession.toFirestoreModel() = FirestoreSession(
+    uuid = uuid,
+    startDateTime = startDateTime.toTimestamp(),
+    endDateTime = endDateTime?.toTimestamp(),
+    startLocationName = startLocationName,
+    endLocationName = endLocationName,
+    clientUUID = clientUUID,
+    distance = distance,
+    startLocation = startLocation?.toGeoPoint(),
+    endLocation = endLocation?.toGeoPoint(),
+)
+
+fun FirestoreSession.toDomainModel(
+    ownerUUID: String
+) = DomainSession(
+    uuid = uuid,
+    startDateTime = startDateTime.toZonedDateTime(),
+    endDateTime = endDateTime?.toZonedDateTime(),
+    startLocationName = startLocationName,
+    endLocationName = endLocationName,
+    clientUUID = clientUUID,
+    ownerUUID = ownerUUID,
+    distance = distance,
+    startLocationLongitude = startLocation?.longitude?.toFloat(),
+    startLocationLatitude = startLocation?.latitude?.toFloat(),
+    endLocationLongitude = endLocation?.longitude?.toFloat(),
+    endLocationLatitude = endLocation?.latitude?.toFloat(),
 )
 
 fun List<DomainLocation>.toPath(
     sessionUUID: String,
     ownerUUID: String
-): PathDocument {
+): FirestorePath {
     val accuracyChangeTimestamps = mutableListOf<Timestamp>()
     val accuracyChanges = mutableListOf<Byte>()
     val altitudes = mutableListOf<Short>()
@@ -99,7 +138,7 @@ fun List<DomainLocation>.toPath(
         }
     }
 
-    return PathDocument(
+    return FirestorePath(
         uuid = UUID.randomUUID().toString(),
         sessionUUID = sessionUUID,
         ownerUUID = ownerUUID,
@@ -123,7 +162,7 @@ fun List<DomainLocation>.toPaths(
     sessionUUID: String,
     ownerUUID: String,
     thresholdInMinutes: Int = 30
-): List<PathDocument> {
+): List<FirestorePath> {
     if (isEmpty()) return emptyList()
     val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
     val groupedByTime = groupBy {(it.zonedDateTime.toInstant().toEpochMilli() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds }
@@ -132,7 +171,7 @@ fun List<DomainLocation>.toPaths(
     }
 }
 
-fun PathDocument.toHashMap() = hashMapOf(
+fun FirestorePath.toHashMap() = hashMapOf(
     "uuid" to uuid,
     "sessionUUID" to sessionUUID,
     "ownerUUID" to ownerUUID,
@@ -150,29 +189,6 @@ fun PathDocument.toHashMap() = hashMapOf(
     "verticalAccuracyChangeTimestamps" to verticalAccuracyChangeTimestamps,
     "verticalAccuracyChanges" to verticalAccuracyChanges.map { it.toInt() }
 )
-
-fun Map<String, Any?>.toDomainSession(
-    uuid: String,
-    userUUID: String
-): DomainSession {
-    val startLocation = this["startLocation"] as? GeoPoint
-    val endLocation = this["endLocation"] as? GeoPoint
-    return DomainSession(
-        uuid = uuid,
-        startDateTime = (this["startDateTime"] as? Timestamp)?.toZonedDateTime() ?: ZonedDateTime
-            .ofInstant(Instant.EPOCH, ZoneOffset.UTC),
-        endDateTime = (this["endDateTime"] as? Timestamp)?.toZonedDateTime(),
-        startLocationLatitude = startLocation?.latitude?.toFloat(),
-        startLocationLongitude = startLocation?.longitude?.toFloat(),
-        endLocationLatitude = endLocation?.latitude?.toFloat(),
-        endLocationLongitude = endLocation?.longitude?.toFloat(),
-        startLocationName = this["startLocationName"] as? String,
-        endLocationName = this["endLocationName"] as? String,
-        distance = (this["distance"] as? Double)?.toFloat(),
-        clientUUID = (this["clientUUID"] as? String),
-        ownerUUID = userUUID,
-    )
-}
 
 fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()

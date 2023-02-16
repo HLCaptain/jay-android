@@ -26,7 +26,7 @@ import kotlinx.parcelize.TypeParceler
 
 @Parcelize
 @TypeParceler<GeoPoint, GeoPointParceler>
-data class PathDocument(
+data class FirestorePath(
     var uuid: String,
     val sessionUUID: String, // reference of the session this path is part of
     val ownerUUID: String,
@@ -43,6 +43,12 @@ data class PathDocument(
     val timestamps: List<Timestamp>,
     val verticalAccuracyChangeTimestamps: List<Timestamp>,
     val verticalAccuracyChanges: List<Short>
-) : Parcelable
+) : Parcelable {
+    companion object {
+        const val CollectionName = "paths"
+        const val FieldOwnerUUID = "ownerUUID"
+        const val FieldSessionUUID = "sessionUUID"
+    }
+}
 
 
