@@ -44,6 +44,8 @@ data class UiSession(
     val isOwned get() = !ownerUUID.isNullOrBlank()
     val isNotOwned get() = !isOwned
     val canDelete get() = isLocal || isSynced
+    val isOngoing get() = endDateTime == null
+    val isNotOngoing get() = !isOngoing
 }
 
 fun DomainSession.toUiModel(

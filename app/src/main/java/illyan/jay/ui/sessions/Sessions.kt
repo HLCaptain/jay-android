@@ -69,6 +69,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -581,41 +582,26 @@ fun SessionCard(
     onSync: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
-    val deleteFromCloudAction = SwipeAction(
-        icon = {
-            Icon(
-                modifier = Modifier.padding(horizontal = 32.dp),
-                imageVector = Icons.Rounded.CloudOff,
-                contentDescription = "",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        background = if (session?.isSynced == true) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surface,
+    val isDeleteFromCloudEnabled = session?.isSynced == true && session.isNotOngoing
+    val deleteFromCloudAction = sessionSwipeAction(
+        icon = Icons.Rounded.CloudOff,
+        enabled = isDeleteFromCloudEnabled,
+        enabledBackgroundColor = MaterialTheme.colorScheme.tertiary,
         onSwipe = onDeleteFromCloud
     )
-    val deleteAction = SwipeAction(
-        icon = {
-            Icon(
-                modifier = Modifier.padding(horizontal = 32.dp),
-                imageVector = Icons.Rounded.Delete,
-                contentDescription = "",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        background = if (session?.canDelete == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surface,
-        onSwipe = onDelete,
+    val isDeleteEnabled = session?.canDelete == true && session.isNotOngoing
+    val deleteAction = sessionSwipeAction(
+        icon = Icons.Rounded.Delete,
+        enabled = isDeleteEnabled,
+        enabledBackgroundColor = MaterialTheme.colorScheme.error,
+        onSwipe = onDelete
     )
-    val syncAction = SwipeAction(
-        icon = {
-            Icon(
-                modifier = Modifier.padding(horizontal = 32.dp),
-                imageVector = Icons.Rounded.SyncAlt,
-                contentDescription = "",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        background = if (session?.isSynced == false) MaterialTheme.signatureBlue else MaterialTheme.colorScheme.surface,
-        onSwipe = if (session?.isSynced == false) onSync else null ?: {}
+    val isSyncEnabled = session?.isSynced == false && session.isNotOngoing
+    val syncAction = sessionSwipeAction(
+        icon = Icons.Rounded.SyncAlt,
+        enabled = isSyncEnabled,
+        enabledBackgroundColor = MaterialTheme.signatureBlue,
+        onSwipe = onSync
     )
     val containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
     val cardColors = CardDefaults.cardColors(
@@ -652,52 +638,6 @@ fun SessionCard(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-//                        LazyRow(
-//                            modifier = Modifier
-//                                .weight(1f)
-//                                .padding(horizontal = 8.dp),
-//                            verticalAlignment = Alignment.CenterVertically,
-//                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-//                        ) {
-//                            item {
-//                                Crossfade(
-//                                    modifier = Modifier.animateContentSize(),
-//                                    targetState = session?.startLocationName
-//                                ) {
-//                                    Text(
-//                                        text = it ?: stringResource(R.string.unknown),
-//                                        style = MaterialTheme.typography.titleLarge,
-//                                        color = MaterialTheme.colorScheme.onSurface,
-//                                    )
-//                                }
-//                            }
-//                            item {
-//                                Icon(
-//                                    imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
-//                                    tint = MaterialTheme.colorScheme.onSurface,
-//                                )
-//                            }
-//                            item {
-//                                Crossfade(
-//                                    modifier = Modifier.animateContentSize(),
-//                                    targetState = (session?.endDateTime == null) to session?.endLocationName
-//                                ) {
-//                                    if (it.first) {
-//                                        Icon(
-//                                            imageVector = Icons.Rounded.MoreHoriz,
-//                                            contentDescription = "",
-//                                            tint = MaterialTheme.colorScheme.onSurface,
-//                                        )
-//                                    } else {
-//                                        Text(
-//                                            text = it.second ?: stringResource(R.string.unknown),
-//                                            style = MaterialTheme.typography.titleLarge,
-//                                            color = MaterialTheme.colorScheme.onSurface,
-//                                        )
-//                                    }
-//                                }
-//                            }
-//                        }
                         Row(
                             modifier = Modifier
                                 .weight(1f)
@@ -789,6 +729,30 @@ fun SessionCard(
             }
         }
     }
+}
+
+@Composable
+fun sessionSwipeAction(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    enabled: Boolean = true,
+    onSwipe: () -> Unit = {},
+    enabledBackgroundColor: Color = Color.Transparent,
+    disabledBackgroundColor: Color = MaterialTheme.colorScheme.surface
+): SwipeAction {
+    return SwipeAction(
+        icon = {
+            Icon(
+                modifier = modifier.padding(horizontal = 32.dp),
+                imageVector = icon,
+                contentDescription = "",
+                tint = tint
+            )
+        },
+        background = if (enabled) enabledBackgroundColor else disabledBackgroundColor,
+        onSwipe = if (enabled) onSwipe else {{}},
+    )
 }
 
 @Composable
