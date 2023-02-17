@@ -18,6 +18,7 @@
 
 package illyan.jay.domain.interactor
 
+import com.google.firebase.firestore.FirebaseFirestore
 import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
@@ -64,6 +65,7 @@ class SessionInteractor @Inject constructor(
     private val serviceInteractor: ServiceInteractor,
     private val locationNetworkDataSource: LocationNetworkDataSource,
     private val userNetworkDataSource: UserNetworkDataSource,
+    private val firestore: FirebaseFirestore,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
     init {
@@ -156,20 +158,29 @@ class SessionInteractor @Inject constructor(
     fun uploadSessions(
         sessions: List<DomainSession>,
         locations: List<DomainLocation>,
-        onSuccess: (List<DomainSession>) -> Unit = {},
+        onSuccess: (List<DomainSession>) -> Unit = { Timber.i("Uploaded locations for ${sessions.size} sessions") },
     ) {
         if (!authInteractor.isUserSignedIn || sessions.isEmpty()) return
         Timber.i("Upload ${sessions.size} sessions with location info to the cloud")
-        sessionNetworkDataSource.insertSessions(sessions, locations) {
-            Timber.i("Upload success ${authInteractor.userUUID}")
-            onSuccess(it)
+        firestore.runBatch { batch ->
+            sessionNetworkDataSource.insertSessions(
+                domainSessions = sessions,
+                batch = batch
+            )
+            locationNetworkDataSource.insertLocations(
+                domainSessions = sessions,
+                domainLocations = locations,
+                batch = batch
+            )
+        }.addOnSuccessListener {
+            onSuccess(sessions)
         }
     }
 
     fun uploadSession(
         session: DomainSession,
         locations: List<DomainLocation>,
-        onSuccess: (List<DomainSession>) -> Unit = {},
+        onSuccess: (List<DomainSession>) -> Unit = { Timber.i("Uploaded locations session ${session.uuid}") },
     ) = uploadSessions(listOf(session), locations, onSuccess)
 
     /**

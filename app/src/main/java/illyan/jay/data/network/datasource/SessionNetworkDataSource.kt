@@ -21,15 +21,12 @@ package illyan.jay.data.network.datasource
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.google.maps.android.ktx.utils.sphericalPathLength
-import illyan.jay.data.network.model.FirestorePath
+import com.google.firebase.firestore.WriteBatch
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.data.network.toDomainModel
 import illyan.jay.data.network.toFirestoreModel
-import illyan.jay.data.network.toPaths
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
-import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,7 +43,6 @@ import javax.inject.Singleton
 class SessionNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
-    private val locationNetworkDataSource: LocationNetworkDataSource,
     private val userNetworkDataSource: UserNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
@@ -71,18 +67,23 @@ class SessionNetworkDataSource @Inject constructor(
 
     fun deleteSession(
         sessionUUID: String,
-        onSuccess: () -> Unit
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while deleting session: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Deleting session canceled") },
+        onSuccess: () -> Unit = { Timber.i("Deleted session") },
     ) = deleteSessions(
         sessionUUIDs = listOf(sessionUUID),
-        onSuccess = onSuccess
+        onFailure = onFailure,
+        onCancel = onCancel,
+        onSuccess = onSuccess,
     )
 
     @JvmName("deleteSessionsByUUIDs")
     fun deleteSessions(
         sessionUUIDs: List<String>,
         userUUID: String = authInteractor.userUUID.toString(),
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while deleting sessions for user: ${it.message}") },
-        onSuccess: () -> Unit = { Timber.i("Deleted ${sessionUUIDs.size} sessions") }
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while deleting sessions: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Deleting sessions canceled") },
+        onSuccess: () -> Unit = { Timber.i("Deleted sessions") }
     ) {
         if (!authInteractor.isUserSignedIn || sessionUUIDs.isEmpty()) return
         Timber.i("Deleting ${sessionUUIDs.size} sessions for user ${userUUID.take(4)} from the cloud")
@@ -95,6 +96,7 @@ class SessionNetworkDataSource @Inject constructor(
                         domainSessions = sessionsToDelete,
                         userUUID = userUUID,
                         onFailure = onFailure,
+                        onCancel = onCancel,
                         onSuccess = onSuccess
                     )
                 }
@@ -106,8 +108,8 @@ class SessionNetworkDataSource @Inject constructor(
     fun deleteSessions(
         domainSessions: List<DomainSession>,
         userUUID: String = authInteractor.userUUID.toString(),
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error: ${it.message}") },
-        onCancel: () -> Unit = { Timber.i("Operation canceled") },
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while deleting sessions: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Deleting ${domainSessions.size} sessions canceled") },
         onSuccess: () -> Unit = { Timber.i("Deleted ${domainSessions.size} sessions") }
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
@@ -132,46 +134,45 @@ class SessionNetworkDataSource @Inject constructor(
 
     fun insertSession(
         domainSession: DomainSession,
-        domainLocation: List<DomainLocation>,
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting session: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Inserting session canceled") },
         onSuccess: (List<DomainSession>) -> Unit
     ) = insertSessions(
         domainSessions = listOf(domainSession),
-        domainLocations = domainLocation,
-        onSuccess = onSuccess
+        onFailure = onFailure,
+        onCancel = onCancel,
+        onSuccess = onSuccess,
     )
 
     fun insertSessions(
         domainSessions: List<DomainSession>,
-        domainLocations: List<DomainLocation>,
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting ${domainSessions.size} sessions: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Inserting ${domainSessions.size} sessions canceled") },
         onSuccess: (List<DomainSession>) -> Unit
     ) {
-        if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
-        val paths = mutableListOf<FirestorePath>()
-        domainSessions.forEach { session ->
-            val locationsForThisSession = domainLocations.filter { it.sessionUUID.contentEquals(session.uuid) }
-            if (session.distance == null) {
-                session.distance = locationsForThisSession
-                    .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
-                    .map { it.latLng }.sphericalPathLength().toFloat()
-            }
-            paths.addAll(locationsForThisSession.toPaths(session.uuid, session.ownerUUID!!))
-        }
-        locationNetworkDataSource.insertPaths(paths)
-        val userRef = firestore
-            .collection(FirestoreUser.CollectionName)
-            .document(authInteractor.userUUID!!)
         firestore.runBatch { batch ->
-            batch.set(
-                userRef,
-                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayUnion(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),
-                SetOptions.merge()
-            )
+            insertSessions(domainSessions, batch)
         }.addOnSuccessListener {
             onSuccess(domainSessions)
         }.addOnFailureListener { exception ->
-            Timber.e(exception, "Error: ${exception.message}")
+            onFailure(exception)
         }.addOnCanceledListener {
-            Timber.i("Operation canceled")
+            onCancel()
         }
+    }
+
+    fun insertSessions(
+        domainSessions: List<DomainSession>,
+        batch: WriteBatch,
+    ) {
+        if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
+        val userRef = firestore
+            .collection(FirestoreUser.CollectionName)
+            .document(authInteractor.userUUID!!)
+        batch.set(
+            userRef,
+            mapOf(FirestoreUser.FieldSessions to FieldValue.arrayUnion(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),
+            SetOptions.merge()
+        )
     }
 }
