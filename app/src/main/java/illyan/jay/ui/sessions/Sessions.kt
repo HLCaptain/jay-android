@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.sessions
 
-import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -71,7 +70,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -122,7 +120,6 @@ fun Sessions(
     viewModel: SessionsViewModel = hiltViewModel(),
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
-    val context = LocalContext.current
     val signedInUser by viewModel.signedInUser.collectAsStateWithLifecycle()
     val areThereSessionsNotOwned by viewModel.areThereSessionsNotOwned.collectAsStateWithLifecycle()
     val canDeleteSessions by viewModel.canDeleteSessionsLocally.collectAsStateWithLifecycle()
@@ -135,7 +132,7 @@ fun Sessions(
     val localSessionsLoading by viewModel.localSessionsLoading.collectAsStateWithLifecycle()
     val isSystemInDarkTheme = isSystemInDarkTheme()
     LaunchedEffect(signedInUser, isSystemInDarkTheme) {
-        viewModel.reloadData(context as Activity)
+        viewModel.reloadData()
     }
     SessionsScreen(
         isUserSignedIn = isUserSignedIn,

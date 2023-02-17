@@ -18,6 +18,7 @@
 
 package illyan.jay.data.network.datasource
 
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ktx.firestore
@@ -41,4 +42,8 @@ object FirestoreModule {
             .build()
         return Firebase.firestore
     }
+
+    @Singleton
+    @Provides
+    fun provideAppLifecycle() = ProcessLifecycleOwner.get().lifecycle
 }

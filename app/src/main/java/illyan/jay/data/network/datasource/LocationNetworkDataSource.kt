@@ -22,7 +22,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.maps.android.ktx.utils.sphericalPathLength
-import illyan.jay.data.network.model.PathDocument
+import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.toDomainLocations
 import illyan.jay.data.network.toHashMap
 import illyan.jay.data.network.toPaths
@@ -50,7 +50,7 @@ class LocationNetworkDataSource @Inject constructor(
     ) {
         if (authInteractor.isUserSignedIn) {
             firestore
-                .collection(SessionNetworkDataSource.PathsCollectionPath)
+                .collection(FirestorePath.CollectionName)
                 .whereEqualTo("sessionUUID", sessionUUID)
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
@@ -68,7 +68,7 @@ class LocationNetworkDataSource @Inject constructor(
         domainSessions: List<DomainSession>,
         domainLocations: List<DomainLocation>,
     ) {
-        val paths = mutableListOf<PathDocument>()
+        val paths = mutableListOf<FirestorePath>()
         domainSessions.forEach { session ->
             val locationsForThisSession = domainLocations.filter { it.sessionUUID.contentEquals(session.uuid) }
             if (session.distance == null) {
@@ -81,7 +81,7 @@ class LocationNetworkDataSource @Inject constructor(
     }
 
     fun insertPath(
-        path: PathDocument,
+        path: FirestorePath,
         onSuccess: () -> Unit = { Timber.d("Successfully inserted path ${path.uuid.take(4)}") }
     ) = insertPaths(
         paths = listOf(path),
@@ -89,13 +89,13 @@ class LocationNetworkDataSource @Inject constructor(
     )
 
     fun insertPaths(
-        paths: List<PathDocument>,
+        paths: List<FirestorePath>,
         onSuccess: () -> Unit = { Timber.d("Successfully inserted ${paths.size} paths") },
     ) {
         if (!authInteractor.isUserSignedIn || paths.isEmpty()) return
         val pathRefs = paths.map {
             firestore
-                .collection(SessionNetworkDataSource.PathsCollectionPath)
+                .collection(FirestorePath.CollectionName)
                 .document(it.uuid) to it
         }
         firestore.runBatch { batch ->
@@ -128,8 +128,8 @@ class LocationNetworkDataSource @Inject constructor(
         if (!authInteractor.isUserSignedIn) return
         val arePathsDeleted = MutableStateFlow(false)
         val pathSnapshotListener = firestore
-            .collection(SessionNetworkDataSource.PathsCollectionPath)
-            .whereEqualTo("ownerUUID", userUUID)
+            .collection(FirestorePath.CollectionName)
+            .whereEqualTo(FirestorePath.FieldOwnerUUID, userUUID)
             .addSnapshotListener { pathSnapshot, pathError ->
                 if (pathError != null) {
                     Timber.e(pathError, "Error while deleting user data: ${pathError.message}")
@@ -158,8 +158,8 @@ class LocationNetworkDataSource @Inject constructor(
     ) {
         val arePathsDeleted = MutableStateFlow(false)
         val pathSnapshotListener = firestore
-            .collection(SessionNetworkDataSource.PathsCollectionPath)
-            .whereEqualTo("sessionUUID", sessionUUID)
+            .collection(FirestorePath.CollectionName)
+            .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
             .addSnapshotListener { pathSnapshot, pathError ->
                 if (pathError != null) {
                     Timber.e(pathError, "Error while deleting path data: ${pathError.message}")
