@@ -94,7 +94,7 @@ class UserNetworkDataSource @Inject constructor(
                     _user.value = FirestoreUserWithUUID(userUUID, user)
                     onSuccess(user)
                 }
-                _isLoading.value = false
+                if (_isLoading.value) _isLoading.value = false
             }
         }
         _userListenerRegistration.value?.remove()
