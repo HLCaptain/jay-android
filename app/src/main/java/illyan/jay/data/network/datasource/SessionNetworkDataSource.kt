@@ -34,8 +34,8 @@ import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -50,17 +50,24 @@ class SessionNetworkDataSource @Inject constructor(
     private val userNetworkDataSource: UserNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
-    val sessions: StateFlow<List<DomainSession>?> get() = userNetworkDataSource.user
-        .map { user ->
+    val sessions: StateFlow<List<DomainSession>?> by lazy {
+        combine(
+            userNetworkDataSource.user,
+            userNetworkDataSource.isLoading
+        ) { user, loading ->
             if (user != null) {
                 val domainSessions = user.firebaseUser.sessions.map { it.toDomainModel(authInteractor.userUUID!!) }
                 Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
                 domainSessions
-            } else {
+            } else if (loading) {
                 null
+            } else {
+                emptyList()
             }
-        }
-        .stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
+    }
+
+    // FIXME: may user `lazy` more often or change SharingStarted to Lazily instead of Eagerly
 
     fun deleteSession(
         sessionUUID: String,

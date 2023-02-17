@@ -18,6 +18,9 @@
 
 package illyan.jay.data.network.datasource
 
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.FirebaseFirestore
@@ -36,14 +39,19 @@ import javax.inject.Inject
 class UserNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
-) {
+    private val appLifecycle: Lifecycle,
+) : DefaultLifecycleObserver {
     private val _userListenerRegistration = MutableStateFlow<ListenerRegistration?>(null)
     private val _userReference = MutableStateFlow<DocumentSnapshot?>(null)
     private val _user = MutableStateFlow<FirestoreUserWithUUID?>(null)
     val user: StateFlow<FirestoreUserWithUUID?> get() {
-        if (_user.value == null) loadUser()
+        if (_userListenerRegistration.value == null) loadUser()
         return _user.asStateFlow()
     }
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
     private val executor = Executors.newSingleThreadExecutor()
 
     init {
@@ -57,13 +65,21 @@ class UserNetworkDataSource @Inject constructor(
                 _user.value = null
             }
         }
+        appLifecycle.addObserver(this)
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        _userListenerRegistration.value?.remove()
+        _userListenerRegistration.value = null
     }
 
     private fun loadUser(
         userUUID: String = authInteractor.userUUID.toString(),
         onError: (Exception) -> Unit = { Timber.e(it, "Error while getting user data: ${it.message}") },
-        onSuccess: (FirestoreUser) -> Unit = { _user.value = FirestoreUserWithUUID(userUUID, it) },
+        onSuccess: (FirestoreUser) -> Unit = { },
     ) {
+        if (_user.value == null) _isLoading.value = true
         Timber.d("Connecting snapshot listener to Firebase to get ${userUUID.take(4)} user's data")
         val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
             if (error != null) {
@@ -75,8 +91,10 @@ class UserNetworkDataSource @Inject constructor(
                 } else {
                     Timber.d("Firebase loaded ${userUUID.take(4)} user's data")
                     _userReference.value = snapshot
+                    _user.value = FirestoreUserWithUUID(userUUID, user)
                     onSuccess(user)
                 }
+                _isLoading.value = false
             }
         }
         _userListenerRegistration.value?.remove()
