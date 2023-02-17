@@ -29,11 +29,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material3.AlertDialog
@@ -47,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
@@ -86,7 +89,7 @@ fun ProfileDialog(
     )
     if (isDialogOpen) {
         ProfileDialogScreen(
-            modifier = Modifier.width(screenWidthDp - 72.dp),
+            modifier = Modifier.widthIn(max = screenWidthDp - 72.dp),
             isUserSignedIn = isUserSignedIn,
             isUserSigningOut = isUserSigningOut,
             userPhotoUrl = userPhotoUrl,
@@ -131,25 +134,34 @@ fun ProfileDialogScreen(
             )
         },
         confirmButton = {
-            // FIXME: find out why Crossfade does not work here
-            if (isUserSignedIn) {
-                TextButton(
-                    enabled = !isUserSigningOut,
-                    onClick = onSignOut
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                ProfileMenu()
+                Row(
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Text(text = stringResource(R.string.sign_out))
+                    TextButton(onClick = { onDialogClosed() }) {
+                        Text(text = stringResource(R.string.close))
+                    }
+                    // FIXME: find out why Crossfade does not work here
+                    if (isUserSignedIn) {
+                        TextButton(
+                            enabled = !isUserSigningOut,
+                            onClick = onSignOut,
+                        ) {
+                            Text(text = stringResource(R.string.sign_out))
+                        }
+                    } else {
+                        Button(
+                            onClick = onShowLoginDialog
+                        ) {
+                            Text(text = stringResource(R.string.sign_in))
+                        }
+                    }
                 }
-            } else {
-                Button(
-                    onClick = onShowLoginDialog
-                ) {
-                    Text(text = stringResource(R.string.sign_in))
-                }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = { onDialogClosed() }) {
-                Text(text = stringResource(R.string.close))
             }
         },
         text = {
@@ -204,7 +216,7 @@ fun ProfileTitleScreen(
     ) {
         Text(text = stringResource(R.string.profile))
         Row(
-            modifier = Modifier.weight(1f, fill = true),
+            modifier = Modifier.weight(1f),
             Arrangement.End
         ) {
             AvatarAsyncImage(
@@ -225,56 +237,73 @@ fun ProfileDetailsScreen(
     showConfidentialInfo: Boolean = false,
     toggleConfidentialInfoVisibility: () -> Unit = {},
 ) {
-    ConstraintLayout(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        val (confidentialInfoText, toggleButton) = createRefs()
-        createHorizontalChain(
-            confidentialInfoText,
-            toggleButton,
-            chainStyle = ChainStyle.SpreadInside
-        )
-        createStartBarrier()
-        ConfidentialInfoToggleButton(
-            modifier = Modifier
-                .constrainAs(toggleButton) {
-                    end.linkTo(parent.end)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                },
-            showConfidentialInfo = showConfidentialInfo,
-            anyConfidentialInfo = confidentialInfo.isNotEmpty(),
-            toggleConfidentialInfoVisibility = toggleConfidentialInfoVisibility
-        )
-        LazyRow(
-            modifier = Modifier
-                .constrainAs(confidentialInfoText) {
-                    start.linkTo(parent.start)
-                    end.linkTo(toggleButton.start)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    width = Dimension.fillToConstraints
-                },
+    Column {
+        ConstraintLayout(
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            item {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(confidentialInfo) {
-                        UserInfo(
-                            infoName = it.first,
-                            info = it.second,
-                            hide = showConfidentialInfo
-                        )
-                    }
-                    items(info) {
-                        UserInfo(
-                            infoName = it.first,
-                            info = it.second,
-                            hide = true
-                        )
-                    }
+            val (confidentialInfoText, toggleButton) = createRefs()
+            createHorizontalChain(
+                confidentialInfoText,
+                toggleButton,
+                chainStyle = ChainStyle.SpreadInside
+            )
+            createStartBarrier()
+            ConfidentialInfoToggleButton(
+                modifier = Modifier
+                    .constrainAs(toggleButton) {
+                        end.linkTo(parent.end)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                    },
+                showConfidentialInfo = showConfidentialInfo,
+                anyConfidentialInfo = confidentialInfo.isNotEmpty(),
+                toggleConfidentialInfoVisibility = toggleConfidentialInfoVisibility
+            )
+            UserInfoList(
+                modifier = Modifier
+                    .constrainAs(confidentialInfoText) {
+                        start.linkTo(parent.start)
+                        end.linkTo(toggleButton.start)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                        width = Dimension.fillToConstraints
+                    },
+                confidentialInfo = confidentialInfo,
+                info = info,
+                showConfidentialInfo = showConfidentialInfo
+            )
+        }
+    }
+}
+
+@Composable
+fun UserInfoList(
+    modifier: Modifier = Modifier,
+    confidentialInfo: List<Pair<String, String>> = emptyList(),
+    info: List<Pair<String, String>> = emptyList(),
+    showConfidentialInfo: Boolean = true,
+) {
+    LazyRow(
+        modifier = modifier,
+    ) {
+        item {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(confidentialInfo) {
+                    UserInfo(
+                        infoName = it.first,
+                        info = it.second,
+                        hide = showConfidentialInfo
+                    )
+                }
+                items(info) {
+                    UserInfo(
+                        infoName = it.first,
+                        info = it.second,
+                        hide = true
+                    )
                 }
             }
         }
@@ -320,6 +349,40 @@ fun UserInfo(
         Crossfade(targetState = hide) {
             Text(
                 text = if (it) info else stringResource(R.string.hidden_field_string)
+            )
+        }
+    }
+}
+
+@Composable
+fun ProfileMenu(
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy((-12).dp)
+    ) {
+        ProfileMenuItem(text = stringResource(R.string.settings))
+        ProfileMenuItem(text = stringResource(R.string.about))
+    }
+}
+
+@Composable
+fun ProfileMenuItem(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    text: String
+) {
+    TextButton(
+        modifier = modifier,
+        onClick = onClick,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = text)
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight, contentDescription = "",
             )
         }
     }
