@@ -81,9 +81,14 @@ fun LoginDialogContent(
                 signInViaGoogle = signInViaGoogle
             )
         },
-        buttons = { LoginButtons() },
+        buttons = { LoginButtons(modifier = Modifier.fillMaxWidth()) },
         containerColor = Color.Transparent,
     )
+}
+
+@Composable
+fun LoginTitle() {
+    Text(text = stringResource(R.string.login_to_jay))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,15 +136,20 @@ fun LoginScreen(
 }
 
 @Composable
-fun LoginButtons() {
+fun LoginButtons(
+    modifier: Modifier = Modifier
+) {
     val onDialogClosed = LocalDialogDismissRequest.current
-    Row {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.End
+    ) {
         TextButton(
             onClick = { onDialogClosed() }
         ) {
             Text(text = stringResource(R.string.cancel))
         }
-        TextButton(
+        Button(
             onClick = {
                 // TODO: Login via email/password
             },
@@ -148,11 +158,6 @@ fun LoginButtons() {
             Text(text = stringResource(R.string.login))
         }
     }
-}
-
-@Composable
-fun LoginTitle() {
-    Text(text = stringResource(R.string.login_to_jay))
 }
 
 @PreviewLightDarkTheme
