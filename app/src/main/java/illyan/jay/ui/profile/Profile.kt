@@ -119,10 +119,10 @@ fun ProfileDialog(
         val engine = rememberAnimatedNavHostEngine(
             rootDefaultAnimations = RootNavGraphDefaultAnimations(
                 enterTransition = {
-                    slideInHorizontally(tween(200)) { -it / 8 } + fadeIn(tween(200))
+                    slideInHorizontally(tween(200)) { it / 8 } + fadeIn(tween(200))
                 },
                 popEnterTransition = {
-                    slideInHorizontally(tween(200)) { it / 8 } + fadeIn(tween(200))
+                    slideInHorizontally(tween(200)) { -it / 8 } + fadeIn(tween(200))
                 }
             )
         )
