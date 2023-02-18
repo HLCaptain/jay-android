@@ -18,13 +18,17 @@
 
 package illyan.jay.ui.about
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
@@ -42,13 +46,15 @@ fun AboutDialogScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     AboutDialogContent(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        onNavigateToLibraries = { destinationsNavigator.navigate(LibrariesDestination) }
     )
 }
 
 @Composable
 fun AboutDialogContent(
     modifier: Modifier = Modifier,
+    onNavigateToLibraries: () -> Unit = {}
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -56,29 +62,33 @@ fun AboutDialogContent(
             // TODO: enable ad button on this screen (only showing one ad on this screen)
             Text(text = stringResource(id = R.string.about))
         },
+        text = {
+            AboutScreen(
+                onNavigateToLibraries = onNavigateToLibraries,
+            )
+        },
         buttons = {
             // TODO: Support the project
             // TODO: Dismiss dialog (Cancel)
         },
-        text = {
-
-        },
+        containerColor = Color.Transparent,
     )
 }
 
 @Composable
 fun AboutScreen(
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
+    onNavigateToLibraries: () -> Unit = {}
 ) {
     LazyColumn {
         item {
             TextButton(
-                onClick = {
-                    destinationsNavigator.navigate(LibrariesDestination)
-                }
+                onClick = onNavigateToLibraries
             ) {
                 Text(text = "Open Library list")
             }
+        }
+        item {
+            Spacer(modifier = Modifier.height(400.dp)) // Fake height
         }
     }
 }

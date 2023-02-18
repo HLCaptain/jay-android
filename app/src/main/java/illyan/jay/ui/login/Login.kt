@@ -34,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.profile.LocalDialogActivityProvider
 import illyan.jay.ui.profile.LocalDialogDismissRequest
@@ -79,7 +81,8 @@ fun LoginDialogContent(
                 signInViaGoogle = signInViaGoogle
             )
         },
-        buttons = { LoginButtons() }
+        buttons = { LoginButtons() },
+        containerColor = Color.Transparent,
     )
 }
 
@@ -156,6 +159,8 @@ fun LoginTitle() {
 @Composable
 private fun PreviewLoginDialog() {
     JayTheme {
-        LoginDialogContent()
+        JayDialogSurface {
+            LoginDialogContent()
+        }
     }
 }

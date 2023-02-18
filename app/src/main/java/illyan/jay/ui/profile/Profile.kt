@@ -24,9 +24,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -61,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -87,6 +86,7 @@ import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.AboutDialogScreenDestination
 import illyan.jay.ui.destinations.LoginDialogScreenDestination
@@ -114,21 +114,17 @@ fun ProfileDialog(
     if (isDialogOpen) {
         val context = LocalContext.current
         val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+        // Don't use exit animations because
+        // it looks choppy while Dialog resizes due to content change.
         val engine = rememberAnimatedNavHostEngine(
             rootDefaultAnimations = RootNavGraphDefaultAnimations(
                 enterTransition = {
-                    slideInHorizontally(tween(100)) { it / 4 } + fadeIn(tween(100))
-                },
-                exitTransition = {
-                    slideOutHorizontally(tween(100)) { -it / 4 } + fadeOut(tween(100))
+                    slideInHorizontally(tween(200)) { -it / 8 } + fadeIn(tween(200))
                 },
                 popEnterTransition = {
-                    slideInHorizontally(tween(100)) { -it / 4 } + fadeIn(tween(100))
-                },
-                popExitTransition = {
-                    slideOutHorizontally(tween(100)) { it / 4 } + fadeOut(tween(100))
+                    slideInHorizontally(tween(200)) { it / 8 } + fadeIn(tween(200))
                 }
-            ),
+            )
         )
         val navController = engine.rememberNavController()
         val currentDestination by navController.currentDestinationAsState()
@@ -146,16 +142,20 @@ fun ProfileDialog(
             ),
             onDismissRequest = onDismissRequest,
         ) {
-            CompositionLocalProvider(
-                LocalDialogDismissRequest provides onDismissRequest,
-                LocalDialogActivityProvider provides context as MainActivity
+            JayDialogContent(
+                surface = { JayDialogSurface(content = it) }
             ) {
-                DestinationsNavHost(
-                    modifier = Modifier.fillMaxWidth(),
-                    navGraph = NavGraphs.profile,
-                    engine = engine,
-                    navController = navController,
-                )
+                CompositionLocalProvider(
+                    LocalDialogDismissRequest provides onDismissRequest,
+                    LocalDialogActivityProvider provides context as MainActivity
+                ) {
+                    DestinationsNavHost(
+                        modifier = Modifier.fillMaxWidth(),
+                        navGraph = NavGraphs.profile,
+                        engine = engine,
+                        navController = navController,
+                    )
+                }
             }
         }
     }
@@ -184,7 +184,7 @@ fun ProfileDialogScreen(
         isUserSigningOut = isUserSigningOut,
         userPhotoUrl = userPhotoUrl,
         confidentialInfo = confidentialInfo,
-        showConfidentialInfoInitially = true,
+        showConfidentialInfoInitially = false,
         onSignOut = viewModel::signOut,
         onShowLoginScreen = { destinationsNavigator.navigate(LoginDialogScreenDestination) },
         onShowAboutScreen = { destinationsNavigator.navigate(AboutDialogScreenDestination) },
@@ -207,16 +207,6 @@ fun ProfileDialogContent(
 ) {
     JayDialogContent(
         modifier = modifier,
-        buttons = {
-            ProfileButtons(
-                isUserSignedIn = isUserSignedIn,
-                isUserSigningOut = isUserSigningOut,
-                onLogin = onShowLoginScreen,
-                onSignOut = onSignOut,
-                onShowAboutScreen = onShowAboutScreen,
-                onShowSettingsScreen = onShowSettingsScreen,
-            )
-        },
         icon = { /*TODO*/ },
         title = {
             ProfileTitleScreen(
@@ -232,6 +222,17 @@ fun ProfileDialogContent(
                 showConfidentialInfoInitially = showConfidentialInfoInitially,
             )
         },
+        buttons = {
+            ProfileButtons(
+                isUserSignedIn = isUserSignedIn,
+                isUserSigningOut = isUserSigningOut,
+                onLogin = onShowLoginScreen,
+                onSignOut = onSignOut,
+                onShowAboutScreen = onShowAboutScreen,
+                onShowSettingsScreen = onShowSettingsScreen,
+            )
+        },
+        containerColor = Color.Transparent,
     )
 }
 
@@ -313,16 +314,18 @@ private fun PreviewProfileDialogScreen(
 ) {
     JayTheme {
         Column {
-            ProfileDialogContent(
-                modifier = Modifier.width(300.dp),
-                userPhotoUrl = null,
-                confidentialInfo = listOf(
-                    stringResource(R.string.name) to name,
-                    stringResource(R.string.email) to email, // I wish one day :)
-                    stringResource(R.string.phone) to phone
-                ),
-                showConfidentialInfoInitially = true
-            )
+            JayDialogSurface {
+                ProfileDialogContent(
+                    modifier = Modifier.width(300.dp),
+                    userPhotoUrl = null,
+                    confidentialInfo = listOf(
+                        stringResource(R.string.name) to name,
+                        stringResource(R.string.email) to email, // I wish one day :)
+                        stringResource(R.string.phone) to phone
+                    ),
+                    showConfidentialInfoInitially = true
+                )
+            }
         }
     }
 }

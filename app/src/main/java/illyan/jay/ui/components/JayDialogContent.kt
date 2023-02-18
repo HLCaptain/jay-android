@@ -54,11 +54,17 @@ fun JayDialogContent(
     tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
     buttonContentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
-    Surface(
+    JayDialogContent(
         modifier = modifier,
-        shape = shape,
-        color = containerColor,
-        tonalElevation = tonalElevation,
+        surface = {
+            JayDialogSurface(
+                modifier = modifier,
+                shape = shape,
+                color = containerColor,
+                tonalElevation = tonalElevation,
+                content = it
+            )
+        }
     ) {
         Column(
             modifier = Modifier.padding(DialogPadding)
@@ -119,6 +125,35 @@ fun JayDialogContent(
         }
     }
 }
+
+@Composable
+fun JayDialogSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = AlertDialogDefaults.shape,
+    color: Color = AlertDialogDefaults.containerColor,
+    tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        shape = shape,
+        color = color,
+        tonalElevation = tonalElevation,
+        content = content
+    )
+}
+
+@Composable
+fun JayDialogContent(
+    modifier: Modifier = Modifier,
+    surface: @Composable (@Composable () -> Unit) -> Unit = {
+        JayDialogSurface(
+            modifier = modifier,
+            content = it
+        )
+    },
+    content: @Composable () -> Unit = {},
+) = surface(content)
 
 internal val DialogMinWidth = 280.dp
 internal val DialogMaxWidth = 560.dp

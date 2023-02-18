@@ -18,11 +18,14 @@
 
 package illyan.jay.ui.settings
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,6 +36,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
@@ -62,13 +66,14 @@ fun SettingsDialogContent(
         title = {
             SettingsTitle()
         },
+        text = {
+            SettingsScreen()
+        },
         buttons = {
             // TODO: Toggle Settings Sync
             // TODO: Dismiss dialog (Cancel)
         },
-        text = {
-            SettingsScreen()
-        },
+        containerColor = Color.Transparent,
     )
 }
 
@@ -80,12 +85,15 @@ fun SettingsTitle() {
 @Composable
 fun SettingsScreen() {
     // TODO: enable ad button on this screen (only showing one ad on this screen)
+    Spacer(modifier = Modifier.height(400.dp)) // Fake height
 }
 
 @PreviewLightDarkTheme
 @Composable
 fun SettingsDialogScreenPreview() {
     JayTheme {
-        SettingsDialogContent()
+        JayDialogSurface {
+            SettingsDialogContent()
+        }
     }
 }
