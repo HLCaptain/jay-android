@@ -92,7 +92,13 @@ class UserNetworkDataSource @Inject constructor(
                     Timber.d("Firebase loaded ${userUUID.take(4)} user's data")
                     onSuccess(user)
                 }
-                _userReference.value = snapshot
+                if (snapshot != null) {
+                    // Update _userReference value with snapshot when snapshot is not null
+                    _userReference.value = snapshot
+                } else if (_userReference.value != null) {
+                    // If snapshot is null, then _userReference is invalid if not null. Assign null to it.
+                    _userReference.value = null
+                }
                 if (user != null) {
                     _user.value = FirestoreUserWithUUID(userUUID, user)
                 } else if (_user.value != null) {
