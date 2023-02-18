@@ -16,8 +16,9 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.model
+package illyan.jay.ui.libraries.model
 
-data class FirestoreUserPreferences(
-    val analyticsEnabled: Boolean = false
+data class License(
+    val type: String = "",
+    val description: String = ""
 )

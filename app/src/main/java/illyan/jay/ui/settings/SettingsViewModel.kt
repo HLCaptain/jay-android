@@ -16,9 +16,13 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.model
+package illyan.jay.ui.settings
 
-data class FirestoreUserWithUUID(
-    val uuid: String,
-    val user: FirestoreUser,
-)
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+
+) : ViewModel()

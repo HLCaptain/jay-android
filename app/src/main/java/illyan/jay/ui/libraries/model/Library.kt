@@ -16,9 +16,11 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.model
+package illyan.jay.ui.libraries.model
 
-data class FirestoreUserWithUUID(
-    val uuid: String,
-    val user: FirestoreUser,
+data class Library(
+    val name: String = "",
+    val license: License? = null,
+    val repositoryUrl: String? = null,
+    val moreInfoUrl: String? = null,
 )

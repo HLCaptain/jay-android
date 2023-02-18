@@ -52,7 +52,7 @@ class SessionNetworkDataSource @Inject constructor(
             userNetworkDataSource.isLoading
         ) { user, loading ->
             if (user != null) {
-                val domainSessions = user.firebaseUser.sessions.map { it.toDomainModel(authInteractor.userUUID!!) }
+                val domainSessions = user.user.sessions.map { it.toDomainModel(authInteractor.userUUID!!) }
                 Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
                 domainSessions
             } else if (loading) {
@@ -90,7 +90,7 @@ class SessionNetworkDataSource @Inject constructor(
         coroutineScopeIO.launch {
             userNetworkDataSource.user.first { user ->
                 user?.let {
-                    val domainSessions = user.firebaseUser.sessions.map { it.toDomainModel(userUUID) }
+                    val domainSessions = user.user.sessions.map { it.toDomainModel(userUUID) }
                     val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
                     deleteSessions(
                         domainSessions = sessionsToDelete,

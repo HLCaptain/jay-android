@@ -18,7 +18,10 @@
 
 package illyan.jay.data.network.model
 
-data class FirestoreUserWithUUID(
-    val uuid: String,
-    val user: FirestoreUser,
-)
+data class FirestoreUserSettings(
+    val analyticsEnabled: Boolean = false
+) {
+    companion object {
+        const val FieldAnalyticsEnabled = "analyticsEnabled"
+    }
+}

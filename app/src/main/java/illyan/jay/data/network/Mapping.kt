@@ -23,8 +23,10 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.GeoPoint
 import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.model.FirestoreSession
+import illyan.jay.data.network.model.FirestoreUserSettings
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
+import illyan.jay.domain.model.DomainUserSettings
 import illyan.jay.util.toGeoPoint
 import illyan.jay.util.toTimestamp
 import illyan.jay.util.toZonedDateTime
@@ -58,6 +60,14 @@ fun FirestoreSession.toDomainModel(
     startLocationLatitude = startLocation?.latitude?.toFloat(),
     endLocationLongitude = endLocation?.longitude?.toFloat(),
     endLocationLatitude = endLocation?.latitude?.toFloat(),
+)
+
+fun FirestoreUserSettings.toDomainModel() = DomainUserSettings(
+    analyticsEnabled = analyticsEnabled
+)
+
+fun DomainUserSettings.toFirestoreModel() = FirestoreUserSettings(
+    analyticsEnabled = analyticsEnabled
 )
 
 fun List<DomainLocation>.toPath(
@@ -147,24 +157,26 @@ fun List<DomainLocation>.toPaths(
     }
 }
 
-fun FirestorePath.toHashMap() = hashMapOf(
-    "uuid" to uuid,
-    "sessionUUID" to sessionUUID,
-    "ownerUUID" to ownerUUID,
-    "accuracyChangeTimestamps" to accuracyChangeTimestamps,
-    "accuracyChanges" to accuracyChanges.map { it.toInt() },
-    "altitudes" to altitudes.map { it.toInt() },
-    "bearingAccuracyChangeTimestamps" to bearingAccuracyChangeTimestamps,
-    "bearingAccuracyChanges" to bearingAccuracyChanges.map { it.toInt() },
-    "bearings" to bearings.map { it.toInt() },
-    "coords" to coords,
-    "speeds" to speeds,
-    "speedAccuracyChangeTimestamps" to speedAccuracyChangeTimestamps,
-    "speedAccuracyChanges" to speedAccuracyChanges,
-    "timestamps" to timestamps,
-    "verticalAccuracyChangeTimestamps" to verticalAccuracyChangeTimestamps,
-    "verticalAccuracyChanges" to verticalAccuracyChanges.map { it.toInt() }
-)
+fun FirestorePath.toMap() = FirestorePath.run {
+    mapOf(
+        FieldUUID to uuid,
+        FieldSessionUUID to sessionUUID,
+        FieldOwnerUUID to ownerUUID,
+        FieldAccuracyChangeTimestamps to accuracyChangeTimestamps,
+        FieldAccuracyChanges to accuracyChanges.map { it.toInt() },
+        FieldAltitudes to altitudes.map { it.toInt() },
+        FieldBearingAccuracyChangeTimestamps to bearingAccuracyChangeTimestamps,
+        FieldBearingAccuracyChanges to bearingAccuracyChanges.map { it.toInt() },
+        FieldBearings to bearings.map { it.toInt() },
+        FieldCoords to coords,
+        FieldSpeeds to speeds,
+        FieldSpeedAccuracyChangeTimestamps to speedAccuracyChangeTimestamps,
+        FieldSpeedAccuracyChanges to speedAccuracyChanges,
+        FieldTimestamps to timestamps,
+        FieldVerticalAccuracyChangeTimestamps to verticalAccuracyChangeTimestamps,
+        FieldVerticalAccuracyChanges to verticalAccuracyChanges.map { it.toInt() }
+    )
+}
 
 fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()

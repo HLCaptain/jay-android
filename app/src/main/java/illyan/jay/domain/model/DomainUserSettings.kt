@@ -16,9 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.model
+package illyan.jay.domain.model
 
-data class FirestoreUserWithUUID(
-    val uuid: String,
-    val user: FirestoreUser,
+data class DomainUserSettings(
+    val analyticsEnabled: Boolean = false
 )

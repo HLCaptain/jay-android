@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,34 +16,34 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.login
+package illyan.jay.ui.libraries
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.MainActivity
-import illyan.jay.domain.interactor.AuthInteractor
+import illyan.jay.ui.libraries.model.Library
+import illyan.jay.ui.libraries.model.License
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginViewModel @Inject constructor(
-    private val authInteractor: AuthInteractor
-): ViewModel() {
-    private val _isSigningIn = MutableStateFlow(false)
-    val isSigningIn = _isSigningIn.asStateFlow()
+class LibrariesViewModel @Inject constructor(
 
-    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
+) : ViewModel() {
+    private val _libraries = MutableStateFlow<List<Library>>(emptyList())
+    val libraries = _libraries.asStateFlow()
 
     init {
-        authInteractor.addGoogleAuthStateCallback { if (_isSigningIn.value) _isSigningIn.value = false }
-        authInteractor.addAuthStateListener { if (_isSigningIn.value) _isSigningIn.value = false }
-    }
-
-    fun signInViaGoogle(activity: MainActivity) {
-        if (!isSigningIn.value) {
-            _isSigningIn.value = true
-            authInteractor.signInViaGoogle(activity)
-        }
+        _libraries.value = listOf(
+            Library(
+                name = "Plumber",
+                license = License(
+                    type = "Apache v2",
+                    description = "Cool license",
+                ),
+                moreInfoUrl = "https://github.com/HLCaptain/plumber",
+                repositoryUrl = "https://github.com/HLCaptain/plumber"
+            )
+        )
     }
 }

@@ -62,10 +62,12 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import illyan.jay.R
+import illyan.jay.ui.about.AboutDialog
 import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.login.LoginDialog
+import illyan.jay.ui.settings.SettingsDialog
 import illyan.jay.ui.theme.JayTheme
 
 @Composable
@@ -76,6 +78,8 @@ fun ProfileDialog(
 ) {
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
     var showLoginDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val isUserSigningOut by viewModel.isUserSigningOut.collectAsStateWithLifecycle()
     val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
@@ -96,6 +100,8 @@ fun ProfileDialog(
             onDialogClosed = onDialogClosed,
             onSignOut = { viewModel.signOut() },
             onShowLoginDialog = { showLoginDialog = true },
+            onShowAboutDialog = { showAboutDialog = true },
+            onShowSettingsDialog = { showSettingsDialog = true },
             confidentialInfo = confidentialInfo
                 .filter { !it.second.isNullOrBlank() }
                 .map { it.first to it.second!! },
@@ -103,6 +109,14 @@ fun ProfileDialog(
         LoginDialog(
             isDialogOpen = showLoginDialog,
             onDialogClosed = { showLoginDialog = false },
+        )
+        AboutDialog(
+            isDialogOpen = showAboutDialog,
+            onDialogClosed = { showAboutDialog = false },
+        )
+        SettingsDialog(
+            isDialogOpen = showSettingsDialog,
+            onDialogClosed = { showSettingsDialog = false },
         )
     }
 }
@@ -117,6 +131,8 @@ fun ProfileDialogScreen(
     onDialogClosed: () -> Unit = {},
     onSignOut: () -> Unit = {},
     onShowLoginDialog: () -> Unit = {},
+    onShowAboutDialog: () -> Unit = {},
+    onShowSettingsDialog: () -> Unit = {},
     showConfidentialInfoInitially: Boolean = false,
 ) {
     var showConfidentialInfo by remember { mutableStateOf(showConfidentialInfoInitially) }
@@ -139,7 +155,10 @@ fun ProfileDialogScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                ProfileMenu()
+                ProfileMenu(
+                    onShowSettingsDialog = onShowSettingsDialog,
+                    onShowAboutDialog = onShowAboutDialog,
+                )
                 Row(
                     verticalAlignment = Alignment.Bottom
                 ) {
@@ -356,14 +375,23 @@ fun UserInfo(
 
 @Composable
 fun ProfileMenu(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowAboutDialog: () -> Unit = {},
+    onShowSettingsDialog: () -> Unit = {},
 ) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy((-12).dp)
     ) {
-        ProfileMenuItem(text = stringResource(R.string.settings))
-        ProfileMenuItem(text = stringResource(R.string.about))
+        ProfileMenuItem(
+            onClick = onShowAboutDialog,
+            text = stringResource(R.string.about)
+        )
+        ProfileMenuItem(
+            onClick = onShowSettingsDialog,
+            text = stringResource(R.string.settings)
+        )
+
     }
 }
 
