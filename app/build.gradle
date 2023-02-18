@@ -150,7 +150,7 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
 
     // Item Swipe
-    implementation "me.saket.swipe:swipe:1.0.0"
+    implementation "me.saket.swipe:swipe:1.1.1"
 
     // Mapbox
     implementation "com.mapbox.maps:android:10.11.0-beta.1"

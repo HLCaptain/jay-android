@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -40,18 +41,18 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun JayDialogContent(
-    buttons: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    icon: (@Composable () -> Unit)?,
-    title: (@Composable () -> Unit)?,
-    text: @Composable (() -> Unit)?,
-    shape: Shape,
-    containerColor: Color,
-    tonalElevation: Dp,
-    buttonContentColor: Color,
-    iconContentColor: Color,
-    titleContentColor: Color,
-    textContentColor: Color,
+    buttons: @Composable (() -> Unit) = {},
+    icon: @Composable (() -> Unit)? = null,
+    title: @Composable (() -> Unit)? = null,
+    text: @Composable (() -> Unit)? = null,
+    shape: Shape = AlertDialogDefaults.shape,
+    containerColor: Color = AlertDialogDefaults.containerColor,
+    iconContentColor: Color = AlertDialogDefaults.iconContentColor,
+    titleContentColor: Color = AlertDialogDefaults.titleContentColor,
+    textContentColor: Color = AlertDialogDefaults.textContentColor,
+    tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
+    buttonContentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     Surface(
         modifier = modifier,

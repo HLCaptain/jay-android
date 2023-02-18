@@ -18,16 +18,8 @@
 
 package illyan.jay.ui.settings
 
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -35,109 +27,65 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
-import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.NavGraph
-import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
-import illyan.jay.ui.NavGraphs
+import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
-@RootNavGraph
-@NavGraph
-annotation class SettingsNavGraph(
-    val start: Boolean = false,
-)
 
-@OptIn(ExperimentalMaterialNavigationApi::class, ExperimentalAnimationApi::class)
+@ProfileNavGraph
+@Destination
 @Composable
-fun SettingsDialog(
-    isDialogOpen: Boolean = true,
-    onDialogClosed: () -> Unit = {},
+fun SettingsDialogScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    if (isDialogOpen) {
-        SettingsDialogScreen(
-            modifier = Modifier
-                .widthIn(max = screenWidthDp - 32.dp)
-                .heightIn(max = max(200.dp, screenHeightDp - 256.dp)),
-            onDialogClosed = onDialogClosed
-        ) {
-            DestinationsNavHost(
-                modifier = Modifier.fillMaxSize(),
-                navGraph = NavGraphs.settings,
-                engine = rememberAnimatedNavHostEngine(
-                    rootDefaultAnimations = RootNavGraphDefaultAnimations(
-                        enterTransition = {
-                            slideInHorizontally(tween(200)) { it / 2 } + fadeIn(tween(200))
-                        },
-                        exitTransition = {
-                            slideOutHorizontally(tween(200)) + fadeOut(tween(200))
-                        },
-                        popEnterTransition = {
-                            slideInHorizontally(tween(200)) + fadeIn(tween(200))
-                        },
-                        popExitTransition = {
-                            slideOutHorizontally(tween(200)) { it / 2 } + fadeOut(tween(200))
-                        }
-                    ),
-                )
-            )
-        }
-    }
+    SettingsDialogContent(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = max(200.dp, screenHeightDp - 256.dp))
+    )
 }
 
 @Composable
-fun SettingsDialogScreen(
+fun SettingsDialogContent(
     modifier: Modifier = Modifier,
-    onDialogClosed: () -> Unit = {},
-    content: @Composable () -> Unit = {},
 ) {
-    AlertDialog(
+    JayDialogContent(
         modifier = modifier,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnClickOutside = true,
-            dismissOnBackPress = true,
-        ),
-        onDismissRequest = onDialogClosed,
         title = {
-            // TODO: enable ad button on this screen (only showing one ad on this screen)
-            Text(text = stringResource(id = R.string.settings))
+            SettingsTitle()
         },
-        confirmButton = {
+        buttons = {
             // TODO: Toggle Settings Sync
-        },
-        dismissButton = {
             // TODO: Dismiss dialog (Cancel)
         },
         text = {
-            content()
+            SettingsScreen()
         },
     )
 }
 
-@SettingsNavGraph(start = true)
-@Destination
+@Composable
+fun SettingsTitle() {
+    Text(text = stringResource(id = R.string.settings))
+}
+
 @Composable
 fun SettingsScreen() {
-
+    // TODO: enable ad button on this screen (only showing one ad on this screen)
 }
 
 @PreviewLightDarkTheme
 @Composable
 fun SettingsDialogScreenPreview() {
     JayTheme {
-        SettingsDialogScreen {
-            SettingsScreen()
-        }
+        SettingsDialogContent()
     }
 }

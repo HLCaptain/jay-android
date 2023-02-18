@@ -29,10 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
-import illyan.jay.ui.about.AboutNavGraph
 import illyan.jay.ui.libraries.model.Library
+import illyan.jay.ui.profile.ProfileNavGraph
 
-@AboutNavGraph
+@ProfileNavGraph
 @Destination
 @Composable
 fun Libraries(
@@ -50,6 +50,7 @@ fun LibrariesScreen(
     libraries: List<Library> = emptyList()
 ) {
     LibrariesList(
+        modifier = modifier,
         libraries = libraries
     )
 }
