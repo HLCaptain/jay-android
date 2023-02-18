@@ -500,7 +500,6 @@ fun ProfileMenu(
             onClick = onShowSettingsScreen,
             text = stringResource(R.string.settings)
         )
-
     }
 }
 

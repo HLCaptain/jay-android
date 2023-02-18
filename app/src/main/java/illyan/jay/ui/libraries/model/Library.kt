@@ -18,9 +18,13 @@
 
 package illyan.jay.ui.libraries.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class Library(
     val name: String = "",
     val license: License? = null,
     val repositoryUrl: String? = null,
     val moreInfoUrl: String? = null,
-)
+) : Parcelable
