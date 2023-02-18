@@ -21,28 +21,76 @@ package illyan.jay.data.network.model
 import android.os.Parcelable
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.PropertyName
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.TypeParceler
 
 @Parcelize
 @TypeParceler<GeoPoint, GeoPointParceler>
 data class FirestorePath(
+    @get:PropertyName(FieldUUID)
+    @set:PropertyName(FieldUUID)
     var uuid: String = "",
-    val sessionUUID: String = "", // reference of the session this path is part of
-    val ownerUUID: String = "",
-    val accuracyChangeTimestamps: List<Timestamp> = emptyList(),
-    val accuracyChanges: List<Byte> = emptyList(),
-    val altitudes: List<Short> = emptyList(),
-    val bearingAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
-    val bearingAccuracyChanges: List<Short> = emptyList(),
-    val bearings: List<Short> = emptyList(),
-    val coords: List<GeoPoint> = emptyList(),
-    val speeds: List<Float> = emptyList(),
-    val speedAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
-    val speedAccuracyChanges: List<Float> = emptyList(),
-    val timestamps: List<Timestamp> = emptyList(),
-    val verticalAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
-    val verticalAccuracyChanges: List<Short> = emptyList()
+
+    @get:PropertyName(FieldSessionUUID)
+    @set:PropertyName(FieldSessionUUID)
+    var sessionUUID: String = "", // reference of the session this path is part of
+
+    @get:PropertyName(FieldOwnerUUID)
+    @set:PropertyName(FieldOwnerUUID)
+    var ownerUUID: String = "",
+
+    @get:PropertyName(FieldAccuracyChangeTimestamps)
+    @set:PropertyName(FieldAccuracyChangeTimestamps)
+    var accuracyChangeTimestamps: List<Timestamp> = emptyList(),
+
+    @get:PropertyName(FieldAccuracyChanges)
+    @set:PropertyName(FieldAccuracyChanges)
+    var accuracyChanges: List<Byte> = emptyList(),
+
+    @get:PropertyName(FieldAltitudes)
+    @set:PropertyName(FieldAltitudes)
+    var altitudes: List<Short> = emptyList(),
+
+    @get:PropertyName(FieldBearingAccuracyChangeTimestamps)
+    @set:PropertyName(FieldBearingAccuracyChangeTimestamps)
+    var bearingAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
+
+    @get:PropertyName(FieldBearingAccuracyChanges)
+    @set:PropertyName(FieldBearingAccuracyChanges)
+    var bearingAccuracyChanges: List<Short> = emptyList(),
+
+    @get:PropertyName(FieldBearings)
+    @set:PropertyName(FieldBearings)
+    var bearings: List<Short> = emptyList(),
+
+    @get:PropertyName(FieldCoords)
+    @set:PropertyName(FieldCoords)
+    var coords: List<GeoPoint> = emptyList(),
+
+    @get:PropertyName(FieldSpeeds)
+    @set:PropertyName(FieldSpeeds)
+    var speeds: List<Float> = emptyList(),
+
+    @get:PropertyName(FieldSpeedAccuracyChangeTimestamps)
+    @set:PropertyName(FieldSpeedAccuracyChangeTimestamps)
+    var speedAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
+
+    @get:PropertyName(FieldSpeedAccuracyChanges)
+    @set:PropertyName(FieldSpeedAccuracyChanges)
+    var speedAccuracyChanges: List<Float> = emptyList(),
+
+    @get:PropertyName(FieldTimestamps)
+    @set:PropertyName(FieldTimestamps)
+    var timestamps: List<Timestamp> = emptyList(),
+
+    @get:PropertyName(FieldVerticalAccuracyChangeTimestamps)
+    @set:PropertyName(FieldVerticalAccuracyChangeTimestamps)
+    var verticalAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
+
+    @get:PropertyName(FieldVerticalAccuracyChanges)
+    @set:PropertyName(FieldVerticalAccuracyChanges)
+    var verticalAccuracyChanges: List<Short> = emptyList()
 ) : Parcelable {
     companion object {
         const val CollectionName = "paths"

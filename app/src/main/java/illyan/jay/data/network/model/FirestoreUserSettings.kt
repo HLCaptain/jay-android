@@ -18,8 +18,12 @@
 
 package illyan.jay.data.network.model
 
+import com.google.firebase.firestore.PropertyName
+
 data class FirestoreUserSettings(
-    val analyticsEnabled: Boolean = false
+    @get:PropertyName(FieldAnalyticsEnabled)
+    @set:PropertyName(FieldAnalyticsEnabled)
+    var analyticsEnabled: Boolean = false
 ) {
     companion object {
         const val FieldAnalyticsEnabled = "analyticsEnabled"

@@ -77,7 +77,7 @@ class UserNetworkDataSource @Inject constructor(
     private fun loadUser(
         userUUID: String = authInteractor.userUUID.toString(),
         onError: (Exception) -> Unit = { Timber.e(it, "Error while getting user data: ${it.message}") },
-        onSuccess: (FirestoreUser) -> Unit = { },
+        onSuccess: (FirestoreUser) -> Unit = {},
     ) {
         if (_user.value == null) _isLoading.value = true
         Timber.d("Connecting snapshot listener to Firebase to get ${userUUID.take(4)} user's data")
@@ -90,9 +90,13 @@ class UserNetworkDataSource @Inject constructor(
                     onError(NoSuchElementException("User document does not exist"))
                 } else {
                     Timber.d("Firebase loaded ${userUUID.take(4)} user's data")
-                    _userReference.value = snapshot
-                    _user.value = FirestoreUserWithUUID(userUUID, user)
                     onSuccess(user)
+                }
+                _userReference.value = snapshot
+                if (user != null) {
+                    _user.value = FirestoreUserWithUUID(userUUID, user)
+                } else if (_user.value != null) {
+                    _user.value = null
                 }
                 if (_isLoading.value) _isLoading.value = false
             }

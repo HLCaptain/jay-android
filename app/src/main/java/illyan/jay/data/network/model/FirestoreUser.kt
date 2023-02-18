@@ -18,9 +18,16 @@
 
 package illyan.jay.data.network.model
 
+import com.google.firebase.firestore.PropertyName
+
 data class FirestoreUser(
-    val sessions: List<FirestoreSession> = emptyList(),
-    val settings: FirestoreUserSettings = FirestoreUserSettings()
+    @get:PropertyName(FieldSessions)
+    @set:PropertyName(FieldSessions)
+    var sessions: List<FirestoreSession> = emptyList(),
+
+    @get:PropertyName(FieldSettings)
+    @set:PropertyName(FieldSettings)
+    var settings: FirestoreUserSettings = FirestoreUserSettings()
 ) {
     companion object {
         const val CollectionName = "users"
