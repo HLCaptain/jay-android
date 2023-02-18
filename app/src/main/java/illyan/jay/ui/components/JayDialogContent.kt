@@ -43,10 +43,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun JayDialogContent(
     modifier: Modifier = Modifier,
-    buttons: @Composable (() -> Unit)? = null,
     icon: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
+    buttons: @Composable (() -> Unit)? = null,
     shape: Shape = AlertDialogDefaults.shape,
     containerColor: Color = AlertDialogDefaults.containerColor,
     iconContentColor: Color = AlertDialogDefaults.iconContentColor,

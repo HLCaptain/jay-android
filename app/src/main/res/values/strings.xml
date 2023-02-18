@@ -84,4 +84,8 @@
     <string name="settings">Settings</string>
     <string name="about">About</string>
     <string name="libraries">Libraries</string>
+    <string name="more">More</string>
+    <string name="repository">Repository</string>
+    <string name="type">Type</string>
+    <string name="license">License</string>
 </resources>

@@ -94,6 +94,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -494,14 +495,14 @@ fun HomeScreen(
                 shouldTriggerBottomSheetOnDrag = true
             }
         }
-        var isProfileDialogShowing by remember { mutableStateOf(false) }
+        var isProfileDialogShowing by rememberSaveable { mutableStateOf(false) }
         ProfileDialog(
             isDialogOpen = isProfileDialogShowing,
             onDialogClosed = { isProfileDialogShowing = false }
         )
         val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
         val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
-        var searchQuery by remember { mutableStateOf("") }
+        var searchQuery by rememberSaveable { mutableStateOf("") }
         LaunchedEffect(searchQuery) {
             if (searchQuery.isBlank()) return@LaunchedEffect
 
@@ -599,9 +600,9 @@ fun HomeScreen(
                 // with the user's location in focus.
                 // If it ends, it defaults to the middle of the Earth.
 
-                var didLoadInLocation by remember { mutableStateOf(false) }
-                var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
-                var isMapInitialized by remember { mutableStateOf(false) }
+                var didLoadInLocation by rememberSaveable { mutableStateOf(false) }
+                var didLoadInLocationWithoutPermissions by rememberSaveable { mutableStateOf(false) }
+                var isMapInitialized by rememberSaveable { mutableStateOf(false) }
                 val sheetContentHeight by sheetContentHeight.collectAsStateWithLifecycle()
                 LaunchedEffect(
                     bottomSheetState.getOffsetAsDp(density),
@@ -677,7 +678,7 @@ fun HomeScreen(
                 if (initialLocationLoaded || cameraOptionsBuilder != null) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                         val (foreground, map) = createRefs()
-                        var isMapVisible by remember { mutableStateOf(false) }
+                        var isMapVisible by rememberSaveable { mutableStateOf(false) }
                         androidx.compose.animation.AnimatedVisibility(
                             modifier = Modifier
                                 .zIndex(1f)
@@ -817,7 +818,7 @@ fun BottomSearchBar(
         orientation = Orientation.Vertical,
         state = rememberDraggableState { onDrag(it) }
     )
-    var searchFieldFocusState by remember { mutableStateOf<FocusState?>(null) }
+    var searchFieldFocusState by rememberSaveable { mutableStateOf<FocusState?>(null) }
     // We should help gestures when not searching
     // and bottomSheet is collapsed or collapsing
     val shouldHelpGestures = searchFieldFocusState?.isFocused == false &&
@@ -860,7 +861,7 @@ fun BottomSearchBar(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                 )
-                var searchPlaceText by remember { mutableStateOf("") }
+                var searchPlaceText by rememberSaveable { mutableStateOf("") }
                 TextField(
                     modifier = Modifier
                         .weight(1f)
