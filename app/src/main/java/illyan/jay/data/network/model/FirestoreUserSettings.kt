@@ -18,11 +18,7 @@
 
 package illyan.jay.data.network.model
 
-import com.google.firebase.firestore.PropertyName
-
 data class FirestoreUserSettings(
-    @get:PropertyName(FieldAnalyticsEnabled)
-    @set:PropertyName(FieldAnalyticsEnabled)
     var analyticsEnabled: Boolean = false
 ) {
     companion object {
