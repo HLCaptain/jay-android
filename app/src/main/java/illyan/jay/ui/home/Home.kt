@@ -346,27 +346,22 @@ fun onSearchBarDrag(
 }
 
 fun calculateCornerRadius(
-    isSearching: Boolean = false,
     bottomSheetState: BottomSheetState,
     maxCornerRadius: Dp = RoundedCornerRadius,
     minCornerRadius: Dp = 0.dp,
     threshold: Float = BottomSheetPartialExpendedFraction,
     fraction: Float = 0f,
 ): Dp {
-    return if (isSearching) {
-        minCornerRadius
+    return if (bottomSheetState.isCollapsedOrWillBe()) {
+        maxCornerRadius
     } else {
-        if (bottomSheetState.isCollapsedOrWillBe()) {
-            maxCornerRadius
-        } else {
-            val max = BottomSheetPartialMaxFraction
-            val min = 0f
-            lerp(
-                maxCornerRadius,
-                minCornerRadius,
-                (max - (max - fraction) / threshold).coerceIn(min, max)
-            ).coerceAtLeast(0.dp)
-        }
+        val max = BottomSheetPartialMaxFraction
+        val min = 0f
+        lerp(
+            maxCornerRadius,
+            minCornerRadius,
+            (max - (max - fraction) / threshold).coerceIn(min, max)
+        ).coerceAtLeast(0.dp)
     }
 }
 
@@ -575,7 +570,6 @@ fun HomeScreen(
                     isSearching = isTextFieldFocused,
                     onBottomSheetFractionChange = {
                         roundDp = calculateCornerRadius(
-                            isSearching = isTextFieldFocused,
                             bottomSheetState = bottomSheetState,
                             maxCornerRadius = RoundedCornerRadius,
                             minCornerRadius = 0.dp,
