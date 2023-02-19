@@ -198,10 +198,15 @@ val AvatarPaddingValues = PaddingValues(
 const val BottomSheetPartialExpendedFraction = 0.5f
 const val BottomSheetPartialMaxFraction = 1f
 
+// FIXME: replace MutableStateFlows with CompositionLocalProviders
+
 private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
 val mapView = _mapView.asStateFlow()
 lateinit var sheetState: BottomSheetState
 var isSearching: Boolean = false
+
+private val _bottomSheetFraction = MutableStateFlow(0f)
+val bottomSheetFraction = _bottomSheetFraction.asStateFlow()
 
 val sheetMaxHeight = 680.dp
 val sheetMinHeight = 100.dp
@@ -951,26 +956,36 @@ fun BottomSheetScreen(
                 }
             },
     ) {
-        AnimatedVisibility(visible = !isSearching) {
+        val fraction by bottomSheetFraction.collectAsStateWithLifecycle()
+        // TODO: maybe A/B test these two animations or idk
+        // V1 is sliding in and out the whole width of the screen
+        AnimatedVisibility(visible = fraction < 0.999f) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Surface(
-                    modifier = Modifier
-                        .width(24.dp)
-                        .height(4.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(4.dp)
-                ) {}
+                // V2 is a more basic *appear* *disappear* animation
+                AnimatedVisibility(visible = true) {
+                    Surface(
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(4.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {}
+                }
             }
         }
         val screenHeight by _screenHeight.collectAsStateWithLifecycle()
         val offset by sheetState.offset
         val density = LocalDensity.current
-        onBottomSheetFractionChange(1 - offset / (screenHeight.value * density.density))
+        val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
+        LaunchedEffect(bottomSheetFraction) {
+            _bottomSheetFraction.value = bottomSheetFraction
+        }
+        onBottomSheetFractionChange(bottomSheetFraction)
         ConstraintLayout(
             modifier = modifier
         ) {
