@@ -20,6 +20,7 @@ package illyan.jay.data.network.model
 
 import android.os.Parcelable
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.PropertyName
 import kotlinx.parcelize.Parcelize
@@ -28,8 +29,7 @@ import kotlinx.parcelize.TypeParceler
 @Parcelize
 @TypeParceler<GeoPoint, GeoPointParceler>
 data class FirestorePath(
-    @get:PropertyName(FieldUUID)
-    @set:PropertyName(FieldUUID)
+    @DocumentId
     var uuid: String = "",
 
     @get:PropertyName(FieldSessionUUID)
@@ -94,7 +94,6 @@ data class FirestorePath(
 ) : Parcelable {
     companion object {
         const val CollectionName = "paths"
-        const val FieldUUID = "uuid"
         const val FieldSessionUUID = "sessionUUID"
         const val FieldOwnerUUID = "ownerUUID"
         const val FieldAccuracyChangeTimestamps = "accuracyChangeTimestamps"

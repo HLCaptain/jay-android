@@ -27,7 +27,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.toObject
 import illyan.jay.data.network.model.FirestoreUser
-import illyan.jay.data.network.model.FirestoreUserWithUUID
 import illyan.jay.domain.interactor.AuthInteractor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,8 +42,8 @@ class UserNetworkDataSource @Inject constructor(
 ) : DefaultLifecycleObserver {
     private val _userListenerRegistration = MutableStateFlow<ListenerRegistration?>(null)
     private val _userReference = MutableStateFlow<DocumentSnapshot?>(null)
-    private val _user = MutableStateFlow<FirestoreUserWithUUID?>(null)
-    val user: StateFlow<FirestoreUserWithUUID?> get() {
+    private val _user = MutableStateFlow<FirestoreUser?>(null)
+    val user: StateFlow<FirestoreUser?> get() {
         if (_userListenerRegistration.value == null) loadUser()
         return _user.asStateFlow()
     }
@@ -57,10 +56,11 @@ class UserNetworkDataSource @Inject constructor(
     init {
         authInteractor.addAuthStateListener {
             if (authInteractor.isUserSignedIn) {
+                Timber.d("Reloading snapshot listener for user ${_user.value?.uuid}")
                 loadUser()
             } else {
-                _userReference.value = null
                 Timber.d("Removing snapshot listener for user ${_user.value?.uuid}")
+                _userReference.value = null
                 _userListenerRegistration.value?.remove()
                 _user.value = null
             }
@@ -82,6 +82,7 @@ class UserNetworkDataSource @Inject constructor(
         if (_user.value == null) _isLoading.value = true
         Timber.d("Connecting snapshot listener to Firebase to get ${userUUID.take(4)} user's data")
         val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
+            Timber.v("New snapshot regarding user ${userUUID.take(4)}")
             if (error != null) {
                 onError(error)
             } else {
@@ -100,7 +101,7 @@ class UserNetworkDataSource @Inject constructor(
                     _userReference.value = null
                 }
                 if (user != null) {
-                    _user.value = FirestoreUserWithUUID(userUUID, user)
+                    _user.value = user
                 } else if (_user.value != null) {
                     _user.value = null
                 }
@@ -115,9 +116,9 @@ class UserNetworkDataSource @Inject constructor(
     }
 
     fun deleteUserData(
-        onCancel: () -> Unit = { Timber.d("User data deletion canceled") },
+        onCancel: () -> Unit = { Timber.i("User data deletion canceled") },
         onFailure: (Exception) -> Unit = { Timber.e(it) },
-        onSuccess: () -> Unit = { Timber.d("User data deletion successful") },
+        onSuccess: () -> Unit = { Timber.i("User data deletion successful") },
     ) {
         _userReference.value?.apply {
             reference.delete()

@@ -18,9 +18,13 @@
 
 package illyan.jay.data.network.model
 
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.PropertyName
 
 data class FirestoreUser(
+    @DocumentId
+    var uuid: String = "",
+
     @get:PropertyName(FieldSessions)
     @set:PropertyName(FieldSessions)
     var sessions: List<FirestoreSession> = emptyList(),

@@ -150,7 +150,7 @@ class SessionInteractor @Inject constructor(
 
     suspend fun deleteAllSyncedData() {
         if (!authInteractor.isUserSignedIn) return
-        Timber.i("Trying to delete user data for user ${authInteractor.userUUID}")
+        Timber.i("Trying to delete user data for user ${authInteractor.userUUID?.take(4)}")
         userNetworkDataSource.deleteUserData()
         locationNetworkDataSource.deleteLocationsForUser()
     }

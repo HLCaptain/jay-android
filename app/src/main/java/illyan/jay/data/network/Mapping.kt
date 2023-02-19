@@ -159,7 +159,6 @@ fun List<DomainLocation>.toPaths(
 
 fun FirestorePath.toMap() = FirestorePath.run {
     mapOf(
-        FieldUUID to uuid,
         FieldSessionUUID to sessionUUID,
         FieldOwnerUUID to ownerUUID,
         FieldAccuracyChangeTimestamps to accuracyChangeTimestamps,

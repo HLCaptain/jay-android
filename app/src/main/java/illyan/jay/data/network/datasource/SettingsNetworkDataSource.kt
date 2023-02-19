@@ -47,7 +47,7 @@ class SettingsNetworkDataSource @Inject constructor(
             userNetworkDataSource.isLoading
         ) { user, loading ->
             if (user != null) {
-                val settings = user.user.settings.toDomainModel()
+                val settings = user.settings.toDomainModel()
                 Timber.d("Firebase got user settings for user ${user.uuid}")
                 settings
             } else if (loading) {
