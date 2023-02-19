@@ -26,7 +26,7 @@ import illyan.jay.data.network.model.FirestoreSession
 import illyan.jay.data.network.model.FirestoreUserSettings
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
-import illyan.jay.domain.model.DomainUserSettings
+import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.util.toGeoPoint
 import illyan.jay.util.toTimestamp
 import illyan.jay.util.toZonedDateTime
@@ -62,11 +62,11 @@ fun FirestoreSession.toDomainModel(
     endLocationLatitude = endLocation?.latitude?.toFloat(),
 )
 
-fun FirestoreUserSettings.toDomainModel() = DomainUserSettings(
+fun FirestoreUserSettings.toDomainModel() = DomainPreferences(
     analyticsEnabled = analyticsEnabled
 )
 
-fun DomainUserSettings.toFirestoreModel() = FirestoreUserSettings(
+fun DomainPreferences.toFirestoreModel() = FirestoreUserSettings(
     analyticsEnabled = analyticsEnabled
 )
 

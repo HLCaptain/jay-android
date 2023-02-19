@@ -18,6 +18,6 @@
 
 package illyan.jay.domain.model
 
-data class DomainUserSettings(
+data class DomainPreferences(
     val analyticsEnabled: Boolean = false
 )

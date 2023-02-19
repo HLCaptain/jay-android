@@ -31,11 +31,11 @@ data class FirestoreUser(
 
     @get:PropertyName(FieldSettings)
     @set:PropertyName(FieldSettings)
-    var settings: FirestoreUserSettings = FirestoreUserSettings()
+    var preferences: FirestoreUserSettings = FirestoreUserSettings()
 ) {
     companion object {
         const val CollectionName = "users"
         const val FieldSessions = "sessions"
-        const val FieldSettings = "settings"
+        const val FieldSettings = "preferences"
     }
 }
