@@ -18,6 +18,16 @@
 
 package illyan.jay.domain.model
 
+import illyan.jay.data.disk.serializers.ZonedDateTimeSerializer
+import kotlinx.serialization.Serializable
+import java.time.ZonedDateTime
+
+
+@Serializable
 data class DomainPreferences(
-    val analyticsEnabled: Boolean = false
+    val userUUID: String? = null,
+    val analyticsEnabled: Boolean = false,
+    val freeDriveAutoStart: Boolean = false,
+    @Serializable(with = ZonedDateTimeSerializer::class)
+    val lastUpdate: ZonedDateTime = ZonedDateTime.now()
 )

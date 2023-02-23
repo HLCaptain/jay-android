@@ -22,9 +22,9 @@ import com.google.firebase.firestore.DocumentId
 
 data class FirestoreUser(
     @DocumentId
-    var uuid: String = "",
-    var sessions: List<FirestoreSession> = emptyList(),
-    var preferences: FirestoreUserSettings = FirestoreUserSettings()
+    val uuid: String = "",
+    val sessions: List<FirestoreSession> = emptyList(),
+    val preferences: FirestoreUserPreferences? = null
 ) {
     companion object {
         const val CollectionName = "users"

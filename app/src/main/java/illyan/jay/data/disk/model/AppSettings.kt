@@ -18,13 +18,13 @@
 
 package illyan.jay.data.disk.model
 
+import illyan.jay.domain.model.DomainPreferences
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppSettings(
-    val turnOnFreeDriveAutomatically: Boolean = false,
     val clientUUID: String? = null,
-    val analyticsEnabled: Boolean = true, // TODO: turn off as default once we can set it, maybe store it in the cloud as a user preference
+    val preferences: DomainPreferences = DomainPreferences(),
 ) {
     companion object {
         val default = AppSettings()

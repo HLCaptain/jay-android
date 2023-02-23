@@ -19,10 +19,19 @@
 package illyan.jay.ui.settings
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.SettingsInteractor
+import illyan.jay.ui.settings.model.toUiModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-
-) : ViewModel()
+    private val settingsInteractor: SettingsInteractor
+) : ViewModel() {
+    val userPreferences = settingsInteractor.userPreferences.map { it?.toUiModel() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+}

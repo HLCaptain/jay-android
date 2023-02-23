@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk
+package illyan.jay.data.disk.serializers
 
 import androidx.datastore.core.Serializer
 import illyan.jay.data.disk.model.AppSettings

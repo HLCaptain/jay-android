@@ -51,6 +51,9 @@ class UserNetworkDataSource @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _isLoadingFromCloud = MutableStateFlow(false)
+    val isLoadingFromCloud = _isLoadingFromCloud.asStateFlow()
+
     private val executor = Executors.newSingleThreadExecutor()
 
     init {
@@ -63,6 +66,8 @@ class UserNetworkDataSource @Inject constructor(
                 _userReference.value = null
                 _userListenerRegistration.value?.remove()
                 _user.value = null
+                _isLoading.value = false
+                _isLoadingFromCloud.value = false
             }
         }
         appLifecycle.addObserver(this)
@@ -79,7 +84,10 @@ class UserNetworkDataSource @Inject constructor(
         onError: (Exception) -> Unit = { Timber.e(it, "Error while getting user data: ${it.message}") },
         onSuccess: (FirestoreUser) -> Unit = {},
     ) {
-        if (_user.value == null) _isLoading.value = true
+        if (_user.value == null) {
+            _isLoading.value = true
+            _isLoadingFromCloud.value = true
+        }
         Timber.d("Connecting snapshot listener to Firebase to get ${userUUID.take(4)} user's data")
         val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
             Timber.v("New snapshot regarding user ${userUUID.take(4)}")
@@ -105,7 +113,12 @@ class UserNetworkDataSource @Inject constructor(
                 } else if (_user.value != null) {
                     _user.value = null
                 }
-                if (_isLoading.value) _isLoading.value = false
+                if (_isLoading.value) {
+                    _isLoading.value = false
+                }
+                if (_isLoadingFromCloud.value && snapshot?.metadata?.isFromCache == false) {
+                    _isLoadingFromCloud.value = false
+                }
             }
         }
         _userListenerRegistration.value?.remove()

@@ -23,7 +23,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.GeoPoint
 import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.model.FirestoreSession
-import illyan.jay.data.network.model.FirestoreUserSettings
+import illyan.jay.data.network.model.FirestoreUserPreferences
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSession
@@ -62,12 +62,19 @@ fun FirestoreSession.toDomainModel(
     endLocationLatitude = endLocation?.latitude?.toFloat(),
 )
 
-fun FirestoreUserSettings.toDomainModel() = DomainPreferences(
-    analyticsEnabled = analyticsEnabled
+fun FirestoreUserPreferences.toDomainModel(
+    userUUID: String
+) = DomainPreferences(
+    userUUID = userUUID,
+    analyticsEnabled = analyticsEnabled,
+    freeDriveAutoStart = freeDriveAutoStart,
+    lastUpdate = lastUpdate.toZonedDateTime(),
 )
 
-fun DomainPreferences.toFirestoreModel() = FirestoreUserSettings(
-    analyticsEnabled = analyticsEnabled
+fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
+    analyticsEnabled = analyticsEnabled,
+    freeDriveAutoStart = freeDriveAutoStart,
+    lastUpdate = lastUpdate.toTimestamp(),
 )
 
 fun List<DomainLocation>.toPath(

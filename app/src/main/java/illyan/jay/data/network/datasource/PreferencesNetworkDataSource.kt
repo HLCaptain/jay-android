@@ -41,15 +41,18 @@ class PreferencesNetworkDataSource @Inject constructor(
     private val userNetworkDataSource: UserNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
+    val isLoading = userNetworkDataSource.isLoading
+    val isLoadingFromCloud = userNetworkDataSource.isLoadingFromCloud
+
     val preferences: StateFlow<DomainPreferences?> by lazy {
         combine(
             userNetworkDataSource.user,
             userNetworkDataSource.isLoading
         ) { user, loading ->
-            if (user != null) {
-                val settings = user.preferences.toDomainModel()
-                Timber.d("Firebase got user settings for user ${user.uuid}")
-                settings
+            if (user?.preferences != null) {
+                val preferences = user.preferences.toDomainModel(userUUID = user.uuid)
+                Timber.d("Firebase got preferences for user ${user.uuid.take(4)}")
+                preferences
             } else if (loading) {
                 null
             } else {
@@ -57,21 +60,20 @@ class PreferencesNetworkDataSource @Inject constructor(
                 // possible states:
                 // - user not signed in: tell user they cannot sync settings?
                 // - user does not have settings yet
-                // - no user profile in cloud
-                DomainPreferences()
+                null
             }
         }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
     }
 
-    fun setUserSettings(
-        settings: DomainPreferences,
+    fun setPreferences(
+        preferences: DomainPreferences,
         batch: WriteBatch,
     ) {
         if (!authInteractor.isUserSignedIn) return
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
-        val fieldMapToSet = mapOf(FirestoreUser.FieldSettings to settings.toFirestoreModel())
+        val fieldMapToSet = mapOf(FirestoreUser.FieldSettings to preferences.toFirestoreModel())
         batch.set(
             userRef,
             fieldMapToSet,
@@ -79,16 +81,16 @@ class PreferencesNetworkDataSource @Inject constructor(
         )
     }
 
-    fun setUserSettings(
-        settings: DomainPreferences,
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting user settings: ${it.message}") },
-        onCancel: () -> Unit = { Timber.i("Inserting user settings canceled") },
-        onSuccess: (DomainPreferences) -> Unit = { Timber.i("Inserting user settings successful") },
+    fun setPreferences(
+        preferences: DomainPreferences,
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting user preferences: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Inserting user preferences canceled") },
+        onSuccess: (DomainPreferences) -> Unit = { Timber.i("Inserting user preferences successful") },
     ) {
         firestore.runBatch {
-            setUserSettings(settings, it)
+            setPreferences(preferences, it)
         }.addOnSuccessListener {
-            onSuccess(settings)
+            onSuccess(preferences)
         }.addOnFailureListener {
             onFailure(it)
         }.addOnCanceledListener {
@@ -96,16 +98,16 @@ class PreferencesNetworkDataSource @Inject constructor(
         }
     }
 
-    fun resetUserSettings(
+    fun resetPreferences(
         batch: WriteBatch
-    ) = setUserSettings(DomainPreferences(), batch)
+    ) = setPreferences(DomainPreferences(userUUID = authInteractor.userUUID), batch)
 
-    fun resetUserSettings(
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while resetting user settings: ${it.message}") },
-        onCancel: () -> Unit = { Timber.i("Resetting user settings canceled") },
-        onSuccess: (DomainPreferences) -> Unit = { Timber.i("Resetting user settings canceled") },
-    ) = setUserSettings(
-        settings = DomainPreferences(),
+    fun resetPreferences(
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while resetting user preferences: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Resetting user preferences canceled") },
+        onSuccess: (DomainPreferences) -> Unit = { Timber.i("Resetting user preferences canceled") },
+    ) = setPreferences(
+        preferences = DomainPreferences(userUUID = authInteractor.userUUID),
         onFailure = onFailure,
         onCancel = onCancel,
         onSuccess = onSuccess,

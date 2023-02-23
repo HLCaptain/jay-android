@@ -54,25 +54,25 @@ interface LocationDao {
     @Delete
     fun deleteLocations(locations: List<RoomLocation>)
 
-    @Query("DELETE FROM location")
+    @Query("DELETE FROM locations")
     fun deleteLocations()
 
-    @Query("DELETE FROM location WHERE sessionUUID = :sessionUUID")
+    @Query("DELETE FROM locations WHERE sessionUUID = :sessionUUID")
     fun deleteLocations(sessionUUID: String)
 
     @Transaction
-    @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID")
+    @Query("SELECT * FROM locations WHERE sessionUUID = :sessionUUID")
     fun getLocations(sessionUUID: String): Flow<List<RoomLocation>>
 
     @Transaction
-    @Query("SELECT * FROM location WHERE sessionUUID IN(:sessionUUIDs)")
+    @Query("SELECT * FROM locations WHERE sessionUUID IN(:sessionUUIDs)")
     fun getLocations(sessionUUIDs: List<String>): Flow<List<RoomLocation>>
 
     @Transaction
-    @Query("SELECT * FROM location ORDER BY time DESC LIMIT :limit")
+    @Query("SELECT * FROM locations ORDER BY time DESC LIMIT :limit")
     fun getLatestLocations(limit: Long): Flow<List<RoomLocation>>
 
     @Transaction
-    @Query("SELECT * FROM location WHERE sessionUUID = :sessionUUID ORDER BY time DESC LIMIT :limit")
+    @Query("SELECT * FROM locations WHERE sessionUUID = :sessionUUID ORDER BY time DESC LIMIT :limit")
     fun getLatestLocations(sessionUUID: String, limit: Long): Flow<List<RoomLocation>>
 }

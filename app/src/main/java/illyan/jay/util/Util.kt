@@ -150,11 +150,13 @@ fun Point.toLatLng() = LatLng(latitude(), longitude())
 
 fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
 
+fun Instant.toZonedDateTime(): ZonedDateTime = toTimestamp().toZonedDateTime()
+
 fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()
 
 fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 
-fun Timestamp.toZonedDateTime() = toInstant().atZone(ZoneOffset.UTC)
+fun Timestamp.toZonedDateTime(): ZonedDateTime = toInstant().atZone(ZoneOffset.UTC)
 
 fun List<DomainLocation>.sphericalPathLength() = sortedBy {
     it.zonedDateTime.toInstant().toEpochMilli()

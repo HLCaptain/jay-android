@@ -21,9 +21,11 @@ package illyan.jay.data.disk
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import illyan.jay.data.disk.dao.LocationDao
+import illyan.jay.data.disk.dao.PreferencesDao
 import illyan.jay.data.disk.dao.SensorEventDao
 import illyan.jay.data.disk.dao.SessionDao
 import illyan.jay.data.disk.model.RoomLocation
+import illyan.jay.data.disk.model.RoomPreferences
 import illyan.jay.data.disk.model.RoomSensorEvent
 import illyan.jay.data.disk.model.RoomSession
 
@@ -37,9 +39,10 @@ import illyan.jay.data.disk.model.RoomSession
     entities = [
         RoomSession::class,
         RoomLocation::class,
-        RoomSensorEvent::class
+        RoomSensorEvent::class,
+        RoomPreferences::class,
     ],
-    version = 29,
+    version = 30,
     exportSchema = false
 )
 abstract class JayDatabase : RoomDatabase() {
@@ -65,6 +68,8 @@ abstract class JayDatabase : RoomDatabase() {
      * @return SensorEventDao
      */
     abstract fun sensorEventDao(): SensorEventDao
+
+    abstract fun preferencesDao(): PreferencesDao
 
     companion object {
         const val DB_NAME = "jay.db"

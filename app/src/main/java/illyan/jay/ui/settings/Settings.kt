@@ -22,8 +22,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -31,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
@@ -39,6 +44,7 @@ import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.profile.ProfileNavGraph
+import illyan.jay.ui.settings.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
 
 
@@ -50,16 +56,19 @@ fun SettingsDialogScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+    val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
     SettingsDialogContent(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = max(200.dp, screenHeightDp - 256.dp))
+            .heightIn(max = max(200.dp, screenHeightDp - 256.dp)),
+        preferences = preferences
     )
 }
 
 @Composable
 fun SettingsDialogContent(
     modifier: Modifier = Modifier,
+    preferences: UiPreferences? = null,
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -67,7 +76,9 @@ fun SettingsDialogContent(
             SettingsTitle()
         },
         text = {
-            SettingsScreen()
+            SettingsScreen(
+                preferences = preferences
+            )
         },
         buttons = {
             // TODO: Toggle Settings Sync
@@ -83,7 +94,23 @@ fun SettingsTitle() {
 }
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    preferences: UiPreferences? = null
+) {
+    LazyColumn {
+        items(
+            listOf(
+                "Analytics enabled" to preferences?.analyticsEnabled,
+                "Free drive auto" to preferences?.freeDriveAutoStart,
+                "User UUID" to preferences?.userUUID,
+                "Last update" to preferences?.lastUpdate
+            )
+        ) {
+            Text(text = it.first)
+            Spacer(modifier = Modifier.width(40.dp))
+            Text(text = it.second.toString())
+        }
+    }
     // TODO: enable ad button on this screen (only showing one ad on this screen)
     Spacer(modifier = Modifier.height(400.dp)) // Fake height
 }

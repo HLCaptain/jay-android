@@ -24,15 +24,15 @@ import illyan.jay.util.toTimestamp
 import java.time.Instant
 
 data class FirestoreSession(
-    var uuid: String = "",
-    var startDateTime: Timestamp = Instant.EPOCH.toTimestamp(),
-    var endDateTime: Timestamp? = null,
-    var startLocation: GeoPoint? = null,
-    var endLocation: GeoPoint? = null,
-    var startLocationName: String? = null,
-    var endLocationName: String? = null,
-    var distance: Float? = null,
-    var clientUUID: String? = null
+    val uuid: String = "",
+    val startDateTime: Timestamp = Instant.EPOCH.toTimestamp(),
+    val endDateTime: Timestamp? = null,
+    val startLocation: GeoPoint? = null,
+    val endLocation: GeoPoint? = null,
+    val startLocationName: String? = null,
+    val endLocationName: String? = null,
+    val distance: Float? = null,
+    val clientUUID: String? = null
 ) {
     companion object {
         const val FieldUUID = "uuid"
