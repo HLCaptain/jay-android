@@ -149,7 +149,7 @@ fun Sessions(
         syncSession = viewModel::syncSession,
         deleteSession = viewModel::deleteSession,
         ownAllSessions = viewModel::ownAllSessions,
-        deleteAllSyncedData = viewModel::deleteAllSyncedData,
+        deleteAllSyncedData = viewModel::deleteSyncedSessions,
         deleteSessionsLocally = viewModel::deleteSessionsLocally,
         deleteSessionFromCloud = viewModel::deleteSessionFromCloud,
         onSessionSelected = {

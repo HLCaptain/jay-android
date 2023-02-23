@@ -230,9 +230,9 @@ class SessionsViewModel @Inject constructor(
         }
     }
 
-    fun deleteAllSyncedData() {
+    fun deleteSyncedSessions() {
         viewModelScope.launch(dispatcherIO) {
-            sessionInteractor.deleteAllSyncedData()
+            sessionInteractor.deleteSyncedSessions()
         }
     }
 

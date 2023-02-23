@@ -77,6 +77,17 @@ class SessionNetworkDataSource @Inject constructor(
         onSuccess = onSuccess,
     )
 
+    fun deleteAllSessions(
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while deleting sessions: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Deleting sessions canceled") },
+        onSuccess: () -> Unit = { Timber.i("Deleted sessions") }
+    ) = deleteSessions(
+        sessionUUIDs = userNetworkDataSource.user.value?.sessions?.map { it.uuid } ?: emptyList(),
+        onFailure = onFailure,
+        onCancel = onCancel,
+        onSuccess = onSuccess,
+    )
+
     @JvmName("deleteSessionsByUUIDs")
     fun deleteSessions(
         sessionUUIDs: List<String>,
