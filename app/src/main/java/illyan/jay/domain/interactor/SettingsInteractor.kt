@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -57,12 +58,29 @@ class SettingsInteractor @Inject constructor(
                         preferencesDiskDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
                     } else {
                         updateAppSettings {
-                            it.copy(preferences = it.preferences.copy(freeDriveAutoStart = value))
+                            it.copy(preferences = it.preferences.copy(
+                                freeDriveAutoStart = value,
+                                lastUpdate = ZonedDateTime.now()
+                            ))
                         }
                     }
                 }
             }
         }
+
+    val arePreferencesSynced by lazy {
+        combine(
+            isLoading,
+            localUserPreferences,
+            syncedUserPreferences
+        ) { loading, local, synced ->
+            if (!loading && local != null && synced != null) {
+                local.lastUpdate.toEpochSecond() == synced.lastUpdate.toEpochSecond()
+            } else {
+                false
+            }
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
+    }
 
     var analyticsEnabled: Boolean?
         get() = userPreferences.value?.analyticsEnabled
@@ -74,7 +92,10 @@ class SettingsInteractor @Inject constructor(
                         preferencesDiskDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
                     } else {
                         updateAppSettings {
-                            it.copy(preferences = it.preferences.copy(analyticsEnabled = value))
+                            it.copy(preferences = it.preferences.copy(
+                                analyticsEnabled = value,
+                                lastUpdate = ZonedDateTime.now()
+                            ))
                         }
                     }
                 }

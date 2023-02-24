@@ -34,4 +34,14 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
     val userPreferences = settingsInteractor.userPreferences.map { it?.toUiModel() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val arePreferencesSynced = settingsInteractor.arePreferencesSynced
+
+    fun setAnalytics(enabled: Boolean) {
+        settingsInteractor.analyticsEnabled = enabled
+    }
+
+    fun setFreeDriveAutoStart(enabled: Boolean) {
+        settingsInteractor.freeDriveAutoStart = enabled
+    }
 }

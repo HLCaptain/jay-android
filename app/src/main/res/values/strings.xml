@@ -88,4 +88,11 @@
     <string name="repository">Repository</string>
     <string name="type">Type</string>
     <string name="license">License</string>
+    <string name="analytics">Analytics</string>
+    <string name="disabled">Disabled</string>
+    <string name="enabled">Enabled</string>
+    <string name="synced">Synced</string>
+    <string name="not_synced">Not synced</string>
+    <string name="last_update">Last update</string>
+    <string name="free_drive_auto_start">Free drive auto start</string>
 </resources>

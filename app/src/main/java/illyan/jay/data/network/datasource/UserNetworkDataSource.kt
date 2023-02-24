@@ -73,6 +73,11 @@ class UserNetworkDataSource @Inject constructor(
         appLifecycle.addObserver(this)
     }
 
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        loadUser()
+    }
+
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
         _userListenerRegistration.value?.remove()
@@ -84,6 +89,7 @@ class UserNetworkDataSource @Inject constructor(
         onError: (Exception) -> Unit = { Timber.e(it, "Error while getting user data: ${it.message}") },
         onSuccess: (FirestoreUser) -> Unit = {},
     ) {
+        if (!authInteractor.isUserSignedIn) return
         if (_user.value == null) {
             _isLoading.value = true
             _isLoadingFromCloud.value = true

@@ -136,18 +136,18 @@ fun List<DomainLocation>.toPath(
         sessionUUID = sessionUUID,
         ownerUUID = ownerUUID,
         accuracyChangeTimestamps = accuracyChangeTimestamps,
-        accuracyChanges = accuracyChanges,
-        altitudes = altitudes,
+        accuracyChanges = accuracyChanges.map { it.toInt() },
+        altitudes = altitudes.map { it.toInt() },
         bearingAccuracyChangeTimestamps = bearingAccuracyChangeTimestamps,
-        bearingAccuracyChanges = bearingAccuracyChanges,
-        bearings = bearings,
+        bearingAccuracyChanges = bearingAccuracyChanges.map { it.toInt() },
+        bearings = bearings.map { it.toInt() },
         coords = coords,
         speeds = speeds,
         speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps,
         speedAccuracyChanges = speedAccuracyChanges,
         timestamps = timestamps,
         verticalAccuracyChangeTimestamps = verticalAccuracyChangeTimestamps,
-        verticalAccuracyChanges = verticalAccuracyChanges,
+        verticalAccuracyChanges = verticalAccuracyChanges.map { it.toInt() },
     )
 }
 

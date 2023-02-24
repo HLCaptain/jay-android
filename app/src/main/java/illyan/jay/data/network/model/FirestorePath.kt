@@ -34,18 +34,18 @@ data class FirestorePath(
     val sessionUUID: String = "", // reference of the session this path is part of
     val ownerUUID: String = "",
     val accuracyChangeTimestamps: List<Timestamp> = emptyList(),
-    val accuracyChanges: List<Byte> = emptyList(),
-    val altitudes: List<Short> = emptyList(),
+    val accuracyChanges: List<Int> = emptyList(),
+    val altitudes: List<Int> = emptyList(),
     val bearingAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
-    val bearingAccuracyChanges: List<Short> = emptyList(),
-    val bearings: List<Short> = emptyList(),
+    val bearingAccuracyChanges: List<Int> = emptyList(),
+    val bearings: List<Int> = emptyList(),
     val coords: List<GeoPoint> = emptyList(),
     val speeds: List<Float> = emptyList(),
     val speedAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
     val speedAccuracyChanges: List<Float> = emptyList(),
     val timestamps: List<Timestamp> = emptyList(),
     val verticalAccuracyChangeTimestamps: List<Timestamp> = emptyList(),
-    val verticalAccuracyChanges: List<Short> = emptyList()
+    val verticalAccuracyChanges: List<Int> = emptyList()
 ) : Parcelable {
     companion object {
         const val CollectionName = "paths"
