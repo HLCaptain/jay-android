@@ -31,10 +31,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.ZonedDateTime
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,7 +48,15 @@ class SettingsInteractor @Inject constructor(
     private val authInteractor: AuthInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
-    val appSettingsFlow = appSettingsDataStore.data
+    val appSettingsFlow = appSettingsDataStore.data.map { settings ->
+        if (settings.clientUUID == null) {
+            val newSettings = settings.copy(clientUUID = UUID.randomUUID().toString())
+            updateAppSettings { newSettings }
+            newSettings
+        } else {
+            settings
+        }
+    }
 
     var freeDriveAutoStart: Boolean?
         get() = userPreferences.value?.freeDriveAutoStart
@@ -74,8 +84,8 @@ class SettingsInteractor @Inject constructor(
             localUserPreferences,
             syncedUserPreferences
         ) { loading, local, synced ->
-            if (!loading && local != null && synced != null) {
-                local.lastUpdate.toEpochSecond() == synced.lastUpdate.toEpochSecond()
+            if (!loading) {
+                local == synced
             } else {
                 false
             }
@@ -204,15 +214,13 @@ class SettingsInteractor @Inject constructor(
                         preferencesNetworkDataSource.setPreferences(localPreferences)
                         localPreferences
                     } else {
-                        if (localPreferences!!.lastUpdate.toInstant().epochSecond ==
-                            syncedPreferences!!.lastUpdate.toInstant().epochSecond
-                        ) {
+                        if (localPreferences == syncedPreferences) {
                             // Same lastUpdate, assuming the version is the same
                             Timber.v("Both local and synced preferences' lastUpdate are matching. Assuming they are the same, returning localPreferences.")
                             localPreferences
                         } else if (
-                            localPreferences.lastUpdate.toInstant().epochSecond >
-                            syncedPreferences.lastUpdate.toInstant().epochSecond
+                            localPreferences!!.lastUpdate.toInstant().epochSecond >
+                            syncedPreferences!!.lastUpdate.toInstant().epochSecond
                         ) {
                             // If local is more fresh, then update synced preferences.
                             Timber.v("Local preferences are more fresh, uploading it to cloud")

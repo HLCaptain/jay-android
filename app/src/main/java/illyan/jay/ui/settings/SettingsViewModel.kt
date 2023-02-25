@@ -24,7 +24,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.ui.settings.model.toUiModel
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -32,8 +32,12 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor
 ) : ViewModel() {
-    val userPreferences = settingsInteractor.userPreferences.map { it?.toUiModel() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val userPreferences = combine(
+        settingsInteractor.userPreferences,
+        settingsInteractor.appSettingsFlow
+    ) { preferences, appSettings ->
+        preferences?.toUiModel(appSettings.clientUUID)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val arePreferencesSynced = settingsInteractor.arePreferencesSynced
 

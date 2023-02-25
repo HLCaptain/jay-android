@@ -30,4 +30,26 @@ data class DomainPreferences(
     val freeDriveAutoStart: Boolean = false,
     @Serializable(with = ZonedDateTimeSerializer::class)
     val lastUpdate: ZonedDateTime = ZonedDateTime.now()
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        return if (other != null && other is DomainPreferences) {
+            lastUpdate.toEpochSecond() == other.lastUpdate.toEpochSecond() &&
+                    userUUID == other.userUUID &&
+                    freeDriveAutoStart == other.freeDriveAutoStart
+        } else {
+            false
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = userUUID?.hashCode() ?: 0
+        result = 31 * result + analyticsEnabled.hashCode()
+        result = 31 * result + freeDriveAutoStart.hashCode()
+        result = 31 * result + lastUpdate.toEpochSecond().hashCode()
+        return result
+    }
+
+    companion object {
+        val default = DomainPreferences()
+    }
+}

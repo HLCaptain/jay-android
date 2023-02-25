@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AppSettings(
     val clientUUID: String? = null,
-    val preferences: DomainPreferences = DomainPreferences(),
+    val preferences: DomainPreferences = DomainPreferences.default,
 ) {
     companion object {
         val default = AppSettings()

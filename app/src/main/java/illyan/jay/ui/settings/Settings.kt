@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.settings
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
@@ -27,11 +28,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -40,8 +43,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,19 +57,20 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
-import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
+import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.model.UiPreferences
-import illyan.jay.ui.settings.model.toUiModel
 import illyan.jay.ui.theme.JayTheme
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -90,7 +98,7 @@ fun SettingsDialogScreen(
 @Composable
 fun SettingsDialogContent(
     modifier: Modifier = Modifier,
-    preferences: UiPreferences? = null,
+    preferences: UiPreferences?,
     arePreferencesSynced: Boolean = false,
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
@@ -100,7 +108,7 @@ fun SettingsDialogContent(
         title = {
             SettingsTitle(
                 arePreferencesSynced = arePreferencesSynced,
-                lastUpdated = preferences?.lastUpdate
+                preferences = preferences
             )
         },
         text = {
@@ -121,17 +129,28 @@ fun SettingsDialogContent(
 @Composable
 fun SettingsTitle(
     arePreferencesSynced: Boolean = false,
-    lastUpdated: ZonedDateTime? = ZonedDateTime.now()
+    preferences: UiPreferences? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(text = stringResource(id = R.string.settings))
+            Text(text = stringResource(R.string.settings))
             SyncPreferencesLabel(arePreferencesSynced = arePreferencesSynced)
         }
-        LastUpdatedLabel(lastUpdated = lastUpdated)
+        Crossfade(targetState = preferences != null) {
+            if (it && preferences != null) {
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    ClientLabel(clientUUID = preferences.clientUUID)
+                    LastUpdateLabel(lastUpdate = preferences.lastUpdate)
+                }
+            } else {
+                MediumCircularProgressIndicator()
+            }
+        }
     }
 }
 
@@ -141,7 +160,8 @@ private fun SyncPreferencesLabel(
 ) {
     Crossfade(targetState = arePreferencesSynced) {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             if (it) {
                 Icon(
@@ -150,7 +170,7 @@ private fun SyncPreferencesLabel(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = stringResource(id = R.string.synced),
+                    text = stringResource(R.string.synced),
                     style = MaterialTheme.typography.bodyMedium
                 )
             } else {
@@ -160,8 +180,8 @@ private fun SyncPreferencesLabel(
                     tint = MaterialTheme.colorScheme.error
                 )
                 Text(
-                    text = stringResource(id = R.string.not_synced),
-                    style = MaterialTheme.typography.bodySmall
+                    text = stringResource(R.string.not_synced),
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
@@ -169,34 +189,72 @@ private fun SyncPreferencesLabel(
 }
 
 @Composable
-private fun LastUpdatedLabel(
-    lastUpdated: ZonedDateTime? = null
+private fun LastUpdateLabel(
+    lastUpdate: ZonedDateTime
+) {
+    SettingLabel(
+        settingName = stringResource(R.string.last_update),
+        settingText = lastUpdate
+            .withZoneSameInstant(ZoneId.systemDefault())
+            .minusNanos(lastUpdate.nano.toLong()) // No millis in formatted time
+            .format(
+                if (lastUpdate.second.seconds.inWholeDays ==
+                    ZonedDateTime.now().second.seconds.inWholeDays
+                ) {
+                    DateTimeFormatter.ISO_LOCAL_TIME
+                } else {
+                    DateTimeFormatter.ISO_LOCAL_DATE
+                }
+            ),
+        style = MaterialTheme.typography.bodyMedium
+    )
+}
+
+@Composable
+fun ClientLabel(
+    clientUUID: String?,
+) {
+    val clipboard = LocalClipboardManager.current
+    AnimatedVisibility(visible = clientUUID != null) {
+        TooltipElevatedCard(
+            tooltip = { CopiedToKeyboardTooltip() },
+            onShowTooltip = { clientUUID?.let { clipboard.setText(AnnotatedString(text = it)) } }
+        ) {
+            SettingLabel(
+                modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+                settingName = stringResource(id = R.string.client),
+                settingText = clientUUID?.take(8),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingLabel(
+    modifier: Modifier = Modifier,
+    settingText: String? = null,
+    settingName: String,
+    style: TextStyle = LocalTextStyle.current,
+    styleName: TextStyle = style.plus(TextStyle(fontWeight = FontWeight.SemiBold))
 ) {
     Row(
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.last_update),
-            style = MaterialTheme.typography.labelMedium
+            text = settingName,
+            style = styleName
         )
         Crossfade(
             modifier = Modifier.animateContentSize(),
-            targetState = lastUpdated
+            targetState = settingText
         ) {
             if (it != null) {
                 Text(
-                    text = it
-                        .withZoneSameInstant(ZoneId.systemDefault())
-                        .minusNanos(it.nano.toLong()) // No millis in formatted time
-                        .format(
-                            if (it.second.seconds.inWholeDays == ZonedDateTime.now().second.seconds.inWholeDays) {
-                                DateTimeFormatter.ISO_LOCAL_TIME
-                            } else {
-                                DateTimeFormatter.ISO_LOCAL_DATE
-                            }
-                        ),
-                    style = MaterialTheme.typography.bodyMedium
+                    text = it,
+                    style = style
                 )
             } else {
                 SmallCircularProgressIndicator()
@@ -273,7 +331,7 @@ private fun BooleanSetting(
 
 @Composable
 private fun AnalyticsSetting(
-    analyticsEnabled: Boolean = AppSettings.default.preferences.analyticsEnabled,
+    analyticsEnabled: Boolean,
     setAnalytics: (Boolean) -> Unit = {}
 ) {
     BooleanSetting(
@@ -285,7 +343,7 @@ private fun AnalyticsSetting(
 
 @Composable
 private fun FreeDriveAutoStartSetting(
-    freeDriveAutoStart: Boolean = AppSettings.default.preferences.freeDriveAutoStart,
+    freeDriveAutoStart: Boolean,
     setFreeDriveAutoStart: (Boolean) -> Unit = {}
 ) {
     BooleanSetting(
@@ -317,7 +375,10 @@ fun SettingsDialogScreenPreview() {
     JayTheme {
         JayDialogSurface {
             SettingsDialogContent(
-                preferences = AppSettings.default.preferences.toUiModel()
+                preferences = UiPreferences(
+                    userUUID = UUID.randomUUID().toString(),
+                    clientUUID = UUID.randomUUID().toString()
+                )
             )
         }
     }

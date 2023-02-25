@@ -35,6 +35,8 @@ class ProfileViewModel @Inject constructor(
     val isUserSigningOut = authInteractor.isUserSigningOut
     val userPhotoUrl = authInteractor.userPhotoUrlStateFlow
 
+    val userUUID = authInteractor.userUUIDStateFlow
+
     val userEmail = authInteractor.currentUserStateFlow
         .map { it?.email }
         .stateIn(

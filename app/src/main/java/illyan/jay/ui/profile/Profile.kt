@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -47,6 +48,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -60,9 +63,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.constraintlayout.compose.ChainStyle
@@ -85,14 +92,17 @@ import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
+import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.destinations.AboutDialogScreenDestination
 import illyan.jay.ui.destinations.LoginDialogScreenDestination
 import illyan.jay.ui.destinations.SettingsDialogScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.theme.JayTheme
+import java.util.UUID
 
 @RootNavGraph
 @NavGraph
@@ -168,6 +178,7 @@ fun ProfileDialogScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
+    val userUUID by viewModel.userUUID.collectAsStateWithLifecycle()
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val isUserSigningOut by viewModel.isUserSigningOut.collectAsStateWithLifecycle()
     val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
@@ -180,6 +191,7 @@ fun ProfileDialogScreen(
         stringResource(R.string.phone) to phone
     )
     ProfileDialogContent(
+        userUUID = userUUID,
         isUserSignedIn = isUserSignedIn,
         isUserSigningOut = isUserSigningOut,
         userPhotoUrl = userPhotoUrl,
@@ -195,6 +207,7 @@ fun ProfileDialogScreen(
 @Composable
 fun ProfileDialogContent(
     modifier: Modifier = Modifier,
+    userUUID: String? = null,
     isUserSignedIn: Boolean = true,
     isUserSigningOut: Boolean = false,
     userPhotoUrl: Uri? = null,
@@ -205,13 +218,15 @@ fun ProfileDialogContent(
     onShowAboutScreen: () -> Unit = {},
     onShowSettingsScreen: () -> Unit = {}
 ) {
+    var showConfidentialInfo by remember { mutableStateOf(showConfidentialInfoInitially) }
     JayDialogContent(
         modifier = modifier,
-        icon = { /*TODO*/ },
         title = {
             ProfileTitleScreen(
+                userUUID = userUUID,
                 isUserSignedIn = isUserSignedIn,
                 userPhotoUrl = userPhotoUrl,
+                showConfidentialInfo = showConfidentialInfo
             )
         },
         text = {
@@ -219,7 +234,8 @@ fun ProfileDialogContent(
                 confidentialInfo = confidentialInfo
                     .filter { !it.second.isNullOrBlank() }
                     .map { it.first to it.second!! },
-                showConfidentialInfoInitially = showConfidentialInfoInitially,
+                onVisibilityChanged = { showConfidentialInfo = it },
+                showConfidentialInfo = showConfidentialInfo
             )
         },
         buttons = {
@@ -280,14 +296,13 @@ fun ProfileButtons(
     }
 }
 
-@Destination
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    showConfidentialInfoInitially: Boolean = false,
+    showConfidentialInfo: Boolean = false,
     confidentialInfo: List<Pair<String, String>> = emptyList(),
+    onVisibilityChanged: (Boolean) -> Unit = {}
 ) {
-    var showConfidentialInfo by remember { mutableStateOf(showConfidentialInfoInitially) }
     var authenticated by remember { mutableStateOf(false) }
     ProfileDetailsScreen(
         modifier = modifier,
@@ -299,7 +314,7 @@ fun ProfileScreen(
                 authenticated = authenticated,
 //                        fragmentActivity = context as FragmentActivity,
                 onAuthenticationChanged = { authenticated = it },
-                onInfoVisibilityChanged = { showConfidentialInfo = it }
+                onVisibilityChanged = onVisibilityChanged
             )
         }
     )
@@ -317,6 +332,7 @@ private fun PreviewProfileDialogScreen(
             JayDialogSurface {
                 ProfileDialogContent(
                     modifier = Modifier.width(300.dp),
+                    userUUID = UUID.randomUUID().toString(),
                     userPhotoUrl = null,
                     confidentialInfo = listOf(
                         stringResource(R.string.name) to name,
@@ -333,13 +349,56 @@ private fun PreviewProfileDialogScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileTitleScreen(
+    modifier: Modifier = Modifier,
+    userUUID: String? = null,
     isUserSignedIn: Boolean = true,
+    showConfidentialInfo: Boolean = false,
     userPhotoUrl: Uri? = null,
 ) {
+    val clipboard = LocalClipboardManager.current
     FlowRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Text(text = stringResource(R.string.profile))
+        Column {
+            Text(text = stringResource(R.string.profile))
+            AnimatedVisibility(visible = userUUID != null) {
+                if (userUUID != null) {
+                    TooltipElevatedCard(
+                        tooltip = { CopiedToKeyboardTooltip() },
+                        disabledTooltip = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Lock,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                                Text(
+                                    text = stringResource(R.string.locked),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        },
+                        enabled = showConfidentialInfo,
+                        onShowTooltip = {
+                            if (showConfidentialInfo) {
+                                clipboard.setText(AnnotatedString(text = userUUID))
+                            }
+                        }
+                    ) {
+                        UserInfo(
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+                            infoName = stringResource(id = R.string.user_id),
+                            info = userUUID.take(8),
+                            show = showConfidentialInfo,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        }
         Row(
             modifier = Modifier.weight(1f),
             Arrangement.End
@@ -409,7 +468,7 @@ fun UserInfoList(
     modifier: Modifier = Modifier,
     confidentialInfo: List<Pair<String, String>> = emptyList(),
     info: List<Pair<String, String>> = emptyList(),
-    showConfidentialInfo: Boolean = true,
+    showConfidentialInfo: Boolean = false,
 ) {
     LazyRow(
         modifier = modifier,
@@ -423,14 +482,14 @@ fun UserInfoList(
                     UserInfo(
                         infoName = it.first,
                         info = it.second,
-                        hide = showConfidentialInfo
+                        show = showConfidentialInfo
                     )
                 }
                 items(info) {
                     UserInfo(
                         infoName = it.first,
                         info = it.second,
-                        hide = true
+                        show = true
                     )
                 }
             }
@@ -466,17 +525,25 @@ fun ConfidentialInfoToggleButton(
 
 @Composable
 fun UserInfo(
+    modifier: Modifier = Modifier,
     infoName: String = stringResource(R.string.unknown),
     info: String = stringResource(R.string.unknown),
-    hide: Boolean = true,
+    show: Boolean = false,
+    style: TextStyle = LocalTextStyle.current,
+    nameStyle: TextStyle = style.plus(TextStyle(fontWeight = FontWeight.SemiBold)),
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(text = "$infoName: ")
-        Crossfade(targetState = hide) {
+        Text(
+            text = infoName,
+            style = nameStyle
+        )
+        Crossfade(targetState = show) {
             Text(
-                text = if (it) info else stringResource(R.string.hidden_field_string)
+                text = if (it) info else stringResource(R.string.hidden_field_string),
+                style = style
             )
         }
     }
@@ -529,15 +596,15 @@ fun toggleConfidentialInfoVisibility(
     authenticated: Boolean,
 //    fragmentActivity: FragmentActivity,
     onAuthenticationChanged: (Boolean) -> Unit,
-    onInfoVisibilityChanged: (Boolean) -> Unit,
+    onVisibilityChanged: (Boolean) -> Unit,
 ) {
     if (showConfidentialInfo) {
-        onInfoVisibilityChanged(false)
+        onVisibilityChanged(false)
     } else {
         if (authenticated) {
-            onInfoVisibilityChanged(true)
+            onVisibilityChanged(true)
         } else {
-            onInfoVisibilityChanged(true)
+            onVisibilityChanged(true)
             onAuthenticationChanged(true)
             // TODO: implement some kind of biometric authentication with multiple local users
             //  in mind. As a phone can be used by multiple people, using biometrics and other
