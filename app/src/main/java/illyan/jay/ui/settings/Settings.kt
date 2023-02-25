@@ -222,7 +222,7 @@ fun ClientLabel(
         ) {
             SettingLabel(
                 modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
-                settingName = stringResource(id = R.string.client),
+                settingName = stringResource(R.string.client_id),
                 settingText = clientUUID?.take(8),
                 style = MaterialTheme.typography.bodyMedium
             )
