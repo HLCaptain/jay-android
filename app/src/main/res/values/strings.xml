@@ -101,4 +101,6 @@
     <string name="locked">Locked</string>
     <string name="user_id">User ID</string>
     <string name="client_id">Client ID</string>
+    <string name="not_syncing">Not syncing</string>
+    <string name="syncing">Syncing</string>
 </resources>

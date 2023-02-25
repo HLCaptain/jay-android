@@ -47,7 +47,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -308,7 +308,7 @@ fun ProfileScreen(
         modifier = modifier,
         confidentialInfo = confidentialInfo,
         showConfidentialInfo = showConfidentialInfo,
-        toggleConfidentialInfoVisibility = {
+        onConfidentialInfoVisibilityChanged = {
             toggleConfidentialInfoVisibility(
                 showConfidentialInfo = showConfidentialInfo,
                 authenticated = authenticated,
@@ -420,7 +420,7 @@ fun ProfileDetailsScreen(
     confidentialInfo: List<Pair<String, String>> = emptyList(),
     info: List<Pair<String, String>> = emptyList(),
     showConfidentialInfo: Boolean = false,
-    toggleConfidentialInfoVisibility: () -> Unit = {},
+    onConfidentialInfoVisibilityChanged: (Boolean) -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -444,7 +444,7 @@ fun ProfileDetailsScreen(
                     },
                 showConfidentialInfo = showConfidentialInfo,
                 anyConfidentialInfo = confidentialInfo.isNotEmpty(),
-                toggleConfidentialInfoVisibility = toggleConfidentialInfoVisibility
+                onVisibilityChanged = onConfidentialInfoVisibilityChanged
             )
             UserInfoList(
                 modifier = Modifier
@@ -502,14 +502,15 @@ fun ConfidentialInfoToggleButton(
     modifier: Modifier = Modifier,
     showConfidentialInfo: Boolean = false,
     anyConfidentialInfo: Boolean = false,
-    toggleConfidentialInfoVisibility: () -> Unit,
+    onVisibilityChanged: (Boolean) -> Unit,
 ) {
     AnimatedVisibility(
         modifier = modifier,
         visible = anyConfidentialInfo
     ) {
-        IconButton(
-            onClick = toggleConfidentialInfoVisibility
+        IconToggleButton(
+            checked = showConfidentialInfo,
+            onCheckedChange = onVisibilityChanged
         ) {
             Icon(
                 imageVector = if (showConfidentialInfo) {

@@ -32,7 +32,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -84,14 +90,19 @@ fun SettingsDialogScreen(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
     val arePreferencesSynced by viewModel.arePreferencesSynced.collectAsStateWithLifecycle()
+    val canSyncPreferences by viewModel.canSyncPreferences.collectAsStateWithLifecycle()
+    val shouldSyncPreferences by viewModel.shouldSyncPreferences.collectAsStateWithLifecycle()
     SettingsDialogContent(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = max(200.dp, screenHeightDp - 256.dp)),
         preferences = preferences,
         arePreferencesSynced = arePreferencesSynced,
+        shouldSyncPreferences = shouldSyncPreferences,
+        canSyncPreferences = canSyncPreferences,
         setAnalytics = viewModel::setAnalytics,
-        setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart
+        setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
+        onShouldSyncChanged = viewModel::setPreferencesSync
     )
 }
 
@@ -100,6 +111,9 @@ fun SettingsDialogContent(
     modifier: Modifier = Modifier,
     preferences: UiPreferences?,
     arePreferencesSynced: Boolean = false,
+    canSyncPreferences: Boolean = false,
+    shouldSyncPreferences: Boolean = false,
+    onShouldSyncChanged: (Boolean) -> Unit = {},
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
 ) {
@@ -120,7 +134,12 @@ fun SettingsDialogContent(
         },
         buttons = {
             // TODO: Toggle Settings Sync
-            // TODO: Dismiss dialog (Cancel)
+            SettingsButtons(
+                modifier = Modifier.fillMaxWidth(),
+                canSyncPreferences = canSyncPreferences,
+                shouldSyncPreferences = shouldSyncPreferences,
+                onShouldSyncChanged = onShouldSyncChanged,
+            )
         },
         containerColor = Color.Transparent,
     )
@@ -156,7 +175,7 @@ fun SettingsTitle(
 
 @Composable
 private fun SyncPreferencesLabel(
-    arePreferencesSynced: Boolean
+    arePreferencesSynced: Boolean,
 ) {
     Crossfade(targetState = arePreferencesSynced) {
         Row(
@@ -188,9 +207,64 @@ private fun SyncPreferencesLabel(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsButtons(
+    modifier: Modifier = Modifier,
+    canSyncPreferences: Boolean = false,
+    shouldSyncPreferences: Boolean = false,
+    onShouldSyncChanged: (Boolean) -> Unit = {},
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.End
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            enabled = canSyncPreferences,
+            onClick = { onShouldSyncChanged(!shouldSyncPreferences) }
+        ) {
+            Row(
+                modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.animateContentSize(),
+                    text = stringResource(
+                        if (shouldSyncPreferences) {
+                            R.string.syncing
+                        } else {
+                            R.string.not_syncing
+                        }
+                    )
+                )
+                FilledIconToggleButton(
+                    checked = shouldSyncPreferences,
+                    onCheckedChange = onShouldSyncChanged,
+                    enabled = canSyncPreferences
+                ) {
+                    Icon(
+                        imageVector = if (shouldSyncPreferences) {
+                            Icons.Rounded.Cloud
+                        } else {
+                            Icons.Rounded.CloudOff
+                        },
+                        contentDescription = ""
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun LastUpdateLabel(
-    lastUpdate: ZonedDateTime
+    lastUpdate: ZonedDateTime,
 ) {
     SettingLabel(
         settingName = stringResource(R.string.last_update),
@@ -236,7 +310,7 @@ fun SettingLabel(
     settingText: String? = null,
     settingName: String,
     style: TextStyle = LocalTextStyle.current,
-    styleName: TextStyle = style.plus(TextStyle(fontWeight = FontWeight.SemiBold))
+    styleName: TextStyle = style.plus(TextStyle(fontWeight = FontWeight.SemiBold)),
 ) {
     Row(
         modifier = modifier,
@@ -305,7 +379,7 @@ private fun BooleanSetting(
     setValue: (Boolean) -> Unit,
     settingName: String,
     enabledText: String = stringResource(R.string.enabled),
-    disabledText: String = stringResource(R.string.disabled)
+    disabledText: String = stringResource(R.string.disabled),
 ) {
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
@@ -332,7 +406,7 @@ private fun BooleanSetting(
 @Composable
 private fun AnalyticsSetting(
     analyticsEnabled: Boolean,
-    setAnalytics: (Boolean) -> Unit = {}
+    setAnalytics: (Boolean) -> Unit = {},
 ) {
     BooleanSetting(
         settingName = stringResource(R.string.analytics),
@@ -344,7 +418,7 @@ private fun AnalyticsSetting(
 @Composable
 private fun FreeDriveAutoStartSetting(
     freeDriveAutoStart: Boolean,
-    setFreeDriveAutoStart: (Boolean) -> Unit = {}
+    setFreeDriveAutoStart: (Boolean) -> Unit = {},
 ) {
     BooleanSetting(
         settingName = stringResource(R.string.free_drive_auto_start),
@@ -357,7 +431,7 @@ private fun FreeDriveAutoStartSetting(
 fun SettingItem(
     modifier: Modifier = Modifier,
     name: String,
-    content: @Composable () -> Unit = {}
+    content: @Composable () -> Unit = {},
 ) {
     Row(
         modifier = modifier,

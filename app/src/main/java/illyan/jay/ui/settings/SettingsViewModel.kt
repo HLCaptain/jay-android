@@ -21,6 +21,7 @@ package illyan.jay.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.ui.settings.model.toUiModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +31,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val settingsInteractor: SettingsInteractor
+    private val settingsInteractor: SettingsInteractor,
+    private val authInteractor: AuthInteractor
 ) : ViewModel() {
     val userPreferences = combine(
         settingsInteractor.userPreferences,
@@ -40,6 +42,16 @@ class SettingsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val arePreferencesSynced = settingsInteractor.arePreferencesSynced
+
+    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
+
+    val shouldSyncPreferences = settingsInteractor.shouldSyncPreferences
+
+    val canSyncPreferences = settingsInteractor.canSyncPreferences
+
+    fun setPreferencesSync(shouldSync: Boolean) {
+        settingsInteractor.shouldSync = shouldSync
+    }
 
     fun setAnalytics(enabled: Boolean) {
         settingsInteractor.analyticsEnabled = enabled

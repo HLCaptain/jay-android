@@ -157,6 +157,7 @@ fun RoomPreferences.toDomainModel() = DomainPreferences(
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
     lastUpdate = Instant.ofEpochMilli(lastUpdate).toZonedDateTime(),
+    shouldSync = shouldSync
 )
 
 fun DomainPreferences.toRoomModel(
@@ -166,5 +167,6 @@ fun DomainPreferences.toRoomModel(
     userUUID = userUUID,
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
-    lastUpdate = lastUpdate.toInstant().toEpochMilli()
+    lastUpdate = lastUpdate.toInstant().toEpochMilli(),
+    shouldSync = shouldSync
 )

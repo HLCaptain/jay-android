@@ -69,6 +69,7 @@ fun FirestoreUserPreferences.toDomainModel(
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
     lastUpdate = lastUpdate.toZonedDateTime(),
+    shouldSync = true
 )
 
 fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(

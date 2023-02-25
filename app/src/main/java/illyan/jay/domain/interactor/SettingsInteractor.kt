@@ -67,12 +67,37 @@ class SettingsInteractor @Inject constructor(
                     if (authInteractor.isUserSignedIn) {
                         preferencesDiskDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
                     } else {
-                        updateAppSettings {
-                            it.copy(preferences = it.preferences.copy(
-                                freeDriveAutoStart = value,
-                                lastUpdate = ZonedDateTime.now()
-                            ))
+                        updateAppPreferences { it.copy(freeDriveAutoStart = value) }
+                    }
+                }
+            }
+        }
+
+    var analyticsEnabled: Boolean?
+        get() = userPreferences.value?.analyticsEnabled
+        set(value) {
+            Timber.v("AnalyticsEnabled preference change requested to $value")
+            if (value != null && !isLoading.value) {
+                coroutineScopeIO.launch {
+                    if (authInteractor.isUserSignedIn) {
+                        preferencesDiskDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
+                    } else {
+                        updateAppPreferences {
+                            it.copy(analyticsEnabled = value)
                         }
+                    }
+                }
+            }
+        }
+
+    var shouldSync: Boolean?
+        get() = userPreferences.value?.shouldSync
+        set(value) {
+            Timber.v("ShouldSync preference change requested to $value")
+            if (value != null && !isLoading.value) {
+                coroutineScopeIO.launch {
+                    if (authInteractor.isUserSignedIn) {
+                        preferencesDiskDataSource.setShouldSync(authInteractor.userUUID!!, value)
                     }
                 }
             }
@@ -92,25 +117,21 @@ class SettingsInteractor @Inject constructor(
         }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
     }
 
-    var analyticsEnabled: Boolean?
-        get() = userPreferences.value?.analyticsEnabled
-        set(value) {
-            Timber.v("AnalyticsEnabled preference change requested to $value")
-            if (value != null && !isLoading.value) {
-                coroutineScopeIO.launch {
-                    if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
-                    } else {
-                        updateAppSettings {
-                            it.copy(preferences = it.preferences.copy(
-                                analyticsEnabled = value,
-                                lastUpdate = ZonedDateTime.now()
-                            ))
-                        }
-                    }
-                }
-            }
-        }
+    val shouldSyncPreferences by lazy {
+        localUserPreferences.map {
+            it?.shouldSync ?: DomainPreferences.default.shouldSync
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, DomainPreferences.default.shouldSync)
+    }
+
+    val canSyncPreferences by lazy {
+        combine(
+            authInteractor.isUserSignedInStateFlow,
+            isLoading,
+            localUserPreferences
+        ) { userSignedIn, loading, local ->
+            userSignedIn && !loading && local != null
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
+    }
 
     private val _localUserPreferences = MutableStateFlow<DomainPreferences?>(null)
     val localUserPreferences = _localUserPreferences.asStateFlow()
@@ -213,24 +234,28 @@ class SettingsInteractor @Inject constructor(
                         Timber.v("User have local but not synced preferences, upload local preferences.")
                         preferencesNetworkDataSource.setPreferences(localPreferences)
                         localPreferences
-                    } else {
-                        if (localPreferences == syncedPreferences) {
-                            // Same lastUpdate, assuming the version is the same
-                            Timber.v("Both local and synced preferences' lastUpdate are matching. Assuming they are the same, returning localPreferences.")
-                            localPreferences
-                        } else if (
-                            localPreferences!!.lastUpdate.toInstant().epochSecond >
-                            syncedPreferences!!.lastUpdate.toInstant().epochSecond
-                        ) {
-                            // If local is more fresh, then update synced preferences.
-                            Timber.v("Local preferences are more fresh, uploading it to cloud")
-                            preferencesNetworkDataSource.setPreferences(localPreferences)
+                    } else { // Both sessions are now loaded in and not null
+                        if (!localPreferences!!.shouldSync) {
                             localPreferences
                         } else {
-                            // If synced is more fresh, then update local preferences.
-                            Timber.v("Synced preferences are more fresh, saving it onto disk")
-                            preferencesDiskDataSource.upsertPreferences(syncedPreferences)
-                            syncedPreferences
+                            if (localPreferences == syncedPreferences) {
+                                // Same lastUpdate, assuming the version is the same
+                                Timber.v("Both local and synced preferences' lastUpdate are matching. Assuming they are the same, returning localPreferences.")
+                                localPreferences
+                            } else if (
+                                localPreferences.lastUpdate.toInstant().epochSecond >
+                                syncedPreferences!!.lastUpdate.toInstant().epochSecond
+                            ) {
+                                // If local is more fresh, then update synced preferences.
+                                Timber.v("Local preferences are more fresh, uploading it to cloud")
+                                preferencesNetworkDataSource.setPreferences(localPreferences)
+                                localPreferences
+                            } else {
+                                // If synced is more fresh, then update local preferences.
+                                Timber.v("Synced preferences are more fresh, saving it onto disk")
+                                preferencesDiskDataSource.upsertPreferences(syncedPreferences)
+                                syncedPreferences
+                            }
                         }
                     }
                 }
@@ -246,6 +271,15 @@ class SettingsInteractor @Inject constructor(
             val newSettings = transform(it)
             Timber.v("Changed settings from $it to $newSettings")
             newSettings
+        }
+    }
+
+    /**
+     * Automatically updates [DomainPreferences.lastUpdate]
+     */
+    suspend fun updateAppPreferences(transform: (DomainPreferences) -> DomainPreferences) {
+        updateAppSettings {
+            it.copy(preferences = transform(it.preferences).copy(lastUpdate = ZonedDateTime.now()))
         }
     }
 }

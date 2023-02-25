@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.data.disk.datasource
 
 import illyan.jay.data.disk.dao.PreferencesDao
@@ -54,12 +72,21 @@ class PreferencesDiskDataSource @Inject constructor(
     }
 
     fun setAnalyticsEnabled(userUUID: String, analyticsEnabled: Boolean) {
-        Timber.v("Setting analyticsEnabled to $analyticsEnabled for user ${userUUID.take(4)}")
+        logSet("analyticsEnabled", analyticsEnabled, userUUID)
         preferencesDao.setAnalyticsEnabled(userUUID, analyticsEnabled)
     }
 
+    fun setShouldSync(userUUID: String, shouldSync: Boolean) {
+        logSet("shouldSync", shouldSync, userUUID)
+        preferencesDao.setShouldSync(userUUID, shouldSync)
+    }
+
     fun setFreeDriveAutoStart(userUUID: String, freeDriveAutoStart: Boolean) {
-        Timber.v("Setting freeDriveAutoStart to $freeDriveAutoStart for user ${userUUID.take(4)}")
+        logSet("freeDriveAutoStart", freeDriveAutoStart, userUUID)
         preferencesDao.setFreeDriveAutoStart(userUUID, freeDriveAutoStart)
+    }
+
+    private fun logSet(name: String, value: Any, userUUID: String) {
+        Timber.v("Setting $name to $value for user ${userUUID.take(4)}")
     }
 }
