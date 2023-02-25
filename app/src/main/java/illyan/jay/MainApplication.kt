@@ -56,7 +56,7 @@ class MainApplication : Application() {
         coroutineScopeIO.launch {
             authInteractor.currentUserStateFlow.collectLatest { user ->
                 appSettingsDataStore.data.collectLatest { settings ->
-                    if (settings.analyticsEnabled) {
+                    if (settings.preferences.analyticsEnabled) {
                         analytics.setUserId(user?.uid)
                         crashlytics.setUserId(user?.uid ?: "")
                     } else {
@@ -69,12 +69,12 @@ class MainApplication : Application() {
         coroutineScopeIO.launch {
             appSettingsDataStore.data.collectLatest { settings ->
                 val collectingData = Timber.forest().contains(crashlyticsTree)
-                if (settings.analyticsEnabled && !collectingData) {
+                if (settings.preferences.analyticsEnabled && !collectingData) {
                     Timber.d("Planting crashlyticsTree")
                     Timber.plant(crashlyticsTree)
                     crashlytics.setCrashlyticsCollectionEnabled(true)
                     analytics.setAnalyticsCollectionEnabled(true)
-                } else if (!settings.analyticsEnabled && collectingData) {
+                } else if (!settings.preferences.analyticsEnabled && collectingData) {
                     Timber.uproot(crashlyticsTree)
                     crashlytics.setCrashlyticsCollectionEnabled(false)
                     analytics.setAnalyticsCollectionEnabled(false)

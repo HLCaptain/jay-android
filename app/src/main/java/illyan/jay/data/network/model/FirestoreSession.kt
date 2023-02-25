@@ -36,5 +36,13 @@ data class FirestoreSession(
 ) {
     companion object {
         const val FieldUUID = "uuid"
+        const val FieldStartDateTime = "startDateTime"
+        const val FieldEndDateTime = "endDateTime"
+        const val FieldStartLocation = "startLocation"
+        const val FieldEndLocation = "endLocation"
+        const val FieldStartLocationName = "startLocationName"
+        const val FieldEndLocationName = "endLocationName"
+        const val FieldDistance = "distance"
+        const val FieldClientUUID = "clientUUID"
     }
 }

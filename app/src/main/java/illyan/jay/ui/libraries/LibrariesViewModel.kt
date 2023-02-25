@@ -43,6 +43,15 @@ class LibrariesViewModel @Inject constructor(
                 ),
                 moreInfoUrl = "https://github.com/HLCaptain/plumber",
                 repositoryUrl = "https://github.com/HLCaptain/plumber"
+            ),
+            Library(
+                name = "Compose Scrollbar",
+                license = License(
+                    type = "Apache v2",
+                    description = "Cool license",
+                ),
+                moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
+                repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar"
             )
         )
     }

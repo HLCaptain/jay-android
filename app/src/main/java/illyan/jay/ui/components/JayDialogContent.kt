@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,10 +43,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun JayDialogContent(
     modifier: Modifier = Modifier,
-    buttons: @Composable (() -> Unit) = {},
     icon: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
+    buttons: @Composable (() -> Unit)? = null,
     shape: Shape = AlertDialogDefaults.shape,
     containerColor: Color = AlertDialogDefaults.containerColor,
     iconContentColor: Color = AlertDialogDefaults.iconContentColor,
@@ -69,57 +70,67 @@ fun JayDialogContent(
         Column(
             modifier = Modifier.padding(DialogPadding)
         ) {
-            icon?.let {
-                CompositionLocalProvider(LocalContentColor provides iconContentColor) {
-                    Box(
-                        Modifier
-                            .padding(IconPadding)
-                            .align(Alignment.CenterHorizontally)
-                    ) {
-                        icon()
-                    }
-                }
-            }
-            title?.let {
-                CompositionLocalProvider(LocalContentColor provides titleContentColor) {
-                    val textStyle = MaterialTheme.typography.headlineSmall
-                    ProvideTextStyle(textStyle) {
+            AnimatedVisibility(visible = icon != null) {
+                icon?.let {
+                    CompositionLocalProvider(LocalContentColor provides iconContentColor) {
                         Box(
-                            // Align the title to the center when an icon is present.
                             Modifier
-                                .padding(TitlePadding)
-                                .align(
-                                    if (icon == null) {
-                                        Alignment.Start
-                                    } else {
-                                        Alignment.CenterHorizontally
-                                    }
-                                )
+                                .padding(IconPadding)
+                                .align(Alignment.CenterHorizontally)
                         ) {
-                            title()
+                            icon()
                         }
                     }
                 }
             }
-            text?.let {
-                CompositionLocalProvider(LocalContentColor provides textContentColor) {
-                    val textStyle = MaterialTheme.typography.bodyMedium
-                    ProvideTextStyle(textStyle) {
-                        Box(
-                            Modifier
-                                .weight(weight = 1f, fill = false)
-                                .padding(TextPadding)
-                                .align(Alignment.Start)
-                        ) {
-                            text()
+            AnimatedVisibility(visible = title != null) {
+                title?.let {
+                    CompositionLocalProvider(LocalContentColor provides titleContentColor) {
+                        val textStyle = MaterialTheme.typography.headlineSmall
+                        ProvideTextStyle(textStyle) {
+                            Box(
+                                // Align the title to the center when an icon is present.
+                                Modifier
+                                    .padding(TitlePadding)
+                                    .align(
+                                        if (icon == null) {
+                                            Alignment.Start
+                                        } else {
+                                            Alignment.CenterHorizontally
+                                        }
+                                    )
+                            ) {
+                                title()
+                            }
                         }
                     }
                 }
             }
-            Box(modifier = Modifier.align(Alignment.End)) {
-                CompositionLocalProvider(LocalContentColor provides buttonContentColor) {
-                    val textStyle = MaterialTheme.typography.labelLarge
-                    ProvideTextStyle(value = textStyle, content = buttons)
+            AnimatedVisibility(visible = text != null) {
+                text?.let {
+                    CompositionLocalProvider(LocalContentColor provides textContentColor) {
+                        val textStyle = MaterialTheme.typography.bodyMedium
+                        ProvideTextStyle(textStyle) {
+                            Box(
+                                Modifier
+                                    .weight(weight = 1f, fill = false)
+                                    .padding(TextPadding)
+                                    .align(Alignment.Start)
+                            ) {
+                                text()
+                            }
+                        }
+                    }
+                }
+            }
+            AnimatedVisibility(visible = buttons != null) {
+                buttons?.let {
+                    Box(modifier = Modifier.align(Alignment.End)) {
+                        CompositionLocalProvider(LocalContentColor provides buttonContentColor) {
+                            val textStyle = MaterialTheme.typography.labelLarge
+                            ProvideTextStyle(value = textStyle, content = buttons)
+                        }
+                    }
                 }
             }
         }
@@ -162,4 +173,4 @@ internal val DialogMaxWidth = 560.dp
 private val DialogPadding = PaddingValues(all = 24.dp)
 private val IconPadding = PaddingValues(bottom = 16.dp)
 private val TitlePadding = PaddingValues(bottom = 16.dp)
-private val TextPadding = PaddingValues(bottom = 24.dp)
+private val TextPadding = PaddingValues(bottom = 16.dp)

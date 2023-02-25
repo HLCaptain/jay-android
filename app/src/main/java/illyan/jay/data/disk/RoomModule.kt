@@ -86,4 +86,8 @@ object RoomModule {
     @Provides
     @Singleton
     fun provideSessionDao(db: JayDatabase) = db.sessionDao()
+
+    @Provides
+    @Singleton
+    fun providePreferencesDao(db: JayDatabase) = db.preferencesDao()
 }

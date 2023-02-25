@@ -16,8 +16,16 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.domain.model
+package illyan.jay.data.network.model
 
-data class DomainUserSettings(
-    val analyticsEnabled: Boolean = false
-)
+import com.google.firebase.Timestamp
+
+data class FirestoreUserPreferences(
+    val analyticsEnabled: Boolean = false,
+    val freeDriveAutoStart: Boolean = false,
+    val lastUpdate: Timestamp = Timestamp.now()
+) {
+    companion object {
+        const val FieldAnalyticsEnabled = "analyticsEnabled"
+    }
+}

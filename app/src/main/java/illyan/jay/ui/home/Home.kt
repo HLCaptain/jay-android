@@ -94,6 +94,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -197,10 +198,15 @@ val AvatarPaddingValues = PaddingValues(
 const val BottomSheetPartialExpendedFraction = 0.5f
 const val BottomSheetPartialMaxFraction = 1f
 
+// FIXME: replace MutableStateFlows with CompositionLocalProviders
+
 private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
 val mapView = _mapView.asStateFlow()
 lateinit var sheetState: BottomSheetState
 var isSearching: Boolean = false
+
+private val _bottomSheetFraction = MutableStateFlow(0f)
+val bottomSheetFraction = _bottomSheetFraction.asStateFlow()
 
 val sheetMaxHeight = 680.dp
 val sheetMinHeight = 100.dp
@@ -340,27 +346,22 @@ fun onSearchBarDrag(
 }
 
 fun calculateCornerRadius(
-    isSearching: Boolean = false,
     bottomSheetState: BottomSheetState,
     maxCornerRadius: Dp = RoundedCornerRadius,
     minCornerRadius: Dp = 0.dp,
     threshold: Float = BottomSheetPartialExpendedFraction,
     fraction: Float = 0f,
 ): Dp {
-    return if (isSearching) {
-        minCornerRadius
+    return if (bottomSheetState.isCollapsedOrWillBe()) {
+        maxCornerRadius
     } else {
-        if (bottomSheetState.isCollapsedOrWillBe()) {
-            maxCornerRadius
-        } else {
-            val max = BottomSheetPartialMaxFraction
-            val min = 0f
-            lerp(
-                maxCornerRadius,
-                minCornerRadius,
-                (max - (max - fraction) / threshold).coerceIn(min, max)
-            ).coerceAtLeast(0.dp)
-        }
+        val max = BottomSheetPartialMaxFraction
+        val min = 0f
+        lerp(
+            maxCornerRadius,
+            minCornerRadius,
+            (max - (max - fraction) / threshold).coerceIn(min, max)
+        ).coerceAtLeast(0.dp)
     }
 }
 
@@ -494,14 +495,14 @@ fun HomeScreen(
                 shouldTriggerBottomSheetOnDrag = true
             }
         }
-        var isProfileDialogShowing by remember { mutableStateOf(false) }
+        var isProfileDialogShowing by rememberSaveable { mutableStateOf(false) }
         ProfileDialog(
             isDialogOpen = isProfileDialogShowing,
             onDialogClosed = { isProfileDialogShowing = false }
         )
         val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
         val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
-        var searchQuery by remember { mutableStateOf("") }
+        var searchQuery by rememberSaveable { mutableStateOf("") }
         LaunchedEffect(searchQuery) {
             if (searchQuery.isBlank()) return@LaunchedEffect
 
@@ -569,7 +570,6 @@ fun HomeScreen(
                     isSearching = isTextFieldFocused,
                     onBottomSheetFractionChange = {
                         roundDp = calculateCornerRadius(
-                            isSearching = isTextFieldFocused,
                             bottomSheetState = bottomSheetState,
                             maxCornerRadius = RoundedCornerRadius,
                             minCornerRadius = 0.dp,
@@ -599,9 +599,9 @@ fun HomeScreen(
                 // with the user's location in focus.
                 // If it ends, it defaults to the middle of the Earth.
 
-                var didLoadInLocation by remember { mutableStateOf(false) }
-                var didLoadInLocationWithoutPermissions by remember { mutableStateOf(false) }
-                var isMapInitialized by remember { mutableStateOf(false) }
+                var didLoadInLocation by rememberSaveable { mutableStateOf(false) }
+                var didLoadInLocationWithoutPermissions by rememberSaveable { mutableStateOf(false) }
+                var isMapInitialized by rememberSaveable { mutableStateOf(false) }
                 val sheetContentHeight by sheetContentHeight.collectAsStateWithLifecycle()
                 LaunchedEffect(
                     bottomSheetState.getOffsetAsDp(density),
@@ -677,7 +677,7 @@ fun HomeScreen(
                 if (initialLocationLoaded || cameraOptionsBuilder != null) {
                     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
                         val (foreground, map) = createRefs()
-                        var isMapVisible by remember { mutableStateOf(false) }
+                        var isMapVisible by rememberSaveable { mutableStateOf(false) }
                         androidx.compose.animation.AnimatedVisibility(
                             modifier = Modifier
                                 .zIndex(1f)
@@ -817,7 +817,7 @@ fun BottomSearchBar(
         orientation = Orientation.Vertical,
         state = rememberDraggableState { onDrag(it) }
     )
-    var searchFieldFocusState by remember { mutableStateOf<FocusState?>(null) }
+    var searchFieldFocusState by rememberSaveable { mutableStateOf<FocusState?>(null) }
     // We should help gestures when not searching
     // and bottomSheet is collapsed or collapsing
     val shouldHelpGestures = searchFieldFocusState?.isFocused == false &&
@@ -860,7 +860,7 @@ fun BottomSearchBar(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                 )
-                var searchPlaceText by remember { mutableStateOf("") }
+                var searchPlaceText by rememberSaveable { mutableStateOf("") }
                 TextField(
                     modifier = Modifier
                         .weight(1f)
@@ -950,26 +950,36 @@ fun BottomSheetScreen(
                 }
             },
     ) {
-        AnimatedVisibility(visible = !isSearching) {
+        val fraction by bottomSheetFraction.collectAsStateWithLifecycle()
+        // TODO: maybe A/B test these two animations or idk
+        // V1 is sliding in and out the whole width of the screen
+        AnimatedVisibility(visible = fraction < 0.999f) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Surface(
-                    modifier = Modifier
-                        .width(24.dp)
-                        .height(4.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(4.dp)
-                ) {}
+                // V2 is a more basic *appear* *disappear* animation
+                AnimatedVisibility(visible = true) {
+                    Surface(
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(4.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {}
+                }
             }
         }
         val screenHeight by _screenHeight.collectAsStateWithLifecycle()
         val offset by sheetState.offset
         val density = LocalDensity.current
-        onBottomSheetFractionChange(1 - offset / (screenHeight.value * density.density))
+        val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
+        LaunchedEffect(bottomSheetFraction) {
+            _bottomSheetFraction.value = bottomSheetFraction
+        }
+        onBottomSheetFractionChange(bottomSheetFraction)
         ConstraintLayout(
             modifier = modifier
         ) {

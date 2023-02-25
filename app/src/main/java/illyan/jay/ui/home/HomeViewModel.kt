@@ -54,13 +54,14 @@ class HomeViewModel @Inject constructor(
     private val _initialLocation = MutableStateFlow<Location?>(null)
     val initialLocation = _initialLocation.asStateFlow()
 
+    // FIXME: tracing initial location load is affected by low GPS signal.
+    //  Find a solution which mitigates issues coming from tunnels/low signal environments.
     private val locationLoadTrace = performance.newTrace("Initial location load")
 
     val initialLocationLoaded = initialLocation.map {
         locationLoadTrace.apply { if (it != null) stop() else start() }
         it != null
-    }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _cameraOptionsBuilder = MutableStateFlow<CameraOptions.Builder?>(null)
     val cameraOptionsBuilder = _cameraOptionsBuilder.asStateFlow()

@@ -23,10 +23,10 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.GeoPoint
 import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.model.FirestoreSession
-import illyan.jay.data.network.model.FirestoreUserSettings
+import illyan.jay.data.network.model.FirestoreUserPreferences
 import illyan.jay.domain.model.DomainLocation
+import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSession
-import illyan.jay.domain.model.DomainUserSettings
 import illyan.jay.util.toGeoPoint
 import illyan.jay.util.toTimestamp
 import illyan.jay.util.toZonedDateTime
@@ -62,12 +62,20 @@ fun FirestoreSession.toDomainModel(
     endLocationLatitude = endLocation?.latitude?.toFloat(),
 )
 
-fun FirestoreUserSettings.toDomainModel() = DomainUserSettings(
-    analyticsEnabled = analyticsEnabled
+fun FirestoreUserPreferences.toDomainModel(
+    userUUID: String
+) = DomainPreferences(
+    userUUID = userUUID,
+    analyticsEnabled = analyticsEnabled,
+    freeDriveAutoStart = freeDriveAutoStart,
+    lastUpdate = lastUpdate.toZonedDateTime(),
+    shouldSync = true
 )
 
-fun DomainUserSettings.toFirestoreModel() = FirestoreUserSettings(
-    analyticsEnabled = analyticsEnabled
+fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
+    analyticsEnabled = analyticsEnabled,
+    freeDriveAutoStart = freeDriveAutoStart,
+    lastUpdate = lastUpdate.toTimestamp(),
 )
 
 fun List<DomainLocation>.toPath(
@@ -129,18 +137,18 @@ fun List<DomainLocation>.toPath(
         sessionUUID = sessionUUID,
         ownerUUID = ownerUUID,
         accuracyChangeTimestamps = accuracyChangeTimestamps,
-        accuracyChanges = accuracyChanges,
-        altitudes = altitudes,
+        accuracyChanges = accuracyChanges.map { it.toInt() },
+        altitudes = altitudes.map { it.toInt() },
         bearingAccuracyChangeTimestamps = bearingAccuracyChangeTimestamps,
-        bearingAccuracyChanges = bearingAccuracyChanges,
-        bearings = bearings,
+        bearingAccuracyChanges = bearingAccuracyChanges.map { it.toInt() },
+        bearings = bearings.map { it.toInt() },
         coords = coords,
         speeds = speeds,
         speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps,
         speedAccuracyChanges = speedAccuracyChanges,
         timestamps = timestamps,
         verticalAccuracyChangeTimestamps = verticalAccuracyChangeTimestamps,
-        verticalAccuracyChanges = verticalAccuracyChanges,
+        verticalAccuracyChanges = verticalAccuracyChanges.map { it.toInt() },
     )
 }
 
@@ -155,27 +163,6 @@ fun List<DomainLocation>.toPaths(
     return groupedByTime.map {
         it.value.toPath(sessionUUID, ownerUUID)
     }
-}
-
-fun FirestorePath.toMap() = FirestorePath.run {
-    mapOf(
-        FieldUUID to uuid,
-        FieldSessionUUID to sessionUUID,
-        FieldOwnerUUID to ownerUUID,
-        FieldAccuracyChangeTimestamps to accuracyChangeTimestamps,
-        FieldAccuracyChanges to accuracyChanges.map { it.toInt() },
-        FieldAltitudes to altitudes.map { it.toInt() },
-        FieldBearingAccuracyChangeTimestamps to bearingAccuracyChangeTimestamps,
-        FieldBearingAccuracyChanges to bearingAccuracyChanges.map { it.toInt() },
-        FieldBearings to bearings.map { it.toInt() },
-        FieldCoords to coords,
-        FieldSpeeds to speeds,
-        FieldSpeedAccuracyChangeTimestamps to speedAccuracyChangeTimestamps,
-        FieldSpeedAccuracyChanges to speedAccuracyChanges,
-        FieldTimestamps to timestamps,
-        FieldVerticalAccuracyChangeTimestamps to verticalAccuracyChangeTimestamps,
-        FieldVerticalAccuracyChanges to verticalAccuracyChanges.map { it.toInt() }
-    )
 }
 
 fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
@@ -200,20 +187,20 @@ fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
         timestamps.forEachIndexed { index, zonedDateTime ->
             val indexOfLastAccuracyChange = accuracyChangeTimestamps
                 .indexOfLast {
-                it.isBefore(zonedDateTime)
-            }.coerceAtLeast(0)
+                    it.isBefore(zonedDateTime)
+                }.coerceAtLeast(0)
             val indexOfLastBearingAccuracyChange = bearingAccuracyChangeTimestamps
                 .indexOfLast {
-                it.isBefore(zonedDateTime)
-            }.coerceAtLeast(0)
+                    it.isBefore(zonedDateTime)
+                }.coerceAtLeast(0)
             val indexOfLastVerticalAccuracyChange = verticalAccuracyChangeTimestamps
                 .indexOfLast {
-                it.isBefore(zonedDateTime)
-            }.coerceAtLeast(0)
+                    it.isBefore(zonedDateTime)
+                }.coerceAtLeast(0)
             val indexOfLastSpeedAccuracyChange = speedAccuracyChangeTimestamps
                 .indexOfLast {
-                it.isBefore(zonedDateTime)
-            }.coerceAtLeast(0)
+                    it.isBefore(zonedDateTime)
+                }.coerceAtLeast(0)
 
             domainLocations.add(
                 DomainLocation(

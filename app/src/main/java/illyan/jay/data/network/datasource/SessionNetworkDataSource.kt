@@ -52,7 +52,7 @@ class SessionNetworkDataSource @Inject constructor(
             userNetworkDataSource.isLoading
         ) { user, loading ->
             if (user != null) {
-                val domainSessions = user.user.sessions.map { it.toDomainModel(authInteractor.userUUID!!) }
+                val domainSessions = user.sessions.map { it.toDomainModel(user.uuid) }
                 Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
                 domainSessions
             } else if (loading) {
@@ -77,6 +77,17 @@ class SessionNetworkDataSource @Inject constructor(
         onSuccess = onSuccess,
     )
 
+    fun deleteAllSessions(
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while deleting sessions: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Deleting sessions canceled") },
+        onSuccess: () -> Unit = { Timber.i("Deleted sessions") }
+    ) = deleteSessions(
+        sessionUUIDs = userNetworkDataSource.user.value?.sessions?.map { it.uuid } ?: emptyList(),
+        onFailure = onFailure,
+        onCancel = onCancel,
+        onSuccess = onSuccess,
+    )
+
     @JvmName("deleteSessionsByUUIDs")
     fun deleteSessions(
         sessionUUIDs: List<String>,
@@ -90,7 +101,7 @@ class SessionNetworkDataSource @Inject constructor(
         coroutineScopeIO.launch {
             userNetworkDataSource.user.first { user ->
                 user?.let {
-                    val domainSessions = user.user.sessions.map { it.toDomainModel(userUUID) }
+                    val domainSessions = user.sessions.map { it.toDomainModel(userUUID) }
                     val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
                     deleteSessions(
                         domainSessions = sessionsToDelete,

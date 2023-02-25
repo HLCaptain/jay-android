@@ -18,13 +18,17 @@
 
 package illyan.jay.data.network.model
 
+import com.google.firebase.firestore.DocumentId
+
 data class FirestoreUser(
+    @DocumentId
+    val uuid: String = "",
     val sessions: List<FirestoreSession> = emptyList(),
-    val settings: FirestoreUserSettings = FirestoreUserSettings()
+    val preferences: FirestoreUserPreferences? = null
 ) {
     companion object {
         const val CollectionName = "users"
         const val FieldSessions = "sessions"
-        const val FieldSettings = "settings"
+        const val FieldSettings = "preferences"
     }
 }

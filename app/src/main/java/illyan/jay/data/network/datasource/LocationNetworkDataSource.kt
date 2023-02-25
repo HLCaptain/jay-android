@@ -25,7 +25,6 @@ import com.google.firebase.firestore.WriteBatch
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.toDomainLocations
-import illyan.jay.data.network.toMap
 import illyan.jay.data.network.toPaths
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
@@ -156,7 +155,7 @@ class LocationNetworkDataSource @Inject constructor(
             // TODO: make size calculations more reliable and easier to implement
             val maxSizeInBytes = 1_048_576
             if (dataSizeInBytes < maxSizeInBytes) {
-                batch.set(it.first, it.second.toMap())
+                batch.set(it.first, it.second)
             } else {
                 Timber.d("Not uploading this path, as $dataSizeInBytes bytes exceeds the $maxSizeInBytes byte limit")
             }

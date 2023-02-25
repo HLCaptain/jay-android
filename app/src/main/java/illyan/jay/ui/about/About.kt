@@ -18,12 +18,15 @@
 
 package illyan.jay.ui.about
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,7 +38,8 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.destinations.LibrariesDestination
+import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
+import illyan.jay.ui.profile.ProfileMenuItem
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -47,7 +51,7 @@ fun AboutDialogScreen(
 ) {
     AboutDialogContent(
         modifier = Modifier.fillMaxWidth(),
-        onNavigateToLibraries = { destinationsNavigator.navigate(LibrariesDestination) }
+        onNavigateToLibraries = { destinationsNavigator.navigate(LibrariesDialogScreenDestination) }
     )
 }
 
@@ -58,10 +62,7 @@ fun AboutDialogContent(
 ) {
     JayDialogContent(
         modifier = modifier,
-        title = {
-            // TODO: enable ad button on this screen (only showing one ad on this screen)
-            Text(text = stringResource(id = R.string.about))
-        },
+        title = { AboutTitle() },
         text = {
             AboutScreen(
                 onNavigateToLibraries = onNavigateToLibraries,
@@ -76,20 +77,33 @@ fun AboutDialogContent(
 }
 
 @Composable
+fun AboutTitle() {
+    Column {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(text = stringResource(id = R.string.about))
+            Text(text = stringResource(id = R.string.app_name))
+        }
+        Text(
+            text = stringResource(id = R.string.app_description_brief),
+            style = MaterialTheme.typography.bodySmall,
+            color = AlertDialogDefaults.textContentColor
+        )
+    }
+}
+
+@Composable
 fun AboutScreen(
     onNavigateToLibraries: () -> Unit = {}
 ) {
-    LazyColumn {
-        item {
-            TextButton(
-                onClick = onNavigateToLibraries
-            ) {
-                Text(text = "Open Library list")
-            }
-        }
-        item {
-            Spacer(modifier = Modifier.height(400.dp)) // Fake height
-        }
+    // TODO: enable ad button on this screen (only showing one ad on this screen)
+    Column {
+        ProfileMenuItem(
+            text = stringResource(id = R.string.libraries),
+            onClick = onNavigateToLibraries
+        )
+        Spacer(modifier = Modifier.height(240.dp)) // Fake height
     }
 }
 
@@ -97,6 +111,8 @@ fun AboutScreen(
 @Composable
 private fun AboutDialogScreenPreview() {
     JayTheme {
-        AboutDialogContent()
+        JayDialogContent {
+            AboutDialogContent(modifier = Modifier.fillMaxWidth())
+        }
     }
 }

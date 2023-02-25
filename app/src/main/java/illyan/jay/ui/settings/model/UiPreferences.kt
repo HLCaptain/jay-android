@@ -16,12 +16,25 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.model
+package illyan.jay.ui.settings.model
 
-data class FirestoreUserSettings(
-    val analyticsEnabled: Boolean = false
-) {
-    companion object {
-        const val FieldAnalyticsEnabled = "analyticsEnabled"
-    }
-}
+import illyan.jay.domain.model.DomainPreferences
+import java.time.ZonedDateTime
+
+data class UiPreferences(
+    val userUUID: String? = null,
+    val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
+    val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
+    val lastUpdate: ZonedDateTime = DomainPreferences.default.lastUpdate,
+    val clientUUID: String? = null
+)
+
+fun DomainPreferences.toUiModel(
+    clientUUID: String? = null
+) = UiPreferences(
+    userUUID = userUUID,
+    analyticsEnabled = analyticsEnabled,
+    freeDriveAutoStart = freeDriveAutoStart,
+    lastUpdate = lastUpdate,
+    clientUUID = clientUUID,
+)

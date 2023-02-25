@@ -27,7 +27,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.toObject
 import illyan.jay.data.network.model.FirestoreUser
-import illyan.jay.data.network.model.FirestoreUserWithUUID
 import illyan.jay.domain.interactor.AuthInteractor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,8 +42,8 @@ class UserNetworkDataSource @Inject constructor(
 ) : DefaultLifecycleObserver {
     private val _userListenerRegistration = MutableStateFlow<ListenerRegistration?>(null)
     private val _userReference = MutableStateFlow<DocumentSnapshot?>(null)
-    private val _user = MutableStateFlow<FirestoreUserWithUUID?>(null)
-    val user: StateFlow<FirestoreUserWithUUID?> get() {
+    private val _user = MutableStateFlow<FirestoreUser?>(null)
+    val user: StateFlow<FirestoreUser?> get() {
         if (_userListenerRegistration.value == null) loadUser()
         return _user.asStateFlow()
     }
@@ -52,20 +51,31 @@ class UserNetworkDataSource @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _isLoadingFromCloud = MutableStateFlow(false)
+    val isLoadingFromCloud = _isLoadingFromCloud.asStateFlow()
+
     private val executor = Executors.newSingleThreadExecutor()
 
     init {
         authInteractor.addAuthStateListener {
             if (authInteractor.isUserSignedIn) {
+                Timber.d("Reloading snapshot listener for user ${_user.value?.uuid}")
                 loadUser()
             } else {
-                _userReference.value = null
                 Timber.d("Removing snapshot listener for user ${_user.value?.uuid}")
+                _userReference.value = null
                 _userListenerRegistration.value?.remove()
                 _user.value = null
+                _isLoading.value = false
+                _isLoadingFromCloud.value = false
             }
         }
         appLifecycle.addObserver(this)
+    }
+
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        loadUser()
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -77,11 +87,16 @@ class UserNetworkDataSource @Inject constructor(
     private fun loadUser(
         userUUID: String = authInteractor.userUUID.toString(),
         onError: (Exception) -> Unit = { Timber.e(it, "Error while getting user data: ${it.message}") },
-        onSuccess: (FirestoreUser) -> Unit = { },
+        onSuccess: (FirestoreUser) -> Unit = {},
     ) {
-        if (_user.value == null) _isLoading.value = true
+        if (!authInteractor.isUserSignedIn) return
+        if (_user.value == null) {
+            _isLoading.value = true
+            _isLoadingFromCloud.value = true
+        }
         Timber.d("Connecting snapshot listener to Firebase to get ${userUUID.take(4)} user's data")
         val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
+            Timber.v("New snapshot regarding user ${userUUID.take(4)}")
             if (error != null) {
                 onError(error)
             } else {
@@ -90,11 +105,26 @@ class UserNetworkDataSource @Inject constructor(
                     onError(NoSuchElementException("User document does not exist"))
                 } else {
                     Timber.d("Firebase loaded ${userUUID.take(4)} user's data")
-                    _userReference.value = snapshot
-                    _user.value = FirestoreUserWithUUID(userUUID, user)
                     onSuccess(user)
                 }
-                if (_isLoading.value) _isLoading.value = false
+                if (snapshot != null) {
+                    // Update _userReference value with snapshot when snapshot is not null
+                    _userReference.value = snapshot
+                } else if (_userReference.value != null) {
+                    // If snapshot is null, then _userReference is invalid if not null. Assign null to it.
+                    _userReference.value = null
+                }
+                if (user != null) {
+                    _user.value = user
+                } else if (_user.value != null) {
+                    _user.value = null
+                }
+                if (_isLoading.value) {
+                    _isLoading.value = false
+                }
+                if (_isLoadingFromCloud.value && snapshot?.metadata?.isFromCache == false) {
+                    _isLoadingFromCloud.value = false
+                }
             }
         }
         _userListenerRegistration.value?.remove()
@@ -105,9 +135,9 @@ class UserNetworkDataSource @Inject constructor(
     }
 
     fun deleteUserData(
-        onCancel: () -> Unit = { Timber.d("User data deletion canceled") },
+        onCancel: () -> Unit = { Timber.i("User data deletion canceled") },
         onFailure: (Exception) -> Unit = { Timber.e(it) },
-        onSuccess: () -> Unit = { Timber.d("User data deletion successful") },
+        onSuccess: () -> Unit = { Timber.i("User data deletion successful") },
     ) {
         _userReference.value?.apply {
             reference.delete()

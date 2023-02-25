@@ -23,14 +23,18 @@ import android.location.Location
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import illyan.jay.data.disk.model.RoomLocation
+import illyan.jay.data.disk.model.RoomPreferences
 import illyan.jay.data.disk.model.RoomSensorEvent
 import illyan.jay.data.disk.model.RoomSession
 import illyan.jay.domain.model.DomainLocation
+import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sensorTimestampToAbsoluteTime
+import illyan.jay.util.toZonedDateTime
 import java.time.Instant
 import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
@@ -145,4 +149,24 @@ fun SensorEvent.toDomainModel(sessionUUID: String) = DomainSensorEvent(
     x = values[0],
     y = values[1],
     z = values[2]
+)
+
+// Preferences
+fun RoomPreferences.toDomainModel() = DomainPreferences(
+    userUUID = userUUID,
+    analyticsEnabled = analyticsEnabled,
+    freeDriveAutoStart = freeDriveAutoStart,
+    lastUpdate = Instant.ofEpochMilli(lastUpdate).toZonedDateTime(),
+    shouldSync = shouldSync
+)
+
+fun DomainPreferences.toRoomModel(
+    userUUID: String,
+    lastUpdate: ZonedDateTime = this.lastUpdate
+) = RoomPreferences(
+    userUUID = userUUID,
+    analyticsEnabled = analyticsEnabled,
+    freeDriveAutoStart = freeDriveAutoStart,
+    lastUpdate = lastUpdate.toInstant().toEpochMilli(),
+    shouldSync = shouldSync
 )

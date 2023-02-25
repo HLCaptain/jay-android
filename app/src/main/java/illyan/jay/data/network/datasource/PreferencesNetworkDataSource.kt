@@ -26,7 +26,7 @@ import illyan.jay.data.network.toDomainModel
 import illyan.jay.data.network.toFirestoreModel
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
-import illyan.jay.domain.model.DomainUserSettings
+import illyan.jay.domain.model.DomainPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,21 +35,24 @@ import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
 import javax.inject.Inject
 
-class SettingsNetworkDataSource @Inject constructor(
+class PreferencesNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
     private val userNetworkDataSource: UserNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
-    val settings: StateFlow<DomainUserSettings?> by lazy {
+    val isLoading = userNetworkDataSource.isLoading
+    val isLoadingFromCloud = userNetworkDataSource.isLoadingFromCloud
+
+    val preferences: StateFlow<DomainPreferences?> by lazy {
         combine(
             userNetworkDataSource.user,
             userNetworkDataSource.isLoading
         ) { user, loading ->
-            if (user != null) {
-                val settings = user.user.settings.toDomainModel()
-                Timber.d("Firebase got user settings for user ${user.uuid}")
-                settings
+            if (user?.preferences != null) {
+                val preferences = user.preferences.toDomainModel(userUUID = user.uuid)
+                Timber.d("Firebase got preferences for user ${user.uuid.take(4)}")
+                preferences
             } else if (loading) {
                 null
             } else {
@@ -57,21 +60,20 @@ class SettingsNetworkDataSource @Inject constructor(
                 // possible states:
                 // - user not signed in: tell user they cannot sync settings?
                 // - user does not have settings yet
-                // - no user profile in cloud
-                DomainUserSettings()
+                null
             }
         }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
     }
 
-    fun setUserSettings(
-        settings: DomainUserSettings,
+    fun setPreferences(
+        preferences: DomainPreferences,
         batch: WriteBatch,
     ) {
         if (!authInteractor.isUserSignedIn) return
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
-        val fieldMapToSet = mapOf(FirestoreUser.FieldSettings to settings.toFirestoreModel())
+        val fieldMapToSet = mapOf(FirestoreUser.FieldSettings to preferences.toFirestoreModel())
         batch.set(
             userRef,
             fieldMapToSet,
@@ -79,16 +81,16 @@ class SettingsNetworkDataSource @Inject constructor(
         )
     }
 
-    fun setUserSettings(
-        settings: DomainUserSettings,
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting user settings: ${it.message}") },
-        onCancel: () -> Unit = { Timber.i("Inserting user settings canceled") },
-        onSuccess: (DomainUserSettings) -> Unit = { Timber.i("Inserting user settings successful") },
+    fun setPreferences(
+        preferences: DomainPreferences,
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting user preferences: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Inserting user preferences canceled") },
+        onSuccess: (DomainPreferences) -> Unit = { Timber.i("Inserting user preferences successful") },
     ) {
         firestore.runBatch {
-            setUserSettings(settings, it)
+            setPreferences(preferences, it)
         }.addOnSuccessListener {
-            onSuccess(settings)
+            onSuccess(preferences)
         }.addOnFailureListener {
             onFailure(it)
         }.addOnCanceledListener {
@@ -96,16 +98,16 @@ class SettingsNetworkDataSource @Inject constructor(
         }
     }
 
-    fun resetUserSettings(
+    fun resetPreferences(
         batch: WriteBatch
-    ) = setUserSettings(DomainUserSettings(), batch)
+    ) = setPreferences(DomainPreferences(userUUID = authInteractor.userUUID), batch)
 
-    fun resetUserSettings(
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while resetting user settings: ${it.message}") },
-        onCancel: () -> Unit = { Timber.i("Resetting user settings canceled") },
-        onSuccess: (DomainUserSettings) -> Unit = { Timber.i("Resetting user settings canceled") },
-    ) = setUserSettings(
-        settings = DomainUserSettings(),
+    fun resetPreferences(
+        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while resetting user preferences: ${it.message}") },
+        onCancel: () -> Unit = { Timber.i("Resetting user preferences canceled") },
+        onSuccess: (DomainPreferences) -> Unit = { Timber.i("Resetting user preferences canceled") },
+    ) = setPreferences(
+        preferences = DomainPreferences(userUUID = authInteractor.userUUID),
         onFailure = onFailure,
         onCancel = onCancel,
         onSuccess = onSuccess,

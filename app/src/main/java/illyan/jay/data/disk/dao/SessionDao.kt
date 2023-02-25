@@ -55,98 +55,98 @@ interface SessionDao {
     fun deleteSessions(sessions: List<RoomSession>)
 
     @Transaction
-    @Query("DELETE FROM session WHERE ownerUUID IS :ownerUUID OR ownerUUID IS NULL")
+    @Query("DELETE FROM sessions WHERE ownerUUID IS :ownerUUID OR ownerUUID IS NULL")
     fun deleteSessions(ownerUUID: String? = null)
 
     @Transaction
-    @Query("DELETE FROM session WHERE ownerUUID IS NULL")
+    @Query("DELETE FROM sessions WHERE ownerUUID IS NULL")
     fun deleteNotOwnedSessions()
 
     @Transaction
-    @Query("DELETE FROM session WHERE ownerUUID IS :ownerUUID")
+    @Query("DELETE FROM sessions WHERE ownerUUID IS :ownerUUID")
     fun deleteSessionsByOwner(ownerUUID: String? = null)
 
     @Transaction
-    @Query("DELETE FROM session WHERE ownerUUID IS :ownerUUID AND endDateTime IS NOT NULL")
+    @Query("DELETE FROM sessions WHERE ownerUUID IS :ownerUUID AND endDateTime IS NOT NULL")
     fun deleteStoppedSessionsByOwner(ownerUUID: String? = null)
 
     @Transaction
-    @Query("SELECT * FROM session WHERE ownerUUID IS :ownerUUID OR ownerUUID IS NULL")
+    @Query("SELECT * FROM sessions WHERE ownerUUID IS :ownerUUID OR ownerUUID IS NULL")
     fun getSessions(ownerUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE uuid IN (:sessionUUIDs)")
+    @Query("SELECT * FROM sessions WHERE uuid IN (:sessionUUIDs)")
     fun getSessions(sessionUUIDs: List<String>): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT uuid FROM session WHERE ownerUUID IS :ownerUUID OR ownerUUID IS NULL")
+    @Query("SELECT uuid FROM sessions WHERE ownerUUID IS :ownerUUID OR ownerUUID IS NULL")
     fun getSessionUUIDs(ownerUUID: String? = null): Flow<List<String>>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE uuid = :uuid AND (ownerUUID IS :ownerUUID OR ownerUUID IS NULL) LIMIT 1")
+    @Query("SELECT * FROM sessions WHERE uuid = :uuid AND (ownerUUID IS :ownerUUID OR ownerUUID IS NULL) LIMIT 1")
     fun getSession(uuid: String, ownerUUID: String? = null): Flow<RoomSession?>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE endDateTime IS NOT NULL AND ownerUUID IS :ownerUUID")
+    @Query("SELECT * FROM sessions WHERE endDateTime IS NOT NULL AND ownerUUID IS :ownerUUID")
     fun getStoppedSessions(ownerUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE endDateTime IS NULL AND (ownerUUID IS :ownerUUID OR ownerUUID IS NULL) ORDER BY startDateTime DESC")
+    @Query("SELECT * FROM sessions WHERE endDateTime IS NULL AND (ownerUUID IS :ownerUUID OR ownerUUID IS NULL) ORDER BY startDateTime DESC")
     fun getOngoingSessions(ownerUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT uuid FROM session WHERE endDateTime IS NULL AND (ownerUUID IS :ownerUUID OR ownerUUID IS NULL) ORDER BY startDateTime DESC")
+    @Query("SELECT uuid FROM sessions WHERE endDateTime IS NULL AND (ownerUUID IS :ownerUUID OR ownerUUID IS NULL) ORDER BY startDateTime DESC")
     fun getOngoingSessionUUIDs(ownerUUID: String? = null): Flow<List<String>>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE ownerUUID IS NULL ORDER BY startDateTime DESC")
+    @Query("SELECT * FROM sessions WHERE ownerUUID IS NULL ORDER BY startDateTime DESC")
     fun getAllNotOwnedSessions(): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("SELECT * FROM session WHERE ownerUUID IS :ownerUUID ORDER BY startDateTime DESC")
+    @Query("SELECT * FROM sessions WHERE ownerUUID IS :ownerUUID ORDER BY startDateTime DESC")
     fun getSessionsByOwner(ownerUUID: String? = null): Flow<List<RoomSession>>
 
     @Transaction
-    @Query("UPDATE session SET ownerUUID = :ownerUUID WHERE ownerUUID IS NULL")
+    @Query("UPDATE sessions SET ownerUUID = :ownerUUID WHERE ownerUUID IS NULL")
     fun ownAllNotOwnedSessions(ownerUUID: String): Int
 
     @Transaction
-    @Query("UPDATE session SET ownerUUID = :ownerUUID WHERE ownerUUID IS NULL AND uuid = :uuid")
+    @Query("UPDATE sessions SET ownerUUID = :ownerUUID WHERE ownerUUID IS NULL AND uuid = :uuid")
     fun ownNotOwnedSession(uuid: String, ownerUUID: String): Int
 
     @Transaction
-    @Query("UPDATE session SET ownerUUID = :ownerUUID WHERE uuid IN(:uuids)")
+    @Query("UPDATE sessions SET ownerUUID = :ownerUUID WHERE uuid IN(:uuids)")
     fun ownSessions(uuids: List<String>, ownerUUID: String)
 
     @Transaction
-    @Query("UPDATE session SET ownerUUID = NULL WHERE uuid IN(:uuids)")
+    @Query("UPDATE sessions SET ownerUUID = NULL WHERE uuid IN(:uuids)")
     fun disownSessions(uuids: List<String>)
 
     @Transaction
-    @Query("UPDATE session SET ownerUUID = NULL WHERE ownerUUID IS :ownerUUID")
+    @Query("UPDATE sessions SET ownerUUID = NULL WHERE ownerUUID IS :ownerUUID")
     fun disownSessions(ownerUUID: String)
 
     @Transaction
-    @Query("UPDATE session SET startLocationLatitude = :latitude, startLocationLongitude = :longitude WHERE uuid IS :sessionUUID")
+    @Query("UPDATE sessions SET startLocationLatitude = :latitude, startLocationLongitude = :longitude WHERE uuid IS :sessionUUID")
     fun saveStartLocationForSession(sessionUUID: String, latitude: Double, longitude: Double)
 
     @Transaction
-    @Query("UPDATE session SET endLocationLatitude = :latitude, endLocationLongitude = :longitude WHERE uuid IS :sessionUUID")
+    @Query("UPDATE sessions SET endLocationLatitude = :latitude, endLocationLongitude = :longitude WHERE uuid IS :sessionUUID")
     fun saveEndLocationForSession(sessionUUID: String, latitude: Double, longitude: Double)
 
     @Transaction
-    @Query("UPDATE session SET startLocationName = :name WHERE uuid IS :sessionUUID")
+    @Query("UPDATE sessions SET startLocationName = :name WHERE uuid IS :sessionUUID")
     fun saveStartLocationNameForSession(sessionUUID: String, name: String)
 
     @Transaction
-    @Query("UPDATE session SET endLocationName = :name WHERE uuid IS :sessionUUID")
+    @Query("UPDATE sessions SET endLocationName = :name WHERE uuid IS :sessionUUID")
     fun saveEndLocationNameForSession(sessionUUID: String, name: String)
 
     @Transaction
-    @Query("UPDATE session SET clientUUID = :clientUUID WHERE uuid IS :sessionUUID")
+    @Query("UPDATE sessions SET clientUUID = :clientUUID WHERE uuid IS :sessionUUID")
     fun assignClientToSession(sessionUUID: String, clientUUID: String?)
 
     @Transaction
-    @Query("UPDATE session SET distance = :distance WHERE uuid IS :sessionUUID")
+    @Query("UPDATE sessions SET distance = :distance WHERE uuid IS :sessionUUID")
     fun saveDistanceForSession(sessionUUID: String, distance: Float?)
 }

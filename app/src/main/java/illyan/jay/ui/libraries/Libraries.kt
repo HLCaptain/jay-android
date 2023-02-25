@@ -18,65 +18,223 @@
 
 package illyan.jay.ui.libraries
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ChainStyle
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.R
+import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.destinations.LibraryDialogScreenDestination
 import illyan.jay.ui.libraries.model.Library
+import illyan.jay.ui.libraries.model.License
 import illyan.jay.ui.profile.ProfileNavGraph
+import illyan.jay.ui.search.DividerThickness
+import illyan.jay.ui.theme.JayTheme
 
 @ProfileNavGraph
 @Destination
 @Composable
-fun Libraries(
+fun LibrariesDialogScreen(
     viewModel: LibrariesViewModel = hiltViewModel(),
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     val libraries by viewModel.libraries.collectAsStateWithLifecycle()
-    LibrariesScreen(
-        libraries = libraries
+    LibrariesDialogContent(
+        modifier = Modifier.fillMaxWidth(),
+        libraries = libraries,
+        onSelectLibrary = { destinationsNavigator.navigate(LibraryDialogScreenDestination(it)) },
+    )
+}
+
+@Composable
+fun LibrariesDialogContent(
+    modifier: Modifier = Modifier,
+    libraries: List<Library> = emptyList(),
+    onSelectLibrary: (Library) -> Unit = {},
+) {
+    JayDialogContent(
+        modifier = modifier,
+        title = { LibrariesTitle() },
+        text = {
+            LibrariesScreen(
+                libraries = libraries,
+                onSelectLibrary = onSelectLibrary,
+            )
+        }
+    )
+}
+
+@Composable
+fun LibrariesTitle() {
+    Text(
+        text = stringResource(id = R.string.libraries),
+        style = MaterialTheme.typography.headlineSmall,
+        color = AlertDialogDefaults.titleContentColor,
     )
 }
 
 @Composable
 fun LibrariesScreen(
     modifier: Modifier = Modifier,
-    libraries: List<Library> = emptyList()
-) {
-    LibrariesList(
-        modifier = modifier,
-        libraries = libraries
-    )
-}
-
-@Composable
-fun LibrariesList(
-    modifier: Modifier = Modifier,
-    libraries: List<Library> = emptyList()
+    libraries: List<Library> = emptyList(),
+    onSelectLibrary: (Library) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier
     ) {
-        items(libraries) {
-            LibraryItem(it)
+        itemsIndexed(libraries) { index, item ->
+            LibraryItem(
+                modifier = Modifier.padding(vertical = 2.dp),
+                library = item,
+                onClick = { onSelectLibrary(item) }
+            )
+            if (index != libraries.size - 1) {
+                Divider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 36.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = DividerThickness,
+                                bottomStart = DividerThickness,
+                                topEnd = DividerThickness,
+                                bottomEnd = DividerThickness
+                            )
+                        ),
+                    thickness = DividerThickness * 2,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2f)
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryItem(
-    library: Library
+    modifier: Modifier = Modifier,
+    library: Library,
+    cardColors: CardColors = CardDefaults.cardColors(
+        containerColor = Color.Transparent
+    ),
+    onClick: () -> Unit = {},
 ) {
-    Card {
-        Column {
-            Text(text = library.name)
-            library.repositoryUrl?.let { Text(text = it) }
+    Card(
+        modifier = modifier,
+        onClick = onClick,
+        colors = cardColors,
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            val (item, icon) = createRefs()
+            createHorizontalChain(
+                item,
+                icon,
+                chainStyle = ChainStyle.SpreadInside
+            )
+            createStartBarrier()
+            Icon(
+                modifier = Modifier.constrainAs(icon) {
+                    end.linkTo(parent.end)
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                },
+                imageVector = Icons.Rounded.ChevronRight, contentDescription = ""
+            )
+            LazyRow(
+                modifier = Modifier.constrainAs(item) {
+                    start.linkTo(parent.start)
+                    end.linkTo(icon.start)
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                    width = Dimension.fillToConstraints
+                }
+            ) {
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = library.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = AlertDialogDefaults.titleContentColor,
+                        )
+                        AnimatedVisibility(visible = library.repositoryUrl != null) {
+                            library.repositoryUrl?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = AlertDialogDefaults.textContentColor,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@PreviewLightDarkTheme
+@Composable
+private fun LibrariesDialogContentPreview() {
+    val libraries = listOf(
+        Library(
+            name = "Plumber",
+            license = License(
+                type = "Apache v2",
+                description = "Cool license",
+            ),
+            moreInfoUrl = "https://github.com/HLCaptain/plumber",
+            repositoryUrl = "https://github.com/HLCaptain/plumber"
+        ),
+        Library(
+            name = "Compose Scrollbar",
+            license = License(
+                type = "Apache v2",
+                description = "Cool license",
+            ),
+            moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
+            repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar"
+        )
+    )
+    JayTheme {
+        JayDialogContent {
+            LibrariesDialogContent(libraries = libraries)
         }
     }
 }

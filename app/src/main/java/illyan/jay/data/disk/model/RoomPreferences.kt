@@ -16,9 +16,21 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.model
+package illyan.jay.data.disk.model
 
-data class FirestoreUserWithUUID(
-    val uuid: String,
-    val user: FirestoreUser,
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import java.time.ZonedDateTime
+import java.util.UUID
+
+@Entity(
+    tableName = "preferences",
+)
+data class RoomPreferences(
+    @PrimaryKey
+    val userUUID: String = UUID.randomUUID().toString(),
+    val freeDriveAutoStart: Boolean = false,
+    val analyticsEnabled: Boolean = false,
+    val lastUpdate: Long = ZonedDateTime.now().toInstant().toEpochMilli(),
+    val shouldSync: Boolean = false
 )

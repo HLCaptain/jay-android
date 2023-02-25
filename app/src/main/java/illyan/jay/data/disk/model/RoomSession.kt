@@ -24,7 +24,7 @@ import androidx.room.PrimaryKey
 import java.util.UUID
 
 @Entity(
-    tableName = "session",
+    tableName = "sessions",
     indices = [Index(value = ["uuid"])]
 )
 data class RoomSession(
