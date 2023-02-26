@@ -30,7 +30,7 @@ data class DomainPreferences(
     val freeDriveAutoStart: Boolean = false,
     @Serializable(with = ZonedDateTimeSerializer::class)
     val lastUpdate: ZonedDateTime = ZonedDateTime.now(),
-    val shouldSync: Boolean = false
+    val shouldSync: Boolean = false // FIXME: change this to true, because user preferences would break bcuz it would never download cloud preferences. Maybe make sync not update lastupdate?
 ) {
     override fun equals(other: Any?): Boolean {
         return if (other != null && other is DomainPreferences) {

@@ -106,15 +106,20 @@ class SettingsInteractor @Inject constructor(
     val arePreferencesSynced by lazy {
         combine(
             isLoading,
+            preferencesNetworkDataSource.isLoadingFromCloud,
             localUserPreferences,
             syncedUserPreferences
-        ) { loading, local, synced ->
-            if (!loading) {
+        ) { loading, cloudLoading, local, synced ->
+            if (!loading && !cloudLoading) {
                 local == synced
             } else {
                 false
             }
-        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
+        }.stateIn(
+            coroutineScopeIO,
+            SharingStarted.Eagerly,
+            localUserPreferences.value == syncedUserPreferences.value
+        )
     }
 
     val shouldSyncPreferences by lazy {
@@ -144,13 +149,12 @@ class SettingsInteractor @Inject constructor(
             return _isLocalLoading.asStateFlow()
         }
 
-    val syncedUserPreferences = preferencesNetworkDataSource.preferences
+    val syncedUserPreferences = preferencesNetworkDataSource.cloudPreferences
 
     val isLoading = combine(
         preferencesNetworkDataSource.isLoading,
-        preferencesNetworkDataSource.isLoadingFromCloud,
         isLocalLoading
-    ) { loadingFromCache, loadingFromCloud, loadingFromDisk ->
+    ) { loadingFromCache, loadingFromDisk ->
         loadingFromCache || loadingFromDisk
     }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
 
@@ -216,7 +220,6 @@ class SettingsInteractor @Inject constructor(
                     Timber.v("If cloud is loaded and local is not, returning cloud preferences")
                     syncedPreferences
                 } else {
-                    // TODO: resolve preferences here, local and synced preferences are loaded
                     if (localPreferences == null && syncedPreferences == null) {
                         // User don't have local nor synced preferences? Create and upload local preferences.
                         Timber.v("User don't have local nor synced preferences, create and upload one.")

@@ -56,10 +56,23 @@ class PreferencesNetworkDataSource @Inject constructor(
             } else if (loading) {
                 null
             } else {
-                // TODO: maybe insert settings
-                // possible states:
-                // - user not signed in: tell user they cannot sync settings?
-                // - user does not have settings yet
+                null
+            }
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
+    }
+
+    val cloudPreferences: StateFlow<DomainPreferences?> by lazy {
+        combine(
+            userNetworkDataSource.cloudUser,
+            userNetworkDataSource.isLoadingFromCloud
+        ) { user, loading ->
+            if (user?.preferences != null) {
+                val preferences = user.preferences.toDomainModel(userUUID = user.uuid)
+                Timber.d("Firebase got cloud preferences for user ${user.uuid.take(4)}")
+                preferences
+            } else if (loading) {
+                null
+            } else {
                 null
             }
         }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
