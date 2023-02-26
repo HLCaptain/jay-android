@@ -20,6 +20,7 @@ package illyan.jay.data.disk.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import illyan.jay.domain.model.DomainPreferences
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -29,8 +30,8 @@ import java.util.UUID
 data class RoomPreferences(
     @PrimaryKey
     val userUUID: String = UUID.randomUUID().toString(),
-    val freeDriveAutoStart: Boolean = false,
-    val analyticsEnabled: Boolean = false,
+    val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
+    val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
     val lastUpdate: Long = ZonedDateTime.now().toInstant().toEpochMilli(),
-    val shouldSync: Boolean = false
+    val shouldSync: Boolean = DomainPreferences.default.shouldSync
 )

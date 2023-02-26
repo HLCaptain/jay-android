@@ -86,7 +86,7 @@ class PreferencesNetworkDataSource @Inject constructor(
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)
-        val fieldMapToSet = mapOf(FirestoreUser.FieldSettings to preferences.toFirestoreModel())
+        val fieldMapToSet = mapOf(FirestoreUser.FieldPreferences to preferences.toFirestoreModel())
         batch.set(
             userRef,
             fieldMapToSet,
