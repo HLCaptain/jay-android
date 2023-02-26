@@ -20,19 +20,20 @@ package illyan.jay.data.network.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.PropertyName
 import illyan.jay.util.toTimestamp
 import java.time.Instant
 
 data class FirestoreSession(
-    val uuid: String = "",
-    val startDateTime: Timestamp = Instant.EPOCH.toTimestamp(),
-    val endDateTime: Timestamp? = null,
-    val startLocation: GeoPoint? = null,
-    val endLocation: GeoPoint? = null,
-    val startLocationName: String? = null,
-    val endLocationName: String? = null,
-    val distance: Float? = null,
-    val clientUUID: String? = null
+    @PropertyName(FieldUUID) val uuid: String = "",
+    @PropertyName(FieldStartDateTime) val startDateTime: Timestamp = Instant.EPOCH.toTimestamp(),
+    @PropertyName(FieldEndDateTime) val endDateTime: Timestamp? = null,
+    @PropertyName(FieldStartLocation) val startLocation: GeoPoint? = null,
+    @PropertyName(FieldEndLocation) val endLocation: GeoPoint? = null,
+    @PropertyName(FieldStartLocationName) val startLocationName: String? = null,
+    @PropertyName(FieldEndLocationName) val endLocationName: String? = null,
+    @PropertyName(FieldDistance) val distance: Float? = null,
+    @PropertyName(FieldClientUUID) val clientUUID: String? = null
 ) {
     companion object {
         const val FieldUUID = "uuid"

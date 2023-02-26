@@ -25,6 +25,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.ktx.toObject
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.domain.interactor.AuthInteractor
@@ -34,7 +35,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import java.util.concurrent.Executors
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class UserNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
@@ -43,9 +46,21 @@ class UserNetworkDataSource @Inject constructor(
     private val _userListenerRegistration = MutableStateFlow<ListenerRegistration?>(null)
     private val _userReference = MutableStateFlow<DocumentSnapshot?>(null)
     private val _user = MutableStateFlow<FirestoreUser?>(null)
-    val user: StateFlow<FirestoreUser?> get() {
-        if (_userListenerRegistration.value == null) loadUser()
-        return _user.asStateFlow()
+    private val _cloudUser = MutableStateFlow<FirestoreUser?>(null)
+
+    val user: StateFlow<FirestoreUser?> by lazy {
+        if (_userListenerRegistration.value == null && !isLoading.value) {
+            Timber.d("User StateFlow requested, but listener registration is null, reloading it")
+            refreshUser()
+        }
+        _user.asStateFlow()
+    }
+    val cloudUser: StateFlow<FirestoreUser?> by lazy {
+        if (_userListenerRegistration.value == null && !isLoadingFromCloud.value) {
+            Timber.d("User StateFlow requested, but listener registration is null, reloading it")
+            refreshUser()
+        }
+        _cloudUser.asStateFlow()
     }
 
     private val _isLoading = MutableStateFlow(false)
@@ -59,41 +74,53 @@ class UserNetworkDataSource @Inject constructor(
     init {
         authInteractor.addAuthStateListener {
             if (authInteractor.isUserSignedIn) {
-                Timber.d("Reloading snapshot listener for user ${_user.value?.uuid}")
-                loadUser()
+                if (authInteractor.userUUID != null &&
+                    authInteractor.userUUID != _user.value?.uuid
+                ) {
+                    Timber.d("Reloading snapshot listener for user ${_user.value?.uuid?.take(4)}")
+                    refreshUser()
+                } else {
+                    Timber.d("User not changed from ${_user.value?.uuid?.take(4)}, not reloading snapshot listener on auth state change")
+                }
             } else {
-                Timber.d("Removing snapshot listener for user ${_user.value?.uuid}")
-                _userReference.value = null
-                _userListenerRegistration.value?.remove()
-                _user.value = null
-                _isLoading.value = false
-                _isLoadingFromCloud.value = false
+                Timber.d("Removing snapshot listener for user ${_user.value?.uuid?.take(4)}")
+                resetUserListenerData()
             }
         }
         appLifecycle.addObserver(this)
     }
 
+    private fun resetUserListenerData() {
+        _userListenerRegistration.value?.remove()
+        if (_userListenerRegistration.value != null) _userListenerRegistration.value = null
+        if (_userReference.value != null) _userReference.value = null
+        if (_isLoading.value) _isLoading.value = false
+        if (_isLoadingFromCloud.value) _isLoadingFromCloud.value = false
+    }
+
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
-        loadUser()
+        Timber.d("Reload user on App Lifecycle Start")
+        resetUserListenerData()
+        refreshUser()
     }
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        _userListenerRegistration.value?.remove()
-        _userListenerRegistration.value = null
+        Timber.d("Remove user listener on App Lifecycle Stop")
+        resetUserListenerData()
     }
 
-    private fun loadUser(
+    private fun refreshUser(
         userUUID: String = authInteractor.userUUID.toString(),
         onError: (Exception) -> Unit = { Timber.e(it, "Error while getting user data: ${it.message}") },
         onSuccess: (FirestoreUser) -> Unit = {},
     ) {
-        if (!authInteractor.isUserSignedIn) return
-        if (_user.value == null) {
-            _isLoading.value = true
-            _isLoadingFromCloud.value = true
+        if (!authInteractor.isUserSignedIn || _isLoadingFromCloud.value) {
+            Timber.d("Not refreshing user, due to another being loaded in or user is not signed in")
+            return
         }
+        resetUserListenerData()
         Timber.d("Connecting snapshot listener to Firebase to get ${userUUID.take(4)} user's data")
         val snapshotListener = EventListener<DocumentSnapshot> { snapshot, error ->
             Timber.v("New snapshot regarding user ${userUUID.take(4)}")
@@ -104,7 +131,6 @@ class UserNetworkDataSource @Inject constructor(
                 if (user == null) {
                     onError(NoSuchElementException("User document does not exist"))
                 } else {
-                    Timber.d("Firebase loaded ${userUUID.take(4)} user's data")
                     onSuccess(user)
                 }
                 if (snapshot != null) {
@@ -114,24 +140,45 @@ class UserNetworkDataSource @Inject constructor(
                     // If snapshot is null, then _userReference is invalid if not null. Assign null to it.
                     _userReference.value = null
                 }
+
+                // Cache
                 if (user != null) {
+                    if (_user.value != null) {
+                        Timber.v("Refreshing Cached ${userUUID.take(4)} user's data")
+                    } else {
+                        Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cache")
+                    }
                     _user.value = user
                 } else if (_user.value != null) {
+
                     _user.value = null
                 }
                 if (_isLoading.value) {
                     _isLoading.value = false
+                }
+
+                // Cloud
+                if (snapshot?.metadata?.isFromCache == false) {
+                    if (user != null) {
+                        if (_cloudUser.value != null) {
+                            Timber.v("Firestore loaded fresh ${userUUID.take(4)} user's data from Cloud")
+                        } else {
+                            Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cloud")
+                        }
+                        _cloudUser.value = user
+                    } else if (_cloudUser.value != null) {
+                        _cloudUser.value = null
+                    }
                 }
                 if (_isLoadingFromCloud.value && snapshot?.metadata?.isFromCache == false) {
                     _isLoadingFromCloud.value = false
                 }
             }
         }
-        _userListenerRegistration.value?.remove()
         _userListenerRegistration.value = firestore
             .collection(FirestoreUser.CollectionName)
             .document(userUUID)
-            .addSnapshotListener(executor, snapshotListener)
+            .addSnapshotListener(executor, MetadataChanges.INCLUDE, snapshotListener)
     }
 
     fun deleteUserData(

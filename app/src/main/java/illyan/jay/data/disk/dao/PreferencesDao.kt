@@ -47,6 +47,6 @@ interface PreferencesDao {
     @Query("UPDATE preferences SET freeDriveAutoStart = :freeDriveAutoStart, lastUpdate = :lastUpdate WHERE userUUID IS :userUUID")
     fun setFreeDriveAutoStart(userUUID: String, freeDriveAutoStart: Boolean, lastUpdate: Long = Instant.now().toEpochMilli())
 
-    @Query("UPDATE preferences SET shouldSync = :shouldSync, lastUpdate = :lastUpdate WHERE userUUID IS :userUUID")
-    fun setShouldSync(userUUID: String, shouldSync: Boolean, lastUpdate: Long = Instant.now().toEpochMilli())
+    @Query("UPDATE preferences SET shouldSync = :shouldSync WHERE userUUID IS :userUUID")
+    fun setShouldSync(userUUID: String, shouldSync: Boolean)
 }

@@ -19,13 +19,17 @@
 package illyan.jay.data.network.model
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
+import illyan.jay.domain.model.DomainPreferences
 
 data class FirestoreUserPreferences(
-    val analyticsEnabled: Boolean = false,
-    val freeDriveAutoStart: Boolean = false,
-    val lastUpdate: Timestamp = Timestamp.now()
+    @PropertyName(FieldAnalyticsEnabled) val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
+    @PropertyName(FieldFreeDriveAutoStart) val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
+    @PropertyName(FieldLastUpdate) val lastUpdate: Timestamp = Timestamp.now()
 ) {
     companion object {
         const val FieldAnalyticsEnabled = "analyticsEnabled"
+        const val FieldFreeDriveAutoStart = "freeDriveAutoStart"
+        const val FieldLastUpdate = "lastUpdate"
     }
 }
