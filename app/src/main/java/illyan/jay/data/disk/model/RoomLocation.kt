@@ -23,7 +23,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 
 @Entity(
-    tableName = "location",
+    tableName = "locations",
     foreignKeys = [
         ForeignKey(
             entity = RoomSession::class,

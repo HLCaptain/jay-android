@@ -35,7 +35,7 @@ class MapboxInteractor @Inject constructor(
     context: Context
 ) {
     val defaultRequest: LocationEngineRequest = LocationEngineRequest
-        .Builder(LocationInteractor.LOCATION_REQUEST_INTERVAL_DEFAULT)
+        .Builder(LocationInteractor.LOCATION_REQUEST_INTERVAL_REALTIME)
         .setPriority(LocationEngineRequest.PRIORITY_HIGH_ACCURACY)
         .build()
 

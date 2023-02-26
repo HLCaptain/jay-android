@@ -77,7 +77,7 @@ class LocationInteractor @Inject constructor(
      * @return location data flow for a particular session.
      */
     fun getLocations(sessionUUID: String): Flow<List<DomainLocation>> {
-        Timber.d("Trying to load path for session with ID from disk: $sessionUUID")
+        Timber.d("Trying to load path for session with ID from disk: ${sessionUUID.take(4)}")
         return locationDiskDataSource.getLocations(sessionUUID)
     }
 
@@ -122,7 +122,7 @@ class LocationInteractor @Inject constructor(
                     syncedPaths.value = emptyList()
                 } else {
                     coroutineScopeIO.launch {
-                        sessionNetworkDataSource.getSessions { sessions ->
+                        sessionNetworkDataSource.sessions.first { sessions ->
                             if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
                                 Timber.v("Found session in cloud, caching it on disk")
                                 coroutineScopeIO.launch {
@@ -137,6 +137,7 @@ class LocationInteractor @Inject constructor(
                                     }
                                 }
                             }
+                            sessions != null
                         }
                     }
                 }

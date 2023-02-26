@@ -19,7 +19,6 @@
 package illyan.jay.ui.components
 
 import android.net.Uri
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
@@ -53,23 +52,21 @@ fun AvatarAsyncImage(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        Crossfade(targetState = placeholderEnabled) {
-            if (!it) {
-                SubcomposeAsyncImage(
-                    modifier = modifier,
-                    model = userPhotoUrl?.toString(),
-                    loading = {
-                        when (painter.state) {
-                            is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                            is AsyncImagePainter.State.Loading -> PlaceholderAvatar(modifier)
-                            is AsyncImagePainter.State.Error -> BrokenAvatar(modifier)
-                            else -> DefaultAvatar(modifier)
-                        }
-                    },
-                    contentDescription = stringResource(R.string.avatar_profile_picture)
-                )
-            } else placeholder()
-        }
+        if (!placeholderEnabled) {
+            SubcomposeAsyncImage(
+                modifier = modifier,
+                model = userPhotoUrl?.toString(),
+                loading = {
+                    when (painter.state) {
+                        is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
+                        is AsyncImagePainter.State.Loading -> PlaceholderAvatar(modifier)
+                        is AsyncImagePainter.State.Error -> BrokenAvatar(modifier)
+                        else -> DefaultAvatar(modifier)
+                    }
+                },
+                contentDescription = stringResource(R.string.avatar_profile_picture)
+            )
+        } else placeholder()
     }
 }
 

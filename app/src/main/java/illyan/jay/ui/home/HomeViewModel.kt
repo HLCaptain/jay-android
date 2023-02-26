@@ -21,6 +21,7 @@ package illyan.jay.ui.home
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.perf.FirebasePerformance
 import com.mapbox.android.core.location.LocationEngineCallback
 import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.geojson.Point
@@ -33,8 +34,11 @@ import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.map.BmeK
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,14 +47,21 @@ class HomeViewModel @Inject constructor(
     private val mapboxInteractor: MapboxInteractor,
     private val authInteractor: AuthInteractor,
     private val sessionInteractor: SessionInteractor,
+    private val performance: FirebasePerformance,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _initialLocation = MutableStateFlow<Location?>(null)
     val initialLocation = _initialLocation.asStateFlow()
 
-    private val _initialLocationLoaded = MutableStateFlow(false)
-    val initialLocationLoaded = _initialLocationLoaded.asStateFlow()
+    // FIXME: tracing initial location load is affected by low GPS signal.
+    //  Find a solution which mitigates issues coming from tunnels/low signal environments.
+    private val locationLoadTrace = performance.newTrace("Initial location load")
+
+    val initialLocationLoaded = initialLocation.map {
+        locationLoadTrace.apply { if (it != null) stop() else start() }
+        it != null
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _cameraOptionsBuilder = MutableStateFlow<CameraOptions.Builder?>(null)
     val cameraOptionsBuilder = _cameraOptionsBuilder.asStateFlow()
@@ -63,7 +74,6 @@ class HomeViewModel @Inject constructor(
             result?.let {
                 if (_initialLocation.value == null) {
                     _initialLocation.value = it.lastLocation
-                    _initialLocationLoaded.value = true
                     disposeLocationUpdates(this)
                 }
             }

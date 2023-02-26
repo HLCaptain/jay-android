@@ -35,11 +35,14 @@ class LoginViewModel @Inject constructor(
 
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
 
+    init {
+        authInteractor.addGoogleAuthStateCallback { if (_isSigningIn.value) _isSigningIn.value = false }
+        authInteractor.addAuthStateListener { if (_isSigningIn.value) _isSigningIn.value = false }
+    }
+
     fun signInViaGoogle(activity: MainActivity) {
         if (!isSigningIn.value) {
             _isSigningIn.value = true
-            authInteractor.addGoogleAuthStateCallback { _isSigningIn.value = false }
-            authInteractor.addAuthStateListener { _isSigningIn.value = false }
             authInteractor.signInViaGoogle(activity)
         }
     }

@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.sessions
 
-import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +30,7 @@ import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
 import illyan.jay.util.sphericalPathLength
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +38,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -54,6 +56,10 @@ class SessionsViewModel @Inject constructor(
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<String, MutableStateFlow<UiSession?>>()
+
+    // FIXME: deleteRequestedOnSessions may be aware of sessions's sync state, so
+    //  they would only be present in this list, if their deletion is pending
+    private val deleteRequestedOnSessions = MutableStateFlow(persistentListOf<String>())
 
     private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
     val ownedLocalSessionUUIDs = _ownedLocalSessionUUIDs.asStateFlow()
@@ -75,6 +81,7 @@ class SessionsViewModel @Inject constructor(
         _syncedSessions,
         clientUUID
     ) { synced, clientUUID ->
+        Timber.v("${synced.size} synced sessions")
         synced.map {
             it.toUiModel(
                 currentClientUUID = clientUUID,
@@ -112,7 +119,8 @@ class SessionsViewModel @Inject constructor(
         syncedSessions,
         ownedLocalSessionUUIDs,
         notOwnedSessionUUIDs,
-    ) { synced, ownedLocal, notOwnedLocal ->
+        deleteRequestedOnSessions,
+    ) { synced, ownedLocal, notOwnedLocal, deleting ->
         val sessions = mutableListOf<Pair<String, ZonedDateTime>>()
         sessions.addAll(synced.map { it.uuid to it.startDateTime })
         sessions.addAll(ownedLocal)
@@ -128,7 +136,8 @@ class SessionsViewModel @Inject constructor(
                 sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
             }
         }
-        sortedSessions
+        // Session is not being deleted
+        sortedSessions.filter { !deleting.contains(it) }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val noSessionsToShow = combine(
@@ -151,6 +160,14 @@ class SessionsViewModel @Inject constructor(
         // The number of local sessions in the cloud is lower than local not ongoing sessions.
         synced.size < owned.size - ongoing.size
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun reloadData() {
+        Timber.v("Requested data reload")
+        disposeSessionStateFlows()
+        loadLocalSessions()
+        loadCloudSessions()
+        loadSessionStateFlows()
+    }
 
     fun loadLocalSessions() {
         _notOwnedSessionUUIDs.value = emptyList()
@@ -196,13 +213,12 @@ class SessionsViewModel @Inject constructor(
         }
     }
 
-    fun loadCloudSessions(activity: Activity) {
+    fun loadCloudSessions() {
         _syncedSessions.value = emptyList()
         _syncedSessionsLoading.value = true
 
         if (isUserSignedIn.value) {
             viewModelScope.launch(dispatcherIO) {
-                sessionInteractor.loadSyncedSessions(activity)
                 sessionInteractor.syncedSessions.collectLatest {
                     Timber.d("New number of synced sessions: ${_syncedSessions.value.size} -> ${it?.size}")
                     _syncedSessions.value = it ?: emptyList()
@@ -214,9 +230,9 @@ class SessionsViewModel @Inject constructor(
         }
     }
 
-    fun deleteAllSyncedData() {
+    fun deleteSyncedSessions() {
         viewModelScope.launch(dispatcherIO) {
-            sessionInteractor.deleteAllSyncedData()
+            sessionInteractor.deleteSyncedSessions()
         }
     }
 
@@ -236,10 +252,46 @@ class SessionsViewModel @Inject constructor(
         }
     }
 
+    fun syncSession(uuid: String) {
+        viewModelScope.launch(dispatcherIO) {
+            sessionInteractor.getSession(uuid).first { session ->
+                session?.let {
+                    locationInteractor.getLocations(uuid).first { locations ->
+                        sessionInteractor.uploadSession(session, locations)
+                        true
+                    }
+                }
+                true
+            }
+        }
+    }
+
+    fun deleteSession(uuid: String) {
+        deleteRequestedOnSessions.getAndUpdate { it.add(uuid) }
+        deleteSessionLocally(uuid)
+        deleteSessionFromCloud(uuid)
+    }
+
+    fun deleteSessionFromCloud(uuid: String) {
+        viewModelScope.launch(dispatcherIO) {
+            sessionInteractor.deleteSessionFromCloud(uuid)
+        }
+    }
+
+    fun deleteSessionLocally(uuid: String) {
+        viewModelScope.launch(dispatcherIO) {
+            sessionInteractor.getSession(uuid).first {
+                it?.let { sessionInteractor.deleteSessionLocally(it) }
+                true
+            }
+//            loadLocalSessions()
+        }
+    }
+
     fun deleteSessionsLocally() {
         viewModelScope.launch(dispatcherIO) {
             sessionInteractor.deleteStoppedSessions()
-            loadLocalSessions()
+//            loadLocalSessions()
         }
     }
 
@@ -248,19 +300,29 @@ class SessionsViewModel @Inject constructor(
         //sessionStateFlows.remove(sessionUUID)
     }
 
+    fun disposeSessionStateFlows() {
+        sessionStateFlows.clear()
+    }
+
     fun loadSessionStateFlows() {
         // FIXME: make loading sessions a constant time-like instead of O(n)
         //  (one query to DB and cloud instead of N)
         viewModelScope.launch(dispatcherIO) {
-            allSessionUUIDs.collectLatest { sessionUUIDs ->
-                sessionUUIDs.subtract(sessionStateFlows.keys).forEach { getSessionStateFlow(it) }
+//            allSessionUUIDs.collectLatest { uuids ->
+//                uuids.subtract(sessionStateFlows.keys).forEach { getSessionStateFlow(it) }
+//            }
+            combine(allSessionUUIDs, isLoading) { uuids, loading ->
+                uuids to loading
+            }.first { state ->
+                state.first.subtract(sessionStateFlows.keys).forEach { getSessionStateFlow(it) }
+                !state.second && state.first.isNotEmpty()
             }
         }
     }
 
     fun getSessionStateFlow(sessionUUID: String): StateFlow<UiSession?> {
         Timber.d("Requesting session state flow with id: ${sessionUUID.take(4)}")
-        if (sessionStateFlows.contains(sessionUUID)) {
+        if (sessionStateFlows[sessionUUID] != null) {
             Timber.d("Session flow for session ${sessionUUID.take(4)} found in memory")
             return sessionStateFlows[sessionUUID]!!.asStateFlow()
         }

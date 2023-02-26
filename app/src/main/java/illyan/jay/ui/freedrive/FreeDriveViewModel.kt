@@ -33,6 +33,7 @@ import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
 import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.data.disk.model.AppSettings
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.domain.interactor.ServiceInteractor
@@ -40,9 +41,11 @@ import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.ui.map.toEdgeInsets
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -54,9 +57,14 @@ class FreeDriveViewModel @Inject constructor(
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
     val isJayServiceRunning = serviceInteractor.isJayServiceRunning
-    val startServiceAutomatically = settingsInteractor.appSettingsFlow.map {
-        it.turnOnFreeDriveAutomatically
-    }
+
+    val startServiceAutomatically = settingsInteractor.userPreferences
+        .map { it?.freeDriveAutoStart ?: AppSettings.default.preferences.freeDriveAutoStart }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            AppSettings.default.preferences.freeDriveAutoStart
+        )
 
     private val _lastLocation = MutableStateFlow<Location?>(null)
     val lastLocation = _lastLocation.asStateFlow()
@@ -179,10 +187,6 @@ class FreeDriveViewModel @Inject constructor(
     }
 
     fun setAutoStartService(startServiceAutomatically: Boolean) {
-        viewModelScope.launch(dispatcherIO) {
-            settingsInteractor.updateAppSettings {
-                it.copy(turnOnFreeDriveAutomatically = startServiceAutomatically)
-            }
-        }
+        settingsInteractor.freeDriveAutoStart = startServiceAutomatically
     }
 }

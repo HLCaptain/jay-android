@@ -29,7 +29,7 @@ import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.*
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -51,6 +51,9 @@ class SessionDiskDataSource @Inject constructor(
     fun getSessions(ownerUUID: String?) =
         sessionDao.getSessions(ownerUUID).map { it.map(RoomSession::toDomainModel) }
 
+    fun getSessions(sessionUUIDs: List<String>) = sessionDao.getSessions(sessionUUIDs)
+        .map { it.map(RoomSession::toDomainModel) }
+
     fun getSessionUUIDs(ownerUUID: String?) = sessionDao.getSessionUUIDs(ownerUUID)
 
     fun getAllNotOwnedSessions() = sessionDao.getAllNotOwnedSessions()
@@ -63,7 +66,6 @@ class SessionDiskDataSource @Inject constructor(
         Timber.i("$ownerUUID owns all sessions without an owner")
         sessionDao.ownAllNotOwnedSessions(ownerUUID)
     }
-
 
     fun ownNotOwnedSession(sessionUUID: String, ownerUUID: String) {
         Timber.i("$ownerUUID owns session with no owner yet: $sessionUUID")

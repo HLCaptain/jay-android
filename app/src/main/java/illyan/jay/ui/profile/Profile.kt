@@ -21,36 +21,55 @@ package illyan.jay.ui.profile
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.constraintlayout.compose.ChainStyle
@@ -58,21 +77,108 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
+import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.NavGraph
+import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import com.ramcosta.composedestinations.utils.currentDestinationAsState
+import com.ramcosta.composedestinations.utils.startDestination
+import illyan.jay.MainActivity
 import illyan.jay.R
+import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
+import illyan.jay.ui.components.CopiedToKeyboardTooltip
+import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.TooltipElevatedCard
+import illyan.jay.ui.destinations.AboutDialogScreenDestination
+import illyan.jay.ui.destinations.LoginDialogScreenDestination
+import illyan.jay.ui.destinations.SettingsDialogScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
-import illyan.jay.ui.login.LoginDialog
 import illyan.jay.ui.theme.JayTheme
+import java.util.UUID
 
+@RootNavGraph
+@NavGraph
+annotation class ProfileNavGraph(
+    val start: Boolean = false,
+)
+
+val LocalDialogDismissRequest = compositionLocalOf { {} }
+val LocalDialogActivityProvider = compositionLocalOf<MainActivity?> { null }
+
+@OptIn(ExperimentalMaterialNavigationApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalAnimationApi::class
+)
 @Composable
 fun ProfileDialog(
     isDialogOpen: Boolean = true,
     onDialogClosed: () -> Unit = {},
-    viewModel: ProfileViewModel = hiltViewModel(),
 ) {
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
-    var showLoginDialog by remember { mutableStateOf(false) }
+    if (isDialogOpen) {
+        val context = LocalContext.current
+        val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+        // Don't use exit animations because
+        // it looks choppy while Dialog resizes due to content change.
+        val engine = rememberAnimatedNavHostEngine(
+            rootDefaultAnimations = RootNavGraphDefaultAnimations(
+                enterTransition = {
+                    slideInHorizontally(tween(200)) { it / 8 } + fadeIn(tween(200))
+                },
+                popEnterTransition = {
+                    slideInHorizontally(tween(200)) { -it / 8 } + fadeIn(tween(200))
+                }
+            )
+        )
+        val navController = engine.rememberNavController()
+        val currentDestination by navController.currentDestinationAsState()
+        val onDismissRequest: () -> Unit = {
+            if (currentDestination == NavGraphs.profile.startDestination) {
+                onDialogClosed()
+            } else {
+                navController.navigateUp()
+            }
+        }
+        AlertDialog(
+            modifier = Modifier.widthIn(max = screenWidthDp - 64.dp),
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false
+            ),
+            onDismissRequest = onDismissRequest,
+        ) {
+            JayDialogContent(
+                surface = { JayDialogSurface(content = it) }
+            ) {
+                CompositionLocalProvider(
+                    LocalDialogDismissRequest provides onDismissRequest,
+                    LocalDialogActivityProvider provides context as MainActivity
+                ) {
+                    DestinationsNavHost(
+                        modifier = Modifier.fillMaxWidth(),
+                        navGraph = NavGraphs.profile,
+                        engine = engine,
+                        navController = navController,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@ProfileNavGraph(start = true)
+@Destination
+@Composable
+fun ProfileDialogScreen(
+    viewModel: ProfileViewModel = hiltViewModel(),
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
+) {
+    val userUUID by viewModel.userUUID.collectAsStateWithLifecycle()
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val isUserSigningOut by viewModel.isUserSigningOut.collectAsStateWithLifecycle()
     val userPhotoUrl by viewModel.userPhotoUrl.collectAsStateWithLifecycle()
@@ -84,87 +190,131 @@ fun ProfileDialog(
         stringResource(R.string.email) to email,
         stringResource(R.string.phone) to phone
     )
-    if (isDialogOpen) {
-        ProfileDialogScreen(
-            modifier = Modifier.width(screenWidthDp - 72.dp),
-            isUserSignedIn = isUserSignedIn,
-            isUserSigningOut = isUserSigningOut,
-            userPhotoUrl = userPhotoUrl,
-            onDialogClosed = onDialogClosed,
-            onSignOut = { viewModel.signOut() },
-            onShowLoginDialog = { showLoginDialog = true },
-            confidentialInfo = confidentialInfo
-                .filter { !it.second.isNullOrBlank() }
-                .map { it.first to it.second!! },
-        )
-        LoginDialog(
-            isDialogOpen = showLoginDialog,
-            onDialogClosed = { showLoginDialog = false },
-        )
-    }
+    ProfileDialogContent(
+        userUUID = userUUID,
+        isUserSignedIn = isUserSignedIn,
+        isUserSigningOut = isUserSigningOut,
+        userPhotoUrl = userPhotoUrl,
+        confidentialInfo = confidentialInfo,
+        showConfidentialInfoInitially = false,
+        onSignOut = viewModel::signOut,
+        onShowLoginScreen = { destinationsNavigator.navigate(LoginDialogScreenDestination) },
+        onShowAboutScreen = { destinationsNavigator.navigate(AboutDialogScreenDestination) },
+        onShowSettingsScreen = { destinationsNavigator.navigate(SettingsDialogScreenDestination) }
+    )
 }
 
 @Composable
-fun ProfileDialogScreen(
+fun ProfileDialogContent(
     modifier: Modifier = Modifier,
+    userUUID: String? = null,
     isUserSignedIn: Boolean = true,
     isUserSigningOut: Boolean = false,
     userPhotoUrl: Uri? = null,
-    confidentialInfo: List<Pair<String, String>> = emptyList(),
-    onDialogClosed: () -> Unit = {},
-    onSignOut: () -> Unit = {},
-    onShowLoginDialog: () -> Unit = {},
+    confidentialInfo: List<Pair<String, String?>> = emptyList(),
     showConfidentialInfoInitially: Boolean = false,
+    onSignOut: () -> Unit = {},
+    onShowLoginScreen: () -> Unit = {},
+    onShowAboutScreen: () -> Unit = {},
+    onShowSettingsScreen: () -> Unit = {}
 ) {
     var showConfidentialInfo by remember { mutableStateOf(showConfidentialInfoInitially) }
-    var authenticated by remember { mutableStateOf(false) }
-    AlertDialog(
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
+    JayDialogContent(
         modifier = modifier,
-        onDismissRequest = { onDialogClosed() },
         title = {
             ProfileTitleScreen(
+                userUUID = userUUID,
                 isUserSignedIn = isUserSignedIn,
                 userPhotoUrl = userPhotoUrl,
+                showConfidentialInfo = showConfidentialInfo
             )
         },
-        confirmButton = {
+        text = {
+            ProfileScreen(
+                confidentialInfo = confidentialInfo
+                    .filter { !it.second.isNullOrBlank() }
+                    .map { it.first to it.second!! },
+                onVisibilityChanged = { showConfidentialInfo = it },
+                showConfidentialInfo = showConfidentialInfo
+            )
+        },
+        buttons = {
+            ProfileButtons(
+                isUserSignedIn = isUserSignedIn,
+                isUserSigningOut = isUserSigningOut,
+                onLogin = onShowLoginScreen,
+                onSignOut = onSignOut,
+                onShowAboutScreen = onShowAboutScreen,
+                onShowSettingsScreen = onShowSettingsScreen,
+            )
+        },
+        containerColor = Color.Transparent,
+    )
+}
+
+@Composable
+fun ProfileButtons(
+    onShowSettingsScreen: () -> Unit = {},
+    onShowAboutScreen: () -> Unit = {},
+    onLogin: () -> Unit = {},
+    onSignOut: () -> Unit = {},
+    isUserSignedIn: Boolean = false,
+    isUserSigningOut: Boolean = false,
+) {
+    val onDialogClosed = LocalDialogDismissRequest.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        ProfileMenu(
+            onShowSettingsScreen = onShowSettingsScreen,
+            onShowAboutScreen = onShowAboutScreen,
+        )
+        Row(
+            verticalAlignment = Alignment.Bottom
+        ) {
+            TextButton(onClick = { onDialogClosed() }) {
+                Text(text = stringResource(R.string.close))
+            }
             // FIXME: find out why Crossfade does not work here
             if (isUserSignedIn) {
                 TextButton(
                     enabled = !isUserSigningOut,
-                    onClick = onSignOut
+                    onClick = onSignOut,
                 ) {
                     Text(text = stringResource(R.string.sign_out))
                 }
             } else {
                 Button(
-                    onClick = onShowLoginDialog
+                    onClick = onLogin
                 ) {
                     Text(text = stringResource(R.string.sign_in))
                 }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = { onDialogClosed() }) {
-                Text(text = stringResource(R.string.close))
-            }
-        },
-        text = {
-            ProfileDetailsScreen(
-                confidentialInfo = confidentialInfo,
+        }
+    }
+}
+
+@Composable
+fun ProfileScreen(
+    modifier: Modifier = Modifier,
+    showConfidentialInfo: Boolean = false,
+    confidentialInfo: List<Pair<String, String>> = emptyList(),
+    onVisibilityChanged: (Boolean) -> Unit = {}
+) {
+    var authenticated by remember { mutableStateOf(false) }
+    ProfileDetailsScreen(
+        modifier = modifier,
+        confidentialInfo = confidentialInfo,
+        showConfidentialInfo = showConfidentialInfo,
+        onConfidentialInfoVisibilityChanged = {
+            toggleConfidentialInfoVisibility(
                 showConfidentialInfo = showConfidentialInfo,
-                toggleConfidentialInfoVisibility = {
-                    toggleConfidentialInfoVisibility(
-                        showConfidentialInfo = showConfidentialInfo,
-                        authenticated = authenticated,
+                authenticated = authenticated,
 //                        fragmentActivity = context as FragmentActivity,
-                        onAuthenticationChanged = { authenticated = it },
-                        onInfoVisibilityChanged = { showConfidentialInfo = it }
-                    )
-                }
+                onAuthenticationChanged = { authenticated = it },
+                onVisibilityChanged = onVisibilityChanged
             )
         }
     )
@@ -179,16 +329,19 @@ private fun PreviewProfileDialogScreen(
 ) {
     JayTheme {
         Column {
-            ProfileDialogScreen(
-                modifier = Modifier.width(300.dp),
-                userPhotoUrl = null,
-                confidentialInfo = listOf(
-                    stringResource(R.string.name) to name,
-                    stringResource(R.string.email) to email, // I wish one day :)
-                    stringResource(R.string.phone) to phone
-                ),
-                showConfidentialInfoInitially = true
-            )
+            JayDialogSurface {
+                ProfileDialogContent(
+                    modifier = Modifier.width(300.dp),
+                    userUUID = UUID.randomUUID().toString(),
+                    userPhotoUrl = null,
+                    confidentialInfo = listOf(
+                        stringResource(R.string.name) to name,
+                        stringResource(R.string.email) to email, // I wish one day :)
+                        stringResource(R.string.phone) to phone
+                    ),
+                    showConfidentialInfoInitially = true
+                )
+            }
         }
     }
 }
@@ -196,15 +349,58 @@ private fun PreviewProfileDialogScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileTitleScreen(
+    modifier: Modifier = Modifier,
+    userUUID: String? = null,
     isUserSignedIn: Boolean = true,
+    showConfidentialInfo: Boolean = false,
     userPhotoUrl: Uri? = null,
 ) {
+    val clipboard = LocalClipboardManager.current
     FlowRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Text(text = stringResource(R.string.profile))
+        Column {
+            Text(text = stringResource(R.string.profile))
+            AnimatedVisibility(visible = userUUID != null) {
+                if (userUUID != null) {
+                    TooltipElevatedCard(
+                        tooltip = { CopiedToKeyboardTooltip() },
+                        disabledTooltip = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Lock,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                                Text(
+                                    text = stringResource(R.string.locked),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        },
+                        enabled = showConfidentialInfo,
+                        onShowTooltip = {
+                            if (showConfidentialInfo) {
+                                clipboard.setText(AnnotatedString(text = userUUID))
+                            }
+                        }
+                    ) {
+                        UserInfo(
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+                            infoName = stringResource(id = R.string.user_id),
+                            info = userUUID.take(8),
+                            show = showConfidentialInfo,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        }
         Row(
-            modifier = Modifier.weight(1f, fill = true),
+            modifier = Modifier.weight(1f),
             Arrangement.End
         ) {
             AvatarAsyncImage(
@@ -220,61 +416,81 @@ fun ProfileTitleScreen(
 
 @Composable
 fun ProfileDetailsScreen(
+    modifier: Modifier = Modifier,
     confidentialInfo: List<Pair<String, String>> = emptyList(),
     info: List<Pair<String, String>> = emptyList(),
     showConfidentialInfo: Boolean = false,
-    toggleConfidentialInfoVisibility: () -> Unit = {},
+    onConfidentialInfoVisibilityChanged: (Boolean) -> Unit = {},
 ) {
-    ConstraintLayout(
-        modifier = Modifier.fillMaxWidth(),
+    Column(
+        modifier = modifier
     ) {
-        val (confidentialInfoText, toggleButton) = createRefs()
-        createHorizontalChain(
-            confidentialInfoText,
-            toggleButton,
-            chainStyle = ChainStyle.SpreadInside
-        )
-        createStartBarrier()
-        ConfidentialInfoToggleButton(
-            modifier = Modifier
-                .constrainAs(toggleButton) {
-                    end.linkTo(parent.end)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                },
-            showConfidentialInfo = showConfidentialInfo,
-            anyConfidentialInfo = confidentialInfo.isNotEmpty(),
-            toggleConfidentialInfoVisibility = toggleConfidentialInfoVisibility
-        )
-        LazyRow(
-            modifier = Modifier
-                .constrainAs(confidentialInfoText) {
-                    start.linkTo(parent.start)
-                    end.linkTo(toggleButton.start)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    width = Dimension.fillToConstraints
-                },
+        ConstraintLayout(
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            item {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(confidentialInfo) {
-                        UserInfo(
-                            infoName = it.first,
-                            info = it.second,
-                            hide = showConfidentialInfo
-                        )
-                    }
-                    items(info) {
-                        UserInfo(
-                            infoName = it.first,
-                            info = it.second,
-                            hide = true
-                        )
-                    }
+            val (confidentialInfoText, toggleButton) = createRefs()
+            createHorizontalChain(
+                confidentialInfoText,
+                toggleButton,
+                chainStyle = ChainStyle.SpreadInside
+            )
+            createStartBarrier()
+            ConfidentialInfoToggleButton(
+                modifier = Modifier
+                    .constrainAs(toggleButton) {
+                        end.linkTo(parent.end)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                    },
+                showConfidentialInfo = showConfidentialInfo,
+                anyConfidentialInfo = confidentialInfo.isNotEmpty(),
+                onVisibilityChanged = onConfidentialInfoVisibilityChanged
+            )
+            UserInfoList(
+                modifier = Modifier
+                    .constrainAs(confidentialInfoText) {
+                        start.linkTo(parent.start)
+                        end.linkTo(toggleButton.start)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                        width = Dimension.fillToConstraints
+                    },
+                confidentialInfo = confidentialInfo,
+                info = info,
+                showConfidentialInfo = showConfidentialInfo
+            )
+        }
+    }
+}
+
+@Composable
+fun UserInfoList(
+    modifier: Modifier = Modifier,
+    confidentialInfo: List<Pair<String, String>> = emptyList(),
+    info: List<Pair<String, String>> = emptyList(),
+    showConfidentialInfo: Boolean = false,
+) {
+    LazyRow(
+        modifier = modifier,
+    ) {
+        item {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(confidentialInfo) {
+                    UserInfo(
+                        infoName = it.first,
+                        info = it.second,
+                        show = showConfidentialInfo
+                    )
+                }
+                items(info) {
+                    UserInfo(
+                        infoName = it.first,
+                        info = it.second,
+                        show = true
+                    )
                 }
             }
         }
@@ -286,14 +502,15 @@ fun ConfidentialInfoToggleButton(
     modifier: Modifier = Modifier,
     showConfidentialInfo: Boolean = false,
     anyConfidentialInfo: Boolean = false,
-    toggleConfidentialInfoVisibility: () -> Unit
+    onVisibilityChanged: (Boolean) -> Unit,
 ) {
     AnimatedVisibility(
         modifier = modifier,
         visible = anyConfidentialInfo
     ) {
-        IconButton(
-            onClick = toggleConfidentialInfoVisibility
+        IconToggleButton(
+            checked = showConfidentialInfo,
+            onCheckedChange = onVisibilityChanged
         ) {
             Icon(
                 imageVector = if (showConfidentialInfo) {
@@ -309,17 +526,67 @@ fun ConfidentialInfoToggleButton(
 
 @Composable
 fun UserInfo(
+    modifier: Modifier = Modifier,
     infoName: String = stringResource(R.string.unknown),
     info: String = stringResource(R.string.unknown),
-    hide: Boolean = true,
+    show: Boolean = false,
+    style: TextStyle = LocalTextStyle.current,
+    nameStyle: TextStyle = style.plus(TextStyle(fontWeight = FontWeight.SemiBold)),
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(text = "$infoName: ")
-        Crossfade(targetState = hide) {
+        Text(
+            text = infoName,
+            style = nameStyle
+        )
+        Crossfade(targetState = show) {
             Text(
-                text = if (it) info else stringResource(R.string.hidden_field_string)
+                text = if (it) info else stringResource(R.string.hidden_field_string),
+                style = style
+            )
+        }
+    }
+}
+
+@Composable
+fun ProfileMenu(
+    modifier: Modifier = Modifier,
+    onShowAboutScreen: () -> Unit = {},
+    onShowSettingsScreen: () -> Unit = {},
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy((-12).dp)
+    ) {
+        ProfileMenuItem(
+            onClick = onShowAboutScreen,
+            text = stringResource(R.string.about)
+        )
+        ProfileMenuItem(
+            onClick = onShowSettingsScreen,
+            text = stringResource(R.string.settings)
+        )
+    }
+}
+
+@Composable
+fun ProfileMenuItem(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    text: String,
+) {
+    TextButton(
+        modifier = modifier,
+        onClick = onClick,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = text)
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight, contentDescription = "",
             )
         }
     }
@@ -330,15 +597,15 @@ fun toggleConfidentialInfoVisibility(
     authenticated: Boolean,
 //    fragmentActivity: FragmentActivity,
     onAuthenticationChanged: (Boolean) -> Unit,
-    onInfoVisibilityChanged: (Boolean) -> Unit,
+    onVisibilityChanged: (Boolean) -> Unit,
 ) {
     if (showConfidentialInfo) {
-        onInfoVisibilityChanged(false)
+        onVisibilityChanged(false)
     } else {
         if (authenticated) {
-            onInfoVisibilityChanged(true)
+            onVisibilityChanged(true)
         } else {
-            onInfoVisibilityChanged(true)
+            onVisibilityChanged(true)
             onAuthenticationChanged(true)
             // TODO: implement some kind of biometric authentication with multiple local users
             //  in mind. As a phone can be used by multiple people, using biometrics and other

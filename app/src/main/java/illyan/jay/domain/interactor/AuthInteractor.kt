@@ -71,13 +71,16 @@ class AuthInteractor @Inject constructor(
     private val _userPhotoUrlStateFlow = MutableStateFlow(auth.currentUser?.photoUrl)
     val userPhotoUrlStateFlow = _userPhotoUrlStateFlow.asStateFlow()
 
+    private val _userUUIDStateFlow = MutableStateFlow(auth.currentUser?.uid)
+    val userUUIDStateFlow = _userUUIDStateFlow.asStateFlow()
+
     private val _googleSignInClient = MutableStateFlow<GoogleSignInClient?>(null)
     private val googleSignInClient = _googleSignInClient.asStateFlow()
 
     private val googleAuthStateListeners = mutableStateListOf<(Int) -> Unit>()
 
     val isUserSignedIn get() = isUserSignedInStateFlow.value
-    val userUUID get() = currentUserStateFlow.value?.uid
+    val userUUID get() = auth.currentUser?.uid
 
     private val _isSigningOut = MutableStateFlow(false)
     val isUserSigningOut = _isSigningOut.asStateFlow()
@@ -92,6 +95,7 @@ class AuthInteractor @Inject constructor(
             _currentUserStateFlow.value = it.currentUser
             _isUserSignedInStateFlow.value = it.currentUser != null
             _userPhotoUrlStateFlow.value = it.currentUser?.photoUrl
+            _userUUIDStateFlow.value = it.currentUser?.uid
         }
     }
 

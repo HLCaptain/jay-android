@@ -96,7 +96,7 @@ fun FreeDrive(
 ) {
     val isServiceRunning by viewModel.isJayServiceRunning.collectAsStateWithLifecycle()
     val startServiceAutomatically by viewModel.startServiceAutomatically.collectAsStateWithLifecycle(
-        AppSettings.default.turnOnFreeDriveAutomatically
+        AppSettings.default.preferences.freeDriveAutoStart
     )
     val cameraPadding by cameraPadding.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -162,7 +162,7 @@ fun FreeDrive(
 @Composable
 fun FreeDriveScreenWithPermission(
     modifier: Modifier = Modifier,
-    startServiceAutomatically: Boolean = AppSettings.default.turnOnFreeDriveAutomatically,
+    startServiceAutomatically: Boolean = AppSettings.default.preferences.freeDriveAutoStart,
     isServiceRunning: Boolean = false,
     onToggleService: () -> Unit = {},
     setStartServiceAutomatically: (Boolean) -> Unit = {},
