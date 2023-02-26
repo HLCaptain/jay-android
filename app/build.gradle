@@ -39,7 +39,6 @@ android {
         applicationId "illyan.jay"
         minSdk 21
         targetSdk 33
-        compileSdkPreview "UpsideDownCake"
         versionCode 3
         versionName "0.2.0-alpha"
 
@@ -114,6 +113,7 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation 'androidx.activity:activity-ktx:1.6.1'
     implementation "com.google.android.material:material:1.8.0"
+    implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'], exclude: [])
 
     // Compose
     def activity_version = '1.7.0-beta02'
@@ -197,10 +197,17 @@ dependencies {
     testImplementation "androidx.room:room-testing:$room_version" // optional - Test helpers
     implementation "androidx.room:room-paging:$room_version" // optional - Paging 3 Integration
 
-    // Proto DataStore
+    // Serialization
     implementation "androidx.datastore:datastore:1.0.0"
     implementation "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5"
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0'
+
+    // Compression
+    def brotliVersion = "1.11.0"
+    implementation 'com.github.luben:zstd-jni:1.5.4-1@aar'
+//    implementation "com.aayushatharva.brotli4j:brotli4j:$brotliVersion"
+    testImplementation "com.github.luben:zstd-jni:1.5.4-1"
 
     // Coroutine
     def coroutines_version = '1.6.4'

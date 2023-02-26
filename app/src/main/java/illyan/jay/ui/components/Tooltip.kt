@@ -66,14 +66,12 @@ fun TooltipElevatedCard(
 ) {
     val tooltipState = remember { PlainTooltipState() }
     val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(tooltipState.isVisible) {
         if (tooltipState.isVisible) onShowTooltip() else onDismissTooltip()
     }
-
     var currentTooltip by remember {
-        mutableStateOf<@Composable () -> Unit>(
-            if (enabled || disabledTooltip == null) tooltip else disabledTooltip
-        )
+        mutableStateOf(if (enabled || disabledTooltip == null) tooltip else disabledTooltip)
     }
     LaunchedEffect(enabled, tooltipState.isVisible) {
         if (!tooltipState.isVisible) {
@@ -82,7 +80,6 @@ fun TooltipElevatedCard(
             currentTooltip = if (enabled || disabledTooltip == null) tooltip else disabledTooltip
         }
     }
-
     PlainTooltipBox(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
