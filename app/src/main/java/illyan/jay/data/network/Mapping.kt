@@ -22,9 +22,10 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.github.luben.zstd.Zstd
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.GeoPoint
 import illyan.jay.BuildConfig
+import illyan.jay.data.network.model.FirestoreLocation
 import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.model.FirestoreSession
 import illyan.jay.data.network.model.FirestoreUserPreferences
@@ -33,19 +34,24 @@ import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.toGeoPoint
+import illyan.jay.util.toInstant
 import illyan.jay.util.toTimestamp
 import illyan.jay.util.toZonedDateTime
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
 import timber.log.Timber
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 import java.util.zip.Deflater
 import java.util.zip.DeflaterOutputStream
+import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
 fun DomainSession.toFirestoreModel() = FirestoreSession(
@@ -98,183 +104,182 @@ fun List<DomainLocation>.toPath(
     sessionUUID: String,
     ownerUUID: String
 ): FirestorePath {
-    val accuracyChangeTimestamps = mutableListOf<Timestamp>()
-    val accuracyChanges = mutableListOf<Byte>()
-    val altitudes = mutableListOf<Short>()
-    val bearingAccuracyChangeTimestamps = mutableListOf<Timestamp>()
-    val bearingAccuracyChanges = mutableListOf<Short>()
-    val bearings = mutableListOf<Short>()
-    val coords = mutableListOf<GeoPoint>()
-    val speeds = mutableListOf<Float>()
-    val speedAccuracyChangeTimestamps = mutableListOf<Timestamp>()
-    val speedAccuracyChanges = mutableListOf<Float>()
-    val timestamps = mutableListOf<Timestamp>()
-    val verticalAccuracyChangeTimestamps = mutableListOf<Timestamp>()
-    val verticalAccuracyChanges = mutableListOf<Short>()
-
-    val sortedLocations = sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
-
-    sortedLocations.forEach {
-        val timestamp = it.zonedDateTime.toTimestamp()
-
-        altitudes.add(it.altitude)
-        bearings.add(it.bearing)
-        coords.add(it.latLng.toGeoPoint())
-        speeds.add(it.speed)
-        timestamps.add(timestamp)
-
-        val lastAccuracyChange = accuracyChanges.lastOrNull()
-        if (lastAccuracyChange != it.accuracy) {
-            accuracyChangeTimestamps.add(timestamp)
-            accuracyChanges.add(it.accuracy)
-        }
-
-        val lastBearingAccuracyChange = bearingAccuracyChanges.lastOrNull()
-        if (lastBearingAccuracyChange != it.bearingAccuracy) {
-            bearingAccuracyChangeTimestamps.add(timestamp)
-            bearingAccuracyChanges.add(it.bearingAccuracy)
-        }
-
-        val lastSpeedAccuracyChange = speedAccuracyChanges.lastOrNull()
-        if (lastSpeedAccuracyChange != it.speedAccuracy) {
-            speedAccuracyChangeTimestamps.add(timestamp)
-            speedAccuracyChanges.add(it.speedAccuracy)
-        }
-
-        val lastVerticalAccuracyChange = verticalAccuracyChanges.lastOrNull()
-        if (lastVerticalAccuracyChange != it.verticalAccuracy) {
-            verticalAccuracyChangeTimestamps.add(timestamp)
-            verticalAccuracyChanges.add(it.verticalAccuracy)
-        }
+    val pathLocations = map {
+        FirestoreLocation(
+            timestamp = it.zonedDateTime.toTimestamp(),
+            latitude = it.latitude,
+            longitude = it.longitude,
+            speed = it.speed,
+            accuracy = it.accuracy.toInt(),
+            bearing = it.bearing.toInt(),
+            bearingAccuracy = it.bearingAccuracy.toInt(),
+            altitude = it.altitude.toInt(),
+            speedAccuracy = it.speedAccuracy,
+            verticalAccuracy = it.verticalAccuracy.toInt()
+        )
     }
 
     val path = FirestorePath(
         uuid = UUID.randomUUID().toString(),
         sessionUUID = sessionUUID,
         ownerUUID = ownerUUID,
-        accuracyChangeTimestamps = accuracyChangeTimestamps,
-        accuracyChanges = accuracyChanges.map { it.toInt() },
-        altitudes = altitudes.map { it.toInt() },
-        bearingAccuracyChangeTimestamps = bearingAccuracyChangeTimestamps,
-        bearingAccuracyChanges = bearingAccuracyChanges.map { it.toInt() },
-        bearings = bearings.map { it.toInt() },
-        coords = coords,
-        speeds = speeds,
-        speedAccuracyChangeTimestamps = speedAccuracyChangeTimestamps,
-        speedAccuracyChanges = speedAccuracyChanges,
-        timestamps = timestamps,
-        verticalAccuracyChangeTimestamps = verticalAccuracyChangeTimestamps,
-        verticalAccuracyChanges = verticalAccuracyChanges.map { it.toInt() },
+        locations = Blob.fromBytes(
+            Zstd.compress(ProtoBuf.encodeToByteArray(pathLocations))
+        )
     )
 
     if (BuildConfig.DEBUG) {
-        // Size comparison between raw location data path and compressed data structures.
-
-        // Conclusion: Path reduces data size ~13% compared to raw location data with SessionUUID
-        // and optimized sensory data (Short, Byte used instead of Int).
-        // Raw, optimized location data without SessionUUID, is taking up ~49% less space
-        // compared to raw location data with SessionUUID (repeated).
-
-        // Size ratio:
-        // - List<DomainLocations> = 1.00
-        // - FirestorePath = ~0.87
-        // - List<LocationWithoutSessionIdOptimized> = ~0.51
-        // - List<LocationWithoutSessionId> = ~0.51
-        // - Base64 GZIP compressed List<LocationWithoutSessionIdOptimized> = ~0.16
-        // - Base64 ZLIB compressed List<LocationWithoutSessionIdOptimized> = ~0.17
-
-        val optimizedLocations = map {
-            LocationWithoutSessionIdOptimized(
-                zonedDateTime = it.zonedDateTime.toTimestamp(),
-                latitude = it.latitude,
-                longitude = it.longitude,
-                speed = it.speed,
-                accuracy = it.accuracy,
-                bearing = it.bearing,
-                bearingAccuracy = it.bearingAccuracy,
-                altitude = it.altitude,
-                speedAccuracy = it.speedAccuracy,
-                verticalAccuracy = it.verticalAccuracy
-            )
-        }
-
-        val locations = map {
-            LocationWithoutSessionId(
-                zonedDateTime = it.zonedDateTime.toTimestamp(),
-                latitude = it.latitude,
-                longitude = it.longitude,
-                speed = it.speed,
-                accuracy = it.accuracy.toInt(),
-                bearing = it.bearing.toInt(),
-                bearingAccuracy = it.bearingAccuracy.toInt(),
-                altitude = it.altitude.toInt(),
-                speedAccuracy = it.speedAccuracy,
-                verticalAccuracy = it.verticalAccuracy.toInt()
-            )
-        }
-
-        val unoptimizedLocations = map {
-            LocationWithoutSessionIdUnoptimized(
-                zonedDateTime = it.zonedDateTime.toTimestamp(),
-                latitude = it.latitude.toDouble(),
-                longitude = it.longitude.toDouble(),
-                speed = it.speed.toDouble(),
-                accuracy = it.accuracy.toLong(),
-                bearing = it.bearing.toLong(),
-                bearingAccuracy = it.bearingAccuracy.toLong(),
-                altitude = it.altitude.toLong(),
-                speedAccuracy = it.speedAccuracy.toDouble(),
-                verticalAccuracy = it.verticalAccuracy.toLong()
-            )
-        }
-
-        val data = listOf(
-            ProtoBuf.encodeToByteArray(optimizedLocations) to "Optimized Locations",
-            ProtoBuf.encodeToByteArray(locations) to "Default Locations",
-            ProtoBuf.encodeToByteArray(unoptimizedLocations) to "Unoptimized Locations"
-        )
-
-        val compressions = listOf<Pair<(ByteArray) -> ByteArray, String>>(
-            { array: ByteArray ->
-                val locationsParcel = Parcel.obtain()
-                locationsParcel.writeByteArray(array)
-                val bytes = locationsParcel.marshall()
-                locationsParcel.recycle()
-                bytes
-            } to "Parcel marshall",
-            { array: ByteArray ->
-                val gzipByteArrayOutputStream = ByteArrayOutputStream()
-                val gzipOutputStream = GZIPOutputStream(gzipByteArrayOutputStream)
-                gzipOutputStream.write(array)
-                gzipByteArrayOutputStream.toByteArray()
-            } to "GZIP",
-            { array: ByteArray ->
-                val zlibByteArrayOutputStream = ByteArrayOutputStream()
-                val deflater = Deflater(Deflater.BEST_COMPRESSION)
-                val deflaterOutputStream = DeflaterOutputStream(zlibByteArrayOutputStream, deflater)
-                deflaterOutputStream.write(array)
-                zlibByteArrayOutputStream.toByteArray()
-            } to "ZLIB",
-            { array: ByteArray ->
-                Zstd.compress(array, Zstd.maxCompressionLevel())
-            } to "Zstd"
-        )
-
-        data.forEach {
-            val byteArray = it.first
-            val stringBuilder = StringBuilder()
-            stringBuilder.append("Data: ${it.second}\n")
-
-            compressions.forEach { algo ->
-                val compressedBytes = algo.first(byteArray)
-                val algoName = algo.second
-                stringBuilder.append("$algoName: ${compressedBytes.size} bytes\n")
-            }
-            Timber.d(stringBuilder.toString())
-        }
+        testCompressions(this)
     }
 
     return path
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+private fun testCompressions(domainLocations: List<DomainLocation>) {
+    // Size comparison between raw location data path and compressed data structures.
+
+    // Conclusion: Path reduces data size ~13% compared to raw location data with SessionUUID
+    // and optimized sensory data (Short, Byte used instead of Int).
+    // Raw, optimized location data without SessionUUID, is taking up ~49% less space
+    // compared to raw location data with SessionUUID (repeated).
+
+    // Size ratio in smaller data (60-100k bytes):
+    // - List<DomainLocations> = 1.00
+    // - FirestorePath = ~0.87
+    // - List<LocationWithoutSessionIdOptimized> = ~0.51
+    // - List<LocationWithoutSessionId> = ~0.51
+    // - Base64 GZIP compressed List<LocationWithoutSessionIdOptimized> = ~0.16
+    // - Base64 ZLIB compressed List<LocationWithoutSessionIdOptimized> = ~0.17
+    // - Blob GZIP compressed = ~0.07
+    // - Blob ZLIB compressed = ~0.07
+    // - Blob Zstd compressed = ~0.09
+
+    // GZIP and ZLIB start returning only their headers when data is below ~50k bytes.
+    // This might be due to their window being too short, or something else.
+
+    // Zstd compression performs better in bigger data sets (400-800k bytes),
+    // providing a 10% reduction in size compared to GZIP and ZLIB.
+
+    // Shorts/Bytes don't really make a difference,
+    // unless the data structure's size is above 32 bits -> Use Int
+    // Bigger data structures (Long/Double, 64 bits) cause a +7.5% size growth.
+    // This growth then accumulates with more data,
+    // so it's actually around 25% growth in large datasets.
+
+    val optimizedLocations = domainLocations.map {
+        LocationWithoutSessionIdOptimized(
+            zonedDateTime = it.zonedDateTime.toTimestamp(),
+            latitude = it.latitude,
+            longitude = it.longitude,
+            speed = it.speed,
+            accuracy = it.accuracy,
+            bearing = it.bearing,
+            bearingAccuracy = it.bearingAccuracy,
+            altitude = it.altitude,
+            speedAccuracy = it.speedAccuracy,
+            verticalAccuracy = it.verticalAccuracy
+        )
+    }
+
+    val locations = domainLocations.map {
+        LocationWithoutSessionId(
+            zonedDateTime = it.zonedDateTime.toTimestamp(),
+            latitude = it.latitude,
+            longitude = it.longitude,
+            speed = it.speed,
+            accuracy = it.accuracy.toInt(),
+            bearing = it.bearing.toInt(),
+            bearingAccuracy = it.bearingAccuracy.toInt(),
+            altitude = it.altitude.toInt(),
+            speedAccuracy = it.speedAccuracy,
+            verticalAccuracy = it.verticalAccuracy.toInt()
+        )
+    }
+
+    val unoptimizedLocations = domainLocations.map {
+        LocationWithoutSessionIdUnoptimized(
+            zonedDateTime = it.zonedDateTime.toTimestamp(),
+            latitude = it.latitude.toDouble(),
+            longitude = it.longitude.toDouble(),
+            speed = it.speed.toDouble(),
+            accuracy = it.accuracy.toLong(),
+            bearing = it.bearing.toLong(),
+            bearingAccuracy = it.bearingAccuracy.toLong(),
+            altitude = it.altitude.toLong(),
+            speedAccuracy = it.speedAccuracy.toDouble(),
+            verticalAccuracy = it.verticalAccuracy.toLong()
+        )
+    }
+
+    val data = listOf(
+        ProtoBuf.encodeToByteArray(optimizedLocations) to "Optimized Locations",
+        ProtoBuf.encodeToByteArray(locations) to "Default Locations",
+        ProtoBuf.encodeToByteArray(unoptimizedLocations) to "Unoptimized Locations"
+    )
+
+    val compressions = listOf<Pair<(ByteArray) -> ByteArray, String>>(
+        { array: ByteArray ->
+            val locationsParcel = Parcel.obtain()
+            locationsParcel.writeByteArray(array)
+            val bytes = locationsParcel.marshall()
+            locationsParcel.recycle()
+            bytes
+        } to "Parcel marshall",
+        ::encodeWithGZIP to "GZIP",
+        { array: ByteArray ->
+            val zlibByteArrayOutputStream = ByteArrayOutputStream()
+            val deflater = Deflater(Deflater.BEST_COMPRESSION)
+            val deflaterOutputStream = DeflaterOutputStream(zlibByteArrayOutputStream, deflater)
+            deflaterOutputStream.write(array)
+            val compressedBytes = zlibByteArrayOutputStream.toByteArray()
+            deflaterOutputStream.close()
+            zlibByteArrayOutputStream.close()
+            compressedBytes
+        } to "ZLIB",
+        { array: ByteArray ->
+            Zstd.compress(array, Zstd.maxCompressionLevel())
+        } to "Zstd"
+    )
+
+    val stringBuilder = StringBuilder()
+    val startMilli = locations
+        .minBy { it.zonedDateTime.toInstant().toEpochMilli() }
+        .zonedDateTime.toInstant().toEpochMilli()
+    val endMilli = locations
+        .maxBy { it.zonedDateTime.toInstant().toEpochMilli() }
+        .zonedDateTime.toInstant().toEpochMilli()
+    val durationInMinutes = (endMilli - startMilli).milliseconds.inWholeMinutes
+    stringBuilder.append("Compressing $durationInMinutes minutes of Location data\n")
+
+    data.forEach {
+        val byteArray = it.first
+        stringBuilder.append("Data type: ${it.second}\n")
+
+        compressions.forEach { algo ->
+            val compressedBytes = algo.first(byteArray)
+            val algoName = algo.second
+            stringBuilder.append("$algoName: ${compressedBytes.size} bytes\n")
+        }
+    }
+    Timber.d(stringBuilder.toString())
+}
+
+private fun encodeWithGZIP(byteArray: ByteArray): ByteArray {
+    val gzipByteArrayOutputStream = ByteArrayOutputStream()
+    val gzipOutputStream = GZIPOutputStream(gzipByteArrayOutputStream)
+    gzipOutputStream.write(byteArray)
+    val compressedBytes = gzipByteArrayOutputStream.toByteArray()
+    gzipByteArrayOutputStream.close()
+    return compressedBytes
+}
+
+private fun decodeWithGZIP(byteArray: ByteArray): ByteArray {
+    val gzipByteArrayInputStream = ByteArrayInputStream(byteArray)
+    val gzipInputStream = GZIPInputStream(gzipByteArrayInputStream)
+    val decompressedBytes = gzipInputStream.readBytes()
+    gzipInputStream.close()
+    return decompressedBytes
 }
 
 @Serializable
@@ -328,70 +333,48 @@ data class LocationWithoutSessionIdUnoptimized(
 fun List<DomainLocation>.toPaths(
     sessionUUID: String,
     ownerUUID: String,
-    thresholdInMinutes: Int = 30
+    thresholdInMinutes: Int = 300
 ): List<FirestorePath> {
     if (isEmpty()) return emptyList()
     val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
-    val groupedByTime = groupBy {(it.zonedDateTime.toInstant().toEpochMilli() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds }
-    return groupedByTime.map {
-        it.value.toPath(sessionUUID, ownerUUID)
+    val groupedByTime = groupBy {
+        (it.zonedDateTime.toInstant().toEpochMilli() - startMilli) /
+                thresholdInMinutes.minutes.inWholeMilliseconds
+    }
+    return groupedByTime.map { groups ->
+        groups.value
+            .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+            .toPath(sessionUUID, ownerUUID)
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
 
     forEach { document ->
-        val timestamps = (document.get("timestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
-        val sessionUUID = document.getString("sessionUUID") ?: ""
-        val accuracyChangeTimestamps = (document.get("accuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
-        val accuracyChanges = document.get("accuracyChanges") as? List<Int> ?: emptyList()
-        val altitudes = document.get("altitudes") as? List<Int> ?: emptyList()
-        val bearingAccuracyChangeTimestamps = (document.get("bearingAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
-        val bearingAccuracyChanges = document.get("bearingAccuracyChanges") as? List<Int> ?: emptyList()
-        val bearings = document.get("bearings") as? List<Int> ?: emptyList()
-        val coords = document.get("coords") as? List<GeoPoint> ?: emptyList()
-        val speeds = document.get("speeds") as? List<Float> ?: emptyList()
-        val speedAccuracyChangeTimestamps = (document.get("speedAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
-        val speedAccuracyChanges = document.get("speedAccuracyChanges") as? List<Float> ?: emptyList()
-        val verticalAccuracyChangeTimestamps = (document.get("verticalAccuracyChangeTimestamps") as? List<Timestamp> ?: emptyList()).map { it.toZonedDateTime() }
-        val verticalAccuracyChanges = document.get("verticalAccuracyChanges") as? List<Int> ?: emptyList()
-
-        timestamps.forEachIndexed { index, zonedDateTime ->
-            val indexOfLastAccuracyChange = accuracyChangeTimestamps
-                .indexOfLast {
-                    it.isBefore(zonedDateTime)
-                }.coerceAtLeast(0)
-            val indexOfLastBearingAccuracyChange = bearingAccuracyChangeTimestamps
-                .indexOfLast {
-                    it.isBefore(zonedDateTime)
-                }.coerceAtLeast(0)
-            val indexOfLastVerticalAccuracyChange = verticalAccuracyChangeTimestamps
-                .indexOfLast {
-                    it.isBefore(zonedDateTime)
-                }.coerceAtLeast(0)
-            val indexOfLastSpeedAccuracyChange = speedAccuracyChangeTimestamps
-                .indexOfLast {
-                    it.isBefore(zonedDateTime)
-                }.coerceAtLeast(0)
-
-            domainLocations.add(
-                DomainLocation(
-                    sessionUUID = sessionUUID,
-                    zonedDateTime = zonedDateTime,
-                    latitude = coords[index].latitude.toFloat(),
-                    longitude = coords[index].longitude.toFloat(),
-                    speed = speeds[index],
-                    speedAccuracy = speedAccuracyChanges[indexOfLastSpeedAccuracyChange],
-                    accuracy = accuracyChanges[indexOfLastAccuracyChange].toByte(),
-                    bearing = bearings[index].toShort(),
-                    bearingAccuracy = bearingAccuracyChanges[indexOfLastBearingAccuracyChange].toShort(),
-                    altitude = altitudes[index].toShort(),
-                    verticalAccuracy = verticalAccuracyChanges[indexOfLastVerticalAccuracyChange].toShort()
-                )
-            )
-        }
+        val sessionUUID = document.getString(FirestorePath.FieldSessionUUID) ?: ""
+        val locations = document.getBlob(FirestorePath.FieldLocations)?.toBytes()
+            ?.let { ProtoBuf.decodeFromByteArray<List<FirestoreLocation>>(Zstd.decompress(it, 1_000_000)) }
+            ?: emptyList()
+        domainLocations.addAll(locations.map { it.toDomainModel(sessionUUID) })
     }
 
     return domainLocations.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
 }
+
+fun FirestoreLocation.toDomainModel(
+    sessionUUID: String
+) = DomainLocation(
+    latitude = latitude,
+    zonedDateTime = timestamp.toZonedDateTime(),
+    longitude = longitude,
+    speed = speed,
+    sessionUUID = sessionUUID,
+    accuracy = accuracy.toByte(),
+    bearing = bearing.toShort(),
+    bearingAccuracy = bearingAccuracy.toShort(),
+    altitude = altitude.toShort(),
+    speedAccuracy = speedAccuracy,
+    verticalAccuracy = verticalAccuracy.toShort()
+)
