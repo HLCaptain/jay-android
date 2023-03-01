@@ -16,25 +16,29 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk.serializers
+package illyan.jay.data.network.serializers
 
+import com.google.firebase.Timestamp
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.time.ZonedDateTime
 
-object ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
+object TimestampSerializer : KSerializer<Timestamp> {
     override val descriptor: SerialDescriptor
-        get() = PrimitiveSerialDescriptor("java.time.ZonedDateTime", PrimitiveKind.STRING)
+        get() = buildClassSerialDescriptor("com.google.firebase.Timestamp") {
+            element<Long>("seconds")
+            element<Int>("nanoseconds")
+        }
 
-    override fun deserialize(decoder: Decoder): ZonedDateTime {
-        return ZonedDateTime.parse(decoder.decodeString())
+    override fun deserialize(decoder: Decoder): Timestamp {
+        return Timestamp(decoder.decodeLong(), decoder.decodeInt())
     }
 
-    override fun serialize(encoder: Encoder, value: ZonedDateTime) {
-        encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: Timestamp) {
+        encoder.encodeLong(value.seconds)
+        encoder.encodeInt(value.nanoseconds)
     }
 }

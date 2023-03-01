@@ -18,8 +18,6 @@
 
 package illyan.jay.data.network.datasource
 
-import android.os.Parcel
-import android.os.Parcelable
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.WriteBatch
 import com.google.maps.android.ktx.utils.sphericalPathLength
@@ -51,7 +49,7 @@ class LocationNetworkDataSource @Inject constructor(
         if (authInteractor.isUserSignedIn) {
             firestore
                 .collection(FirestorePath.CollectionName)
-                .whereEqualTo("sessionUUID", sessionUUID)
+                .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         Timber.e(error, "Error while getting path for session $sessionUUID: ${error.message}")
@@ -148,18 +146,7 @@ class LocationNetworkDataSource @Inject constructor(
                 .document(it.uuid) to it
         }
         pathRefs.forEach {
-            val parcel = Parcel.obtain()
-            it.second.writeToParcel(parcel, Parcelable.PARCELABLE_WRITE_RETURN_VALUE)
-            val dataSizeInBytes = parcel.dataSize()
-            Timber.i("Path ${it.second.uuid.take(4)} for session ${it.second.sessionUUID.take(4)} size is around $dataSizeInBytes bytes")
-            // TODO: make size calculations more reliable and easier to implement
-            val maxSizeInBytes = 1_048_576
-            if (dataSizeInBytes < maxSizeInBytes) {
-                batch.set(it.first, it.second)
-            } else {
-                Timber.d("Not uploading this path, as $dataSizeInBytes bytes exceeds the $maxSizeInBytes byte limit")
-            }
-            parcel.recycle()
+            batch.set(it.first, it.second)
         }
     }
 

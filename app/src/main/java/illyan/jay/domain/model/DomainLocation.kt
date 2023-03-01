@@ -18,7 +18,10 @@
 
 package illyan.jay.domain.model
 
+import android.os.Parcelable
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.parcelize.IgnoredOnParcel
+import kotlinx.parcelize.Parcelize
 import java.time.ZonedDateTime
 
 /**
@@ -38,6 +41,7 @@ import java.time.ZonedDateTime
  * @property verticalAccuracy
  * @constructor Create empty Domain location
  */
+@Parcelize
 data class DomainLocation(
     var sessionUUID: String,
     val zonedDateTime: ZonedDateTime,
@@ -50,6 +54,6 @@ data class DomainLocation(
     var altitude: Short = Short.MIN_VALUE,
     var speedAccuracy: Float = Float.MIN_VALUE, // in meters per second
     var verticalAccuracy: Short = Short.MIN_VALUE, // in meters
-) {
-    val latLng = LatLng(latitude.toDouble(), longitude.toDouble())
+) : Parcelable {
+    @IgnoredOnParcel val latLng = LatLng(latitude.toDouble(), longitude.toDouble())
 }
