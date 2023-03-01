@@ -107,7 +107,7 @@ android {
 
 dependencies {
     // Core
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
     implementation "androidx.core:core-ktx:1.9.0"
     implementation "androidx.collection:collection-ktx:1.2.0" // The Collection extensions contain utility functions for working with Android's memory-efficient collection libraries, including ArrayMap, LongSparseArray, LruCache, and others.
     implementation "androidx.appcompat:appcompat:1.6.1"
@@ -204,9 +204,7 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0'
 
     // Compression
-    def brotliVersion = "1.11.0"
     implementation 'com.github.luben:zstd-jni:1.5.4-1@aar'
-//    implementation "com.aayushatharva.brotli4j:brotli4j:$brotliVersion"
     testImplementation "com.github.luben:zstd-jni:1.5.4-1"
 
     // Coroutine

@@ -20,7 +20,6 @@ package illyan.jay.data.network
 
 import android.os.Parcel
 import android.os.Parcelable
-import android.util.Base64
 import com.github.luben.zstd.Zstd
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
@@ -178,26 +177,13 @@ fun List<DomainLocation>.toPath(
 
         // Size ratio:
         // - List<DomainLocations> = 1.00
-        // - FirestorePath = 0.87
-        // - List<LocationWithoutSessionIdOptimized> = 0.51
-        // - List<LocationWithoutSessionId> = 0.51
-        // - Base64 GZIP compressed List<LocationWithoutSessionIdOptimized> =
-        // - Base64 ZLIB compressed List<LocationWithoutSessionIdOptimized> =
+        // - FirestorePath = ~0.87
+        // - List<LocationWithoutSessionIdOptimized> = ~0.51
+        // - List<LocationWithoutSessionId> = ~0.51
+        // - Base64 GZIP compressed List<LocationWithoutSessionIdOptimized> = ~0.16
+        // - Base64 ZLIB compressed List<LocationWithoutSessionIdOptimized> = ~0.17
 
-        val locationsParcel = Parcel.obtain()
-        forEach { it.writeToParcel(locationsParcel, Parcelable.PARCELABLE_WRITE_RETURN_VALUE) }
-        val locationsDataSizeInBytes = locationsParcel.dataSize()
-        Timber.i("Locations (with sessionUUID) for session $sessionUUID size is around $locationsDataSizeInBytes bytes")
-        locationsParcel.recycle()
-
-        val pathParcel = Parcel.obtain()
-        path.writeToParcel(pathParcel, Parcelable.PARCELABLE_WRITE_RETURN_VALUE)
-        val pathDataSizeInBytes = pathParcel.dataSize()
-        Timber.i("Path for session $sessionUUID size is around $pathDataSizeInBytes bytes")
-        pathParcel.recycle()
-
-        val rawOptimizedLocationsParcel = Parcel.obtain()
-        val rawOptimizedLocations = map {
+        val optimizedLocations = map {
             LocationWithoutSessionIdOptimized(
                 zonedDateTime = it.zonedDateTime.toTimestamp(),
                 latitude = it.latitude,
@@ -211,13 +197,8 @@ fun List<DomainLocation>.toPath(
                 verticalAccuracy = it.verticalAccuracy
             )
         }
-        rawOptimizedLocations.forEach { it.writeToParcel(rawOptimizedLocationsParcel, Parcelable.PARCELABLE_WRITE_RETURN_VALUE) }
-        val rawOptimizedLocationsDataSizeInBytes = rawOptimizedLocationsParcel.dataSize()
-        Timber.i("Locations (without sessionUUID, optimized) for session $sessionUUID size is around $rawOptimizedLocationsDataSizeInBytes bytes")
-        rawOptimizedLocationsParcel.recycle()
 
-        val rawLocationsParcel = Parcel.obtain()
-        val rawLocations = map {
+        val locations = map {
             LocationWithoutSessionId(
                 zonedDateTime = it.zonedDateTime.toTimestamp(),
                 latitude = it.latitude,
@@ -231,56 +212,66 @@ fun List<DomainLocation>.toPath(
                 verticalAccuracy = it.verticalAccuracy.toInt()
             )
         }
-        rawLocations.forEach { it.writeToParcel(rawLocationsParcel, Parcelable.PARCELABLE_WRITE_RETURN_VALUE) }
-        val rawLocationsDataSizeInBytes = rawLocationsParcel.dataSize()
-        Timber.i("Locations (without sessionUUID, unoptimized) for session $sessionUUID size is around $rawLocationsDataSizeInBytes bytes")
-        rawLocationsParcel.recycle()
 
-        val gzipByteArrayOutputStream = ByteArrayOutputStream()
-        val gzipOutputStream = GZIPOutputStream(gzipByteArrayOutputStream)
-        gzipOutputStream.write(ProtoBuf.encodeToByteArray(rawOptimizedLocations))
-        val gzipCompressedBytes = gzipByteArrayOutputStream.toByteArray()
-        val gzipBase64String = Base64.encodeToString(gzipCompressedBytes, Base64.DEFAULT)
-        val gzipBase64Parcel = Parcel.obtain()
-        gzipBase64Parcel.writeString(gzipBase64String)
-        val gzipBase64DataSizeInBytes = gzipBase64Parcel.dataSize()
-        Timber.i("Compressed (GZIP) locations (without sessionUUID, optimized) for session $sessionUUID size is around $gzipBase64DataSizeInBytes bytes")
-        gzipBase64Parcel.recycle()
+        val unoptimizedLocations = map {
+            LocationWithoutSessionIdUnoptimized(
+                zonedDateTime = it.zonedDateTime.toTimestamp(),
+                latitude = it.latitude.toDouble(),
+                longitude = it.longitude.toDouble(),
+                speed = it.speed.toDouble(),
+                accuracy = it.accuracy.toLong(),
+                bearing = it.bearing.toLong(),
+                bearingAccuracy = it.bearingAccuracy.toLong(),
+                altitude = it.altitude.toLong(),
+                speedAccuracy = it.speedAccuracy.toDouble(),
+                verticalAccuracy = it.verticalAccuracy.toLong()
+            )
+        }
 
-        val zlibByteArrayOutputStream = ByteArrayOutputStream()
-        val deflater = Deflater(Deflater.BEST_COMPRESSION)
-        val deflaterOutputStream = DeflaterOutputStream(zlibByteArrayOutputStream, deflater)
-        deflaterOutputStream.write(ProtoBuf.encodeToByteArray(rawOptimizedLocations))
-        val zlibCompressedBytes = zlibByteArrayOutputStream.toByteArray()
-        val zlibBase64String = Base64.encodeToString(zlibCompressedBytes, Base64.DEFAULT)
-        val zlibBase64Parcel = Parcel.obtain()
-        zlibBase64Parcel.writeString(zlibBase64String)
-        val zlibBase64DataSizeInBytes = zlibBase64Parcel.dataSize()
-        Timber.i("Compressed (ZLIB) locations (without sessionUUID, optimized) for session $sessionUUID size is around $zlibBase64DataSizeInBytes bytes")
-        zlibBase64Parcel.recycle()
+        val data = listOf(
+            ProtoBuf.encodeToByteArray(optimizedLocations) to "Optimized Locations",
+            ProtoBuf.encodeToByteArray(locations) to "Default Locations",
+            ProtoBuf.encodeToByteArray(unoptimizedLocations) to "Unoptimized Locations"
+        )
 
-        val zstdCompressedBytes = Zstd.compress(ProtoBuf.encodeToByteArray(rawOptimizedLocations), Zstd.maxCompressionLevel())
-        val zstdBase64String = Base64.encodeToString(zstdCompressedBytes, Base64.DEFAULT)
-        val zstdBase64Parcel = Parcel.obtain()
-        zstdBase64Parcel.writeString(zstdBase64String)
-        val zstdBase64DataSizeInBytes = zstdBase64Parcel.dataSize()
-        Timber.i("Compressed (Zstd) locations (without sessionUUID, optimized) for session $sessionUUID size is around $zstdBase64DataSizeInBytes bytes")
-        zstdBase64Parcel.recycle()
+        val compressions = listOf<Pair<(ByteArray) -> ByteArray, String>>(
+            { array: ByteArray ->
+                val locationsParcel = Parcel.obtain()
+                locationsParcel.writeByteArray(array)
+                val bytes = locationsParcel.marshall()
+                locationsParcel.recycle()
+                bytes
+            } to "Parcel marshall",
+            { array: ByteArray ->
+                val gzipByteArrayOutputStream = ByteArrayOutputStream()
+                val gzipOutputStream = GZIPOutputStream(gzipByteArrayOutputStream)
+                gzipOutputStream.write(array)
+                gzipByteArrayOutputStream.toByteArray()
+            } to "GZIP",
+            { array: ByteArray ->
+                val zlibByteArrayOutputStream = ByteArrayOutputStream()
+                val deflater = Deflater(Deflater.BEST_COMPRESSION)
+                val deflaterOutputStream = DeflaterOutputStream(zlibByteArrayOutputStream, deflater)
+                deflaterOutputStream.write(array)
+                zlibByteArrayOutputStream.toByteArray()
+            } to "ZLIB",
+            { array: ByteArray ->
+                Zstd.compress(array, Zstd.maxCompressionLevel())
+            } to "Zstd"
+        )
 
-//        Brotli4jLoader.ensureAvailability()
-//        if (Brotli4jLoader.isAvailable()) {
-//            val brotliByteArrayOutputStream = ByteArrayOutputStream()
-//            val encoderParams = Encoder.Parameters().setQuality(8)
-//            val brotliOutputStream = BrotliOutputStream(brotliByteArrayOutputStream, encoderParams)
-//            brotliOutputStream.write(ProtoBuf.encodeToByteArray(rawOptimizedLocations))
-//            val brotliCompressedBytes = brotliByteArrayOutputStream.toByteArray()
-//            val brotliBase64String = Base64.encodeToString(brotliCompressedBytes, Base64.DEFAULT)
-//            val brotliBase64Parcel = Parcel.obtain()
-//            brotliBase64Parcel.writeString(brotliBase64String)
-//            val brotliBase64DataSizeInBytes = brotliBase64Parcel.dataSize()
-//            Timber.i("Compressed (Brotli) locations (without sessionUUID, optimized) for session $sessionUUID size is around $brotliBase64DataSizeInBytes bytes")
-//            brotliBase64Parcel.recycle()
-//        }
+        data.forEach {
+            val byteArray = it.first
+            val stringBuilder = StringBuilder()
+            stringBuilder.append("Data: ${it.second}\n")
+
+            compressions.forEach { algo ->
+                val compressedBytes = algo.first(byteArray)
+                val algoName = algo.second
+                stringBuilder.append("$algoName: ${compressedBytes.size} bytes\n")
+            }
+            Timber.d(stringBuilder.toString())
+        }
     }
 
     return path
@@ -316,6 +307,22 @@ data class LocationWithoutSessionId(
     var altitude: Int = Int.MIN_VALUE,
     var speedAccuracy: Float = Float.MIN_VALUE, // in meters per second
     var verticalAccuracy: Int = Int.MIN_VALUE, // in meters
+) : Parcelable
+
+@Serializable
+@Parcelize
+data class LocationWithoutSessionIdUnoptimized(
+    @Serializable(with = TimestampSerializer::class)
+    val zonedDateTime: Timestamp,
+    val latitude: Double,
+    val longitude: Double,
+    var speed: Double = Double.MIN_VALUE,
+    var accuracy: Long = Long.MIN_VALUE,
+    var bearing: Long = Long.MIN_VALUE,
+    var bearingAccuracy: Long = Long.MIN_VALUE, // in degrees
+    var altitude: Long = Long.MIN_VALUE,
+    var speedAccuracy: Double = Double.MIN_VALUE, // in meters per second
+    var verticalAccuracy: Long = Long.MIN_VALUE, // in meters
 ) : Parcelable
 
 fun List<DomainLocation>.toPaths(
