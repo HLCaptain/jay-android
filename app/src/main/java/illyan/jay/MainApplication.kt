@@ -26,6 +26,7 @@ import dagger.hilt.android.HiltAndroidApp
 import illyan.jay.data.disk.model.AppSettings
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
+import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.util.log.CrashlyticsTree
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
@@ -41,6 +42,7 @@ class MainApplication : Application() {
     @Inject lateinit var authInteractor: AuthInteractor
     @Inject lateinit var crashlytics: FirebaseCrashlytics
     @Inject lateinit var analytics: FirebaseAnalytics
+    @Inject lateinit var settingsInteractor: SettingsInteractor
     @Inject @CoroutineScopeIO lateinit var coroutineScopeIO: CoroutineScope
     override fun onCreate() {
         super.onCreate()
@@ -54,32 +56,23 @@ class MainApplication : Application() {
             Timber.d("Planting debugTree")
         }
         coroutineScopeIO.launch {
-            authInteractor.currentUserStateFlow.collectLatest { user ->
-                appSettingsDataStore.data.collectLatest { settings ->
-                    if (settings.preferences.analyticsEnabled) {
-                        analytics.setUserId(user?.uid)
-                        crashlytics.setUserId(user?.uid ?: "")
-                    } else {
-                        analytics.setUserId(null)
-                        crashlytics.setUserId("")
+            settingsInteractor.userPreferences.collectLatest { preferences ->
+                preferences?.let {
+                    crashlytics.setUserId(it.userUUID ?: "")
+                    analytics.setUserId(it.userUUID)
+                    val collectingData = Timber.forest().contains(crashlyticsTree)
+                    if (it.analyticsEnabled && !collectingData) {
+                        Timber.d("Analytics On, Planting crashlyticsTree")
+                        Timber.plant(crashlyticsTree)
+                        crashlytics.setCrashlyticsCollectionEnabled(true)
+                        analytics.setAnalyticsCollectionEnabled(true)
+                    } else if (!it.analyticsEnabled && collectingData) {
+                        Timber.uproot(crashlyticsTree)
+                        crashlytics.setCrashlyticsCollectionEnabled(false)
+                        analytics.setAnalyticsCollectionEnabled(false)
+                        crashlytics.deleteUnsentReports()
+                        Timber.d("Analytics Off, Uprooting crashlyticsTree")
                     }
-                }
-            }
-        }
-        coroutineScopeIO.launch {
-            appSettingsDataStore.data.collectLatest { settings ->
-                val collectingData = Timber.forest().contains(crashlyticsTree)
-                if (settings.preferences.analyticsEnabled && !collectingData) {
-                    Timber.d("Planting crashlyticsTree")
-                    Timber.plant(crashlyticsTree)
-                    crashlytics.setCrashlyticsCollectionEnabled(true)
-                    analytics.setAnalyticsCollectionEnabled(true)
-                } else if (!settings.preferences.analyticsEnabled && collectingData) {
-                    Timber.uproot(crashlyticsTree)
-                    crashlytics.setCrashlyticsCollectionEnabled(false)
-                    analytics.setAnalyticsCollectionEnabled(false)
-                    crashlytics.deleteUnsentReports()
-                    Timber.d("Uprooting crashlyticsTree")
                 }
             }
         }

@@ -382,6 +382,7 @@ fun ProfileTitleScreen(
                             }
                         },
                         enabled = showConfidentialInfo,
+                        showTooltipOnClick = true,
                         onShowTooltip = {
                             if (showConfidentialInfo) {
                                 clipboard.setText(AnnotatedString(text = userUUID))

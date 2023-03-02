@@ -292,6 +292,7 @@ fun ClientLabel(
     AnimatedVisibility(visible = clientUUID != null) {
         TooltipElevatedCard(
             tooltip = { CopiedToKeyboardTooltip() },
+            showTooltipOnClick = true,
             onShowTooltip = { clientUUID?.let { clipboard.setText(AnnotatedString(text = it)) } }
         ) {
             SettingLabel(
