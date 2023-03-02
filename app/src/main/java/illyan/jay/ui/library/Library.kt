@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.library
 
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.ramcosta.composedestinations.annotation.Destination
 import illyan.jay.R
@@ -139,24 +141,28 @@ fun LibraryButtons(
     moreInfoUri: Uri? = null,
     repositoryUri: Uri? = null,
 ) {
+    val context = LocalContext.current
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
         AnimatedVisibility(visible = repositoryUri != null) {
-            repositoryUri?.let {
-                TextButton(onClick = { /* TODO: Open browser with link */ }) {
-                    Text(text = stringResource(id = R.string.repository))
+            TextButton(
+                onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, repositoryUri))
                 }
+            ) {
+                Text(text = stringResource(R.string.repository))
             }
         }
-        AnimatedVisibility(visible = moreInfoUri != null) {
-            moreInfoUri?.let {
-                Button(onClick = { /* TODO: Open browser with link */ }) {
-                    Text(text = stringResource(id = R.string.more))
-                }
+        Button(
+            enabled = moreInfoUri != null,
+            onClick = {
+                context.startActivity(Intent(Intent.ACTION_VIEW, moreInfoUri))
             }
+        ) {
+            Text(text = stringResource(R.string.more))
         }
     }
 }
