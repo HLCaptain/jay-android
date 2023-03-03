@@ -36,21 +36,32 @@ class LibrariesViewModel @Inject constructor(
     init {
         _libraries.value = listOf(
             Library(
+                name = "Compose Scrollbar",
+                license = License.Builder()
+                    .setAuthor("Balázs Püspök-Kiss (Illyan)")
+                    .setYear(2023)
+                    .setType(License.LicenseType.ApacheV2)
+                    .build(),
+                repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
+                moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
+            ),
+            Library(
                 name = "Plumber",
-                license = License(
-                    type = "Apache v2",
-                    description = "Cool license",
-                ),
+                license = License.Builder()
+                    .setAuthor("Balázs Püspök-Kiss (Illyan)")
+                    .setYear(2023)
+                    .setType(License.LicenseType.ApacheV2)
+                    .build(),
                 repositoryUrl = "https://github.com/HLCaptain/plumber"
             ),
             Library(
-                name = "Compose Scrollbar",
-                license = License(
-                    type = "Apache v2",
-                    description = "Cool license",
-                ),
-                repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
-                moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
+                name = "swipe",
+                license = License.Builder()
+                    .setAuthor("Saket Narayan")
+                    .setYear(2022)
+                    .setType(License.LicenseType.ApacheV2)
+                    .build(),
+                repositoryUrl = "https://github.com/saket/swipe"
             )
         )
     }

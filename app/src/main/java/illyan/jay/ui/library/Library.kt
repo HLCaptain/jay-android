@@ -66,7 +66,7 @@ fun LibraryDialogContent(
         title = {
             LibraryTitle(
                 name = library.name,
-                licenseType = library.license?.type
+                licenseType = library.license?.name
             )
         },
         text = {
@@ -172,12 +172,13 @@ fun LibraryButtons(
 private fun LibraryDialogContentPreview() {
     val library = Library(
         name = "Compose Scrollbar",
-        license = License(
-            type = "Apache v2",
-            description = "Cool license",
-        ),
-        moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
-        repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar"
+        license = License.Builder()
+            .setAuthor("Balázs Püspök-Kiss (Illyan)")
+            .setYear(2023)
+            .setType(License.LicenseType.ApacheV2)
+            .build(),
+        repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
+        moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
     )
     JayTheme {
         JayDialogContent {

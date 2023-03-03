@@ -214,22 +214,32 @@ fun LibraryItem(
 private fun LibrariesDialogContentPreview() {
     val libraries = listOf(
         Library(
+            name = "Compose Scrollbar",
+            license = License.Builder()
+                .setAuthor("Balázs Püspök-Kiss (Illyan)")
+                .setYear(2023)
+                .setType(License.LicenseType.ApacheV2)
+                .build(),
+            repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
+            moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
+        ),
+        Library(
             name = "Plumber",
-            license = License(
-                type = "Apache v2",
-                description = "Cool license",
-            ),
-            moreInfoUrl = "https://github.com/HLCaptain/plumber",
+            license = License.Builder()
+                .setAuthor("Balázs Püspök-Kiss (Illyan)")
+                .setYear(2023)
+                .setType(License.LicenseType.ApacheV2)
+                .build(),
             repositoryUrl = "https://github.com/HLCaptain/plumber"
         ),
         Library(
-            name = "Compose Scrollbar",
-            license = License(
-                type = "Apache v2",
-                description = "Cool license",
-            ),
-            moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
-            repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar"
+            name = "swipe",
+            license = License.Builder()
+                .setAuthor("Saket Narayan")
+                .setYear(2022)
+                .setType(License.LicenseType.ApacheV2)
+                .build(),
+            repositoryUrl = "https://github.com/saket/swipe"
         )
     )
     JayTheme {

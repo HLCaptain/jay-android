@@ -23,6 +23,83 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class License(
-    val type: String = "",
-    val description: String = ""
-) : Parcelable
+    val name: String? = null,
+    val type: LicenseType? = null,
+    val description: String? = null,
+) : Parcelable {
+    enum class LicenseType(
+        val licenseName: String,
+        val description: String,
+    ) {
+        ApacheV2(
+            licenseName = "Apache-2.0",
+            description = "\n" +
+                    "Licensed under the Apache License, Version 2.0 (the \"License\");" +
+                    " you may not use this file except in compliance with the License." +
+                    " You may obtain a copy of the License at\n" +
+                    "\n" +
+                    "    https://www.apache.org/licenses/LICENSE-2.0\n" +
+                    "\n" +
+                    "Unless required by applicable law or agreed to in writing, software" +
+                    " distributed under the License is distributed on an \"AS IS\" BASIS," +
+                    " WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied." +
+                    " See the License for the specific language governing permissions and" +
+                    " limitations under the License."
+        ),
+    }
+
+    class Builder {
+        var interval: IntRange? = null
+        var year: Int? = null
+        var author: String? = null
+        var type: LicenseType? = null
+
+        val copyrightYear: String?
+            get() = if (interval != null) {
+                "${interval?.first}-${interval?.last}"
+            } else if (year != null) {
+                year.toString()
+            } else {
+                null
+            }
+
+        val description: String?
+            get() = when (type) {
+                LicenseType.ApacheV2 -> {
+                    // "\\s+".toRegex() removes additional whitespaces between words
+                    "Copyright ${if (copyrightYear != null) copyrightYear else ""} $author\n"
+                        .replace("\\s+".toRegex(), " ") + LicenseType.ApacheV2.description
+                }
+
+                else -> null
+            }
+
+        fun setAuthor(author: String): Builder {
+            this.author = author
+            return this
+        }
+
+        fun setYearInterval(interval: IntRange): Builder {
+            this.interval = interval
+            return this
+        }
+
+        fun setYear(year: Int): Builder {
+            this.year = year
+            return this
+        }
+
+        fun setType(type: LicenseType): Builder {
+            this.type = type
+            return this
+        }
+
+        fun build(): License {
+            return License(
+                name = type?.licenseName,
+                type = type,
+                description = description
+            )
+        }
+    }
+}
