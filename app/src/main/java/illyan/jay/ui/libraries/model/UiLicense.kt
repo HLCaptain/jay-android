@@ -19,12 +19,26 @@
 package illyan.jay.ui.libraries.model
 
 import android.os.Parcelable
+import illyan.jay.data.serializers.YearIntervalParceler
+import illyan.jay.domain.model.libraries.License
+import illyan.jay.domain.model.libraries.LicenseType
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.TypeParceler
 
 @Parcelize
-data class Library(
-    val name: String = "",
-    val license: License? = null,
-    val repositoryUrl: String? = null,
-    val moreInfoUrl: String? = null,
+@TypeParceler<IntRange?, YearIntervalParceler>
+data class UiLicense(
+    val type: LicenseType? = null,
+    val name: String? = type?.licenseName,
+    val authors: List<String> = emptyList(),
+    val year: Int? = null,
+    val yearInterval: IntRange? = null
 ) : Parcelable
+
+fun License.toUiModel() = UiLicense(
+    name = name,
+    type = type,
+    authors = authors,
+    year = year,
+    yearInterval = yearInterval
+)

@@ -18,13 +18,14 @@
 
 package illyan.jay.ui.library
 
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.AlertDialogDefaults
@@ -36,14 +37,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import com.ramcosta.composedestinations.annotation.Destination
+import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
+import illyan.jay.domain.model.libraries.Library
+import illyan.jay.domain.model.libraries.License
+import illyan.jay.domain.model.libraries.LicenseType
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.libraries.model.Library
-import illyan.jay.ui.libraries.model.License
+import illyan.jay.ui.components.getDefaultLicenseOf
+import illyan.jay.ui.libraries.model.UiLibrary
+import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -51,7 +57,7 @@ import illyan.jay.ui.theme.JayTheme
 @Destination
 @Composable
 fun LibraryDialogScreen(
-    library: Library
+    library: UiLibrary
 ) {
     LibraryDialogContent(library = library)
 }
@@ -59,7 +65,7 @@ fun LibraryDialogScreen(
 @Composable
 fun LibraryDialogContent(
     modifier: Modifier = Modifier,
-    library: Library,
+    library: UiLibrary,
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -95,7 +101,7 @@ fun LibraryTitle(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(id = R.string.license),
+                        text = stringResource(R.string.license),
                         style = MaterialTheme.typography.titleSmall,
                         color = AlertDialogDefaults.titleContentColor,
                     )
@@ -117,18 +123,22 @@ fun LibraryTitle(
 @Composable
 fun LibraryScreen(
     modifier: Modifier = Modifier,
-    library: Library
+    library: UiLibrary
 ) {
     Column(
         modifier = modifier,
     ) {
-        
-        AnimatedVisibility(visible = library.license?.description != null) {
-            library.license?.description?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AlertDialogDefaults.textContentColor
+        val lazyListState = rememberLazyListState()
+        LazyColumn(
+            modifier = Modifier.drawVerticalScrollbar(lazyListState),
+            state = lazyListState
+        ) {
+            item {
+                getDefaultLicenseOf(
+                    type = library.license?.type,
+                    authors = library.license?.authors ?: emptyList(),
+                    year = library.license?.year,
+                    yearInterval = library.license?.yearInterval
                 )
             }
         }
@@ -141,7 +151,7 @@ fun LibraryButtons(
     moreInfoUri: Uri? = null,
     repositoryUri: Uri? = null,
 ) {
-    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.End,
@@ -149,18 +159,14 @@ fun LibraryButtons(
     ) {
         AnimatedVisibility(visible = repositoryUri != null) {
             TextButton(
-                onClick = {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, repositoryUri))
-                }
+                onClick = { uriHandler.openUri(repositoryUri.toString()) }
             ) {
                 Text(text = stringResource(R.string.repository))
             }
         }
         Button(
             enabled = moreInfoUri != null,
-            onClick = {
-                context.startActivity(Intent(Intent.ACTION_VIEW, moreInfoUri))
-            }
+            onClick = { uriHandler.openUri(moreInfoUri.toString()) }
         ) {
             Text(text = stringResource(R.string.more))
         }
@@ -172,14 +178,15 @@ fun LibraryButtons(
 private fun LibraryDialogContentPreview() {
     val library = Library(
         name = "Compose Scrollbar",
-        license = License.Builder()
-            .setAuthor("Balázs Püspök-Kiss (Illyan)")
-            .setYear(2023)
-            .setType(License.LicenseType.ApacheV2)
-            .build(),
+        license = License(
+            authors = listOf("Balázs Püspök-Kiss (Illyan)"),
+            year = 2023,
+            type = LicenseType.ApacheV2
+        ),
         repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
-        moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
-    )
+        moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
+        authors = listOf("Balázs Püspök-Kiss (Illyan)")
+    ).toUiModel()
     JayTheme {
         JayDialogContent {
             LibraryDialogContent(library = library)

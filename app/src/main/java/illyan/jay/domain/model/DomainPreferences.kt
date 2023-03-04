@@ -18,7 +18,7 @@
 
 package illyan.jay.domain.model
 
-import illyan.jay.data.disk.serializers.ZonedDateTimeSerializer
+import illyan.jay.data.serializers.ZonedDateTimeSerializer
 import kotlinx.serialization.Serializable
 import java.time.ZonedDateTime
 

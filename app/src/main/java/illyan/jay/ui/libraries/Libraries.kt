@@ -54,11 +54,14 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.domain.model.libraries.Library
+import illyan.jay.domain.model.libraries.License
+import illyan.jay.domain.model.libraries.LicenseType
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.LibraryDialogScreenDestination
-import illyan.jay.ui.libraries.model.Library
-import illyan.jay.ui.libraries.model.License
+import illyan.jay.ui.libraries.model.UiLibrary
+import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.search.DividerThickness
 import illyan.jay.ui.theme.JayTheme
@@ -81,8 +84,8 @@ fun LibrariesDialogScreen(
 @Composable
 fun LibrariesDialogContent(
     modifier: Modifier = Modifier,
-    libraries: List<Library> = emptyList(),
-    onSelectLibrary: (Library) -> Unit = {},
+    libraries: List<UiLibrary> = emptyList(),
+    onSelectLibrary: (UiLibrary) -> Unit = {},
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -108,8 +111,8 @@ fun LibrariesTitle() {
 @Composable
 fun LibrariesScreen(
     modifier: Modifier = Modifier,
-    libraries: List<Library> = emptyList(),
-    onSelectLibrary: (Library) -> Unit = {},
+    libraries: List<UiLibrary> = emptyList(),
+    onSelectLibrary: (UiLibrary) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier
@@ -144,7 +147,7 @@ fun LibrariesScreen(
 @Composable
 fun LibraryItem(
     modifier: Modifier = Modifier,
-    library: Library,
+    library: UiLibrary,
     cardColors: CardColors = CardDefaults.cardColors(
         containerColor = Color.Transparent
     ),
@@ -215,33 +218,33 @@ private fun LibrariesDialogContentPreview() {
     val libraries = listOf(
         Library(
             name = "Compose Scrollbar",
-            license = License.Builder()
-                .setAuthor("Balázs Püspök-Kiss (Illyan)")
-                .setYear(2023)
-                .setType(License.LicenseType.ApacheV2)
-                .build(),
+            license = License(
+                authors = listOf("Balázs Püspök-Kiss (Illyan)"),
+                year = 2023,
+                type = LicenseType.ApacheV2,
+            ),
             repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
             moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
         ),
         Library(
             name = "Plumber",
-            license = License.Builder()
-                .setAuthor("Balázs Püspök-Kiss (Illyan)")
-                .setYear(2023)
-                .setType(License.LicenseType.ApacheV2)
-                .build(),
+            license = License(
+                authors = listOf("Balázs Püspök-Kiss (Illyan)"),
+                year = 2023,
+                type = LicenseType.ApacheV2,
+            ),
             repositoryUrl = "https://github.com/HLCaptain/plumber"
         ),
         Library(
             name = "swipe",
-            license = License.Builder()
-                .setAuthor("Saket Narayan")
-                .setYear(2022)
-                .setType(License.LicenseType.ApacheV2)
-                .build(),
+            license = License(
+                authors = listOf("Saket Narayan"),
+                year = 2022,
+                type = LicenseType.ApacheV2,
+            ),
             repositoryUrl = "https://github.com/saket/swipe"
         )
-    )
+    ).map { it.toUiModel() }
     JayTheme {
         JayDialogContent {
             LibrariesDialogContent(libraries = libraries)

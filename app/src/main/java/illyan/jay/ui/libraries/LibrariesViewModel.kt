@@ -20,8 +20,11 @@ package illyan.jay.ui.libraries
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.ui.libraries.model.Library
-import illyan.jay.ui.libraries.model.License
+import illyan.jay.domain.model.libraries.Library
+import illyan.jay.domain.model.libraries.License
+import illyan.jay.domain.model.libraries.LicenseType
+import illyan.jay.ui.libraries.model.UiLibrary
+import illyan.jay.ui.libraries.model.toUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
@@ -30,39 +33,42 @@ import javax.inject.Inject
 class LibrariesViewModel @Inject constructor(
 
 ) : ViewModel() {
-    private val _libraries = MutableStateFlow<List<Library>>(emptyList())
+    private val _libraries = MutableStateFlow<List<UiLibrary>>(emptyList())
     val libraries = _libraries.asStateFlow()
 
     init {
         _libraries.value = listOf(
             Library(
                 name = "Compose Scrollbar",
-                license = License.Builder()
-                    .setAuthor("Balázs Püspök-Kiss (Illyan)")
-                    .setYear(2023)
-                    .setType(License.LicenseType.ApacheV2)
-                    .build(),
+                license = License(
+                    authors = listOf("Balázs Püspök-Kiss (Illyan)"),
+                    year = 2023,
+                    type = LicenseType.ApacheV2,
+                ),
                 repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
-                moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
+                moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
+                authors = listOf("Balázs Püspök-Kiss (Illyan)"),
             ),
             Library(
                 name = "Plumber",
-                license = License.Builder()
-                    .setAuthor("Balázs Püspök-Kiss (Illyan)")
-                    .setYear(2023)
-                    .setType(License.LicenseType.ApacheV2)
-                    .build(),
-                repositoryUrl = "https://github.com/HLCaptain/plumber"
+                license = License(
+                    authors = listOf("Balázs Püspök-Kiss (Illyan)"),
+                    year = 2023,
+                    type = LicenseType.ApacheV2,
+                ),
+                repositoryUrl = "https://github.com/HLCaptain/plumber",
+                authors = listOf("Balázs Püspök-Kiss (Illyan)"),
             ),
             Library(
                 name = "swipe",
-                license = License.Builder()
-                    .setAuthor("Saket Narayan")
-                    .setYear(2022)
-                    .setType(License.LicenseType.ApacheV2)
-                    .build(),
-                repositoryUrl = "https://github.com/saket/swipe"
+                license = License(
+                    authors = listOf("Saket Narayan"),
+                    year = 2022,
+                    type = LicenseType.ApacheV2,
+                ),
+                repositoryUrl = "https://github.com/saket/swipe",
+                authors = listOf("Saket Narayan"),
             )
-        )
+        ).map { it.toUiModel() }.sortedBy { it.name }
     }
 }
