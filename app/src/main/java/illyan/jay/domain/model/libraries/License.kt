@@ -28,8 +28,11 @@ import kotlinx.parcelize.TypeParceler
 data class License(
     val type: LicenseType? = null,
     val name: String? = type?.licenseName,
+    val url: String? = type?.url,
+    val beforeTitle: String = "",
+    val afterTitle: String = "",
     val description: String? = type?.description,
-    val authors: List<String> = emptyList(),
+    val copyrightOwners: List<String> = emptyList(),
     val year: Int? = null,
     val yearInterval: IntRange? = null
 ) : Parcelable

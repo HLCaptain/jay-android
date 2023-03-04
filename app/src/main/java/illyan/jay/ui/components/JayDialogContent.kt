@@ -47,6 +47,9 @@ fun JayDialogContent(
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
     buttons: @Composable (() -> Unit)? = null,
+    iconPaddingValues: PaddingValues = IconPadding,
+    titlePaddingValues: PaddingValues = TitlePadding,
+    textPaddingValues: PaddingValues = TextPadding,
     shape: Shape = AlertDialogDefaults.shape,
     containerColor: Color = AlertDialogDefaults.containerColor,
     iconContentColor: Color = AlertDialogDefaults.iconContentColor,
@@ -75,7 +78,7 @@ fun JayDialogContent(
                     CompositionLocalProvider(LocalContentColor provides iconContentColor) {
                         Box(
                             Modifier
-                                .padding(IconPadding)
+                                .padding(iconPaddingValues)
                                 .align(Alignment.CenterHorizontally)
                         ) {
                             icon()
@@ -91,7 +94,7 @@ fun JayDialogContent(
                             Box(
                                 // Align the title to the center when an icon is present.
                                 Modifier
-                                    .padding(TitlePadding)
+                                    .padding(titlePaddingValues)
                                     .align(
                                         if (icon == null) {
                                             Alignment.Start
@@ -114,7 +117,7 @@ fun JayDialogContent(
                             Box(
                                 Modifier
                                     .weight(weight = 1f, fill = false)
-                                    .padding(TextPadding)
+                                    .padding(textPaddingValues)
                                     .align(Alignment.Start)
                             ) {
                                 text()

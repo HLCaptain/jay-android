@@ -30,15 +30,17 @@ import kotlinx.parcelize.TypeParceler
 data class UiLicense(
     val type: LicenseType? = null,
     val name: String? = type?.licenseName,
+    val url: String? = type?.url,
     val authors: List<String> = emptyList(),
     val year: Int? = null,
-    val yearInterval: IntRange? = null
+    val yearInterval: IntRange? = null,
 ) : Parcelable
 
 fun License.toUiModel() = UiLicense(
     name = name,
     type = type,
-    authors = authors,
+    url = url,
+    authors = copyrightOwners,
     year = year,
     yearInterval = yearInterval
 )

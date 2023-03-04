@@ -22,32 +22,39 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.ramcosta.composedestinations.annotation.Destination
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.Library
-import illyan.jay.domain.model.libraries.License
-import illyan.jay.domain.model.libraries.LicenseType
 import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.LicenseOfType
 import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.components.getDefaultLicenseOf
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileNavGraph
@@ -72,7 +79,8 @@ fun LibraryDialogContent(
         title = {
             LibraryTitle(
                 name = library.name,
-                licenseType = library.license?.name
+                licenseType = library.license?.name,
+                licenseUrl = library.license?.url
             )
         },
         text = {
@@ -84,14 +92,18 @@ fun LibraryDialogContent(
                 moreInfoUri = if (library.moreInfoUrl != null) Uri.parse(library.moreInfoUrl) else null,
                 repositoryUri = if (library.repositoryUrl != null) Uri.parse(library.repositoryUrl) else null,
             )
-        }
+        },
+        titlePaddingValues = PaddingValues(),
+        textPaddingValues = PaddingValues(),
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryTitle(
     name: String,
-    licenseType: String? = null
+    licenseType: String? = null,
+    licenseUrl: String? = null
 ) {
     Column {
         Text(text = name)
@@ -109,11 +121,17 @@ fun LibraryTitle(
                         imageVector = Icons.Rounded.ChevronRight,
                         contentDescription = ""
                     )
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = AlertDialogDefaults.titleContentColor,
-                    )
+                    val uriHandler = LocalUriHandler.current
+                    OutlinedCard(
+                        onClick = { licenseUrl?.let { uriHandler.openUri(it) }}
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+                            text = it,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = AlertDialogDefaults.titleContentColor,
+                        )
+                    }
                 }
             }
         }
@@ -125,16 +143,21 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     library: UiLibrary
 ) {
-    Column(
-        modifier = modifier,
+    val backgroundColor = AlertDialogDefaults.containerColor
+    val verticalContentPadding = 16.dp
+    val lazyListState = rememberLazyListState()
+    Surface(
+        color = backgroundColor
     ) {
-        val lazyListState = rememberLazyListState()
         LazyColumn(
-            modifier = Modifier.drawVerticalScrollbar(lazyListState),
-            state = lazyListState
+            modifier = modifier
+                .drawVerticalScrollbar(lazyListState)
+                .clip(RoundedCornerShape(verticalContentPadding)),
+            state = lazyListState,
+            contentPadding = PaddingValues(vertical = verticalContentPadding),
         ) {
             item {
-                getDefaultLicenseOf(
+                LicenseOfType(
                     type = library.license?.type,
                     authors = library.license?.authors ?: emptyList(),
                     year = library.license?.year,
@@ -176,19 +199,11 @@ fun LibraryButtons(
 @PreviewLightDarkTheme
 @Composable
 private fun LibraryDialogContentPreview() {
-    val library = Library(
-        name = "Compose Scrollbar",
-        license = License(
-            authors = listOf("Balázs Püspök-Kiss (Illyan)"),
-            year = 2023,
-            type = LicenseType.ApacheV2
-        ),
-        repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
-        moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
-        authors = listOf("Balázs Püspök-Kiss (Illyan)")
-    ).toUiModel()
+    val library = Library.Jay.toUiModel()
     JayTheme {
-        JayDialogContent {
+        JayDialogContent(
+            modifier = Modifier.width(300.dp)
+        ) {
             LibraryDialogContent(library = library)
         }
     }

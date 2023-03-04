@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -124,6 +125,7 @@ fun ProfileDialog(
     if (isDialogOpen) {
         val context = LocalContext.current
         val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+        val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
         // Don't use exit animations because
         // it looks choppy while Dialog resizes due to content change.
         val engine = rememberAnimatedNavHostEngine(
@@ -146,7 +148,9 @@ fun ProfileDialog(
             }
         }
         AlertDialog(
-            modifier = Modifier.widthIn(max = screenWidthDp - 64.dp),
+            modifier = Modifier
+                .widthIn(max = screenWidthDp - 64.dp)
+                .heightIn(max = (screenHeightDp.value * 0.66f).dp),
             properties = DialogProperties(
                 usePlatformDefaultWidth = false
             ),

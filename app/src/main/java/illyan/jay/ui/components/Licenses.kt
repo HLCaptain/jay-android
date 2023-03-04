@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -26,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -35,22 +35,55 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
+import illyan.jay.R
 import illyan.jay.domain.model.libraries.LicenseType
 
 @Composable
-fun getDefaultLicenseOf(
+fun LicenseOfType(
     type: LicenseType? = null,
     authors: List<String> = emptyList(),
     year: Int? = null,
     yearInterval: IntRange? = null,
+    beforeTitle: String = "",
+    afterTitle: String = "",
 ) {
     SelectionContainer {
         when (type) {
             LicenseType.ApacheV2 -> ApacheV2License(
                 authors = authors,
                 year = year,
-                yearInterval = yearInterval
+                yearInterval = yearInterval,
+                beforeTitle = beforeTitle,
+                afterTitle = afterTitle,
+            )
+            LicenseType.FreeBSD -> FreeBSDLicense(
+                authors = authors,
+                year = year,
+                yearInterval = yearInterval,
+                beforeTitle = beforeTitle,
+                afterTitle = afterTitle,
+            )
+            LicenseType.EclipsePublicLicenseV2 -> EclipsePublicLicense()
+            LicenseType.GPLV2 -> GPLV2License(
+                authors = authors,
+                year = year,
+                yearInterval = yearInterval,
+                beforeTitle = beforeTitle,
+                afterTitle = afterTitle,
+            )
+            LicenseType.GPLV3 -> GPLV3License(
+                authors = authors,
+                year = year,
+                yearInterval = yearInterval,
+                beforeTitle = beforeTitle,
+                afterTitle = afterTitle,
+            )
+            LicenseType.Jay_GPLV3 -> JayGPLV3License(
+                authors = authors,
+                year = year,
+                yearInterval = yearInterval,
+                beforeTitle = beforeTitle,
+                afterTitle = afterTitle,
             )
             else -> MissingLicense()
         }
@@ -59,7 +92,7 @@ fun getDefaultLicenseOf(
 
 @Composable
 fun MissingLicense() {
-    Text(text = "Missing license")
+    Text(text = stringResource(R.string.missing_license))
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -68,13 +101,15 @@ fun ApacheV2License(
     authors: List<String> = emptyList(),
     year: Int? = null,
     yearInterval: IntRange? = null,
+    beforeTitle: String = "",
+    afterTitle: String = "",
 ) {
     val copyrightYearString = if (yearInterval != null) {
         "${yearInterval.first}-${yearInterval.last}"
     } else year?.toString() ?: ""
 
-    val title = "Copyright $copyrightYearString ${authors.joinToString(",")}"
-        .replace("\\s+".toRegex(), " ") + ""
+    val title = beforeTitle + "Copyright $copyrightYearString ${authors.joinToString(",")}"
+        .replace("\\s+".toRegex(), " ") + afterTitle
     val paragraph1 = "\n\nLicensed under the Apache License, Version 2.0 (the \"License\");" +
             " you may not use this file except in compliance with the License." +
             " You may obtain a copy of the License at\n\n\t"
@@ -106,26 +141,269 @@ fun ApacheV2License(
         withStyle(
             style = SpanStyle(
                 fontStyle = FontStyle.Italic,
-                fontWeight = FontWeight.SemiBold,
                 textDecoration = TextDecoration.Underline,
             )
         ) {
-            append(LicenseType.ApacheV2.url)
+            append(link)
         }
 
         append(paragraph2)
 
-
         addUrlAnnotation(
-            urlAnnotation = UrlAnnotation(LicenseType.ApacheV2.url),
+            urlAnnotation = UrlAnnotation(link),
             start = linkStart,
             end = linkEnd
         )
     }
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    ClickableText(
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        onClick = { offset ->
+            val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
+            urlAnnotations.firstOrNull()?.let {
+                uriHandler.openUri(it.item.url)
+            }
+        },
+        text = annotatedString
+    )
+}
+
+@Composable
+fun FreeBSDLicense(
+    authors: List<String> = emptyList(),
+    year: Int? = null,
+    yearInterval: IntRange? = null,
+    beforeTitle: String = "",
+    afterTitle: String = "",
+) {
+    val copyrightYearString = if (yearInterval != null) {
+        "${yearInterval.first}-${yearInterval.last}"
+    } else year?.toString() ?: ""
+
+    val title = beforeTitle + "Copyright (c) $copyrightYearString ${authors.joinToString(",")}"
+        .replace("\\s+".toRegex(), " ") + afterTitle
+    val paragraph = "\n" +
+            "\n" +
+            "Redistribution and use in source and binary forms, with or without modification," +
+            " are permitted provided that the following conditions are met:\n" +
+            "\n" +
+            "Redistributions of source code must retain the above copyright notice," +
+            " this list of conditions and the following disclaimer.\n" +
+            "Redistributions in binary form must reproduce the above copyright notice," +
+            " this list of conditions and the following disclaimer in the documentation" +
+            " and/or other materials provided with the distribution.\n" +
+            "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS" +
+            " \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO," +
+            " THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE" +
+            " ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE" +
+            " FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL" +
+            " DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR" +
+            " SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER" +
+            " CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY," +
+            " OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE" +
+            " OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n"
+
+    val annotatedString = buildAnnotatedString {
+        // Title
+        withStyle(
+            style = SpanStyle(
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.SemiBold,
+            )
+        ) {
+            append(title)
+        }
+
+        // Paragraph
+        append(paragraph)
+    }
+
+    Text(
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        text = annotatedString
+    )
+}
+
+@Composable
+fun EclipsePublicLicense() {
+    val title = LicenseType.EclipsePublicLicenseV2.licenseName + "\n\n"
+    val description = LicenseType.EclipsePublicLicenseV2.description
+
+    val annotatedString = buildAnnotatedString {
+        // Title
+        withStyle(
+            style = SpanStyle(
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.SemiBold,
+            )
+        ) {
+            append(title)
+        }
+
+        // Paragraph
+        append(description)
+    }
+
+    Text(
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        text = annotatedString
+    )
+}
+
+@Composable
+fun GPLV2License(
+    authors: List<String> = emptyList(),
+    year: Int? = null,
+    yearInterval: IntRange? = null,
+    beforeTitle: String = "",
+    afterTitle: String = "",
+) {
+    val copyrightYearString = if (yearInterval != null) {
+        "${yearInterval.first}-${yearInterval.last}"
+    } else year?.toString() ?: ""
+
+    val title = beforeTitle + "Copyright (C) $copyrightYearString ${authors.joinToString(",")}"
+        .replace("\\s+".toRegex(), " ") + afterTitle
+    val paragraph = LicenseType.GPLV2.description
+
+    val annotatedString = buildAnnotatedString {
+        // Title
+        withStyle(
+            style = SpanStyle(
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.SemiBold,
+            )
+        ) {
+            append(title)
+        }
+
+        // Paragraph
+        append(paragraph)
+    }
+
+    Text(
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        text = annotatedString
+    )
+}
+
+@OptIn(ExperimentalTextApi::class)
+@Composable
+fun GPLV3License(
+    authors: List<String> = emptyList(),
+    year: Int? = null,
+    yearInterval: IntRange? = null,
+    beforeTitle: String = "",
+    afterTitle: String = "",
+) {
+    val copyrightYearString = if (yearInterval != null) {
+        "${yearInterval.first}-${yearInterval.last}"
+    } else year?.toString() ?: ""
+
+    val title = beforeTitle + "Copyright (C) $copyrightYearString ${authors.joinToString(",")}"
+        .replace("\\s+".toRegex(), " ") + afterTitle
+    val paragraph = LicenseType.GPLV3.description
+    val link = LicenseType.GPLV3.url
+    val linkStart = title.length + paragraph.indexOf(link)
+    val linkEnd = linkStart + link.length
+
+    val uriHandler = LocalUriHandler.current
+    val annotatedString = buildAnnotatedString {
+        // Title
+        withStyle(
+            style = SpanStyle(
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.SemiBold,
+            )
+        ) {
+            append(title)
+        }
+
+        // Paragraph
+        append(paragraph)
+
+        // Stylize link
+        addStyle(
+            style = SpanStyle(
+                fontStyle = FontStyle.Italic,
+                textDecoration = TextDecoration.Underline,
+            ),
+            linkStart,
+            linkEnd
+        )
+
+        addUrlAnnotation(
+            urlAnnotation = UrlAnnotation(link),
+            start = linkStart,
+            end = linkEnd
+        )
+    }
+
+    ClickableText(
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        onClick = { offset ->
+            val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
+            urlAnnotations.firstOrNull()?.let {
+                uriHandler.openUri(it.item.url)
+            }
+        },
+        text = annotatedString
+    )
+}
+
+@OptIn(ExperimentalTextApi::class)
+@Composable
+fun JayGPLV3License(
+    authors: List<String> = emptyList(),
+    year: Int? = null,
+    yearInterval: IntRange? = null,
+    beforeTitle: String = "",
+    afterTitle: String = "",
+) {
+    val copyrightYearString = if (yearInterval != null) {
+        "${yearInterval.first}-${yearInterval.last}"
+    } else year?.toString() ?: ""
+
+    val title = beforeTitle + "Copyright (C) $copyrightYearString ${authors.joinToString(",")}"
+        .replace("\\s+".toRegex(), " ") + afterTitle
+    val paragraph = LicenseType.GPLV3.description
+    val link = LicenseType.GPLV3.url
+    val linkStart = title.length + paragraph.indexOf(link)
+    val linkEnd = linkStart + link.length
+
+    val uriHandler = LocalUriHandler.current
+    val annotatedString = buildAnnotatedString {
+        // Title
+        withStyle(
+            style = SpanStyle(
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.SemiBold,
+            )
+        ) {
+            append(title)
+        }
+
+        // Paragraph
+        append(paragraph)
+
+        // Stylize link
+        addStyle(
+            style = SpanStyle(
+                fontStyle = FontStyle.Italic,
+                textDecoration = TextDecoration.Underline,
+            ),
+            linkStart,
+            linkEnd
+        )
+
+        addUrlAnnotation(
+            urlAnnotation = UrlAnnotation(link),
+            start = linkStart,
+            end = linkEnd
+        )
+    }
+
+    Column {
         ClickableText(
             style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
             onClick = { offset ->

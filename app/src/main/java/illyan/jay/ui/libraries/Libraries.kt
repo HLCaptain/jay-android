@@ -18,7 +18,7 @@
 
 package illyan.jay.ui.libraries
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -33,11 +34,11 @@ import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -53,17 +54,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
-import illyan.jay.domain.model.libraries.Library
-import illyan.jay.domain.model.libraries.License
-import illyan.jay.domain.model.libraries.LicenseType
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.LibraryDialogScreenDestination
 import illyan.jay.ui.libraries.model.UiLibrary
-import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.search.DividerThickness
 import illyan.jay.ui.theme.JayTheme
 
 @ProfileNavGraph
@@ -95,7 +92,7 @@ fun LibrariesDialogContent(
                 libraries = libraries,
                 onSelectLibrary = onSelectLibrary,
             )
-        }
+        },
     )
 }
 
@@ -114,31 +111,28 @@ fun LibrariesScreen(
     libraries: List<UiLibrary> = emptyList(),
     onSelectLibrary: (UiLibrary) -> Unit = {},
 ) {
+    val lazyListState = rememberLazyListState()
+    val verticalContentPadding = 12.dp
     LazyColumn(
         modifier = modifier
+            .drawVerticalScrollbar(state = lazyListState)
+            .clip(RoundedCornerShape(verticalContentPadding)),
     ) {
         itemsIndexed(libraries) { index, item ->
-            LibraryItem(
-                modifier = Modifier.padding(vertical = 2.dp),
-                library = item,
-                onClick = { onSelectLibrary(item) }
-            )
-            if (index != libraries.size - 1) {
-                Divider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 36.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = DividerThickness,
-                                bottomStart = DividerThickness,
-                                topEnd = DividerThickness,
-                                bottomEnd = DividerThickness
-                            )
-                        ),
-                    thickness = DividerThickness * 2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.2f)
+            val cardColors = if (index.mod(2) == 0) {
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                )
+            } else {
+                CardDefaults.cardColors(
+                    containerColor = Color.Transparent
                 )
             }
+            LibraryItem(
+                library = item,
+                onClick = { onSelectLibrary(item) },
+                cardColors = cardColors,
+            )
         }
     }
 }
@@ -196,8 +190,14 @@ fun LibraryItem(
                             style = MaterialTheme.typography.titleSmall,
                             color = AlertDialogDefaults.titleContentColor,
                         )
-                        AnimatedVisibility(visible = library.repositoryUrl != null) {
-                            library.repositoryUrl?.let {
+                        Crossfade(
+                            targetState = library.repositoryUrl to library.moreInfoUrl
+                        ) { repositoryAndMoreInfoUrls ->
+                            val shownText = repositoryAndMoreInfoUrls.run {
+                                // Show Repo URL, then More Info URL, then null
+                                if (first != null) first else if (second != null) second else null
+                            }
+                            shownText?.let {
                                 Text(
                                     text = it,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -215,36 +215,7 @@ fun LibraryItem(
 @PreviewLightDarkTheme
 @Composable
 private fun LibrariesDialogContentPreview() {
-    val libraries = listOf(
-        Library(
-            name = "Compose Scrollbar",
-            license = License(
-                authors = listOf("Balázs Püspök-Kiss (Illyan)"),
-                year = 2023,
-                type = LicenseType.ApacheV2,
-            ),
-            repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar",
-            moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar"
-        ),
-        Library(
-            name = "Plumber",
-            license = License(
-                authors = listOf("Balázs Püspök-Kiss (Illyan)"),
-                year = 2023,
-                type = LicenseType.ApacheV2,
-            ),
-            repositoryUrl = "https://github.com/HLCaptain/plumber"
-        ),
-        Library(
-            name = "swipe",
-            license = License(
-                authors = listOf("Saket Narayan"),
-                year = 2022,
-                type = LicenseType.ApacheV2,
-            ),
-            repositoryUrl = "https://github.com/saket/swipe"
-        )
-    ).map { it.toUiModel() }
+    val libraries = LibrariesViewModel.Libraries
     JayTheme {
         JayDialogContent {
             LibrariesDialogContent(libraries = libraries)

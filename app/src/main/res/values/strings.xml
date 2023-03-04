@@ -103,4 +103,6 @@
     <string name="client_id">Client ID</string>
     <string name="not_syncing">Not syncing</string>
     <string name="syncing">Syncing</string>
+    <string name="missing_license">Missing license</string>
+    <string name="jay_license">Jay License</string>
 </resources>

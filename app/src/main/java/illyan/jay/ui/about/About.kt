@@ -36,9 +36,12 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
+import illyan.jay.ui.destinations.LibraryDialogScreenDestination
+import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileMenuItem
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
@@ -51,14 +54,20 @@ fun AboutDialogScreen(
 ) {
     AboutDialogContent(
         modifier = Modifier.fillMaxWidth(),
-        onNavigateToLibraries = { destinationsNavigator.navigate(LibrariesDialogScreenDestination) }
+        onNavigateToLibraries = {
+            destinationsNavigator.navigate(LibrariesDialogScreenDestination)
+        },
+        onNavigateToJayLicense = {
+            destinationsNavigator.navigate(LibraryDialogScreenDestination(Library.Jay.toUiModel()))
+        }
     )
 }
 
 @Composable
 fun AboutDialogContent(
     modifier: Modifier = Modifier,
-    onNavigateToLibraries: () -> Unit = {}
+    onNavigateToLibraries: () -> Unit = {},
+    onNavigateToJayLicense: () -> Unit = {},
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -66,6 +75,7 @@ fun AboutDialogContent(
         text = {
             AboutScreen(
                 onNavigateToLibraries = onNavigateToLibraries,
+                onNavigateToJayLicense = onNavigateToJayLicense
             )
         },
         buttons = {
@@ -95,13 +105,20 @@ fun AboutTitle() {
 
 @Composable
 fun AboutScreen(
-    onNavigateToLibraries: () -> Unit = {}
+    onNavigateToLibraries: () -> Unit = {},
+    onNavigateToJayLicense: () -> Unit = {}
 ) {
     // TODO: enable ad button on this screen (only showing one ad on this screen)
-    Column {
+    Column(
+        verticalArrangement = Arrangement.spacedBy((-12).dp)
+    ) {
         ProfileMenuItem(
             text = stringResource(id = R.string.libraries),
             onClick = onNavigateToLibraries
+        )
+        ProfileMenuItem(
+            text = stringResource(id = R.string.jay_license),
+            onClick = onNavigateToJayLicense
         )
         Spacer(modifier = Modifier.height(240.dp)) // Fake height
     }
