@@ -184,7 +184,7 @@ enum class LicenseType(
                 " along with this program. If not, see <https://www.gnu.org/licenses/>.",
         url = "https://www.gnu.org/licenses/gpl-3.0.en.html"
     ),
-    Jay_GPLV3(
+    JayGPLV3(
         licenseName = "GNU General Public License v3.0",
         description = /* "Copyright (C) $year $copyrightOwners" */ "\n" +
                 "\n" +

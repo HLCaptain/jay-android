@@ -79,7 +79,7 @@ fun LicenseOfType(
                 beforeTitle = beforeTitle,
                 afterTitle = afterTitle,
             )
-            LicenseType.Jay_GPLV3 -> JayGPLV3License(
+            LicenseType.JayGPLV3 -> JayGPLV3License(
                 authors = authors,
                 year = year,
                 yearInterval = yearInterval,
@@ -315,8 +315,6 @@ fun GPLV3License(
         .replace("\\s+".toRegex(), " ") + afterTitle
     val paragraph = LicenseType.GPLV3.description
     val link = LicenseType.GPLV3.url
-    val linkStart = title.length + paragraph.indexOf(link)
-    val linkEnd = linkStart + link.length
 
     val uriHandler = LocalUriHandler.current
     val annotatedString = buildAnnotatedString {
@@ -379,7 +377,7 @@ fun JayGPLV3License(
 
     val title = beforeTitle + "Copyright (C) $copyrightYearString ${authors.joinToString(",")}"
         .replace("\\s+".toRegex(), " ") + afterTitle
-    val paragraph = LicenseType.Jay_GPLV3.description
+    val paragraph = LicenseType.JayGPLV3.description
 
     val uriHandler = LocalUriHandler.current
     val annotatedString = buildAnnotatedString {

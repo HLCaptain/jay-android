@@ -245,7 +245,7 @@ data class Library(
             name = "Jay",
             license = License(
                 copyrightOwners = listOf("Balázs Püspök-Kiss (Illyan)"),
-                type = LicenseType.Jay_GPLV3,
+                type = LicenseType.JayGPLV3,
             ),
             repositoryUrl = "https://github.com/HLCaptain/jay-android",
             authors = listOf("Balázs Püspök-Kiss (Illyan)")
