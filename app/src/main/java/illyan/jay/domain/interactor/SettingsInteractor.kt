@@ -90,6 +90,23 @@ class SettingsInteractor @Inject constructor(
             }
         }
 
+    var showAds: Boolean?
+        get() = userPreferences.value?.showAds
+        set(value) {
+            Timber.v("ShowAds preference change requested to $value")
+            if (value != null && !isLoading.value) {
+                coroutineScopeIO.launch {
+                    if (authInteractor.isUserSignedIn) {
+                        preferencesDiskDataSource.setShowAds(authInteractor.userUUID!!, value)
+                    } else {
+                        updateAppPreferences {
+                            it.copy(showAds = value)
+                        }
+                    }
+                }
+            }
+        }
+
     var shouldSync: Boolean?
         get() = userPreferences.value?.shouldSync
         set(value) {

@@ -86,6 +86,11 @@ class PreferencesDiskDataSource @Inject constructor(
         preferencesDao.setFreeDriveAutoStart(userUUID, freeDriveAutoStart)
     }
 
+    fun setShowAds(userUUID: String, showAds: Boolean) {
+        logSet("showAds", showAds, userUUID)
+        preferencesDao.setShowAds(userUUID, showAds)
+    }
+
     private fun logSet(name: String, value: Any, userUUID: String) {
         Timber.v("Setting $name to $value for user ${userUUID.take(4)}")
     }

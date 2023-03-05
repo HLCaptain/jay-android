@@ -28,6 +28,7 @@ plugins {
     id 'kotlin-parcelize'
     id 'org.jetbrains.kotlin.plugin.serialization'
     id 'com.google.firebase.crashlytics'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
 android {
@@ -211,6 +212,7 @@ dependencies {
     // Google services
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.google.android.gms:play-services-auth:20.4.1'
+    implementation 'com.google.android.gms:play-services-ads:21.5.0'
     implementation 'com.google.maps.android:android-maps-utils:2.4.0'
     implementation 'com.google.maps.android:maps-utils-ktx:3.4.0'
 

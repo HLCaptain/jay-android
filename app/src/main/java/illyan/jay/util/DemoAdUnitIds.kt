@@ -16,23 +16,15 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk.model
+package illyan.jay.util
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import illyan.jay.domain.model.DomainPreferences
-import java.time.ZonedDateTime
-import java.util.UUID
-
-@Entity(
-    tableName = "preferences",
-)
-data class RoomPreferences(
-    @PrimaryKey
-    val userUUID: String = UUID.randomUUID().toString(),
-    val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
-    val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
-    val showAds: Boolean = DomainPreferences.default.showAds,
-    val lastUpdate: Long = ZonedDateTime.now().toInstant().toEpochMilli(),
-    val shouldSync: Boolean = DomainPreferences.default.shouldSync,
-)
+object DemoAdUnitIds {
+    const val AppOpen = "ca-app-pub-3940256099942544/3419835294"
+    const val Banner = "ca-app-pub-3940256099942544/6300978111"
+    const val Interstitial = "ca-app-pub-3940256099942544/1033173712"
+    const val InterstitialVideo = "ca-app-pub-3940256099942544/8691691433"
+    const val Rewarded = "ca-app-pub-3940256099942544/5224354917"
+    const val RewardedInterstitial = "ca-app-pub-3940256099942544/5354046379"
+    const val NativeAdvanced = "ca-app-pub-3940256099942544/2247696110"
+    const val NativeAdvancedVideo = "ca-app-pub-3940256099942544/1044960115"
+}

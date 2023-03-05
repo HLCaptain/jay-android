@@ -96,11 +96,12 @@ fun SettingsDialogScreen(
             .heightIn(max = max(200.dp, screenHeightDp - 256.dp)),
         preferences = preferences,
         arePreferencesSynced = arePreferencesSynced,
-        shouldSyncPreferences = shouldSyncPreferences,
         canSyncPreferences = canSyncPreferences,
+        shouldSyncPreferences = shouldSyncPreferences,
+        onShouldSyncChanged = viewModel::setPreferencesSync,
         setAnalytics = viewModel::setAnalytics,
         setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
-        onShouldSyncChanged = viewModel::setPreferencesSync
+        setAdVisibility = viewModel::setAdVisibility,
     )
 }
 
@@ -114,6 +115,7 @@ fun SettingsDialogContent(
     onShouldSyncChanged: (Boolean) -> Unit = {},
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
+    setAdVisibility: (Boolean) -> Unit = {},
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -127,7 +129,8 @@ fun SettingsDialogContent(
             SettingsScreen(
                 preferences = preferences,
                 setAnalytics = setAnalytics,
-                setFreeDriveAutoStart = setFreeDriveAutoStart
+                setFreeDriveAutoStart = setFreeDriveAutoStart,
+                setAdVisibility = setAdVisibility
             )
         },
         buttons = {
@@ -341,6 +344,7 @@ fun SettingsScreen(
     preferences: UiPreferences? = null,
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
+    setAdVisibility: (Boolean) -> Unit = {},
 ) {
     Crossfade(targetState = preferences != null) {
         if (it && preferences != null) {
@@ -348,11 +352,15 @@ fun SettingsScreen(
                 item {
                     AnalyticsSetting(
                         analyticsEnabled = preferences.analyticsEnabled,
-                        setAnalytics = setAnalytics
+                        setAnalytics = setAnalytics,
                     )
                     FreeDriveAutoStartSetting(
                         freeDriveAutoStart = preferences.freeDriveAutoStart,
-                        setFreeDriveAutoStart = setFreeDriveAutoStart
+                        setFreeDriveAutoStart = setFreeDriveAutoStart,
+                    )
+                    ShowAdsSetting(
+                        showAds = preferences.showAds,
+                        setAdVisibility = setAdVisibility,
                     )
                 }
             }
@@ -370,7 +378,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun BooleanSetting(
+fun BooleanSetting(
     value: Boolean,
     setValue: (Boolean) -> Unit,
     settingName: String,
@@ -400,7 +408,7 @@ private fun BooleanSetting(
 }
 
 @Composable
-private fun AnalyticsSetting(
+fun AnalyticsSetting(
     analyticsEnabled: Boolean,
     setAnalytics: (Boolean) -> Unit = {},
 ) {
@@ -412,7 +420,7 @@ private fun AnalyticsSetting(
 }
 
 @Composable
-private fun FreeDriveAutoStartSetting(
+fun FreeDriveAutoStartSetting(
     freeDriveAutoStart: Boolean,
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
 ) {
@@ -422,6 +430,19 @@ private fun FreeDriveAutoStartSetting(
         value = freeDriveAutoStart
     )
 }
+
+@Composable
+fun ShowAdsSetting(
+    showAds: Boolean,
+    setAdVisibility: (Boolean) -> Unit = {},
+) {
+    BooleanSetting(
+        settingName = stringResource(R.string.show_ads),
+        setValue = setAdVisibility,
+        value = showAds
+    )
+}
+
 
 @Composable
 fun SettingItem(

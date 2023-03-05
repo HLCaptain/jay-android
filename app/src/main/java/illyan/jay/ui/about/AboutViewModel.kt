@@ -16,27 +16,28 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.settings.model
+package illyan.jay.ui.about
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.domain.model.DomainPreferences
-import java.time.ZonedDateTime
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
-data class UiPreferences(
-    val userUUID: String? = null,
-    val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
-    val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
-    val showAds: Boolean = DomainPreferences.default.showAds,
-    val lastUpdate: ZonedDateTime = DomainPreferences.default.lastUpdate,
-    val clientUUID: String? = null,
-)
+@HiltViewModel
+class AboutViewModel @Inject constructor(
+    private val settingsInteractor: SettingsInteractor
+) : ViewModel() {
 
-fun DomainPreferences.toUiModel(
-    clientUUID: String? = null
-) = UiPreferences(
-    userUUID = userUUID,
-    analyticsEnabled = analyticsEnabled,
-    freeDriveAutoStart = freeDriveAutoStart,
-    showAds = showAds,
-    lastUpdate = lastUpdate,
-    clientUUID = clientUUID,
-)
+    val showAds = settingsInteractor.userPreferences.map {
+        it?.showAds ?: DomainPreferences.default.showAds
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, DomainPreferences.default.showAds)
+
+    fun setAdVisibility(visible: Boolean) {
+        settingsInteractor.showAds = visible
+    }
+}

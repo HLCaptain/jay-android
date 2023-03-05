@@ -60,4 +60,8 @@ class SettingsViewModel @Inject constructor(
     fun setFreeDriveAutoStart(enabled: Boolean) {
         settingsInteractor.freeDriveAutoStart = enabled
     }
+
+    fun setAdVisibility(visible: Boolean) {
+        settingsInteractor.showAds = visible
+    }
 }

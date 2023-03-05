@@ -28,15 +28,18 @@ data class DomainPreferences(
     val userUUID: String? = null,
     val analyticsEnabled: Boolean = false,
     val freeDriveAutoStart: Boolean = false,
+    val showAds: Boolean = false,
     @Serializable(with = ZonedDateTimeSerializer::class)
     val lastUpdate: ZonedDateTime = ZonedDateTime.now(),
-    val shouldSync: Boolean = false
+    val shouldSync: Boolean = false,
 ) {
     override fun equals(other: Any?): Boolean {
         return if (other != null && other is DomainPreferences) {
-            lastUpdate.toEpochSecond() == other.lastUpdate.toEpochSecond() &&
-                    userUUID == other.userUUID &&
+            userUUID == other.userUUID &&
+                    analyticsEnabled == other.analyticsEnabled &&
                     freeDriveAutoStart == other.freeDriveAutoStart &&
+                    showAds == other.showAds &&
+                    lastUpdate.toEpochSecond() == other.lastUpdate.toEpochSecond() &&
                     shouldSync == other.shouldSync
         } else {
             false
@@ -47,6 +50,7 @@ data class DomainPreferences(
         var result = userUUID?.hashCode() ?: 0
         result = 31 * result + analyticsEnabled.hashCode()
         result = 31 * result + freeDriveAutoStart.hashCode()
+        result = 31 * result + showAds.hashCode()
         result = 31 * result + lastUpdate.toEpochSecond().hashCode()
         result = 31 * result + shouldSync.hashCode()
         return result
