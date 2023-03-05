@@ -167,7 +167,7 @@ enum class LicenseType(
         url = "https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html"
     ),
     GPLV3(
-        licenseName = "GNU General Public License Version 3",
+        licenseName = "GNU General Public License v3.0",
         description = /* "Copyright (C) $year $copyrightOwners" */ "\n" +
                 "\n" +
                 "This program is free software: you can redistribute it and/or modify" +
@@ -182,10 +182,10 @@ enum class LicenseType(
                 "\n" +
                 "You should have received a copy of the GNU General Public License" +
                 " along with this program. If not, see <https://www.gnu.org/licenses/>.",
-        url = "https://www.gnu.org/licenses/"
+        url = "https://www.gnu.org/licenses/gpl-3.0.en.html"
     ),
     Jay_GPLV3(
-        licenseName = "GNU General Public License Version 3",
+        licenseName = "GNU General Public License v3.0",
         description = /* "Copyright (C) $year $copyrightOwners" */ "\n" +
                 "\n" +
                 "Jay is a driver behaviour analytics app.\n" +
@@ -204,6 +204,6 @@ enum class LicenseType(
                 "\n" +
                 "You should have received a copy of the GNU General Public License" +
                 " along with Jay. If not, see <https://www.gnu.org/licenses/>.",
-        url = "https://www.gnu.org/licenses/"
+        url = "https://www.gnu.org/licenses/gpl-3.0.en.html"
     )
 }

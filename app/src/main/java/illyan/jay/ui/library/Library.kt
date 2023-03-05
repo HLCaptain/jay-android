@@ -148,12 +148,13 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     library: UiLibrary
 ) {
-    val verticalContentPadding = 4.dp
-    val horizontalContentPadding = 4.dp
+    val verticalContentPadding = 6.dp
+    val horizontalContentPadding = 6.dp
     val contentPadding = PaddingValues(
         vertical = verticalContentPadding,
         horizontal = horizontalContentPadding
     )
+    // Text's corner touches the circle's edge
     val cornerRadius = (hypot(verticalContentPadding.value, horizontalContentPadding.value) * 2).dp
     val lazyListState = rememberLazyListState()
     LazyColumn(

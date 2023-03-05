@@ -369,7 +369,6 @@ fun SettingsScreen(
     }
 }
 
-
 @Composable
 private fun BooleanSetting(
     value: Boolean,

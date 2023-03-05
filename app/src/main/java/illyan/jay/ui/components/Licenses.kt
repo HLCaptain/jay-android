@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.LicenseType
+import illyan.jay.util.findUrlIntervals
 
 @Composable
 fun LicenseOfType(
@@ -119,8 +120,6 @@ fun ApacheV2License(
             " WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied." +
             " See the License for the specific language governing permissions and" +
             " limitations under the License."
-    val linkStart = (title + paragraph1).length
-    val linkEnd = linkStart + link.length
 
     val uriHandler = LocalUriHandler.current
     val annotatedString = buildAnnotatedString {
@@ -149,11 +148,23 @@ fun ApacheV2License(
 
         append(paragraph2)
 
-        addUrlAnnotation(
-            urlAnnotation = UrlAnnotation(link),
-            start = linkStart,
-            end = linkEnd
-        )
+        val whole = title + paragraph1 + link + paragraph2
+        val urls = whole.findUrlIntervals()
+        urls.forEach {
+            addStyle(
+                style = SpanStyle(
+                    fontStyle = FontStyle.Italic,
+                    textDecoration = TextDecoration.Underline,
+                ),
+                start = it.first,
+                end = it.second,
+            )
+            addUrlAnnotation(
+                urlAnnotation = UrlAnnotation(it.third),
+                start = it.first,
+                end = it.second
+            )
+        }
     }
 
     ClickableText(
@@ -322,21 +333,23 @@ fun GPLV3License(
         // Paragraph
         append(paragraph)
 
-        // Stylize link
-        addStyle(
-            style = SpanStyle(
-                fontStyle = FontStyle.Italic,
-                textDecoration = TextDecoration.Underline,
-            ),
-            linkStart,
-            linkEnd
-        )
-
-        addUrlAnnotation(
-            urlAnnotation = UrlAnnotation(link),
-            start = linkStart,
-            end = linkEnd
-        )
+        val whole = title + paragraph
+        val urls = whole.findUrlIntervals()
+        urls.forEach {
+            addStyle(
+                style = SpanStyle(
+                    fontStyle = FontStyle.Italic,
+                    textDecoration = TextDecoration.Underline,
+                ),
+                start = it.first,
+                end = it.second,
+            )
+            addUrlAnnotation(
+                urlAnnotation = UrlAnnotation(link),
+                start = it.first,
+                end = it.second
+            )
+        }
     }
 
     ClickableText(
@@ -367,9 +380,6 @@ fun JayGPLV3License(
     val title = beforeTitle + "Copyright (C) $copyrightYearString ${authors.joinToString(",")}"
         .replace("\\s+".toRegex(), " ") + afterTitle
     val paragraph = LicenseType.Jay_GPLV3.description
-    val link = LicenseType.Jay_GPLV3.url
-    val linkStart = title.length + paragraph.indexOf(link)
-    val linkEnd = linkStart + link.length
 
     val uriHandler = LocalUriHandler.current
     val annotatedString = buildAnnotatedString {
@@ -386,21 +396,23 @@ fun JayGPLV3License(
         // Paragraph
         append(paragraph)
 
-        // Stylize link
-        addStyle(
-            style = SpanStyle(
-                fontStyle = FontStyle.Italic,
-                textDecoration = TextDecoration.Underline,
-            ),
-            linkStart,
-            linkEnd
-        )
-
-        addUrlAnnotation(
-            urlAnnotation = UrlAnnotation(link),
-            start = linkStart,
-            end = linkEnd
-        )
+        val whole = title + paragraph
+        val urls = whole.findUrlIntervals()
+        urls.forEach {
+            addStyle(
+                style = SpanStyle(
+                    fontStyle = FontStyle.Italic,
+                    textDecoration = TextDecoration.Underline,
+                ),
+                start = it.first,
+                end = it.second,
+            )
+            addUrlAnnotation(
+                urlAnnotation = UrlAnnotation(it.third),
+                start = it.first,
+                end = it.second
+            )
+        }
     }
 
     Column {
