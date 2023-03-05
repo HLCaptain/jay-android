@@ -22,6 +22,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ChainStyle
@@ -84,8 +86,10 @@ fun LibrariesDialogContent(
     libraries: List<UiLibrary> = emptyList(),
     onSelectLibrary: (UiLibrary) -> Unit = {},
 ) {
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
     JayDialogContent(
         modifier = modifier,
+        textModifier = Modifier.heightIn(max = (screenHeightDp * 0.55f).dp),
         title = { LibrariesTitle() },
         text = {
             LibrariesScreen(

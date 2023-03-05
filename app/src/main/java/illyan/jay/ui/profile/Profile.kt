@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -148,16 +147,14 @@ fun ProfileDialog(
             }
         }
         AlertDialog(
-            modifier = Modifier
-                .widthIn(max = screenWidthDp - 64.dp)
-                .heightIn(max = (screenHeightDp.value * 0.66f).dp),
+            modifier = Modifier.widthIn(max = screenWidthDp - 64.dp),
             properties = DialogProperties(
                 usePlatformDefaultWidth = false
             ),
             onDismissRequest = onDismissRequest,
         ) {
             JayDialogContent(
-                surface = { JayDialogSurface(content = it) }
+                surface = { JayDialogSurface(content = it) },
             ) {
                 CompositionLocalProvider(
                     LocalDialogDismissRequest provides onDismissRequest,

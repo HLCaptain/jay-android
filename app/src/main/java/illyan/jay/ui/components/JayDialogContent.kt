@@ -22,6 +22,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.LocalContentColor
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -43,6 +45,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun JayDialogContent(
     modifier: Modifier = Modifier,
+    textModifier: Modifier = Modifier.heightIn(max = (LocalConfiguration.current.screenHeightDp * 0.66f).dp),
     icon: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
@@ -115,7 +118,7 @@ fun JayDialogContent(
                         val textStyle = MaterialTheme.typography.bodyMedium
                         ProvideTextStyle(textStyle) {
                             Box(
-                                Modifier
+                                textModifier
                                     .weight(weight = 1f, fill = false)
                                     .padding(textPaddingValues)
                                     .align(Alignment.Start)

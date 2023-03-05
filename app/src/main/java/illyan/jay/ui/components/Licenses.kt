@@ -201,7 +201,7 @@ fun FreeBSDLicense(
             " SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER" +
             " CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY," +
             " OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE" +
-            " OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n"
+            " OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
 
     val annotatedString = buildAnnotatedString {
         // Title
@@ -366,8 +366,8 @@ fun JayGPLV3License(
 
     val title = beforeTitle + "Copyright (C) $copyrightYearString ${authors.joinToString(",")}"
         .replace("\\s+".toRegex(), " ") + afterTitle
-    val paragraph = LicenseType.GPLV3.description
-    val link = LicenseType.GPLV3.url
+    val paragraph = LicenseType.Jay_GPLV3.description
+    val link = LicenseType.Jay_GPLV3.url
     val linkStart = title.length + paragraph.indexOf(link)
     val linkEnd = linkStart + link.length
 

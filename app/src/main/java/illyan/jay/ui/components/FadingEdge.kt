@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.Dp
 import kotlin.math.abs
 
 // Source: https://gist.github.com/dovahkiin98/85acb72ab0c4ddfc6b53413c955bcd10
+// FIXME: fix fading edge implementation and maybe make a library about it
 
 fun Modifier.horizontalFadingEdge(
     scrollState: ScrollState,

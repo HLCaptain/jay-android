@@ -18,13 +18,14 @@
 
 package illyan.jay.ui.library
 
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,13 +39,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -59,6 +61,7 @@ import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
+import kotlin.math.hypot
 
 @ProfileNavGraph
 @Destination
@@ -74,8 +77,10 @@ fun LibraryDialogContent(
     modifier: Modifier = Modifier,
     library: UiLibrary,
 ) {
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
     JayDialogContent(
         modifier = modifier,
+        textModifier = Modifier.heightIn(max = (screenHeightDp * 0.5f).dp),
         title = {
             LibraryTitle(
                 name = library.name,
@@ -89,12 +94,12 @@ fun LibraryDialogContent(
         buttons = {
             LibraryButtons(
                 modifier = Modifier.fillMaxWidth(),
-                moreInfoUri = if (library.moreInfoUrl != null) Uri.parse(library.moreInfoUrl) else null,
-                repositoryUri = if (library.repositoryUrl != null) Uri.parse(library.repositoryUrl) else null,
+                moreInfoUri = library.moreInfoUrl,
+                repositoryUri = library.repositoryUrl,
             )
         },
-        titlePaddingValues = PaddingValues(),
-        textPaddingValues = PaddingValues(),
+        titlePaddingValues = PaddingValues(bottom = 4.dp),
+        textPaddingValues = PaddingValues(bottom = 4.dp),
     )
 }
 
@@ -143,27 +148,29 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     library: UiLibrary
 ) {
-    val backgroundColor = AlertDialogDefaults.containerColor
-    val verticalContentPadding = 16.dp
+    val verticalContentPadding = 4.dp
+    val horizontalContentPadding = 4.dp
+    val contentPadding = PaddingValues(
+        vertical = verticalContentPadding,
+        horizontal = horizontalContentPadding
+    )
+    val cornerRadius = (hypot(verticalContentPadding.value, horizontalContentPadding.value) * 2).dp
     val lazyListState = rememberLazyListState()
-    Surface(
-        color = backgroundColor
+    LazyColumn(
+        modifier = modifier
+            .drawVerticalScrollbar(lazyListState)
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)),
+        state = lazyListState,
+        contentPadding = contentPadding,
     ) {
-        LazyColumn(
-            modifier = modifier
-                .drawVerticalScrollbar(lazyListState)
-                .clip(RoundedCornerShape(verticalContentPadding)),
-            state = lazyListState,
-            contentPadding = PaddingValues(vertical = verticalContentPadding),
-        ) {
-            item {
-                LicenseOfType(
-                    type = library.license?.type,
-                    authors = library.license?.authors ?: emptyList(),
-                    year = library.license?.year,
-                    yearInterval = library.license?.yearInterval
-                )
-            }
+        item {
+            LicenseOfType(
+                type = library.license?.type,
+                authors = library.license?.authors ?: emptyList(),
+                year = library.license?.year,
+                yearInterval = library.license?.yearInterval
+            )
         }
     }
 }
@@ -171,8 +178,8 @@ fun LibraryScreen(
 @Composable
 fun LibraryButtons(
     modifier: Modifier = Modifier,
-    moreInfoUri: Uri? = null,
-    repositoryUri: Uri? = null,
+    moreInfoUri: String? = null,
+    repositoryUri: String? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     Row(
