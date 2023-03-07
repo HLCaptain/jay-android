@@ -19,22 +19,9 @@
 package illyan.jay.ui.profile
 
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -43,22 +30,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,18 +64,13 @@ import com.ramcosta.composedestinations.utils.startDestination
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
-import illyan.jay.ui.components.AvatarAsyncImage
-import illyan.jay.ui.components.CopiedToKeyboardTooltip
-import illyan.jay.ui.components.JayDialogContent
-import illyan.jay.ui.components.JayDialogSurface
-import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.components.TooltipElevatedCard
+import illyan.jay.ui.components.*
 import illyan.jay.ui.destinations.AboutDialogScreenDestination
 import illyan.jay.ui.destinations.LoginDialogScreenDestination
 import illyan.jay.ui.destinations.SettingsDialogScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.theme.JayTheme
-import java.util.UUID
+import java.util.*
 
 @RootNavGraph
 @NavGraph
@@ -160,12 +128,24 @@ fun ProfileDialog(
                     LocalDialogDismissRequest provides onDismissRequest,
                     LocalDialogActivityProvider provides context as MainActivity
                 ) {
-                    DestinationsNavHost(
-                        modifier = Modifier.fillMaxWidth(),
-                        navGraph = NavGraphs.profile,
-                        engine = engine,
-                        navController = navController,
-                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val backstack by navController.currentBackStack.collectAsStateWithLifecycle()
+                        val elements = backstack.map { it.destination.label.toString() }
+                        ProvideTextStyle(MaterialTheme.typography.headlineSmall) {
+                            Breadcrumb(
+                                modifier = Modifier.padding(16.dp),
+                                elements = elements,
+                            )
+                        }
+                        DestinationsNavHost(
+                            modifier = Modifier.fillMaxWidth(),
+                            navGraph = NavGraphs.profile,
+                            engine = engine,
+                            navController = navController,
+                        )
+                    }
                 }
             }
         }

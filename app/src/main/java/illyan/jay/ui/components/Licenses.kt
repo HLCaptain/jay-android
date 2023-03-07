@@ -18,12 +18,20 @@
 
 package illyan.jay.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -35,9 +43,40 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.LicenseType
 import illyan.jay.util.findUrlIntervals
+import kotlin.math.hypot
+
+@Composable
+fun JayTextCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val verticalContentPadding = 6.dp
+    val horizontalContentPadding = 6.dp
+    val contentPadding = PaddingValues(
+        vertical = verticalContentPadding,
+        horizontal = horizontalContentPadding
+    )
+    // Text's corner touches the circle's edge
+    val cornerRadius = (hypot(verticalContentPadding.value, horizontalContentPadding.value) * 2).dp
+    val lazyListState = rememberLazyListState()
+    LazyColumn(
+        modifier = modifier
+            .drawVerticalScrollbar(lazyListState)
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)),
+        state = lazyListState,
+        contentPadding = contentPadding,
+    ) {
+        item {
+            content()
+        }
+    }
+}
 
 @Composable
 fun LicenseOfType(

@@ -19,23 +19,12 @@
 package illyan.jay.ui.about
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.VolunteerActivism
-import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -86,6 +75,9 @@ fun AboutDialogScreen(
         },
         onNavigateToJayLicense = {
             destinationsNavigator.navigate(LibraryDialogScreenDestination(Library.Jay.toUiModel()))
+        },
+        onNavigateToPrivacyPolicy = {
+            destinationsNavigator
         }
     )
 }
@@ -97,6 +89,7 @@ fun AboutDialogContent(
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
     onNavigateToJayLicense: () -> Unit = {},
+    onNavigateToPrivacyPolicy: () -> Unit = {},
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -106,7 +99,8 @@ fun AboutDialogContent(
                 isShowingAd = isShowingAd,
                 setAdVisibility = setAdVisibility,
                 onNavigateToLibraries = onNavigateToLibraries,
-                onNavigateToJayLicense = onNavigateToJayLicense
+                onNavigateToJayLicense = onNavigateToJayLicense,
+                onNavigateToPrivacyPolicy = onNavigateToPrivacyPolicy,
             )
         },
         buttons = {
@@ -139,18 +133,23 @@ fun AboutScreen(
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
     onNavigateToJayLicense: () -> Unit = {},
+    onNavigateToPrivacyPolicy: () -> Unit = {},
 ) {
     Column {
         Column(
             verticalArrangement = Arrangement.spacedBy((-12).dp)
         ) {
             ProfileMenuItem(
-                text = stringResource(id = R.string.libraries),
+                text = stringResource(R.string.libraries),
                 onClick = onNavigateToLibraries
             )
             ProfileMenuItem(
-                text = stringResource(id = R.string.jay_license),
+                text = stringResource(R.string.jay_license),
                 onClick = onNavigateToJayLicense
+            )
+            ProfileMenuItem(
+                text = stringResource(R.string.privacy_policy),
+                onClick = onNavigateToPrivacyPolicy
             )
         }
         // TODO: show main developers
@@ -211,7 +210,7 @@ fun AboutButtons() {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(imageVector = Icons.Rounded.VolunteerActivism, contentDescription = "")
+                Icon(imageVector = Icons.Rounded.Favorite, contentDescription = "")
                 Text(text = stringResource(R.string.support_jay))
             }
         }

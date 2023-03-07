@@ -387,7 +387,8 @@ fun BooleanSetting(
 ) {
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
-        name = settingName
+        name = settingName,
+        onClick = { setValue(!value) }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -444,19 +445,31 @@ fun ShowAdsSetting(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingItem(
     modifier: Modifier = Modifier,
     name: String,
+    onClick: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
-    Row(
+    Card(
         modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        onClick = onClick
     ) {
-        Text(text = name)
-        content()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = name)
+            content()
+        }
     }
 }
 

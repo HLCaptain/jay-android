@@ -19,49 +19,28 @@
 package illyan.jay.ui.library
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ramcosta.composedestinations.annotation.Destination
-import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.JayTextCard
 import illyan.jay.ui.components.LicenseOfType
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
-import kotlin.math.hypot
 
 @ProfileNavGraph
 @Destination
@@ -148,31 +127,16 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     library: UiLibrary
 ) {
-    val verticalContentPadding = 6.dp
-    val horizontalContentPadding = 6.dp
-    val contentPadding = PaddingValues(
-        vertical = verticalContentPadding,
-        horizontal = horizontalContentPadding
-    )
-    // Text's corner touches the circle's edge
-    val cornerRadius = (hypot(verticalContentPadding.value, horizontalContentPadding.value) * 2).dp
-    val lazyListState = rememberLazyListState()
-    LazyColumn(
+    JayTextCard(
         modifier = modifier
-            .drawVerticalScrollbar(lazyListState)
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)),
-        state = lazyListState,
-        contentPadding = contentPadding,
     ) {
-        item {
-            LicenseOfType(
-                type = library.license?.type,
-                authors = library.license?.authors ?: emptyList(),
-                year = library.license?.year,
-                yearInterval = library.license?.yearInterval
-            )
-        }
+        // TODO: change license text to button pointing to the exact license of the used library
+        LicenseOfType(
+            type = library.license?.type,
+            authors = library.license?.authors ?: emptyList(),
+            year = library.license?.year,
+            yearInterval = library.license?.yearInterval
+        )
     }
 }
 

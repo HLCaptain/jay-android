@@ -59,7 +59,8 @@ class LibrariesViewModel @Inject constructor(
                 GooglePlayServicesLibrary,
                 FirebaseAndroidSDKLibrary,
                 JUnit5Library,
-                MockKLibrary
+                MockKLibrary,
+                GradleSecretsLibrary
             ).map { it.toUiModel() }.sortedBy { it.name.lowercase() }
         }
     }

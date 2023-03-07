@@ -241,6 +241,17 @@ data class Library(
             repositoryUrl = "https://github.com/mockk/mockk",
             authors = listOf("github.com/mockk"),
         )
+        val GradleSecretsLibrary = Library(
+            name = "Secrets Gradle Plugin for Android",
+            license = License(
+                copyrightOwners = listOf("Google"),
+                year = ZonedDateTime.now().year,
+                type = LicenseType.ApacheV2,
+            ),
+            moreInfoUrl = "https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin",
+            repositoryUrl = "https://github.com/google/secrets-gradle-plugin",
+            authors = listOf("Google"),
+        )
         val Jay = Library(
             name = "Jay",
             license = License(
