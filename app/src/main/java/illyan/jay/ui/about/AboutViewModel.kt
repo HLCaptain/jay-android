@@ -16,50 +16,32 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.settings
+package illyan.jay.ui.about
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.ktx.get
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
-import illyan.jay.ui.settings.model.toUiModel
+import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.util.FirebaseRemoteConfigKeys
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class AboutViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
-    private val authInteractor: AuthInteractor
+    private val remoteConfig: FirebaseRemoteConfig,
 ) : ViewModel() {
-    val userPreferences = combine(
-        settingsInteractor.userPreferences,
-        settingsInteractor.appSettingsFlow
-    ) { preferences, appSettings ->
-        preferences?.toUiModel(appSettings.clientUUID)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val arePreferencesSynced = settingsInteractor.arePreferencesSynced
+    val showAds = settingsInteractor.userPreferences.map {
+        it?.showAds ?: DomainPreferences.Default.showAds
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, DomainPreferences.Default.showAds)
 
-    val isUserSignedIn = authInteractor.isUserSignedInStateFlow
-
-    val shouldSyncPreferences = settingsInteractor.shouldSyncPreferences
-
-    val canSyncPreferences = settingsInteractor.canSyncPreferences
-
-    fun setPreferencesSync(shouldSync: Boolean) {
-        settingsInteractor.shouldSync = shouldSync
-    }
-
-    fun setAnalytics(enabled: Boolean) {
-        settingsInteractor.analyticsEnabled = enabled
-    }
-
-    fun setFreeDriveAutoStart(enabled: Boolean) {
-        settingsInteractor.freeDriveAutoStart = enabled
-    }
+    val aboutBannerAdUnitId = remoteConfig[FirebaseRemoteConfigKeys.BannerOnAboutScreenAdUnitIdKey].asString()
 
     fun setAdVisibility(visible: Boolean) {
         settingsInteractor.showAds = visible

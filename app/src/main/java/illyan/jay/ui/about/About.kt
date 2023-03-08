@@ -18,59 +18,96 @@
 
 package illyan.jay.ui.about
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.VolunteerActivism
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.BuildConfig
 import illyan.jay.R
+import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
 import illyan.jay.ui.profile.ProfileMenuItem
 import illyan.jay.ui.profile.ProfileNavGraph
+import illyan.jay.ui.settings.ShowAdsSetting
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.signaturePink
+import illyan.jay.util.TestAdUnitIds
 
 @ProfileNavGraph
 @Destination
 @Composable
 fun AboutDialogScreen(
+    viewModel: AboutViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
+    val showAds by viewModel.showAds.collectAsStateWithLifecycle()
     AboutDialogContent(
         modifier = Modifier.fillMaxWidth(),
-        onNavigateToLibraries = { destinationsNavigator.navigate(LibrariesDialogScreenDestination) }
+        isShowingAd = showAds,
+        aboutBannerAdUnitId = viewModel.aboutBannerAdUnitId,
+        setAdVisibility = viewModel::setAdVisibility,
+        onNavigateToLibraries = {
+            destinationsNavigator.navigate(LibrariesDialogScreenDestination)
+        }
     )
 }
 
 @Composable
 fun AboutDialogContent(
     modifier: Modifier = Modifier,
-    onNavigateToLibraries: () -> Unit = {}
+    isShowingAd: Boolean = false,
+    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
+    setAdVisibility: (Boolean) -> Unit = {},
+    onNavigateToLibraries: () -> Unit = {},
 ) {
     JayDialogContent(
         modifier = modifier,
         title = { AboutTitle() },
         text = {
             AboutScreen(
+                isShowingAd = isShowingAd,
+                setAdVisibility = setAdVisibility,
                 onNavigateToLibraries = onNavigateToLibraries,
+                aboutBannerAdUnitId = aboutBannerAdUnitId,
             )
         },
         buttons = {
-            // TODO: Support the project
-            // TODO: Dismiss dialog (Cancel)
+            AboutButtons()
         },
         containerColor = Color.Transparent,
     )
@@ -82,11 +119,11 @@ fun AboutTitle() {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(text = stringResource(id = R.string.about))
-            Text(text = stringResource(id = R.string.app_name))
+            Text(text = stringResource(R.string.about))
+            Text(text = stringResource(R.string.app_name))
         }
         Text(
-            text = stringResource(id = R.string.app_description_brief),
+            text = stringResource(R.string.app_description_brief),
             style = MaterialTheme.typography.bodySmall,
             color = AlertDialogDefaults.textContentColor
         )
@@ -95,15 +132,163 @@ fun AboutTitle() {
 
 @Composable
 fun AboutScreen(
-    onNavigateToLibraries: () -> Unit = {}
+    isShowingAd: Boolean = false,
+    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
+    setAdVisibility: (Boolean) -> Unit = {},
+    onNavigateToLibraries: () -> Unit = {},
 ) {
-    // TODO: enable ad button on this screen (only showing one ad on this screen)
+    val uriHandler = LocalUriHandler.current
     Column {
-        ProfileMenuItem(
-            text = stringResource(id = R.string.libraries),
-            onClick = onNavigateToLibraries
+        Column(
+            verticalArrangement = Arrangement.spacedBy((-12).dp)
+        ) {
+            ProfileMenuItem(
+                text = stringResource(R.string.libraries),
+                onClick = onNavigateToLibraries
+            )
+            AnimatedVisibility(visible = Library.Jay.license?.url != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.jay_license),
+                    onClick = { Library.Jay.license?.url?.let { uriHandler.openUri(it) } }
+                )
+            }
+            AnimatedVisibility(visible = Library.Jay.privacyPolicyUrl != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.privacy_policy),
+                    onClick = { Library.Jay.privacyPolicyUrl?.let { uriHandler.openUri(it) } }
+                )
+            }
+            AnimatedVisibility(visible = Library.Jay.termsAndConditionsUrl != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.terms_and_conditions),
+                    onClick = { Library.Jay.termsAndConditionsUrl?.let { uriHandler.openUri(it) } }
+                )
+            }
+        }
+        // TODO: show main developers
+        // Place new sections here
+        DonationScreen(
+            isShowingAd = isShowingAd,
+            setAdVisibility = setAdVisibility,
+            aboutBannerAdUnitId = aboutBannerAdUnitId
         )
-        Spacer(modifier = Modifier.height(240.dp)) // Fake height
+    }
+}
+
+@Composable
+fun DonationScreen(
+    modifier: Modifier = Modifier,
+    isShowingAd: Boolean = false,
+    setAdVisibility: (Boolean) -> Unit = {},
+    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
+) {
+    Column(
+        modifier = modifier
+    ) {
+        AboutAdSetting(
+            modifier = Modifier.fillMaxWidth(),
+            isShowingAd = isShowingAd,
+            setAdVisibility = setAdVisibility,
+        )
+        AboutAdScreen(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            isShowingAd = isShowingAd,
+            adUnitId = aboutBannerAdUnitId
+        )
+    }
+}
+
+@Composable
+fun AboutButtons() {
+    val uriHandler = LocalUriHandler.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Column {
+            Text(
+                text = "${BuildConfig.VERSION_NAME} v${BuildConfig.VERSION_CODE}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Button(
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.signaturePink
+            ),
+            onClick = {
+                // FIXME: change link to a real support link
+                uriHandler.openUri("https://github.com/HLCaptain/jay-android")
+            }
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(imageVector = Icons.Rounded.Favorite, contentDescription = "")
+                Text(text = stringResource(R.string.support_jay))
+            }
+        }
+    }
+}
+
+@Composable
+fun AboutAdSetting(
+    modifier: Modifier = Modifier,
+    isShowingAd: Boolean = false,
+    setAdVisibility: (Boolean) -> Unit = {},
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        ShowAdsSetting(
+            showAds = isShowingAd,
+            setAdVisibility = setAdVisibility
+        )
+        AnimatedVisibility(visible = isShowingAd) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(imageVector = Icons.Rounded.VolunteerActivism, contentDescription = "")
+                    Text(text = stringResource(id = R.string.support_jay_with_ad_description))
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AboutAdScreen(
+    modifier: Modifier = Modifier,
+    isShowingAd: Boolean = false,
+    adUnitId: String = TestAdUnitIds.Banner,
+) {
+    AnimatedVisibility(
+        modifier = modifier
+            .padding(6.dp)
+            .clip(RoundedCornerShape(6.dp)),
+        visible = isShowingAd
+    ) {
+        AndroidView(
+            modifier = Modifier.heightIn(min = AdSize.BANNER.height.dp),
+            factory = { context ->
+                AdView(context).apply {
+                    setAdSize(AdSize.BANNER)
+                    this.adUnitId = adUnitId
+                    loadAd(AdRequest.Builder().build())
+                }
+            }
+        )
     }
 }
 

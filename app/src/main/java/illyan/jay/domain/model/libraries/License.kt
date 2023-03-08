@@ -16,17 +16,23 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.model
+package illyan.jay.domain.model.libraries
 
-import android.os.Parcel
-import com.google.firebase.firestore.GeoPoint
-import kotlinx.parcelize.Parceler
+import android.os.Parcelable
+import illyan.jay.data.serializers.YearIntervalParceler
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.TypeParceler
 
-object GeoPointParceler : Parceler<GeoPoint> {
-    override fun create(parcel: Parcel) = GeoPoint(parcel.readDouble(), parcel.readDouble())
-
-    override fun GeoPoint.write(parcel: Parcel, flags: Int) {
-        parcel.writeDouble(latitude)
-        parcel.writeDouble(longitude)
-    }
-}
+@Parcelize
+@TypeParceler<IntRange?, YearIntervalParceler>
+data class License(
+    val type: LicenseType? = null,
+    val name: String? = type?.licenseName,
+    val url: String? = null,
+    val beforeTitle: String = "",
+    val afterTitle: String = "",
+    val description: String? = type?.description,
+    val copyrightOwners: List<String> = emptyList(),
+    val year: Int? = null,
+    val yearInterval: IntRange? = null
+) : Parcelable

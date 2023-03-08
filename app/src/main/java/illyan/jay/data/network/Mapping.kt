@@ -89,6 +89,7 @@ fun FirestoreUserPreferences.toDomainModel(
     userUUID = userUUID,
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
+    showAds = showAds,
     lastUpdate = lastUpdate.toZonedDateTime(),
     shouldSync = true
 )
@@ -96,6 +97,7 @@ fun FirestoreUserPreferences.toDomainModel(
 fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
+    showAds = showAds,
     lastUpdate = lastUpdate.toTimestamp(),
 )
 

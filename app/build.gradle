@@ -28,6 +28,7 @@ plugins {
     id 'kotlin-parcelize'
     id 'org.jetbrains.kotlin.plugin.serialization'
     id 'com.google.firebase.crashlytics'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
 android {
@@ -90,13 +91,6 @@ android {
     testOptions {
         unitTests.returnDefaultValues = true
         animationsDisabled = true
-    }
-    applicationVariants.all { variant ->
-        kotlin.sourceSets {
-            getByName(variant.name) {
-                kotlin.srcDir("build/generated/ksp/${variant.name}/kotlin")
-            }
-        }
     }
     lint {
         // If set to true (default), stops the build if errors are found.
@@ -181,11 +175,6 @@ dependencies {
     // Coil
     implementation "io.coil-kt:coil-compose:2.2.2"
 
-    // Networking
-    implementation 'com.google.code.gson:gson:2.10'
-    implementation "com.squareup.retrofit2:retrofit:2.9.0"
-    implementation "com.squareup.retrofit2:converter-gson:2.9.0"
-
     // Room
     def room_version = '2.5.0'
     implementation "androidx.room:room-ktx:$room_version"
@@ -216,6 +205,7 @@ dependencies {
     // Google services
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.google.android.gms:play-services-auth:20.4.1'
+    implementation 'com.google.android.gms:play-services-ads:21.5.0'
     implementation 'com.google.maps.android:android-maps-utils:2.4.0'
     implementation 'com.google.maps.android:maps-utils-ktx:3.4.0'
 

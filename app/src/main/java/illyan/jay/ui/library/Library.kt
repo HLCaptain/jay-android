@@ -18,30 +18,30 @@
 
 package illyan.jay.ui.library
 
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.ramcosta.composedestinations.annotation.Destination
 import illyan.jay.R
+import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.JayTextCard
+import illyan.jay.ui.components.LicenseOfType
 import illyan.jay.ui.components.PreviewLightDarkTheme
-import illyan.jay.ui.libraries.model.Library
-import illyan.jay.ui.libraries.model.License
+import illyan.jay.ui.libraries.model.UiLibrary
+import illyan.jay.ui.libraries.model.toUiModel
+import illyan.jay.ui.profile.ProfileMenuItem
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -49,7 +49,7 @@ import illyan.jay.ui.theme.JayTheme
 @Destination
 @Composable
 fun LibraryDialogScreen(
-    library: Library
+    library: UiLibrary
 ) {
     LibraryDialogContent(library = library)
 }
@@ -57,14 +57,17 @@ fun LibraryDialogScreen(
 @Composable
 fun LibraryDialogContent(
     modifier: Modifier = Modifier,
-    library: Library,
+    library: UiLibrary,
 ) {
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
     JayDialogContent(
         modifier = modifier,
+        textModifier = Modifier.heightIn(max = (screenHeightDp * 0.5f).dp),
         title = {
             LibraryTitle(
                 name = library.name,
-                licenseType = library.license?.type
+                licenseType = library.license?.name,
+                licenseUrl = library.license?.type?.url
             )
         },
         text = {
@@ -73,17 +76,21 @@ fun LibraryDialogContent(
         buttons = {
             LibraryButtons(
                 modifier = Modifier.fillMaxWidth(),
-                moreInfoUri = if (library.moreInfoUrl != null) Uri.parse(library.moreInfoUrl) else null,
-                repositoryUri = if (library.repositoryUrl != null) Uri.parse(library.repositoryUrl) else null,
+                moreInfoUri = library.moreInfoUrl,
+                repositoryUri = library.repositoryUrl,
             )
-        }
+        },
+        titlePaddingValues = PaddingValues(bottom = 4.dp),
+        textPaddingValues = PaddingValues(bottom = 4.dp),
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryTitle(
     name: String,
-    licenseType: String? = null
+    licenseType: String? = null,
+    licenseUrl: String? = null
 ) {
     Column {
         Text(text = name)
@@ -93,7 +100,7 @@ fun LibraryTitle(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(id = R.string.license),
+                        text = stringResource(R.string.license_type),
                         style = MaterialTheme.typography.titleSmall,
                         color = AlertDialogDefaults.titleContentColor,
                     )
@@ -101,11 +108,17 @@ fun LibraryTitle(
                         imageVector = Icons.Rounded.ChevronRight,
                         contentDescription = ""
                     )
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = AlertDialogDefaults.titleContentColor,
-                    )
+                    val uriHandler = LocalUriHandler.current
+                    OutlinedCard(
+                        onClick = { licenseUrl?.let { uriHandler.openUri(it) }}
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+                            text = it,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = AlertDialogDefaults.titleContentColor,
+                        )
+                    }
                 }
             }
         }
@@ -115,19 +128,40 @@ fun LibraryTitle(
 @Composable
 fun LibraryScreen(
     modifier: Modifier = Modifier,
-    library: Library
+    library: UiLibrary
 ) {
-    Column(
-        modifier = modifier,
-    ) {
-        
-        AnimatedVisibility(visible = library.license?.description != null) {
-            library.license?.description?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AlertDialogDefaults.textContentColor
+    val uriHandler = LocalUriHandler.current
+    Column(modifier = modifier) {
+        AnimatedVisibility(visible = library.privacyPolicyUrl != null) {
+            ProfileMenuItem(
+                text = stringResource(R.string.privacy_policy),
+                onClick = { library.privacyPolicyUrl?.let { uriHandler.openUri(it) } }
+            )
+        }
+        AnimatedVisibility(visible = library.termsAndConditionsUrl != null) {
+            ProfileMenuItem(
+                text = stringResource(R.string.license),
+                onClick = { library.termsAndConditionsUrl?.let { uriHandler.openUri(it) } }
+            )
+        }
+        Crossfade(
+            modifier = Modifier.animateContentSize(),
+            targetState = library.license?.url
+        ) {
+            if (it != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.license),
+                    onClick = { uriHandler.openUri(it) }
                 )
+            } else {
+                JayTextCard {
+                    LicenseOfType(
+                        type = library.license?.type,
+                        authors = library.license?.authors ?: emptyList(),
+                        year = library.license?.year,
+                        yearInterval = library.license?.yearInterval
+                    )
+                }
             }
         }
     }
@@ -136,27 +170,27 @@ fun LibraryScreen(
 @Composable
 fun LibraryButtons(
     modifier: Modifier = Modifier,
-    moreInfoUri: Uri? = null,
-    repositoryUri: Uri? = null,
+    moreInfoUri: String? = null,
+    repositoryUri: String? = null,
 ) {
+    val uriHandler = LocalUriHandler.current
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
         AnimatedVisibility(visible = repositoryUri != null) {
-            repositoryUri?.let {
-                TextButton(onClick = { /* TODO: Open browser with link */ }) {
-                    Text(text = stringResource(id = R.string.repository))
-                }
+            TextButton(
+                onClick = { uriHandler.openUri(repositoryUri.toString()) }
+            ) {
+                Text(text = stringResource(R.string.repository))
             }
         }
-        AnimatedVisibility(visible = moreInfoUri != null) {
-            moreInfoUri?.let {
-                Button(onClick = { /* TODO: Open browser with link */ }) {
-                    Text(text = stringResource(id = R.string.more))
-                }
-            }
+        Button(
+            enabled = moreInfoUri != null,
+            onClick = { uriHandler.openUri(moreInfoUri.toString()) }
+        ) {
+            Text(text = stringResource(R.string.more))
         }
     }
 }
@@ -164,17 +198,11 @@ fun LibraryButtons(
 @PreviewLightDarkTheme
 @Composable
 private fun LibraryDialogContentPreview() {
-    val library = Library(
-        name = "Compose Scrollbar",
-        license = License(
-            type = "Apache v2",
-            description = "Cool license",
-        ),
-        moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
-        repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar"
-    )
+    val library = Library.Jay.toUiModel()
     JayTheme {
-        JayDialogContent {
+        JayDialogContent(
+            modifier = Modifier.width(300.dp)
+        ) {
             LibraryDialogContent(library = library)
         }
     }

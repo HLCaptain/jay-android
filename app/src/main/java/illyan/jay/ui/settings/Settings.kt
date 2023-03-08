@@ -24,9 +24,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -98,11 +96,12 @@ fun SettingsDialogScreen(
             .heightIn(max = max(200.dp, screenHeightDp - 256.dp)),
         preferences = preferences,
         arePreferencesSynced = arePreferencesSynced,
-        shouldSyncPreferences = shouldSyncPreferences,
         canSyncPreferences = canSyncPreferences,
+        shouldSyncPreferences = shouldSyncPreferences,
+        onShouldSyncChanged = viewModel::setPreferencesSync,
         setAnalytics = viewModel::setAnalytics,
         setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
-        onShouldSyncChanged = viewModel::setPreferencesSync
+        setAdVisibility = viewModel::setAdVisibility,
     )
 }
 
@@ -116,6 +115,7 @@ fun SettingsDialogContent(
     onShouldSyncChanged: (Boolean) -> Unit = {},
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
+    setAdVisibility: (Boolean) -> Unit = {},
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -129,7 +129,8 @@ fun SettingsDialogContent(
             SettingsScreen(
                 preferences = preferences,
                 setAnalytics = setAnalytics,
-                setFreeDriveAutoStart = setFreeDriveAutoStart
+                setFreeDriveAutoStart = setFreeDriveAutoStart,
+                setAdVisibility = setAdVisibility
             )
         },
         buttons = {
@@ -343,6 +344,7 @@ fun SettingsScreen(
     preferences: UiPreferences? = null,
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
+    setAdVisibility: (Boolean) -> Unit = {},
 ) {
     Crossfade(targetState = preferences != null) {
         if (it && preferences != null) {
@@ -350,11 +352,15 @@ fun SettingsScreen(
                 item {
                     AnalyticsSetting(
                         analyticsEnabled = preferences.analyticsEnabled,
-                        setAnalytics = setAnalytics
+                        setAnalytics = setAnalytics,
                     )
                     FreeDriveAutoStartSetting(
                         freeDriveAutoStart = preferences.freeDriveAutoStart,
-                        setFreeDriveAutoStart = setFreeDriveAutoStart
+                        setFreeDriveAutoStart = setFreeDriveAutoStart,
+                    )
+                    ShowAdsSetting(
+                        showAds = preferences.showAds,
+                        setAdVisibility = setAdVisibility,
                     )
                 }
             }
@@ -369,13 +375,10 @@ fun SettingsScreen(
             }
         }
     }
-    // TODO: enable ad button on this screen (only showing one ad on this screen)
-    Spacer(modifier = Modifier.height(400.dp)) // Fake height
 }
 
-
 @Composable
-private fun BooleanSetting(
+fun BooleanSetting(
     value: Boolean,
     setValue: (Boolean) -> Unit,
     settingName: String,
@@ -384,7 +387,8 @@ private fun BooleanSetting(
 ) {
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
-        name = settingName
+        name = settingName,
+        onClick = { setValue(!value) }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -405,7 +409,7 @@ private fun BooleanSetting(
 }
 
 @Composable
-private fun AnalyticsSetting(
+fun AnalyticsSetting(
     analyticsEnabled: Boolean,
     setAnalytics: (Boolean) -> Unit = {},
 ) {
@@ -417,7 +421,7 @@ private fun AnalyticsSetting(
 }
 
 @Composable
-private fun FreeDriveAutoStartSetting(
+fun FreeDriveAutoStartSetting(
     freeDriveAutoStart: Boolean,
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
 ) {
@@ -429,18 +433,43 @@ private fun FreeDriveAutoStartSetting(
 }
 
 @Composable
+fun ShowAdsSetting(
+    showAds: Boolean,
+    setAdVisibility: (Boolean) -> Unit = {},
+) {
+    BooleanSetting(
+        settingName = stringResource(R.string.show_ads),
+        setValue = setAdVisibility,
+        value = showAds
+    )
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun SettingItem(
     modifier: Modifier = Modifier,
     name: String,
+    onClick: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
-    Row(
+    Card(
         modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        onClick = onClick
     ) {
-        Text(text = name)
-        content()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = name)
+            content()
+        }
     }
 }
 

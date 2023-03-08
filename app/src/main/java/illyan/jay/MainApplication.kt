@@ -20,6 +20,7 @@ package illyan.jay
 
 import android.app.Application
 import androidx.datastore.core.DataStore
+import com.google.android.gms.ads.MobileAds
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
@@ -44,10 +45,16 @@ class MainApplication : Application() {
     @Inject lateinit var analytics: FirebaseAnalytics
     @Inject lateinit var settingsInteractor: SettingsInteractor
     @Inject @CoroutineScopeIO lateinit var coroutineScopeIO: CoroutineScope
+
     override fun onCreate() {
         super.onCreate()
 
         initLogging()
+        initAds()
+    }
+
+    private fun initAds() {
+        MobileAds.initialize(applicationContext)
     }
 
     private fun initLogging() {

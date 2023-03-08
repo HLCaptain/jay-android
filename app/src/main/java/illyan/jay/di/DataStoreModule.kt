@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk
+package illyan.jay.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -28,7 +28,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import illyan.jay.data.disk.model.AppSettings
-import illyan.jay.data.disk.serializers.AppSettingsSerializer
+import illyan.jay.data.serializers.AppSettingsSerializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

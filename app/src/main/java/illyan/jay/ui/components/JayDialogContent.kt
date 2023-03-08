@@ -22,6 +22,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.LocalContentColor
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -43,10 +45,14 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun JayDialogContent(
     modifier: Modifier = Modifier,
+    textModifier: Modifier = Modifier.heightIn(max = (LocalConfiguration.current.screenHeightDp * 0.66f).dp),
     icon: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
     buttons: @Composable (() -> Unit)? = null,
+    iconPaddingValues: PaddingValues = IconPadding,
+    titlePaddingValues: PaddingValues = TitlePadding,
+    textPaddingValues: PaddingValues = TextPadding,
     shape: Shape = AlertDialogDefaults.shape,
     containerColor: Color = AlertDialogDefaults.containerColor,
     iconContentColor: Color = AlertDialogDefaults.iconContentColor,
@@ -75,7 +81,7 @@ fun JayDialogContent(
                     CompositionLocalProvider(LocalContentColor provides iconContentColor) {
                         Box(
                             Modifier
-                                .padding(IconPadding)
+                                .padding(iconPaddingValues)
                                 .align(Alignment.CenterHorizontally)
                         ) {
                             icon()
@@ -91,7 +97,7 @@ fun JayDialogContent(
                             Box(
                                 // Align the title to the center when an icon is present.
                                 Modifier
-                                    .padding(TitlePadding)
+                                    .padding(titlePaddingValues)
                                     .align(
                                         if (icon == null) {
                                             Alignment.Start
@@ -112,9 +118,9 @@ fun JayDialogContent(
                         val textStyle = MaterialTheme.typography.bodyMedium
                         ProvideTextStyle(textStyle) {
                             Box(
-                                Modifier
+                                textModifier
                                     .weight(weight = 1f, fill = false)
-                                    .padding(TextPadding)
+                                    .padding(textPaddingValues)
                                     .align(Alignment.Start)
                             ) {
                                 text()

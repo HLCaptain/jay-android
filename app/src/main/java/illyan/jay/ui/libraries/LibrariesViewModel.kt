@@ -20,8 +20,9 @@ package illyan.jay.ui.libraries
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.ui.libraries.model.Library
-import illyan.jay.ui.libraries.model.License
+import illyan.jay.domain.model.libraries.Library
+import illyan.jay.ui.libraries.model.UiLibrary
+import illyan.jay.ui.libraries.model.toUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
@@ -30,29 +31,37 @@ import javax.inject.Inject
 class LibrariesViewModel @Inject constructor(
 
 ) : ViewModel() {
-    private val _libraries = MutableStateFlow<List<Library>>(emptyList())
+    private val _libraries = MutableStateFlow<List<UiLibrary>>(emptyList())
     val libraries = _libraries.asStateFlow()
 
     init {
-        _libraries.value = listOf(
-            Library(
-                name = "Plumber",
-                license = License(
-                    type = "Apache v2",
-                    description = "Cool license",
-                ),
-                moreInfoUrl = "https://github.com/HLCaptain/plumber",
-                repositoryUrl = "https://github.com/HLCaptain/plumber"
-            ),
-            Library(
-                name = "Compose Scrollbar",
-                license = License(
-                    type = "Apache v2",
-                    description = "Cool license",
-                ),
-                moreInfoUrl = "https://github.com/HLCaptain/compose-scrollbar",
-                repositoryUrl = "https://github.com/HLCaptain/compose-scrollbar"
-            )
-        )
+        _libraries.value = Libraries
+    }
+
+    companion object {
+        val Libraries = Library.run {
+            listOf(
+                ComposeScrollbarLibrary,
+                PlumberLibrary,
+                SwipeLibrary,
+                AccompanistLibrary,
+                HiltLibrary,
+                TimberLibrary,
+                ComposeDestinationsLibrary,
+                CoilLibrary,
+                RoomLibrary,
+                DataStoreLibrary,
+                KotlinSerializationLibrary,
+                KotlinImmutableCollectionsLibrary,
+                KotlinCoroutinesLibrary,
+                ZstdJniLibrary,
+                GoogleMapsUtilitiesLibrary,
+                GooglePlayServicesLibrary,
+                FirebaseAndroidSDKLibrary,
+                JUnit5Library,
+                MockKLibrary,
+                GradleSecretsLibrary
+            ).map { it.toUiModel() }.sortedBy { it.name.lowercase() }
+        }
     }
 }

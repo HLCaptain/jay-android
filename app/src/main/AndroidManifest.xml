@@ -27,6 +27,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
 
     <application
         android:name=".MainApplication"
@@ -37,6 +38,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.Jay"
         android:usesCleartextTraffic="false">
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${ADMOB_APPLICATION_ID}" />
+
         <profileable
             android:shell="true"
             tools:targetApi="33" />
@@ -46,11 +52,12 @@
             android:exported="true"
             android:theme="@style/Theme.Jay"
             android:windowSoftInputMode="adjustResize">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
         <service
@@ -60,6 +67,7 @@
 
         <receiver android:name=".service.ServiceStateReceiver" />
         <receiver android:name=".service.BaseReceiver" />
+
     </application>
 
 </manifest>

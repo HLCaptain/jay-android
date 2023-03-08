@@ -103,4 +103,14 @@
     <string name="client_id">Client ID</string>
     <string name="not_syncing">Not syncing</string>
     <string name="syncing">Syncing</string>
+    <string name="missing_license">Missing license</string>
+    <string name="jay_license">Jay License</string>
+    <string name="hide_ad">Hide Ad</string>
+    <string name="support_jay_with_ad">Support Jay with Ad</string>
+    <string name="show_ads">Show Ads</string>
+    <string name="support_jay_with_ad_description">Ads help support the development of Jay.</string>
+    <string name="support_jay">Support Jay</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_and_conditions">Terms and Conditions</string>
+    <string name="license_type">License Type</string>
 </resources>
