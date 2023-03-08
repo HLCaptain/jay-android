@@ -16,15 +16,17 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.util
+package illyan.jay.data.network.serializers
 
-object DemoAdUnitIds {
-    const val AppOpen = "ca-app-pub-3940256099942544/3419835294"
-    const val Banner = "ca-app-pub-3940256099942544/6300978111"
-    const val Interstitial = "ca-app-pub-3940256099942544/1033173712"
-    const val InterstitialVideo = "ca-app-pub-3940256099942544/8691691433"
-    const val Rewarded = "ca-app-pub-3940256099942544/5224354917"
-    const val RewardedInterstitial = "ca-app-pub-3940256099942544/5354046379"
-    const val NativeAdvanced = "ca-app-pub-3940256099942544/2247696110"
-    const val NativeAdvancedVideo = "ca-app-pub-3940256099942544/1044960115"
+import android.os.Parcel
+import com.google.firebase.firestore.GeoPoint
+import kotlinx.parcelize.Parceler
+
+object GeoPointParceler : Parceler<GeoPoint> {
+    override fun create(parcel: Parcel) = GeoPoint(parcel.readDouble(), parcel.readDouble())
+
+    override fun GeoPoint.write(parcel: Parcel, flags: Int) {
+        parcel.writeDouble(latitude)
+        parcel.writeDouble(longitude)
+    }
 }

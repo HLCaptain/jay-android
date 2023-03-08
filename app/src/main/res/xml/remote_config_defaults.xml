@@ -31,10 +31,5 @@
     const val NativeAdvancedVideo = "ca-app-pub-3940256099942544/1044960115"
     -->
 
-    <entry>
-        <key>banner_on_about_screen</key>
-        <value>ca-app-pub-3940256099942544/6300978111</value>
-    </entry>
-
 </defaultsMap>
 <!-- END xml_defaults -->

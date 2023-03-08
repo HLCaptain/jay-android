@@ -92,13 +92,6 @@ android {
         unitTests.returnDefaultValues = true
         animationsDisabled = true
     }
-    applicationVariants.all { variant ->
-        kotlin.sourceSets {
-            getByName(variant.name) {
-                kotlin.srcDir("build/generated/ksp/${variant.name}/kotlin")
-            }
-        }
-    }
     lint {
         // If set to true (default), stops the build if errors are found.
         // This is needed because CICD pipeline will flop without it.

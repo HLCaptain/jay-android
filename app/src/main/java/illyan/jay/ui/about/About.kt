@@ -66,7 +66,7 @@ import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.ShowAdsSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
-import illyan.jay.util.DemoAdUnitIds
+import illyan.jay.util.TestAdUnitIds
 
 @ProfileNavGraph
 @Destination
@@ -91,7 +91,7 @@ fun AboutDialogScreen(
 fun AboutDialogContent(
     modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
-    aboutBannerAdUnitId: String = DemoAdUnitIds.Banner,
+    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
@@ -133,7 +133,7 @@ fun AboutTitle() {
 @Composable
 fun AboutScreen(
     isShowingAd: Boolean = false,
-    aboutBannerAdUnitId: String = DemoAdUnitIds.Banner,
+    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
@@ -180,7 +180,7 @@ fun DonationScreen(
     modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
     setAdVisibility: (Boolean) -> Unit = {},
-    aboutBannerAdUnitId: String = DemoAdUnitIds.Banner,
+    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
 ) {
     Column(
         modifier = modifier
@@ -271,7 +271,7 @@ fun AboutAdSetting(
 fun AboutAdScreen(
     modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
-    adUnitId: String = DemoAdUnitIds.Banner,
+    adUnitId: String = TestAdUnitIds.Banner,
 ) {
     AnimatedVisibility(
         modifier = modifier

@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.disk
+package illyan.jay.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
