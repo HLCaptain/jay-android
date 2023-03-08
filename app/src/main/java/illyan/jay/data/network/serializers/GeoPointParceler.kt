@@ -16,15 +16,17 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.libraries.model
+package illyan.jay.data.network.serializers
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+import android.os.Parcel
+import com.google.firebase.firestore.GeoPoint
+import kotlinx.parcelize.Parceler
 
-@Parcelize
-data class Library(
-    val name: String = "",
-    val license: License? = null,
-    val repositoryUrl: String? = null,
-    val moreInfoUrl: String? = null,
-) : Parcelable
+object GeoPointParceler : Parceler<GeoPoint> {
+    override fun create(parcel: Parcel) = GeoPoint(parcel.readDouble(), parcel.readDouble())
+
+    override fun GeoPoint.write(parcel: Parcel, flags: Int) {
+        parcel.writeDouble(latitude)
+        parcel.writeDouble(longitude)
+    }
+}

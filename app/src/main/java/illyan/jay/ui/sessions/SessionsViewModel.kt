@@ -59,6 +59,7 @@ class SessionsViewModel @Inject constructor(
 
     // FIXME: deleteRequestedOnSessions may be aware of sessions's sync state, so
     //  they would only be present in this list, if their deletion is pending
+    // FIXME: create a list with not yet synced sessions with the cloud (local cache vs fresh cloud data)
     private val deleteRequestedOnSessions = MutableStateFlow(persistentListOf<String>())
 
     private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
@@ -207,7 +208,7 @@ class SessionsViewModel @Inject constructor(
         viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getOwnSessions().collectLatest { sessions ->
                 _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
-                Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid}")
+                Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid?.take(4)}")
                 loadingOwnedSessions.value = false
             }
         }
@@ -321,9 +322,9 @@ class SessionsViewModel @Inject constructor(
     }
 
     fun getSessionStateFlow(sessionUUID: String): StateFlow<UiSession?> {
-        Timber.d("Requesting session state flow with id: ${sessionUUID.take(4)}")
+        Timber.v("Requesting session state flow with id: ${sessionUUID.take(4)}")
         if (sessionStateFlows[sessionUUID] != null) {
-            Timber.d("Session flow for session ${sessionUUID.take(4)} found in memory")
+            Timber.v("Session flow for session ${sessionUUID.take(4)} found in memory")
             return sessionStateFlows[sessionUUID]!!.asStateFlow()
         }
         val sessionMutableStateFlow = MutableStateFlow<UiSession?>(null)
@@ -342,9 +343,9 @@ class SessionsViewModel @Inject constructor(
                     val remoteSession = syncedSessions.value.firstOrNull { it.uuid == sessionUUID }
                     sessionMutableStateFlow.value = remoteSession
                     if (remoteSession != null) {
-                        Timber.d("Session ${sessionUUID.take(4)} found in cloud")
+                        Timber.v("Session ${sessionUUID.take(4)} found in cloud")
                     } else {
-                        Timber.d("Session ${sessionUUID.take(4)} not found, returning null")
+                        Timber.v("Session ${sessionUUID.take(4)} not found, returning null")
                     }
                 }
             }

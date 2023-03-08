@@ -31,9 +31,11 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.placeholder
 import com.google.accompanist.placeholder.material.shimmer
@@ -199,4 +201,31 @@ fun Modifier.cardPlaceholder(
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceVariant,
     )
+}
+
+/**
+ * Finds all potential URLs's start and end indices in the String.
+ */
+fun String.findUrlIntervals(
+    urlRegex: Regex = "[(http(s)?):\\/\\/(www\\.)?a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)".toRegex()
+): List<Triple<Int, Int, String>> {
+    return urlRegex.findAll(this).map {
+        Triple(it.range.first, it.range.last, it.value)
+    }.toList()
+}
+
+fun Color.setSaturation(saturation: Float): Color {
+    val hsl = FloatArray(3)
+    val rgb = (red * 255 * 255 * 255 + green * 255 * 255 + blue * 255).toInt()
+    ColorUtils.colorToHSL(rgb, hsl)
+    hsl[1] = saturation
+    return Color.hsl(hsl[0], hsl[1], hsl[2], alpha = alpha)
+}
+
+fun Color.setLightness(lightness: Float): Color {
+    val hsl = FloatArray(3)
+    val rgb = (red * 255 * 255 * 255 + green * 255 * 255 + blue * 255).toInt()
+    ColorUtils.colorToHSL(rgb, hsl)
+    hsl[2] = lightness
+    return Color.hsl(hsl[0], hsl[1], hsl[2], alpha = alpha)
 }

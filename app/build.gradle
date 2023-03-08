@@ -28,6 +28,7 @@ plugins {
     id 'kotlin-parcelize'
     id 'org.jetbrains.kotlin.plugin.serialization'
     id 'com.google.firebase.crashlytics'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
 android {
@@ -39,7 +40,6 @@ android {
         applicationId "illyan.jay"
         minSdk 21
         targetSdk 33
-        compileSdkPreview "UpsideDownCake"
         versionCode 3
         versionName "0.2.0-alpha"
 
@@ -92,13 +92,6 @@ android {
         unitTests.returnDefaultValues = true
         animationsDisabled = true
     }
-    applicationVariants.all { variant ->
-        kotlin.sourceSets {
-            getByName(variant.name) {
-                kotlin.srcDir("build/generated/ksp/${variant.name}/kotlin")
-            }
-        }
-    }
     lint {
         // If set to true (default), stops the build if errors are found.
         // This is needed because CICD pipeline will flop without it.
@@ -108,12 +101,13 @@ android {
 
 dependencies {
     // Core
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
     implementation "androidx.core:core-ktx:1.9.0"
     implementation "androidx.collection:collection-ktx:1.2.0" // The Collection extensions contain utility functions for working with Android's memory-efficient collection libraries, including ArrayMap, LongSparseArray, LruCache, and others.
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation 'androidx.activity:activity-ktx:1.6.1'
     implementation "com.google.android.material:material:1.8.0"
+    implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'], exclude: [])
 
     // Compose
     def activity_version = '1.7.0-beta02'
@@ -181,11 +175,6 @@ dependencies {
     // Coil
     implementation "io.coil-kt:coil-compose:2.2.2"
 
-    // Networking
-    implementation 'com.google.code.gson:gson:2.10'
-    implementation "com.squareup.retrofit2:retrofit:2.9.0"
-    implementation "com.squareup.retrofit2:converter-gson:2.9.0"
-
     // Room
     def room_version = '2.5.0'
     implementation "androidx.room:room-ktx:$room_version"
@@ -197,10 +186,15 @@ dependencies {
     testImplementation "androidx.room:room-testing:$room_version" // optional - Test helpers
     implementation "androidx.room:room-paging:$room_version" // optional - Paging 3 Integration
 
-    // Proto DataStore
+    // Serialization
     implementation "androidx.datastore:datastore:1.0.0"
     implementation "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5"
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0'
+
+    // Compression
+    implementation 'com.github.luben:zstd-jni:1.5.4-1@aar'
+    testImplementation "com.github.luben:zstd-jni:1.5.4-1"
 
     // Coroutine
     def coroutines_version = '1.6.4'
@@ -211,6 +205,7 @@ dependencies {
     // Google services
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.google.android.gms:play-services-auth:20.4.1'
+    implementation 'com.google.android.gms:play-services-ads:21.5.0'
     implementation 'com.google.maps.android:android-maps-utils:2.4.0'
     implementation 'com.google.maps.android:maps-utils-ktx:3.4.0'
 

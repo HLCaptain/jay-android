@@ -23,10 +23,11 @@ import java.time.ZonedDateTime
 
 data class UiPreferences(
     val userUUID: String? = null,
-    val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
-    val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
-    val lastUpdate: ZonedDateTime = DomainPreferences.default.lastUpdate,
-    val clientUUID: String? = null
+    val analyticsEnabled: Boolean = DomainPreferences.Default.analyticsEnabled,
+    val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
+    val showAds: Boolean = DomainPreferences.Default.showAds,
+    val lastUpdate: ZonedDateTime = DomainPreferences.Default.lastUpdate,
+    val clientUUID: String? = null,
 )
 
 fun DomainPreferences.toUiModel(
@@ -35,6 +36,7 @@ fun DomainPreferences.toUiModel(
     userUUID = userUUID,
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
+    showAds = showAds,
     lastUpdate = lastUpdate,
     clientUUID = clientUUID,
 )

@@ -53,6 +53,10 @@ import kotlinx.coroutines.launch
 private const val TooltipFadeInDuration = 150L
 private const val TooltipFadeOutDuration = 75L
 
+/**
+ * @param showTooltipOnClick if true, toggles tooltip visibility when
+ * card is clicked instead of long clicked
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TooltipElevatedCard(
@@ -60,20 +64,23 @@ fun TooltipElevatedCard(
     tooltip: @Composable () -> Unit,
     disabledTooltip: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
+    showTooltipOnClick: Boolean = false,
     onShowTooltip: () -> Unit = {},
     onDismissTooltip: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     val tooltipState = remember { PlainTooltipState() }
     val coroutineScope = rememberCoroutineScope()
+    val tryShowTooltip = {
+        coroutineScope.launch {
+            if (enabled || disabledTooltip != null) tooltipState.show()
+        }
+    }
     LaunchedEffect(tooltipState.isVisible) {
         if (tooltipState.isVisible) onShowTooltip() else onDismissTooltip()
     }
-
     var currentTooltip by remember {
-        mutableStateOf<@Composable () -> Unit>(
-            if (enabled || disabledTooltip == null) tooltip else disabledTooltip
-        )
+        mutableStateOf(if (enabled || disabledTooltip == null) tooltip else disabledTooltip)
     }
     LaunchedEffect(enabled, tooltipState.isVisible) {
         if (!tooltipState.isVisible) {
@@ -82,7 +89,6 @@ fun TooltipElevatedCard(
             currentTooltip = if (enabled || disabledTooltip == null) tooltip else disabledTooltip
         }
     }
-
     PlainTooltipBox(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -98,12 +104,8 @@ fun TooltipElevatedCard(
                 modifier = Modifier
                     .animateContentSize()
                     .combinedClickable(
-                        onLongClick = {
-                            coroutineScope.launch {
-                                if (enabled || disabledTooltip != null) tooltipState.show()
-                            }
-                        },
-                        onClick = {}
+                        onLongClick = { if (!showTooltipOnClick) tryShowTooltip() },
+                        onClick = { if (showTooltipOnClick) tryShowTooltip() }
                     ),
                 color = Color.Transparent,
                 content = content

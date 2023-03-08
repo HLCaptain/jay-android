@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,34 +16,34 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.network.datasource
+package illyan.jay.di
 
-import androidx.lifecycle.ProcessLifecycleOwner
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import com.mapbox.search.SearchEngine
+import com.mapbox.search.SearchEngineSettings
+import com.mapbox.search.ServiceProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import illyan.jay.BuildConfig
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object FirestoreModule {
+object MapboxModule {
 
-    @Singleton
     @Provides
-    fun provideFirestore(): FirebaseFirestore {
-        Firebase.firestore.firestoreSettings = FirebaseFirestoreSettings.Builder()
-            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
-            .setPersistenceEnabled(true)
-            .build()
-        return Firebase.firestore
-    }
+    @Singleton
+    fun provideSearchEngine() =
+        SearchEngine.createSearchEngineWithBuiltInDataProviders(
+            SearchEngineSettings(accessToken = BuildConfig.MapboxSdkRegistryToken)
+        )
 
-    @Singleton
     @Provides
-    fun provideAppLifecycle() = ProcessLifecycleOwner.get().lifecycle
+    @Singleton
+    fun provideHistoryDataProvider() = ServiceProvider.INSTANCE.historyDataProvider()
+
+    @Provides
+    @Singleton
+    fun provideFavoritesDataProvider() = ServiceProvider.INSTANCE.favoritesDataProvider()
 }

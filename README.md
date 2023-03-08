@@ -53,7 +53,11 @@ Follow the [Mapbox install] guide for further information. I placed both of my k
 
 Don't forget to change your properties in the project level `build.gradle` file.
 
-### Few tips for security
+### AdMob setup (Experiment)
+
+Set your application ID from `AdMob` in the `local.properties` file with the key `ADMOB_APPLICATION_ID` in order to get Ads. Also set your `Ad Unit IDs` in `Firebase Remote Config`. If not set, the project will use the default test ad unit IDs from Google.
+
+## Few tips for security
 
 - Never add `google-services.json` and `«USER_HOME»/.gradle/gradle.properties` into your forked repository.
 - I would recommend keeping your `string.xml` file squeaky clean 🧹🧽🧼 (don't place any keys, either public or private or confidential information there), use Firebase's [Remote Config] service or place keys in `local.properties`.
