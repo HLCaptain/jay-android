@@ -128,24 +128,12 @@ fun ProfileDialog(
                     LocalDialogDismissRequest provides onDismissRequest,
                     LocalDialogActivityProvider provides context as MainActivity
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val backstack by navController.currentBackStack.collectAsStateWithLifecycle()
-                        val elements = backstack.map { it.destination.label.toString() }
-                        ProvideTextStyle(MaterialTheme.typography.headlineSmall) {
-                            Breadcrumb(
-                                modifier = Modifier.padding(16.dp),
-                                elements = elements,
-                            )
-                        }
-                        DestinationsNavHost(
-                            modifier = Modifier.fillMaxWidth(),
-                            navGraph = NavGraphs.profile,
-                            engine = engine,
-                            navController = navController,
-                        )
-                    }
+                    DestinationsNavHost(
+                        modifier = Modifier.fillMaxWidth(),
+                        navGraph = NavGraphs.profile,
+                        engine = engine,
+                        navController = navController,
+                    )
                 }
             }
         }

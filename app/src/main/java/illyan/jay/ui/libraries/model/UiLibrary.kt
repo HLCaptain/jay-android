@@ -32,6 +32,8 @@ data class UiLibrary(
     val repositoryUrl: String? = null,
     val moreInfoUrl: String? = null,
     val authors: List<String> = emptyList(),
+    val privacyPolicyUrl: String? = null,
+    val termsAndConditionsUrl: String? = null,
 ) : Parcelable
 
 fun Library.toUiModel() = UiLibrary(
@@ -40,4 +42,6 @@ fun Library.toUiModel() = UiLibrary(
     repositoryUrl = repositoryUrl,
     moreInfoUrl = moreInfoUrl,
     authors = authors,
+    privacyPolicyUrl = privacyPolicyUrl,
+    termsAndConditionsUrl = termsAndConditionsUrl,
 )

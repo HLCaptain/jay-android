@@ -111,4 +111,6 @@
     <string name="support_jay_with_ad_description">Ads help support the development of Jay.</string>
     <string name="support_jay">Support Jay</string>
     <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_and_conditions">Terms and Conditions</string>
+    <string name="license_type">License Type</string>
 </resources>

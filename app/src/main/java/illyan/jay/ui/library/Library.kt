@@ -19,6 +19,8 @@
 package illyan.jay.ui.library
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -39,6 +41,7 @@ import illyan.jay.ui.components.LicenseOfType
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.libraries.model.toUiModel
+import illyan.jay.ui.profile.ProfileMenuItem
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -64,7 +67,7 @@ fun LibraryDialogContent(
             LibraryTitle(
                 name = library.name,
                 licenseType = library.license?.name,
-                licenseUrl = library.license?.url
+                licenseUrl = library.license?.type?.url
             )
         },
         text = {
@@ -97,7 +100,7 @@ fun LibraryTitle(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.license),
+                        text = stringResource(R.string.license_type),
                         style = MaterialTheme.typography.titleSmall,
                         color = AlertDialogDefaults.titleContentColor,
                     )
@@ -127,16 +130,40 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     library: UiLibrary
 ) {
-    JayTextCard(
-        modifier = modifier
-    ) {
-        // TODO: change license text to button pointing to the exact license of the used library
-        LicenseOfType(
-            type = library.license?.type,
-            authors = library.license?.authors ?: emptyList(),
-            year = library.license?.year,
-            yearInterval = library.license?.yearInterval
-        )
+    val uriHandler = LocalUriHandler.current
+    Column(modifier = modifier) {
+        AnimatedVisibility(visible = library.privacyPolicyUrl != null) {
+            ProfileMenuItem(
+                text = stringResource(R.string.privacy_policy),
+                onClick = { library.privacyPolicyUrl?.let { uriHandler.openUri(it) } }
+            )
+        }
+        AnimatedVisibility(visible = library.termsAndConditionsUrl != null) {
+            ProfileMenuItem(
+                text = stringResource(R.string.license),
+                onClick = { library.termsAndConditionsUrl?.let { uriHandler.openUri(it) } }
+            )
+        }
+        Crossfade(
+            modifier = Modifier.animateContentSize(),
+            targetState = library.license?.url
+        ) {
+            if (it != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.license),
+                    onClick = { uriHandler.openUri(it) }
+                )
+            } else {
+                JayTextCard {
+                    LicenseOfType(
+                        type = library.license?.type,
+                        authors = library.license?.authors ?: emptyList(),
+                        year = library.license?.year,
+                        yearInterval = library.license?.yearInterval
+                    )
+                }
+            }
+        }
     }
 }
 

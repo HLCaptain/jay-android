@@ -30,7 +30,7 @@ import kotlinx.parcelize.TypeParceler
 data class UiLicense(
     val type: LicenseType? = null,
     val name: String? = type?.licenseName,
-    val url: String? = type?.url,
+    val url: String? = null,
     val authors: List<String> = emptyList(),
     val year: Int? = null,
     val yearInterval: IntRange? = null,

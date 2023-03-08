@@ -34,8 +34,8 @@ class AboutViewModel @Inject constructor(
 ) : ViewModel() {
 
     val showAds = settingsInteractor.userPreferences.map {
-        it?.showAds ?: DomainPreferences.default.showAds
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, DomainPreferences.default.showAds)
+        it?.showAds ?: DomainPreferences.Default.showAds
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, DomainPreferences.Default.showAds)
 
     fun setAdVisibility(visible: Boolean) {
         settingsInteractor.showAds = visible

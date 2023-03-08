@@ -33,30 +33,15 @@ data class DomainPreferences(
     val lastUpdate: ZonedDateTime = ZonedDateTime.now(),
     val shouldSync: Boolean = false,
 ) {
-    override fun equals(other: Any?): Boolean {
-        return if (other != null && other is DomainPreferences) {
-            userUUID == other.userUUID &&
-                    analyticsEnabled == other.analyticsEnabled &&
-                    freeDriveAutoStart == other.freeDriveAutoStart &&
-                    showAds == other.showAds &&
-                    lastUpdate.toEpochSecond() == other.lastUpdate.toEpochSecond() &&
-                    shouldSync == other.shouldSync
-        } else {
-            false
-        }
+    fun isBefore(other: DomainPreferences): Boolean {
+        return lastUpdate.toInstant().epochSecond < other.lastUpdate.toInstant().epochSecond
     }
 
-    override fun hashCode(): Int {
-        var result = userUUID?.hashCode() ?: 0
-        result = 31 * result + analyticsEnabled.hashCode()
-        result = 31 * result + freeDriveAutoStart.hashCode()
-        result = 31 * result + showAds.hashCode()
-        result = 31 * result + lastUpdate.toEpochSecond().hashCode()
-        result = 31 * result + shouldSync.hashCode()
-        return result
+    fun isAfter(other: DomainPreferences): Boolean {
+        return lastUpdate.toInstant().epochSecond > other.lastUpdate.toInstant().epochSecond
     }
 
     companion object {
-        val default = DomainPreferences()
+        val Default = DomainPreferences()
     }
 }

@@ -23,9 +23,9 @@ import com.google.firebase.firestore.PropertyName
 import illyan.jay.domain.model.DomainPreferences
 
 data class FirestoreUserPreferences(
-    @PropertyName(FieldAnalyticsEnabled) val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
-    @PropertyName(FieldFreeDriveAutoStart) val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
-    @PropertyName(FieldShowAds) val showAds: Boolean = DomainPreferences.default.showAds,
+    @PropertyName(FieldAnalyticsEnabled) val analyticsEnabled: Boolean = DomainPreferences.Default.analyticsEnabled,
+    @PropertyName(FieldFreeDriveAutoStart) val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
+    @PropertyName(FieldShowAds) val showAds: Boolean = DomainPreferences.Default.showAds,
     @PropertyName(FieldLastUpdate) val lastUpdate: Timestamp = Timestamp.now(),
 ) {
     companion object {

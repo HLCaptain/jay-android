@@ -19,12 +19,24 @@
 package illyan.jay.ui.about
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.VolunteerActivism
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -49,8 +61,6 @@ import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
-import illyan.jay.ui.destinations.LibraryDialogScreenDestination
-import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileMenuItem
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.ShowAdsSetting
@@ -73,12 +83,6 @@ fun AboutDialogScreen(
         onNavigateToLibraries = {
             destinationsNavigator.navigate(LibrariesDialogScreenDestination)
         },
-        onNavigateToJayLicense = {
-            destinationsNavigator.navigate(LibraryDialogScreenDestination(Library.Jay.toUiModel()))
-        },
-        onNavigateToPrivacyPolicy = {
-            destinationsNavigator
-        }
     )
 }
 
@@ -88,8 +92,6 @@ fun AboutDialogContent(
     isShowingAd: Boolean = false,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
-    onNavigateToJayLicense: () -> Unit = {},
-    onNavigateToPrivacyPolicy: () -> Unit = {},
 ) {
     JayDialogContent(
         modifier = modifier,
@@ -99,8 +101,6 @@ fun AboutDialogContent(
                 isShowingAd = isShowingAd,
                 setAdVisibility = setAdVisibility,
                 onNavigateToLibraries = onNavigateToLibraries,
-                onNavigateToJayLicense = onNavigateToJayLicense,
-                onNavigateToPrivacyPolicy = onNavigateToPrivacyPolicy,
             )
         },
         buttons = {
@@ -132,9 +132,8 @@ fun AboutScreen(
     isShowingAd: Boolean = false,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
-    onNavigateToJayLicense: () -> Unit = {},
-    onNavigateToPrivacyPolicy: () -> Unit = {},
 ) {
+    val uriHandler = LocalUriHandler.current
     Column {
         Column(
             verticalArrangement = Arrangement.spacedBy((-12).dp)
@@ -143,14 +142,24 @@ fun AboutScreen(
                 text = stringResource(R.string.libraries),
                 onClick = onNavigateToLibraries
             )
-            ProfileMenuItem(
-                text = stringResource(R.string.jay_license),
-                onClick = onNavigateToJayLicense
-            )
-            ProfileMenuItem(
-                text = stringResource(R.string.privacy_policy),
-                onClick = onNavigateToPrivacyPolicy
-            )
+            AnimatedVisibility(visible = Library.Jay.license?.url != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.jay_license),
+                    onClick = { Library.Jay.license?.url?.let { uriHandler.openUri(it) } }
+                )
+            }
+            AnimatedVisibility(visible = Library.Jay.privacyPolicyUrl != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.privacy_policy),
+                    onClick = { Library.Jay.privacyPolicyUrl?.let { uriHandler.openUri(it) } }
+                )
+            }
+            AnimatedVisibility(visible = Library.Jay.termsAndConditionsUrl != null) {
+                ProfileMenuItem(
+                    text = stringResource(R.string.terms_and_conditions),
+                    onClick = { Library.Jay.termsAndConditionsUrl?.let { uriHandler.openUri(it) } }
+                )
+            }
         }
         // TODO: show main developers
         // Place new sections here

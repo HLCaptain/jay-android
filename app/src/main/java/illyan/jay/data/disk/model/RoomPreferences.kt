@@ -30,9 +30,9 @@ import java.util.UUID
 data class RoomPreferences(
     @PrimaryKey
     val userUUID: String = UUID.randomUUID().toString(),
-    val freeDriveAutoStart: Boolean = DomainPreferences.default.freeDriveAutoStart,
-    val analyticsEnabled: Boolean = DomainPreferences.default.analyticsEnabled,
-    val showAds: Boolean = DomainPreferences.default.showAds,
+    val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
+    val analyticsEnabled: Boolean = DomainPreferences.Default.analyticsEnabled,
+    val showAds: Boolean = DomainPreferences.Default.showAds,
     val lastUpdate: Long = ZonedDateTime.now().toInstant().toEpochMilli(),
-    val shouldSync: Boolean = DomainPreferences.default.shouldSync,
+    val shouldSync: Boolean = DomainPreferences.Default.shouldSync,
 )
