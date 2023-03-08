@@ -79,10 +79,11 @@ fun AboutDialogScreen(
     AboutDialogContent(
         modifier = Modifier.fillMaxWidth(),
         isShowingAd = showAds,
+        aboutBannerAdUnitId = viewModel.aboutBannerAdUnitId,
         setAdVisibility = viewModel::setAdVisibility,
         onNavigateToLibraries = {
             destinationsNavigator.navigate(LibrariesDialogScreenDestination)
-        },
+        }
     )
 }
 
@@ -90,6 +91,7 @@ fun AboutDialogScreen(
 fun AboutDialogContent(
     modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
+    aboutBannerAdUnitId: String = DemoAdUnitIds.Banner,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
@@ -101,6 +103,7 @@ fun AboutDialogContent(
                 isShowingAd = isShowingAd,
                 setAdVisibility = setAdVisibility,
                 onNavigateToLibraries = onNavigateToLibraries,
+                aboutBannerAdUnitId = aboutBannerAdUnitId,
             )
         },
         buttons = {
@@ -130,6 +133,7 @@ fun AboutTitle() {
 @Composable
 fun AboutScreen(
     isShowingAd: Boolean = false,
+    aboutBannerAdUnitId: String = DemoAdUnitIds.Banner,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
@@ -166,6 +170,7 @@ fun AboutScreen(
         DonationScreen(
             isShowingAd = isShowingAd,
             setAdVisibility = setAdVisibility,
+            aboutBannerAdUnitId = aboutBannerAdUnitId
         )
     }
 }
@@ -175,6 +180,7 @@ fun DonationScreen(
     modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
     setAdVisibility: (Boolean) -> Unit = {},
+    aboutBannerAdUnitId: String = DemoAdUnitIds.Banner,
 ) {
     Column(
         modifier = modifier
@@ -187,6 +193,7 @@ fun DonationScreen(
         AboutAdScreen(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             isShowingAd = isShowingAd,
+            adUnitId = aboutBannerAdUnitId
         )
     }
 }
@@ -263,7 +270,8 @@ fun AboutAdSetting(
 @Composable
 fun AboutAdScreen(
     modifier: Modifier = Modifier,
-    isShowingAd: Boolean = false
+    isShowingAd: Boolean = false,
+    adUnitId: String = DemoAdUnitIds.Banner,
 ) {
     AnimatedVisibility(
         modifier = modifier
@@ -271,17 +279,12 @@ fun AboutAdScreen(
             .clip(RoundedCornerShape(6.dp)),
         visible = isShowingAd
     ) {
-        val unitId = if (BuildConfig.DEBUG) {
-            DemoAdUnitIds.Banner
-        } else {
-            BuildConfig.AD_UNIT_ID_BANNER_ON_ABOUT_SCREEN
-        }
         AndroidView(
             modifier = Modifier.heightIn(min = AdSize.BANNER.height.dp),
             factory = { context ->
                 AdView(context).apply {
                     setAdSize(AdSize.BANNER)
-                    adUnitId = unitId
+                    this.adUnitId = adUnitId
                     loadAd(AdRequest.Builder().build())
                 }
             }

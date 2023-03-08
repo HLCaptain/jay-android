@@ -20,9 +20,12 @@ package illyan.jay.ui.about
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.ktx.get
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.util.FirebaseRemoteConfigKeys
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -30,12 +33,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AboutViewModel @Inject constructor(
-    private val settingsInteractor: SettingsInteractor
+    private val settingsInteractor: SettingsInteractor,
+    private val remoteConfig: FirebaseRemoteConfig,
 ) : ViewModel() {
 
     val showAds = settingsInteractor.userPreferences.map {
         it?.showAds ?: DomainPreferences.Default.showAds
     }.stateIn(viewModelScope, SharingStarted.Eagerly, DomainPreferences.Default.showAds)
+
+    val aboutBannerAdUnitId = remoteConfig[FirebaseRemoteConfigKeys.BannerOnAboutScreenAdUnitIdKey].asString()
 
     fun setAdVisibility(visible: Boolean) {
         settingsInteractor.showAds = visible

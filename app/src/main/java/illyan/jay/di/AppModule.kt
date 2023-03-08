@@ -21,22 +21,18 @@ package illyan.jay.di
 import android.content.Context
 import android.hardware.SensorManager
 import androidx.core.graphics.drawable.IconCompat
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.analytics.ktx.analytics
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.crashlytics.ktx.crashlytics
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.perf.ktx.performance
-import com.mapbox.search.SearchEngine
-import com.mapbox.search.SearchEngineSettings
-import com.mapbox.search.ServiceProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import illyan.jay.BuildConfig
 import illyan.jay.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,11 +43,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    @Singleton
     @Provides
     fun provideAppContext(@ApplicationContext context: Context) = context
 
+    @Singleton
     @Provides
-    fun provideFirebaseAuth() = Firebase.auth
+    fun provideAppLifecycle() = ProcessLifecycleOwner.get().lifecycle
 
     @Provides
     @Singleton
@@ -72,21 +70,6 @@ object AppModule {
     @Singleton
     fun provideLocalBroadcastManager(@ApplicationContext context: Context) =
         LocalBroadcastManager.getInstance(context)
-
-    @Provides
-    @Singleton
-    fun provideSearchEngine() =
-        SearchEngine.createSearchEngineWithBuiltInDataProviders(
-            SearchEngineSettings(accessToken = BuildConfig.MapboxSdkRegistryToken)
-        )
-
-    @Provides
-    @Singleton
-    fun provideHistoryDataProvider() = ServiceProvider.INSTANCE.historyDataProvider()
-
-    @Provides
-    @Singleton
-    fun provideFavoritesDataProvider() = ServiceProvider.INSTANCE.favoritesDataProvider()
 
     @Provides
     @CoroutineScopeIO

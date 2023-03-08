@@ -49,8 +49,8 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        initAds()
         initLogging()
+        initAds()
     }
 
     private fun initAds() {
