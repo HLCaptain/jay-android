@@ -121,13 +121,12 @@ fun List<DomainLocation>.toPath(
         )
     }
 
+    val locationsBlob = Blob.fromBytes(Zstd.compress(ProtoBuf.encodeToByteArray(pathLocations)))
     val path = FirestorePath(
-        uuid = UUID.randomUUID().toString(),
+        uuid = UUID.nameUUIDFromBytes(locationsBlob.toBytes()).toString(),
         sessionUUID = sessionUUID,
         ownerUUID = ownerUUID,
-        locations = Blob.fromBytes(
-            Zstd.compress(ProtoBuf.encodeToByteArray(pathLocations))
-        )
+        locations = locationsBlob
     )
 
     if (BuildConfig.DEBUG) {
