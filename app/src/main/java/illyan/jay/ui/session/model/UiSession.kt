@@ -49,7 +49,7 @@ fun DomainSession.toUiModel(
 }
 
 fun DomainSession.toUiModel(
-    totalDistance: Double? = distance?.toDouble(),
+    totalDistance: Double?,
     currentTime: ZonedDateTime = ZonedDateTime.now(),
 ): UiSession {
     return UiSession(
@@ -58,7 +58,7 @@ fun DomainSession.toUiModel(
         endDateTime = endDateTime,
         startCoordinate = startLocation,
         endCoordinate = endLocation,
-        totalDistance = totalDistance,
+        totalDistance = totalDistance ?: distance?.toDouble(),
         startLocationName = startLocationName,
         endLocationName = endLocationName,
         duration = if (endDateTime != null) {

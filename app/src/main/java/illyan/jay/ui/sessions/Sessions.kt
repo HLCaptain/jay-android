@@ -23,8 +23,10 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -72,9 +75,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.LatLng
@@ -107,7 +112,7 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 val DefaultContentPadding = PaddingValues(
-    bottom = MenuItemPadding + RoundedCornerRadius
+    bottom = RoundedCornerRadius
 )
 
 val DefaultScreenOnSheetPadding = PaddingValues(
@@ -168,6 +173,7 @@ fun Sessions(
 
 @Composable
 fun SessionsScreen(
+    modifier: Modifier = Modifier,
     isUserSignedIn: Boolean = false,
     canSyncSessions: Boolean = false,
     areThereSyncedSessions: Boolean = false,
@@ -195,7 +201,7 @@ fun SessionsScreen(
             (canSyncSessions || areThereSyncedSessions || areThereSessionsNotOwned) ||
             canDeleteSessions
     ConstraintLayout(
-        modifier = Modifier.padding(
+        modifier = modifier.padding(
             DefaultContentPadding + if (!showButtons) {
                 DefaultScreenOnSheetPadding
             } else PaddingValues()
@@ -215,6 +221,10 @@ fun SessionsScreen(
         SessionsInteractorButtonList(
             modifier = Modifier
                 .zIndex(2f)
+                .padding(
+                    start = MenuItemPadding,
+                    bottom = MenuItemPadding,
+                )
                 .constrainAs(buttons) {
                     bottom.linkTo(parent.bottom)
                     start.linkTo(parent.start)
@@ -230,7 +240,10 @@ fun SessionsScreen(
         )
         Column(
             modifier = Modifier
-                .padding(DefaultContentPadding)
+                .padding(
+                    top = MenuItemPadding,
+                    bottom = MenuItemPadding + RoundedCornerRadius,
+                )
                 .constrainAs(column) {
                     top.linkTo(parent.top)
                     bottom.linkTo(buttons.top)
@@ -267,6 +280,7 @@ private fun SessionsScreenPreview() {
     val canDeleteSessions = sessions.any { it.isLocal }
     JayTheme {
         SessionsScreen(
+            modifier = Modifier.width(350.dp),
             isUserSignedIn = true,
             canSyncSessions = areThereSyncedSessions,
             areThereSyncedSessions = areThereSyncedSessions,
@@ -320,7 +334,7 @@ fun SessionsInteractorButtonList(
     onDeleteSessionsLocally: () -> Unit = {},
 ) {
     LazyRow(
-        modifier = modifier.padding(start = MenuItemPadding),
+        modifier = modifier,
     ) {
         item {
             SessionInteractionButton(
@@ -432,7 +446,7 @@ fun SessionsList(
             .drawVerticalScrollbar(
                 state = lazyListState,
                 reverseScrolling = true,
-                topPadding = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding() / 2 + contentPadding.calculateTopPadding(),
+                topPadding = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding(),
                 bottomPadding = contentPadding.calculateBottomPadding(),
             )
     ) {
@@ -445,7 +459,7 @@ fun SessionsList(
                 .padding(
                     start = contentPadding.calculateStartPadding(layoutDirection),
                     end = contentPadding.calculateEndPadding(layoutDirection),
-                    top = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding()
+                    top = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding() / 2
                 )
                 .clip(RoundedCornerShape(12.dp)),
             contentPadding = PaddingValues(
@@ -490,7 +504,7 @@ fun SessionsList(
                         .cardPlaceholder(isPlaceholderVisible)
                         .animateItemPlacement(),
                     session = session,
-                    onClick = onSessionSelected,
+                    onClick = { onSessionSelected(it) },
                     onSync = { syncSession(it) },
                     onDelete = { deleteSession(it) },
                     onDeleteFromCloud = { deleteSessionFromCloud(it) }
@@ -572,6 +586,7 @@ fun SessionLoadingIndicator(
     }
 }
 
+@PreviewLightDarkTheme
 @Composable
 private fun SessionLoadingIndicatorPreview() {
     JayTheme {
@@ -584,7 +599,7 @@ private fun SessionLoadingIndicatorPreview() {
 fun SessionCard(
     modifier: Modifier = Modifier,
     session: UiSession? = null,
-    onClick: (String) -> Unit = {},
+    onClick: () -> Unit = {},
     onDelete: () -> Unit = {},
     onDeleteFromCloud: () -> Unit = {},
     onSync: () -> Unit = {},
@@ -618,7 +633,7 @@ fun SessionCard(
     )
     Card(
         modifier = modifier,
-        onClick = { session?.let { onClick(it.uuid) } },
+        onClick = onClick,
         colors = cardColors,
     ) {
         SwipeableActionsBox(
@@ -630,66 +645,85 @@ fun SessionCard(
             Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
+                    .padding(bottom = 4.dp)
                     .background(containerColor)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(
-                            start = 8.dp,
-                            end = 6.dp,
-                            top = 4.dp,
-                            bottom = 4.dp
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Row(
+                Column {
+                    ConstraintLayout(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Row(
+                        val (title, labels) = createRefs()
+                        Box(
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                .constrainAs(title) {
+                                    start.linkTo(parent.start)
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                    end.linkTo(labels.start)
+                                    width = Dimension.fillToConstraints
+                                }
                         ) {
-                            Crossfade(
-                                modifier = Modifier.animateContentSize(),
-                                targetState = session?.startLocationName
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = MenuItemPadding * 2)
                             ) {
-                                Text(
-                                    text = it ?: stringResource(R.string.unknown),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Crossfade(
-                                modifier = Modifier.animateContentSize(),
-                                targetState = (session?.endDateTime == null) to session?.endLocationName
-                            ) {
-                                if (it.first) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.MoreHoriz,
-                                        contentDescription = "",
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                } else {
-                                    Text(
-                                        text = it.second ?: stringResource(R.string.unknown),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
+                                item {
+                                    Row(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .clickable { onClick() },
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Crossfade(
+                                            modifier = Modifier.animateContentSize(),
+                                            targetState = session?.startLocationName
+                                        ) {
+                                            Text(
+                                                text = it ?: stringResource(R.string.unknown),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                        Icon(
+                                            imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Crossfade(
+                                            modifier = Modifier.animateContentSize(),
+                                            targetState = (session?.endDateTime == null) to session?.endLocationName
+                                        ) {
+                                            if (it.first) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.MoreHoriz,
+                                                    contentDescription = "",
+                                                    tint = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = it.second ?: stringResource(R.string.unknown),
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                        Row(
-                            horizontalArrangement = Arrangement.End
+                        val areLabelsVisible =
+                            session?.isLocal == true ||
+                            session?.isSynced == true ||
+                            session?.isNotOwned == true
+                        androidx.compose.animation.AnimatedVisibility(
+                            modifier = Modifier
+                                .constrainAs(labels) {
+                                    end.linkTo(parent.end)
+                                    top.linkTo(parent.top)
+                                },
+                            visible = areLabelsVisible
                         ) {
                             Row(
+                                modifier = Modifier.padding(top = 4.dp, end = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -706,7 +740,9 @@ fun SessionCard(
                         }
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .padding(start = MenuItemPadding)
+                            .fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -765,16 +801,19 @@ fun sessionSwipeAction(
 
 @Composable
 fun SessionDetailsList(
+    modifier: Modifier = Modifier,
     details: List<Pair<String, String>> = emptyList()
 ) {
-    Column {
+    Column(modifier = modifier) {
         details.forEach {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${it.first}:",
+                    text = it.first,
                     color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
                 )
                 Text(
                     text = it.second,

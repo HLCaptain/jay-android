@@ -48,21 +48,25 @@ class SessionViewModel @Inject constructor(
     val path = _path.asStateFlow()
 
     fun load(sessionUUID: String) {
-        Timber.d("Trying to load session with ID: $sessionUUID")
+
         viewModelScope.launch(dispatcherIO) {
-            locationInteractor.getSyncedPath(sessionUUID).collectLatest { locations ->
-                Timber.d("Loaded path with ${locations?.size} locations for session with ID: $sessionUUID")
-                if (!locations.isNullOrEmpty()) {
-                    val sortedPath = locations.sortedBy { it.zonedDateTime.toInstant() }
-                    _path.value = sortedPath.map { it.toUiModel() }
+            Timber.d("Trying to load session with ID: $sessionUUID")
+            sessionInteractor.getSession(sessionUUID).collectLatest { session ->
+                if (session != null) {
+                    Timber.d("Loaded session with ID: $sessionUUID")
+                    _session.value = session.toUiModel()
                     viewModelScope.launch(dispatcherIO) {
-                        sessionInteractor.getSession(sessionUUID).collectLatest { session ->
-                            Timber.d("Loaded session with ID: $sessionUUID")
-                            if (session != null) {
+                        locationInteractor.getSyncedPath(sessionUUID).collectLatest { locations ->
+                            Timber.d("Loaded path with ${locations?.size} locations for session with ID: $sessionUUID")
+                            if (!locations.isNullOrEmpty()) {
+                                val sortedPath = locations.sortedBy { it.zonedDateTime.toInstant() }
+                                _path.value = sortedPath.map { it.toUiModel() }
                                 _session.value = session.toUiModel(locations = sortedPath)
                             }
                         }
                     }
+                } else {
+                    Timber.d("Session not found (collected null)")
                 }
             }
         }
