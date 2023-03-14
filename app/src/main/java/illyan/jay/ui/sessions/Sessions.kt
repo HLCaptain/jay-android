@@ -445,7 +445,7 @@ fun SessionsList(
             .drawVerticalScrollbar(
                 state = lazyListState,
                 reverseScrolling = true,
-                topPadding = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding() / 2 + contentPadding.calculateTopPadding(),
+                topPadding = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding(),
                 bottomPadding = contentPadding.calculateBottomPadding(),
             )
     ) {
@@ -644,13 +644,12 @@ fun SessionCard(
             Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
+                    .padding(bottom = 4.dp)
                     .background(containerColor)
             ) {
                 Column {
                     ConstraintLayout(
-                        modifier = Modifier
-                            .padding(start = 16.dp, end = 8.dp)
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         val (title, labels) = createRefs()
                         Box(
@@ -663,7 +662,9 @@ fun SessionCard(
                                     width = Dimension.fillToConstraints
                                 }
                         ) {
-                            LazyRow {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp)
+                            ) {
                                 item {
                                     Row(
                                         modifier = Modifier
@@ -708,16 +709,20 @@ fun SessionCard(
                                 }
                             }
                         }
-                        Row(
+                        val areLabelsVisible =
+                            session?.isLocal == true ||
+                            session?.isSynced == true ||
+                            session?.isNotOwned == true
+                        androidx.compose.animation.AnimatedVisibility(
                             modifier = Modifier
                                 .constrainAs(labels) {
                                     end.linkTo(parent.end)
                                     top.linkTo(parent.top)
-                                }
-                                .padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.End
+                                },
+                            visible = areLabelsVisible
                         ) {
                             Row(
+                                modifier = Modifier.padding(top = 4.dp, end = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
