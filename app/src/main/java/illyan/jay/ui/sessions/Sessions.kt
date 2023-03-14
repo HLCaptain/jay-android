@@ -75,6 +75,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -220,14 +221,14 @@ fun SessionsScreen(
         SessionsInteractorButtonList(
             modifier = Modifier
                 .zIndex(2f)
-                .constrainAs(buttons) {
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                }
                 .padding(
                     start = MenuItemPadding,
                     bottom = MenuItemPadding,
-                ),
+                )
+                .constrainAs(buttons) {
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                },
             showSyncButton = isUserSignedIn && canSyncSessions,
             showOwnAllSessionsButton = isUserSignedIn && areThereSessionsNotOwned,
             showDeleteSessionsFromCloudButton = isUserSignedIn && areThereSyncedSessions,
@@ -239,16 +240,16 @@ fun SessionsScreen(
         )
         Column(
             modifier = Modifier
+                .padding(
+                    top = MenuItemPadding,
+                    bottom = MenuItemPadding + RoundedCornerRadius,
+                )
                 .constrainAs(column) {
                     top.linkTo(parent.top)
                     bottom.linkTo(buttons.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                 }
-                .padding(
-                    top = MenuItemPadding,
-                    bottom = MenuItemPadding + RoundedCornerRadius,
-                )
         ) {
             SessionsList(
                 modifier = Modifier.fillMaxWidth(),
@@ -663,7 +664,7 @@ fun SessionCard(
                                 }
                         ) {
                             LazyRow(
-                                contentPadding = PaddingValues(horizontal = 16.dp)
+                                contentPadding = PaddingValues(horizontal = MenuItemPadding * 2)
                             ) {
                                 item {
                                     Row(
@@ -740,7 +741,7 @@ fun SessionCard(
                     }
                     Row(
                         modifier = Modifier
-                            .padding(horizontal = 8.dp)
+                            .padding(start = MenuItemPadding)
                             .fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -800,16 +801,19 @@ fun sessionSwipeAction(
 
 @Composable
 fun SessionDetailsList(
+    modifier: Modifier = Modifier,
     details: List<Pair<String, String>> = emptyList()
 ) {
-    Column {
+    Column(modifier = modifier) {
         details.forEach {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${it.first}:",
+                    text = it.first,
                     color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
                 )
                 Text(
                     text = it.second,

@@ -44,8 +44,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.os.ConfigurationCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mapbox.geojson.Point
@@ -70,10 +73,10 @@ import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.format
 import java.math.RoundingMode
+import java.time.format.DateTimeFormatter
+import java.util.TimeZone
 
 val DefaultScreenOnSheetPadding = PaddingValues(
-    start = MenuItemPadding * 2,
-    end = MenuItemPadding * 2,
     top = MenuItemPadding * 2,
     bottom = RoundedCornerRadius + MenuItemPadding * 2
 )
@@ -85,7 +88,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
 fun SessionScreen(
     sessionUUID: String,
     viewModel: SessionViewModel = hiltViewModel(),
-    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator
+    destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     LaunchedEffect(Unit) {
@@ -169,7 +172,7 @@ fun SessionDetailsScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp),
+                modifier = Modifier.padding(start = MenuItemPadding * 3),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -208,28 +211,83 @@ fun SessionDetailsScreen(
             AnimatedVisibility(
                 visible = path == null || session == null
             ) {
-                MediumCircularProgressIndicator()
+                MediumCircularProgressIndicator(
+                    modifier = Modifier.padding(end = MenuItemPadding * 2)
+                )
             }
         }
+        val unknown = stringResource(R.string.unknown)
+        val ongoing = stringResource(R.string.ongoing)
+        val configuration = LocalConfiguration.current
+        // Needed ConfigurationCompat to work under API 24
+        val locale = ConfigurationCompat.getLocales(configuration)[0]
+        val zone = TimeZone.getDefault()
+        val dateTimeFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+            .withZone(zone.toZoneId())
         SessionDetailsList(
+            contentPadding = PaddingValues(horizontal = MenuItemPadding * 2),
             details = listOf(
                 stringResource(R.string.distance) to if (session?.totalDistance == null) {
-                    stringResource(R.string.unknown)
+                    unknown
                 } else {
-                    "${
-                        session.totalDistance
-                            .div(1000)
-                            .toBigDecimal()
-                            .setScale(2, RoundingMode.FLOOR)} " +
-                            stringResource(R.string.kilometers)
+                    "${session.totalDistance
+                        .div(1000)
+                        .toBigDecimal()
+                        .setScale(2, RoundingMode.FLOOR)
+                    } ${stringResource(R.string.kilometers)}"
                 },
-                stringResource(R.string.duration) to (session?.duration?.format(
+                stringResource(R.string.duration) to session?.duration?.format(
                     separator = " ",
                     second = stringResource(R.string.second_short),
                     minute = stringResource(R.string.minute_short),
                     hour = stringResource(R.string.hour_short),
                     day = stringResource(R.string.day_short)
-                ) ?: stringResource(R.string.unknown))
+                ),
+                stringResource(R.string.start_date) to session?.startDateTime?.format(
+                    if (locale != null) {
+                        dateTimeFormatter.withLocale(locale)
+                    } else {
+                        dateTimeFormatter
+                    }
+                ),
+                stringResource(R.string.end_date) to (session?.endDateTime?.format(
+                    if (locale != null) {
+                        dateTimeFormatter.withLocale(locale)
+                    } else {
+                        dateTimeFormatter
+                    }
+                ) ?: ongoing),
+                stringResource(R.string.start_location) to if (session?.startCoordinate != null) {
+                    session.startCoordinate.run {
+                        "(${
+                            latitude
+                                .toBigDecimal()
+                                .setScale(6, RoundingMode.HALF_UP)
+                        }, ${
+                            longitude
+                                .toBigDecimal()
+                                .setScale(6, RoundingMode.HALF_UP)
+                        })"
+                    }
+                } else {
+                    unknown
+                },
+                stringResource(R.string.end_location) to if (session?.endCoordinate != null) {
+                    session.endCoordinate.run {
+                        "(${
+                            latitude
+                                .toBigDecimal()
+                                .setScale(6, RoundingMode.HALF_UP)
+                        }, ${
+                            longitude
+                                .toBigDecimal()
+                                .setScale(6, RoundingMode.HALF_UP)
+                        })"
+                    }
+                } else {
+                    unknown
+                },
+                stringResource(R.string.session_id) to session?.uuid
             ),
         )
     }
@@ -237,21 +295,26 @@ fun SessionDetailsScreen(
 
 @Composable
 fun SessionDetailsList(
-    details: List<Pair<String, String>> = emptyList()
+    details: List<Pair<String, String?>> = emptyList(),
+    contentPadding: PaddingValues = PaddingValues()
 ) {
-    LazyRow {
+    LazyRow(
+        contentPadding = contentPadding
+    ) {
         item {
             Column {
                 details.forEach {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "${it.first}:",
+                            text = it.first,
                             color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium,
                         )
                         Text(
-                            text = it.second,
+                            text = it.second ?: stringResource(R.string.unknown),
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
