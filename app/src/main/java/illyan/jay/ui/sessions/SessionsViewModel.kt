@@ -31,17 +31,10 @@ import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
 import illyan.jay.util.sphericalPathLength
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.ZonedDateTime
@@ -162,12 +155,24 @@ class SessionsViewModel @Inject constructor(
         synced.size < owned.size - ongoing.size
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    var ownedSessionsJob: Job? = null
+    var ongoingSessionsJob: Job? = null
+    var notOwnedSessionsJob: Job? = null
+
     fun reloadData() {
         Timber.v("Requested data reload")
         disposeSessionStateFlows()
+        disposeJobs()
         loadLocalSessions()
         loadCloudSessions()
         loadSessionStateFlows()
+    }
+
+    private fun disposeJobs() {
+        val cancellationException = CancellationException("Jobs are cancelled on session data reload")
+        ownedSessionsJob?.cancel(cancellationException)
+        ongoingSessionsJob?.cancel(cancellationException)
+        notOwnedSessionsJob?.cancel(cancellationException)
     }
 
     fun loadLocalSessions() {
@@ -191,21 +196,21 @@ class SessionsViewModel @Inject constructor(
             }
         }
 
-        viewModelScope.launch(dispatcherIO) {
+        notOwnedSessionsJob = viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
                 _notOwnedSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
                 Timber.d("Got ${sessions.size} not owned sessions")
                 loadingNotOwnedSessions.value = false
             }
         }
-        viewModelScope.launch(dispatcherIO) {
+        ongoingSessionsJob = viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getOngoingSessionUUIDs().collectLatest {
                 _ongoingSessionUUIDs.value = it
                 Timber.d("Got ${it.size} ongoing sessions")
                 loadingOngoingSessions.value = false
             }
         }
-        viewModelScope.launch(dispatcherIO) {
+        ownedSessionsJob = viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getOwnSessions().collectLatest { sessions ->
                 _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
                 Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid?.take(4)}")
