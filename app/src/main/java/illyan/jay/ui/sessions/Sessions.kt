@@ -107,7 +107,7 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 val DefaultContentPadding = PaddingValues(
-    bottom = MenuItemPadding + RoundedCornerRadius
+    bottom = RoundedCornerRadius
 )
 
 val DefaultScreenOnSheetPadding = PaddingValues(
@@ -218,7 +218,11 @@ fun SessionsScreen(
                 .constrainAs(buttons) {
                     bottom.linkTo(parent.bottom)
                     start.linkTo(parent.start)
-                },
+                }
+                .padding(
+                    start = MenuItemPadding,
+                    bottom = MenuItemPadding,
+                ),
             showSyncButton = isUserSignedIn && canSyncSessions,
             showOwnAllSessionsButton = isUserSignedIn && areThereSessionsNotOwned,
             showDeleteSessionsFromCloudButton = isUserSignedIn && areThereSyncedSessions,
@@ -230,13 +234,16 @@ fun SessionsScreen(
         )
         Column(
             modifier = Modifier
-                .padding(DefaultContentPadding)
                 .constrainAs(column) {
                     top.linkTo(parent.top)
                     bottom.linkTo(buttons.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                 }
+                .padding(
+                    top = MenuItemPadding,
+                    bottom = MenuItemPadding + RoundedCornerRadius,
+                )
         ) {
             SessionsList(
                 modifier = Modifier.fillMaxWidth(),
@@ -320,7 +327,7 @@ fun SessionsInteractorButtonList(
     onDeleteSessionsLocally: () -> Unit = {},
 ) {
     LazyRow(
-        modifier = modifier.padding(start = MenuItemPadding),
+        modifier = modifier,
     ) {
         item {
             SessionInteractionButton(
@@ -445,7 +452,7 @@ fun SessionsList(
                 .padding(
                     start = contentPadding.calculateStartPadding(layoutDirection),
                     end = contentPadding.calculateEndPadding(layoutDirection),
-                    top = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding()
+                    top = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding() / 2
                 )
                 .clip(RoundedCornerShape(12.dp)),
             contentPadding = PaddingValues(
