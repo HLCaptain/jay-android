@@ -46,6 +46,11 @@ jobs:
           echo "MAPBOX_DOWNLOADS_TOKEN=${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}" >> gradle.properties
           echo "SDK_REGISTRY_TOKEN=${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}" >> gradle.properties
 
+      - name: Put keys into local.properties for Gradle Secrets Android plugin
+        run: |
+          echo -e "\n" >> local.properties
+          echo "ADMOB_APPLICATION_ID=${{ secrets.ADMOB_APPLICATION_ID }}" >> local.properties
+
       - name: Create blank google-services.json
         run: cat app/google-services.json | base64
 
