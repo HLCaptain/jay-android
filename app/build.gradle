@@ -193,8 +193,8 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0'
 
     // Compression
-    implementation 'com.github.luben:zstd-jni:1.5.4-1@aar'
-    testImplementation "com.github.luben:zstd-jni:1.5.4-1"
+    implementation 'com.github.luben:zstd-jni:1.5.4-2@aar'
+    testImplementation "com.github.luben:zstd-jni:1.5.4-2"
 
     // Coroutine
     def coroutines_version = '1.6.4'
