@@ -24,14 +24,40 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.AddChart
+import androidx.compose.material.icons.rounded.ArrowRightAlt
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.CloudSync
+import androidx.compose.material.icons.rounded.CloudUpload
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.PersonAdd
+import androidx.compose.material.icons.rounded.PersonOff
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.SyncAlt
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +73,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +86,7 @@ import illyan.jay.R
 import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
+import illyan.jay.ui.components.TooltipButton
 import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
@@ -74,7 +102,7 @@ import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 import java.math.RoundingMode
 import java.time.ZonedDateTime
-import java.util.*
+import java.util.UUID
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
@@ -168,12 +196,12 @@ fun SessionsScreen(
             canDeleteSessions
     ConstraintLayout(
         modifier = Modifier.padding(
-            if (!showButtons) {
+            DefaultContentPadding + if (!showButtons) {
                 DefaultScreenOnSheetPadding
             } else PaddingValues()
         )
     ) {
-        val (column, globalLoadingIndicator) = createRefs()
+        val (column, globalLoadingIndicator, buttons) = createRefs()
         AnimatedVisibility(
             modifier = Modifier
                 .constrainAs(globalLoadingIndicator) {
@@ -184,32 +212,36 @@ fun SessionsScreen(
         ) {
             MediumCircularProgressIndicator(modifier = Modifier.padding(end = MenuItemPadding * 2))
         }
+        SessionsInteractorButtonList(
+            modifier = Modifier
+                .zIndex(2f)
+                .constrainAs(buttons) {
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                },
+            showSyncButton = isUserSignedIn && canSyncSessions,
+            showOwnAllSessionsButton = isUserSignedIn && areThereSessionsNotOwned,
+            showDeleteSessionsFromCloudButton = isUserSignedIn && areThereSyncedSessions,
+            showDeleteSessionsLocallyButton = canDeleteSessions,
+            onSyncSessions = syncSessions,
+            onOwnAllSession = ownAllSessions,
+            onDeleteSessionsFromCloud = deleteAllSyncedData,
+            onDeleteSessionsLocally = deleteSessionsLocally,
+        )
         Column(
             modifier = Modifier
+                .padding(DefaultContentPadding)
                 .constrainAs(column) {
                     top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
+                    bottom.linkTo(buttons.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                 }
         ) {
-            SessionsInteractorButtonList(
-                showSyncButton = isUserSignedIn && canSyncSessions,
-                showOwnAllSessionsButton = isUserSignedIn && areThereSessionsNotOwned,
-                showDeleteSessionsFromCloudButton = isUserSignedIn && areThereSyncedSessions,
-                showDeleteSessionsLocallyButton = canDeleteSessions,
-                onSyncSessions = syncSessions,
-                onOwnAllSession = ownAllSessions,
-                onDeleteSessionsFromCloud = deleteAllSyncedData,
-                onDeleteSessionsLocally = deleteSessionsLocally,
-            )
-
             SessionsList(
                 modifier = Modifier.fillMaxWidth(),
                 onSessionSelected = onSessionSelected,
-                contentPadding = DefaultContentPadding + PaddingValues(
-                    horizontal = MenuItemPadding * 2
-                ),
+                contentPadding = PaddingValues(horizontal = MenuItemPadding * 2),
                 isUserSignedIn = isUserSignedIn,
                 sessionUUIDs = sessionUUIDs,
                 ownSession = ownSession,
@@ -252,8 +284,7 @@ private fun generateUiSessions(number: Int): List<UiSession> {
     return List(number) {
         val now = ZonedDateTime.now()
         val startTime = now.minusSeconds(Random.nextLong(5000, 10000))
-        val endTime =
-            if (Random.nextInt(3) == 0) null else now.minusSeconds(Random.nextLong(1000, 4000))
+        val endTime = if (Random.nextInt(3) == 0) null else now.minusSeconds(Random.nextLong(1000, 4000))
         val ownerUUID = UUID.randomUUID().toString()
         UiSession(
             uuid = UUID.randomUUID().toString(),
@@ -266,8 +297,7 @@ private fun generateUiSessions(number: Int): List<UiSession> {
             startLocationName = "City number $it",
             endLocationName = "City number ${Random.nextInt(it + 1)}",
             totalDistance = Random.nextDouble(100.0, 10000.0),
-            duration = ((endTime?.toEpochSecond()
-                ?: now.toEpochSecond()) - startTime.toEpochSecond()).seconds,
+            duration = ((endTime?.toEpochSecond() ?: now.toEpochSecond()) - startTime.toEpochSecond()).seconds,
             endCoordinate = LatLng(Random.nextDouble(-90.0, 90.0), Random.nextDouble(-90.0, 90.0)),
             startCoordinate = LatLng(
                 Random.nextDouble(-90.0, 90.0),
@@ -279,6 +309,7 @@ private fun generateUiSessions(number: Int): List<UiSession> {
 
 @Composable
 fun SessionsInteractorButtonList(
+    modifier: Modifier = Modifier,
     showSyncButton: Boolean = false,
     showOwnAllSessionsButton: Boolean = false,
     showDeleteSessionsFromCloudButton: Boolean = false,
@@ -288,35 +319,42 @@ fun SessionsInteractorButtonList(
     onDeleteSessionsFromCloud: () -> Unit = {},
     onDeleteSessionsLocally: () -> Unit = {},
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+    LazyRow(
+        modifier = modifier.padding(start = MenuItemPadding),
     ) {
-        Column(
-            modifier = Modifier.padding(start = MenuItemPadding)
-        ) {
+        item {
             SessionInteractionButton(
+                modifier = Modifier.padding(horizontal = 2.dp),
                 text = stringResource(R.string.sync),
                 imageVector = Icons.Rounded.CloudUpload,
                 visibility = showSyncButton,
                 enabled = showSyncButton,
                 onClick = onSyncSessions,
             )
+        }
+        item {
             SessionInteractionButton(
+                modifier = Modifier.padding(horizontal = 2.dp),
                 text = stringResource(R.string.delete_from_cloud),
                 imageVector = Icons.Rounded.CloudOff,
                 visibility = showDeleteSessionsFromCloudButton,
                 enabled = showDeleteSessionsFromCloudButton,
                 onClick = onDeleteSessionsFromCloud,
             )
+        }
+        item {
             SessionInteractionButton(
+                modifier = Modifier.padding(horizontal = 2.dp),
                 text = stringResource(R.string.delete_locally),
                 imageVector = Icons.Rounded.Delete,
                 visibility = showDeleteSessionsLocallyButton,
                 enabled = showDeleteSessionsLocallyButton,
                 onClick = onDeleteSessionsLocally,
             )
+        }
+        item {
             SessionInteractionButton(
+                modifier = Modifier.padding(horizontal = 2.dp),
                 text = stringResource(R.string.own_all_sessions),
                 imageVector = Icons.Rounded.AddChart,
                 visibility = showOwnAllSessionsButton,
@@ -329,16 +367,25 @@ fun SessionsInteractorButtonList(
 
 @Composable
 fun SessionInteractionButton(
+    modifier: Modifier = Modifier,
     text: String = stringResource(R.string.unknown),
     imageVector: ImageVector? = null,
     visibility: Boolean = true,
     enabled: Boolean = visibility,
     onClick: () -> Unit,
 ) {
-    AnimatedVisibility(visible = visibility) {
-        TextButton(
+    AnimatedVisibility(
+        visible = visibility && enabled,
+        modifier = modifier,
+    ) {
+        TooltipButton(
             onClick = onClick,
-            enabled = enabled,
+            tooltip = {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -360,7 +407,7 @@ fun SessionInteractionButton(
 fun SessionsList(
     modifier: Modifier = Modifier,
     onSessionSelected: (String) -> Unit,
-    contentPadding: PaddingValues = DefaultContentPadding,
+    contentPadding: PaddingValues = PaddingValues(),
     isUserSignedIn: Boolean = false,
     loadingSessionsFromCloud: Boolean = false,
     loadingSessionsLocally: Boolean = false,
@@ -371,13 +418,7 @@ fun SessionsList(
     deleteSessionFromCloud: (String) -> Unit = {},
     syncSession: (String) -> Unit = {},
     disposeSessionStateFlow: (String) -> Unit = {},
-    getSessionStateFlow: @Composable (String) -> State<UiSession?> = {
-        remember {
-            mutableStateOf(
-                null
-            )
-        }
-    },
+    getSessionStateFlow: @Composable (String) -> State<UiSession?> = { remember { mutableStateOf(null) } },
     emptyListPlaceholder: @Composable () -> Unit = {
         AnimatedVisibility(visible = showNoSessionPrompt) {
             NoSessionPrompt(modifier = Modifier.padding(start = MenuItemPadding * 2, bottom = 8.dp))
@@ -391,7 +432,7 @@ fun SessionsList(
             .drawVerticalScrollbar(
                 state = lazyListState,
                 reverseScrolling = true,
-                topPadding = contentPadding.calculateTopPadding(),
+                topPadding = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding() / 2 + contentPadding.calculateTopPadding(),
                 bottomPadding = contentPadding.calculateBottomPadding(),
             )
     ) {
@@ -403,14 +444,10 @@ fun SessionsList(
                 .fillMaxWidth()
                 .padding(
                     start = contentPadding.calculateStartPadding(layoutDirection),
-                    end = contentPadding.calculateEndPadding(layoutDirection)
+                    end = contentPadding.calculateEndPadding(layoutDirection),
+                    top = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding()
                 )
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 12.dp,
-                        topEnd = 12.dp
-                    )
-                ),
+                .clip(RoundedCornerShape(12.dp)),
             contentPadding = PaddingValues(
                 top = contentPadding.calculateTopPadding(),
                 bottom = contentPadding.calculateBottomPadding()

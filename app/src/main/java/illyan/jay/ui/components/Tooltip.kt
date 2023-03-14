@@ -23,10 +23,15 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.PlainTooltipBox
@@ -34,6 +39,7 @@ import androidx.compose.material3.PlainTooltipState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +67,8 @@ private const val TooltipFadeOutDuration = 75L
 @Composable
 fun TooltipElevatedCard(
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
     tooltip: @Composable () -> Unit,
     disabledTooltip: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
@@ -76,6 +84,107 @@ fun TooltipElevatedCard(
             if (enabled || disabledTooltip != null) tooltipState.show()
         }
     }
+    ContentWithTooltip(
+        modifier = modifier,
+        tooltipState = tooltipState,
+        tooltip = tooltip,
+        disabledTooltip = disabledTooltip,
+        enabled = enabled,
+        onShowTooltip = onShowTooltip,
+        onDismissTooltip = onDismissTooltip
+    ) {
+        OutlinedCard(
+            enabled = enabled,
+            onClick = {
+                onClick()
+                if (showTooltipOnClick) tryShowTooltip()
+            }
+        ) {
+            Surface(
+                modifier = Modifier
+                    .animateContentSize()
+                    .combinedClickable(
+                        onLongClick = {
+                            onLongClick()
+                            if (!showTooltipOnClick) tryShowTooltip()
+                        },
+                        onClick = {
+                            onClick()
+                            if (showTooltipOnClick) tryShowTooltip()
+                        }
+                    ),
+                color = Color.Transparent,
+                content = content
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun TooltipButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+    tooltip: @Composable () -> Unit,
+    disabledTooltip: @Composable (() -> Unit)? = null,
+    showTooltipOnClick: Boolean = false,
+    onShowTooltip: () -> Unit = {},
+    onDismissTooltip: () -> Unit = {},
+    content: @Composable RowScope.() -> Unit
+) {
+    val tooltipState = remember { PlainTooltipState() }
+    val coroutineScope = rememberCoroutineScope()
+    val tryShowTooltip = { coroutineScope.launch { tooltipState.show() } }
+    ContentWithTooltip(
+        modifier = modifier,
+        tooltipState = tooltipState,
+        tooltip = tooltip,
+        disabledTooltip = disabledTooltip,
+        onShowTooltip = onShowTooltip,
+        onDismissTooltip = onDismissTooltip
+    ) {
+        Surface(
+            modifier = Modifier
+                .animateContentSize()
+                .combinedClickable(
+                    onLongClick = {
+                        onLongClick()
+                        if (!showTooltipOnClick) tryShowTooltip()
+                    },
+                    onClick = {
+                        onClick()
+                        if (showTooltipOnClick) tryShowTooltip()
+                    }
+                ),
+            shape = ButtonDefaults.shape,
+            color = MaterialTheme.colorScheme.primary
+        ) {
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onPrimary,
+                LocalTextStyle provides MaterialTheme.typography.labelLarge
+            ) {
+                Row(
+                    modifier = Modifier.padding(ButtonDefaults.ContentPadding),
+                    content = content
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ContentWithTooltip(
+    modifier: Modifier = Modifier,
+    tooltipState: PlainTooltipState = remember { PlainTooltipState() },
+    tooltip: @Composable () -> Unit,
+    disabledTooltip: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
+    onShowTooltip: () -> Unit = {},
+    onDismissTooltip: () -> Unit = {},
+    content: @Composable () -> Unit
+) {
     LaunchedEffect(tooltipState.isVisible) {
         if (tooltipState.isVisible) onShowTooltip() else onDismissTooltip()
     }
@@ -96,21 +205,7 @@ fun TooltipElevatedCard(
         tooltip = currentTooltip,
         tooltipState = tooltipState,
     ) {
-        OutlinedCard(
-            enabled = enabled,
-            onClick = {}
-        ) {
-            Surface(
-                modifier = Modifier
-                    .animateContentSize()
-                    .combinedClickable(
-                        onLongClick = { if (!showTooltipOnClick) tryShowTooltip() },
-                        onClick = { if (showTooltipOnClick) tryShowTooltip() }
-                    ),
-                color = Color.Transparent,
-                content = content
-            )
-        }
+        content()
     }
 }
 
