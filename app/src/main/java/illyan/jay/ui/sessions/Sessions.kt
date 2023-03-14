@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -168,6 +169,7 @@ fun Sessions(
 
 @Composable
 fun SessionsScreen(
+    modifier: Modifier = Modifier,
     isUserSignedIn: Boolean = false,
     canSyncSessions: Boolean = false,
     areThereSyncedSessions: Boolean = false,
@@ -195,7 +197,7 @@ fun SessionsScreen(
             (canSyncSessions || areThereSyncedSessions || areThereSessionsNotOwned) ||
             canDeleteSessions
     ConstraintLayout(
-        modifier = Modifier.padding(
+        modifier = modifier.padding(
             DefaultContentPadding + if (!showButtons) {
                 DefaultScreenOnSheetPadding
             } else PaddingValues()
@@ -274,6 +276,7 @@ private fun SessionsScreenPreview() {
     val canDeleteSessions = sessions.any { it.isLocal }
     JayTheme {
         SessionsScreen(
+            modifier = Modifier.width(250.dp),
             isUserSignedIn = true,
             canSyncSessions = areThereSyncedSessions,
             areThereSyncedSessions = areThereSyncedSessions,
