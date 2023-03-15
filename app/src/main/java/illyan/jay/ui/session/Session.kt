@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,8 +53,11 @@ import androidx.core.os.ConfigurationCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mapbox.geojson.Point
+import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
 import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -71,6 +75,7 @@ import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.mapMarkers
 import illyan.jay.util.format
 import java.math.RoundingMode
 import java.time.format.DateTimeFormatter
@@ -125,11 +130,17 @@ fun SessionScreen(
             }
         }
     }
+    val context = LocalContext.current
+    val mapMarkers by mapMarkers.collectAsStateWithLifecycle()
     DisposableEffect(
         path
     ) {
+        val sortedLocations = path?.sortedBy { it.zonedDateTime }?.map { it.latLng }
+        val startPoint = sortedLocations?.first()
+        val endPoint = sortedLocations?.last()
         val annotationsPlugin = mapView.value?.annotations
         val polylineAnnotationManager = annotationsPlugin?.createPolylineAnnotationManager()
+        val pointAnnotationManager = annotationsPlugin?.createPointAnnotationManager()
         polylineAnnotationManager?.create(
             option = PolylineAnnotationOptions()
                 .withPoints(
@@ -143,8 +154,29 @@ fun SessionScreen(
                 .withLineColor("#1b8fff")
                 .withLineWidth(5.0)
         )
+        startPoint?.let { point ->
+            mapMarkers?.let {
+                pointAnnotationManager?.create(
+                    option = PointAnnotationOptions()
+                        .withPoint(Point.fromLngLat(point.longitude, point.latitude))
+                        .withIconImage(it.getPathStartBitmap(context))
+                        .withIconAnchor(IconAnchor.BOTTOM)
+                )
+            }
+        }
+        endPoint?.let { point ->
+            mapMarkers?.let {
+                pointAnnotationManager?.create(
+                    option = PointAnnotationOptions()
+                        .withPoint(Point.fromLngLat(point.longitude, point.latitude))
+                        .withIconImage(it.getPathEndBitmap(context))
+                        .withIconAnchor(IconAnchor.BOTTOM)
+                )
+            }
+        }
         onDispose {
             annotationsPlugin?.removeAnnotationManager(polylineAnnotationManager!!)
+            annotationsPlugin?.removeAnnotationManager(pointAnnotationManager!!)
         }
     }
     val session by viewModel.session.collectAsStateWithLifecycle()

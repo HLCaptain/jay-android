@@ -30,11 +30,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import illyan.jay.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.math.roundToInt
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -105,6 +109,13 @@ private const val darkMapStyleUrl = "mapbox://styles/illyan/cl3kg2wpq001414muhgr
 private val _mapStyleUrl = MutableStateFlow(lightMapStyleUrl)
 val mapStyleUrl = _mapStyleUrl.asStateFlow()
 
+private lateinit var darkMapMarkers: MapMarkers
+// val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)
+// val image = drawable!!.toBitmap(height = puckHeight, width = puckHeight * drawable.intrinsicWidth / drawable.intrinsicHeight)
+private lateinit var lightMapMarkers: MapMarkers
+private val _mapMarkers = MutableStateFlow<MapMarkers?>(null)
+val mapMarkers = _mapMarkers.asStateFlow()
+
 @Composable
 fun JayTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -122,6 +133,22 @@ fun JayTheme(
         else -> LightColors
     }
     val view = LocalView.current
+    val density = LocalDensity.current.density
+    val markerHeight = (36.dp * density).value.roundToInt()
+    lightMapMarkers = MapMarkers(
+        height = markerHeight,
+        locationPuckDrawableId = R.drawable.jay_puck_transparent_background,
+        poiDrawableId = R.drawable.jay_marker_icon_v3_round,
+        pathStartDrawableId = R.drawable.jay_begin_light_marker_icon,
+        pathEndDrawableId = R.drawable.jay_finish_light_marker_icon,
+    )
+    darkMapMarkers = MapMarkers(
+        height = markerHeight,
+        locationPuckDrawableId = R.drawable.jay_puck_transparent_background,
+        poiDrawableId = R.drawable.jay_marker_icon_v3_round,
+        pathStartDrawableId = R.drawable.jay_begin_dark_marker_icon,
+        pathEndDrawableId = R.drawable.jay_finish_dark_marker_icon,
+    )
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
@@ -135,6 +162,7 @@ fun JayTheme(
                 darkIcons = !darkTheme
             )
             _mapStyleUrl.value = if (darkTheme) darkMapStyleUrl else lightMapStyleUrl
+            _mapMarkers.value = if (darkTheme) darkMapMarkers else lightMapMarkers
         }
     }
 

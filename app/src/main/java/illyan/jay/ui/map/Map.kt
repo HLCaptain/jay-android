@@ -19,8 +19,6 @@
 package illyan.jay.ui.map
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
@@ -31,7 +29,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
@@ -178,17 +175,3 @@ fun PaddingValues.toEdgeInsets(
     calculateBottomPadding().value.toDouble() * density,
     calculateRightPadding(layoutDirection).value.toDouble() * density
 )
-
-// https://www.geeksforgeeks.org/how-to-convert-a-vector-to-bitmap-in-android/
-fun getBitmapFromVectorDrawable(context: Context, drawableId: Int): Bitmap {
-    val drawable = ContextCompat.getDrawable(context, drawableId)
-    val bitmap = Bitmap.createBitmap(
-        drawable!!.intrinsicWidth,
-        drawable.intrinsicHeight,
-        Bitmap.Config.ARGB_8888
-    )
-    val canvas = Canvas(bitmap)
-    drawable.setBounds(0, 0, canvas.width, canvas.height)
-    drawable.draw(canvas)
-    return bitmap
-}

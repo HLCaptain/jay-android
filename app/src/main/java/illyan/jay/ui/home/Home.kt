@@ -848,8 +848,8 @@ fun BottomSearchBar(
                     Image(
                         modifier = Modifier
                             .zIndex(1f)
-                            .size(RoundedCornerRadius * 2),
-                        painter = painterResource(R.drawable.ic_jay_marker_icon_v3_round),
+                            .size(RoundedCornerRadius * 1.5f),
+                        painter = painterResource(R.drawable.jay_marker_icon_v3_round),
                         contentDescription = stringResource(R.string.search_marker_icon)
                     )
                 }
