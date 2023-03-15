@@ -26,6 +26,7 @@ import com.google.firebase.firestore.EventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.WriteBatch
 import com.google.firebase.firestore.ktx.toObject
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.domain.interactor.AuthInteractor
@@ -186,11 +187,20 @@ class UserNetworkDataSource @Inject constructor(
         onFailure: (Exception) -> Unit = { Timber.e(it) },
         onSuccess: () -> Unit = { Timber.i("User data deletion successful") },
     ) {
+        firestore.runBatch {
+            deleteUserData(batch = it)
+        }.addOnSuccessListener {
+            onSuccess()
+        }.addOnFailureListener {
+            onFailure(it)
+        }.addOnCanceledListener {
+            onCancel()
+        }
+    }
+
+    fun deleteUserData(batch: WriteBatch) {
         _userReference.value?.apply {
-            reference.delete()
-                .addOnSuccessListener { onSuccess() }
-                .addOnFailureListener { onFailure(it) }
-                .addOnCanceledListener { onCancel() }
+            batch.delete(reference)
         }
     }
 }

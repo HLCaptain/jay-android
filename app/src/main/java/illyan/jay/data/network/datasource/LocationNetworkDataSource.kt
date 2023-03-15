@@ -153,6 +153,18 @@ class LocationNetworkDataSource @Inject constructor(
     fun deleteLocationsForUser(
         userUUID: String = authInteractor.userUUID.toString()
     ) {
+        firestore.runBatch {
+            deleteLocationsForUser(
+                batch = it,
+                userUUID = userUUID
+            )
+        }
+    }
+
+    fun deleteLocationsForUser(
+        batch: WriteBatch,
+        userUUID: String = authInteractor.userUUID.toString()
+    ) {
         if (!authInteractor.isUserSignedIn) return
         val arePathsDeleted = MutableStateFlow(false)
         val pathSnapshotListener = firestore
@@ -164,7 +176,7 @@ class LocationNetworkDataSource @Inject constructor(
                 } else if (!arePathsDeleted.value) {
                     Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${userUUID.take(4)}")
                     pathSnapshot.documents.forEach {
-                        it.reference.delete()
+                        batch.delete(it.reference)
                     }
                     arePathsDeleted.value = true
                 }
@@ -181,6 +193,7 @@ class LocationNetworkDataSource @Inject constructor(
     }
 
     fun deleteLocationsForSession(
+        batch: WriteBatch,
         sessionUUID: String,
         onDelete: () -> Unit = {}
     ) {
@@ -194,7 +207,7 @@ class LocationNetworkDataSource @Inject constructor(
                 } else {
                     Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${authInteractor.userUUID?.take(4)}")
                     pathSnapshot.documents.forEach {
-                        it.reference.delete()
+                        batch.delete(it.reference)
                     }
                     arePathsDeleted.value = true
                     onDelete()
@@ -211,6 +224,19 @@ class LocationNetworkDataSource @Inject constructor(
         }
     }
 
+    fun deleteLocationsForSession(
+        sessionUUID: String,
+        onDelete: () -> Unit = {}
+    ) {
+        firestore.runBatch {
+            deleteLocationsForSession(
+                batch = it,
+                sessionUUID = sessionUUID,
+                onDelete = onDelete
+            )
+        }
+    }
+
     fun deleteLocationsForSessions(
         sessionUUIDs: List<String>,
         onDelete: (String) -> Unit = {}
@@ -220,5 +246,17 @@ class LocationNetworkDataSource @Inject constructor(
             return
         }
         sessionUUIDs.forEach { deleteLocationsForSession(it) { onDelete(it) } }
+    }
+
+    fun deleteLocationsForSessions(
+        batch: WriteBatch,
+        sessionUUIDs: List<String>,
+        onDelete: (String) -> Unit = {}
+    ) {
+        if (sessionUUIDs.isEmpty()) {
+            Timber.d("No sessions given to delete paths for!")
+            return
+        }
+        sessionUUIDs.forEach { deleteLocationsForSession(batch, it) { onDelete(it) } }
     }
 }
