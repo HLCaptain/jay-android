@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.session
 
+import android.graphics.Color.parseColor
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -44,21 +45,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.os.ConfigurationCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
+import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.interpolate
+import com.mapbox.maps.extension.style.layers.addLayerBelow
+import com.mapbox.maps.extension.style.layers.generated.lineLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
+import com.mapbox.maps.extension.style.layers.properties.generated.LineCap
+import com.mapbox.maps.extension.style.layers.properties.generated.LineJoin
+import com.mapbox.maps.extension.style.sources.addSource
+import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
+import com.mapbox.maps.plugin.annotation.AnnotationConfig
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
-import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
@@ -76,7 +87,9 @@ import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapMarkers
+import illyan.jay.ui.theme.signatureBlue
 import illyan.jay.util.format
+import timber.log.Timber
 import java.math.RoundingMode
 import java.time.format.DateTimeFormatter
 import java.util.TimeZone
@@ -131,29 +144,52 @@ fun SessionScreen(
         }
     }
     val context = LocalContext.current
+    val density = LocalDensity.current.density
     val mapMarkers by mapMarkers.collectAsStateWithLifecycle()
     DisposableEffect(
         path
     ) {
+        val points = path?.map {
+            Point.fromLngLat(it.latLng.longitude, it.latLng.latitude)
+        } ?: emptyList()
         val sortedLocations = path?.sortedBy { it.zonedDateTime }?.map { it.latLng }
         val startPoint = sortedLocations?.first()
         val endPoint = sortedLocations?.last()
         val annotationsPlugin = mapView.value?.annotations
-        val polylineAnnotationManager = annotationsPlugin?.createPolylineAnnotationManager()
-        val pointAnnotationManager = annotationsPlugin?.createPointAnnotationManager()
-        polylineAnnotationManager?.create(
-            option = PolylineAnnotationOptions()
-                .withPoints(
-                    path?.map {
-                        Point.fromLngLat(it.latLng.longitude, it.latLng.latitude)
-                    } ?: emptyList()
-                )
-                // TODO: make this drawn line a gradient, showing speed via LineLayer,
-                //  aka https://docs.mapbox.com/android/legacy/maps/examples/line-gradient/
-                // AzureBlue
-                .withLineColor("#1b8fff")
-                .withLineWidth(5.0)
+        val lineWidth = (2.dp * density).value.toDouble()
+        // FIXME: extract source and layer id functionality to a different class
+        val pointAnnotationManager = annotationsPlugin?.createPointAnnotationManager(
+            annotationConfig = AnnotationConfig(
+                sourceId = "MARKER_SOURCE_ID",
+                layerId = "MARKER_LAYER_ID",
+            )
         )
+        // Used reference from https://github.com/mapbox/mapbox-maps-android/blob/e8becd34eede7049feeaa4a8d3cca1b72be9f1bb/app/src/main/java/com/mapbox/maps/testapp/examples/linesandpolygons/LineGradientActivity.kt#L32
+        mapView.value?.getMapboxMap()?.getStyle { style ->
+            Timber.d("Adding source")
+            style.addSource(
+                geoJsonSource(id = "ROUTE_LINE_SOURCE_ID") {
+                    feature(Feature.fromGeometry(LineString.fromLngLats(points)))
+                    lineMetrics(true)
+                }
+            )
+            style.addLayerBelow(
+                layer = lineLayer("ROUTE_LAYER_ID", "ROUTE_LINE_SOURCE_ID") {
+                    lineCap(LineCap.ROUND)
+                    lineJoin(LineJoin.ROUND)
+                    lineWidth(lineWidth)
+                    lineGradient(
+                        interpolate {
+                            linear()
+                            lineProgress()
+                            stop(0.0) { color(parseColor("#00ff8c")) }
+                            stop(1.0) { color(MaterialTheme.signatureBlue.toArgb()) }
+                        }
+                    )
+                },
+                below = "MARKER_LAYER_ID"
+            )
+        }
         startPoint?.let { point ->
             mapMarkers?.let {
                 pointAnnotationManager?.create(
@@ -175,8 +211,11 @@ fun SessionScreen(
             }
         }
         onDispose {
-            annotationsPlugin?.removeAnnotationManager(polylineAnnotationManager!!)
             annotationsPlugin?.removeAnnotationManager(pointAnnotationManager!!)
+            mapView.value?.getMapboxMap()?.getStyle {
+                it.removeStyleLayer("ROUTE_LAYER_ID")
+                it.removeStyleSource("ROUTE_LINE_SOURCE_ID")
+            }
         }
     }
     val session by viewModel.session.collectAsStateWithLifecycle()
