@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -84,6 +85,9 @@ class FreeDriveViewModel @Inject constructor(
     private val _navigationCamera = MutableStateFlow<NavigationCamera?>(null)
     val navigationCamera = _navigationCamera.asStateFlow()
 
+    private val _firstLocationReceived = MutableStateFlow(false )
+    val firstLocationReceived = _firstLocationReceived.asStateFlow()
+
     private val routesObserver = RoutesObserver { result ->
         val routes = result.navigationRoutes
         if (routes.isNotEmpty()) {
@@ -101,15 +105,14 @@ class FreeDriveViewModel @Inject constructor(
     }
 
     private val callback = object : LocationEngineCallback<LocationEngineResult> {
-        var firstLocationReceived = false
         override fun onSuccess(result: LocationEngineResult?) {
             result?.let {
                 it.lastLocation?.let { lastLocation ->
                     viewportDataSource.value?.onLocationChanged(lastLocation)
                     viewportDataSource.value?.evaluate()
                     _lastLocation.value = lastLocation
-                    if (!firstLocationReceived) {
-                        firstLocationReceived = true
+                    if (!firstLocationReceived.value) {
+                        _firstLocationReceived.value = true
                         navigationCamera.value?.requestNavigationCameraToFollowing()
                     }
                     Unit
@@ -118,7 +121,7 @@ class FreeDriveViewModel @Inject constructor(
         }
 
         override fun onFailure(exception: Exception) {
-            exception.printStackTrace()
+            Timber.e(exception, "Failure while getting locations from Mapbox: ${exception.message}")
         }
     }
 
@@ -176,6 +179,7 @@ class FreeDriveViewModel @Inject constructor(
             it.unregisterRouteProgressObserver(routeProgressObserver)
         }
         _mapboxNavigation.value?.onDestroy()
+        _firstLocationReceived.value = false
     }
 
     fun toggleService() {

@@ -42,11 +42,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.LatLng
+import com.mapbox.geojson.Point
+import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
@@ -61,18 +64,18 @@ import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.home.tryFlyToLocation
 import illyan.jay.ui.map.BmeK
-import illyan.jay.ui.map.getBitmapFromVectorDrawable
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.poi.model.PlaceMetadata
-import illyan.jay.ui.poi.model.toPoint
 import illyan.jay.ui.sheet.SheetNavGraph
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.mapMarkers
 import illyan.jay.util.largeTextPlaceholder
 import illyan.jay.util.plus
 import illyan.jay.util.textPlaceholder
 import java.math.RoundingMode
+import kotlin.math.roundToInt
 
 val DefaultScreenOnSheetPaddingHorizontal = PaddingValues(
     start = MenuItemPadding * 2,
@@ -116,26 +119,32 @@ fun Poi(
         sheetHeightNotSet = sheetState.isAnimationRunning
     }
     val context = LocalContext.current
+    val mapMarkers by mapMarkers.collectAsStateWithLifecycle()
+    val markerHeight = (36.dp * LocalDensity.current.density).value.roundToInt()
     DisposableEffect(
         place,
-        placeMetadata
+        placeMetadata,
+        mapMarkers
     ) {
-        if (place != null) {
-            val pointAnnotationManager = mapView.value?.annotations?.createPointAnnotationManager()
-            val pointAnnotationOptions = PointAnnotationOptions()
-                .withIconImage(
-                    getBitmapFromVectorDrawable(
-                        context,
-                        R.drawable.ic_jay_marker_icon_v3_round
-                    )
+        val annotationsPlugin = mapView.value?.annotations
+        val pointAnnotationManager = annotationsPlugin?.createPointAnnotationManager()
+        place?.let { point ->
+            mapMarkers?.let {
+                pointAnnotationManager?.create(
+                    option = PointAnnotationOptions()
+                        .withPoint(Point.fromLngLat(point.longitude, point.latitude))
+                        .withIconImage(
+                            it.getPoiBitmap(
+                                context = context,
+                                height = markerHeight
+                            )
+                        )
+                        .withIconAnchor(IconAnchor.BOTTOM)
                 )
-                // I know, the point annotation is fake, because it is not at
-                // the placeInfo's coordinates, but instead a place's.
-                .withPoint(place!!.toPoint())
-            val annotation = pointAnnotationManager?.create(pointAnnotationOptions)
-            onDispose { annotation?.let { pointAnnotationManager.delete(it) } }
-        } else {
-            onDispose {}
+            }
+        }
+        onDispose {
+            annotationsPlugin?.removeAnnotationManager(pointAnnotationManager!!)
         }
     }
     LaunchedEffect(

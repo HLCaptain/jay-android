@@ -88,6 +88,34 @@ class SessionNetworkDataSource @Inject constructor(
         onSuccess = onSuccess,
     )
 
+    fun deleteAllSessions(batch: WriteBatch) = deleteSessions(
+        batch = batch,
+        sessionUUIDs = userNetworkDataSource.user.value?.sessions?.map { it.uuid } ?: emptyList(),
+    )
+
+    @JvmName("deleteSessionsByUUIDs")
+    fun deleteSessions(
+        batch: WriteBatch,
+        sessionUUIDs: List<String>,
+        userUUID: String = authInteractor.userUUID.toString(),
+    ) {
+        if (!authInteractor.isUserSignedIn || sessionUUIDs.isEmpty()) return
+        coroutineScopeIO.launch {
+            userNetworkDataSource.user.first { user ->
+                user?.let {
+                    val domainSessions = user.sessions.map { it.toDomainModel(userUUID) }
+                    val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
+                    deleteSessions(
+                        batch = batch,
+                        domainSessions = sessionsToDelete,
+                        userUUID = userUUID,
+                    )
+                }
+                user != null
+            }
+        }
+    }
+
     @JvmName("deleteSessionsByUUIDs")
     fun deleteSessions(
         sessionUUIDs: List<String>,
@@ -96,24 +124,36 @@ class SessionNetworkDataSource @Inject constructor(
         onCancel: () -> Unit = { Timber.i("Deleting sessions canceled") },
         onSuccess: () -> Unit = { Timber.i("Deleted sessions") }
     ) {
-        if (!authInteractor.isUserSignedIn || sessionUUIDs.isEmpty()) return
-        Timber.i("Deleting ${sessionUUIDs.size} sessions for user ${userUUID.take(4)} from the cloud")
-        coroutineScopeIO.launch {
-            userNetworkDataSource.user.first { user ->
-                user?.let {
-                    val domainSessions = user.sessions.map { it.toDomainModel(userUUID) }
-                    val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }
-                    deleteSessions(
-                        domainSessions = sessionsToDelete,
-                        userUUID = userUUID,
-                        onFailure = onFailure,
-                        onCancel = onCancel,
-                        onSuccess = onSuccess
-                    )
-                }
-                user != null
-            }
+        firestore.runBatch {
+            deleteSessions(
+                batch = it,
+                sessionUUIDs = sessionUUIDs,
+                userUUID = userUUID,
+            )
+        }.addOnSuccessListener {
+            onSuccess()
+        }.addOnFailureListener { exception ->
+            onFailure(exception)
+        }.addOnCanceledListener {
+            onCancel()
         }
+    }
+
+    fun deleteSessions(
+        batch: WriteBatch,
+        domainSessions: List<DomainSession>,
+        userUUID: String = authInteractor.userUUID.toString(),
+    ) {
+        if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
+        val userRef = firestore
+            .collection(FirestoreUser.CollectionName)
+            .document(userUUID)
+        Timber.i("Deleting ${domainSessions.size} sessions for user ${userUUID.take(4)} from the cloud")
+        batch.set(
+            userRef,
+            mapOf(FirestoreUser.FieldSessions to FieldValue.arrayRemove(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),
+            SetOptions.merge()
+        )
     }
 
     fun deleteSessions(
@@ -124,15 +164,11 @@ class SessionNetworkDataSource @Inject constructor(
         onSuccess: () -> Unit = { Timber.i("Deleted ${domainSessions.size} sessions") }
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
-        val userRef = firestore
-            .collection(FirestoreUser.CollectionName)
-            .document(userUUID)
-        Timber.i("Deleting ${domainSessions.size} sessions for user ${userUUID.take(4)} from the cloud")
         firestore.runBatch { batch ->
-            batch.set(
-                userRef,
-                mapOf(FirestoreUser.FieldSessions to FieldValue.arrayRemove(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),
-                SetOptions.merge()
+            deleteSessions(
+                batch = batch,
+                domainSessions = domainSessions,
+                userUUID = userUUID,
             )
         }.addOnSuccessListener {
             onSuccess()
@@ -162,7 +198,7 @@ class SessionNetworkDataSource @Inject constructor(
         onSuccess: (List<DomainSession>) -> Unit
     ) {
         firestore.runBatch { batch ->
-            insertSessions(domainSessions, batch)
+            insertSessions(batch, domainSessions)
         }.addOnSuccessListener {
             onSuccess(domainSessions)
         }.addOnFailureListener { exception ->
@@ -173,8 +209,8 @@ class SessionNetworkDataSource @Inject constructor(
     }
 
     fun insertSessions(
-        domainSessions: List<DomainSession>,
         batch: WriteBatch,
+        domainSessions: List<DomainSession>,
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
         val userRef = firestore
