@@ -151,15 +151,19 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
         Timber.i("Trying to delete sessions' data for user ${authInteractor.userUUID?.take(4)}")
-        sessionNetworkDataSource.deleteAllSessions()
-        locationNetworkDataSource.deleteLocationsForUser()
+        firestore.runBatch {
+            sessionNetworkDataSource.deleteAllSessions(batch = it)
+            locationNetworkDataSource.deleteLocationsForUser(batch = it)
+        }
     }
 
     suspend fun deleteAllSyncedData() {
         if (!authInteractor.isUserSignedIn) return
         Timber.i("Trying to delete user data for user ${authInteractor.userUUID?.take(4)}")
-        userNetworkDataSource.deleteUserData()
-        locationNetworkDataSource.deleteLocationsForUser()
+        firestore.runBatch {
+            userNetworkDataSource.deleteUserData(batch = it)
+            locationNetworkDataSource.deleteLocationsForUser(batch = it)
+        }
     }
 
     fun uploadSessions(
@@ -171,13 +175,13 @@ class SessionInteractor @Inject constructor(
         Timber.i("Upload ${sessions.size} sessions with location info to the cloud")
         firestore.runBatch { batch ->
             sessionNetworkDataSource.insertSessions(
-                domainSessions = sessions,
-                batch = batch
+                batch = batch,
+                domainSessions = sessions
             )
             locationNetworkDataSource.insertLocations(
+                batch = batch,
                 domainSessions = sessions,
-                domainLocations = locations,
-                batch = batch
+                domainLocations = locations
             )
         }.addOnSuccessListener {
             onSuccess(sessions)
@@ -502,15 +506,31 @@ class SessionInteractor @Inject constructor(
 
     @JvmName("deleteSessionsFromCloudByUUIDs")
     fun deleteSessionsFromCloud(sessionUUIDs: List<String>) {
-        sessionNetworkDataSource.deleteSessions(sessionUUIDs)
-        locationNetworkDataSource.deleteLocationsForSessions(sessionUUIDs)
+        firestore.runBatch {
+            sessionNetworkDataSource.deleteSessions(
+                batch = it,
+                sessionUUIDs = sessionUUIDs
+            )
+            locationNetworkDataSource.deleteLocationsForSessions(
+                batch = it,
+                sessionUUIDs = sessionUUIDs
+            )
+        }
     }
 
     fun deleteSessionFromCloud(domainSession: DomainSession) = deleteSessionsFromCloud(listOf(domainSession))
 
     fun deleteSessionsFromCloud(domainSessions: List<DomainSession>) {
-        sessionNetworkDataSource.deleteSessions(domainSessions)
-        locationNetworkDataSource.deleteLocationsForSessions(domainSessions.map { it.uuid })
+        firestore.runBatch { batch ->
+            sessionNetworkDataSource.deleteSessions(
+                batch = batch,
+                domainSessions = domainSessions
+            )
+            locationNetworkDataSource.deleteLocationsForSessions(
+                batch = batch,
+                sessionUUIDs = domainSessions.map { it.uuid }
+            )
+        }
     }
 
     /**
