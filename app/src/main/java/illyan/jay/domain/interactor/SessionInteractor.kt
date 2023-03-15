@@ -33,8 +33,10 @@ import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sphericalPathLength
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -151,18 +153,64 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
         Timber.i("Trying to delete sessions' data for user ${authInteractor.userUUID?.take(4)}")
-        firestore.runBatch {
-            sessionNetworkDataSource.deleteAllSessions(batch = it)
-            locationNetworkDataSource.deleteLocationsForUser(batch = it)
+        val batch = firestore.batch()
+        val finishedDeletingSessions = MutableStateFlow(false)
+        val finishedDeletingLocations = MutableStateFlow(false)
+        sessionNetworkDataSource.deleteAllSessions(
+            batch = batch,
+            onWriteFinished = { finishedDeletingSessions.value = true }
+        )
+        locationNetworkDataSource.deleteLocationsForUser(
+            batch = batch,
+            onWriteFinished = { finishedDeletingLocations.value = true }
+        )
+        coroutineScopeIO.launch {
+            combine(
+                finishedDeletingSessions,
+                finishedDeletingLocations
+            ) {
+                sessions, locations ->
+                sessions && locations
+            }.first {
+                if (it) {
+                    batch.commit()
+                    true
+                } else {
+                    false
+                }
+            }
         }
     }
 
     suspend fun deleteAllSyncedData() {
         if (!authInteractor.isUserSignedIn) return
         Timber.i("Trying to delete user data for user ${authInteractor.userUUID?.take(4)}")
-        firestore.runBatch {
-            userNetworkDataSource.deleteUserData(batch = it)
-            locationNetworkDataSource.deleteLocationsForUser(batch = it)
+        val batch = firestore.batch()
+        val finishedDeletingUserData = MutableStateFlow(false)
+        val finishedDeletingLocations = MutableStateFlow(false)
+        userNetworkDataSource.deleteUserData(
+            batch = batch,
+            onWriteFinished = { finishedDeletingUserData.value = true }
+        )
+        locationNetworkDataSource.deleteLocationsForUser(
+            batch = batch,
+            onWriteFinished = { finishedDeletingLocations.value = true }
+        )
+        coroutineScopeIO.launch {
+            combine(
+                finishedDeletingUserData,
+                finishedDeletingLocations
+            ) {
+                user, locations ->
+                user && locations
+            }.first {
+                if (it) {
+                    batch.commit()
+                    true
+                } else {
+                    false
+                }
+            }
         }
     }
 
@@ -506,31 +554,41 @@ class SessionInteractor @Inject constructor(
 
     @JvmName("deleteSessionsFromCloudByUUIDs")
     fun deleteSessionsFromCloud(sessionUUIDs: List<String>) {
-        firestore.runBatch {
-            sessionNetworkDataSource.deleteSessions(
-                batch = it,
-                sessionUUIDs = sessionUUIDs
-            )
-            locationNetworkDataSource.deleteLocationsForSessions(
-                batch = it,
-                sessionUUIDs = sessionUUIDs
-            )
+        val batch = firestore.batch()
+        val finishedDeletingSessions = MutableStateFlow(false)
+        val finishedDeletingLocations = MutableStateFlow(false)
+        sessionNetworkDataSource.deleteSessions(
+            batch = batch,
+            sessionUUIDs = sessionUUIDs,
+            onWriteFinished = { finishedDeletingSessions.value = true }
+        )
+        locationNetworkDataSource.deleteLocationsForSessions(
+            batch = batch,
+            sessionUUIDs = sessionUUIDs,
+            onWriteFinished = { finishedDeletingLocations.value = true }
+        )
+        coroutineScopeIO.launch {
+            combine(
+                finishedDeletingSessions,
+                finishedDeletingLocations
+            ) {
+                sessions, locations ->
+                sessions && locations
+            }.first {
+                if (it) {
+                    batch.commit()
+                    true
+                } else {
+                    false
+                }
+            }
         }
     }
 
     fun deleteSessionFromCloud(domainSession: DomainSession) = deleteSessionsFromCloud(listOf(domainSession))
 
     fun deleteSessionsFromCloud(domainSessions: List<DomainSession>) {
-        firestore.runBatch { batch ->
-            sessionNetworkDataSource.deleteSessions(
-                batch = batch,
-                domainSessions = domainSessions
-            )
-            locationNetworkDataSource.deleteLocationsForSessions(
-                batch = batch,
-                sessionUUIDs = domainSessions.map { it.uuid }
-            )
-        }
+        deleteSessionsFromCloud(domainSessions.map { it.uuid })
     }
 
     /**

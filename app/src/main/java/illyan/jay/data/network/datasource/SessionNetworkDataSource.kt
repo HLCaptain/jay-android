@@ -88,9 +88,13 @@ class SessionNetworkDataSource @Inject constructor(
         onSuccess = onSuccess,
     )
 
-    fun deleteAllSessions(batch: WriteBatch) = deleteSessions(
+    fun deleteAllSessions(
+        batch: WriteBatch,
+        onWriteFinished: () -> Unit = {}
+    ) = deleteSessions(
         batch = batch,
         sessionUUIDs = userNetworkDataSource.user.value?.sessions?.map { it.uuid } ?: emptyList(),
+        onWriteFinished = onWriteFinished,
     )
 
     @JvmName("deleteSessionsByUUIDs")
@@ -98,6 +102,7 @@ class SessionNetworkDataSource @Inject constructor(
         batch: WriteBatch,
         sessionUUIDs: List<String>,
         userUUID: String = authInteractor.userUUID.toString(),
+        onWriteFinished: () -> Unit = {}
     ) {
         if (!authInteractor.isUserSignedIn || sessionUUIDs.isEmpty()) return
         coroutineScopeIO.launch {
@@ -109,6 +114,7 @@ class SessionNetworkDataSource @Inject constructor(
                         batch = batch,
                         domainSessions = sessionsToDelete,
                         userUUID = userUUID,
+                        onWriteFinished = onWriteFinished
                     )
                 }
                 user != null
@@ -143,6 +149,7 @@ class SessionNetworkDataSource @Inject constructor(
         batch: WriteBatch,
         domainSessions: List<DomainSession>,
         userUUID: String = authInteractor.userUUID.toString(),
+        onWriteFinished: () -> Unit = {}
     ) {
         if (!authInteractor.isUserSignedIn || domainSessions.isEmpty()) return
         val userRef = firestore
@@ -154,6 +161,7 @@ class SessionNetworkDataSource @Inject constructor(
             mapOf(FirestoreUser.FieldSessions to FieldValue.arrayRemove(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),
             SetOptions.merge()
         )
+        onWriteFinished()
     }
 
     fun deleteSessions(

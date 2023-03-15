@@ -198,9 +198,13 @@ class UserNetworkDataSource @Inject constructor(
         }
     }
 
-    fun deleteUserData(batch: WriteBatch) {
+    fun deleteUserData(
+        batch: WriteBatch,
+        onWriteFinished: () -> Unit = {}
+    ) {
         _userReference.value?.apply {
             batch.delete(reference)
+            onWriteFinished()
         }
     }
 }

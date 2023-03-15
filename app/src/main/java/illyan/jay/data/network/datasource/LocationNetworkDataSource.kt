@@ -163,6 +163,7 @@ class LocationNetworkDataSource @Inject constructor(
 
     fun deleteLocationsForUser(
         batch: WriteBatch,
+        onWriteFinished: () -> Unit = {},
         userUUID: String = authInteractor.userUUID.toString()
     ) {
         if (!authInteractor.isUserSignedIn) return
@@ -186,6 +187,7 @@ class LocationNetworkDataSource @Inject constructor(
                 if (it) {
                     Timber.d("Removing path listener from Firestore")
                     pathSnapshotListener.remove()
+                    onWriteFinished()
                 }
                 it
             }
@@ -251,12 +253,27 @@ class LocationNetworkDataSource @Inject constructor(
     fun deleteLocationsForSessions(
         batch: WriteBatch,
         sessionUUIDs: List<String>,
-        onDelete: (String) -> Unit = {}
+        onWriteFinished: () -> Unit = {}
     ) {
+        val numberOfDeletions = MutableStateFlow(sessionUUIDs.size)
         if (sessionUUIDs.isEmpty()) {
             Timber.d("No sessions given to delete paths for!")
             return
         }
-        sessionUUIDs.forEach { deleteLocationsForSession(batch, it) { onDelete(it) } }
+        sessionUUIDs.forEach {
+            deleteLocationsForSession(batch, it) {
+                numberOfDeletions.value = numberOfDeletions.value - 1
+            }
+        }
+        coroutineScopeIO.launch {
+            numberOfDeletions.first {
+                if (it <= 0) {
+                    onWriteFinished()
+                    true
+                } else {
+                    false
+                }
+            }
+        }
     }
 }
