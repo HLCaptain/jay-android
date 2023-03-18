@@ -30,8 +30,14 @@ import illyan.jay.data.network.datasource.UserNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
+import illyan.jay.util.completeNext
 import illyan.jay.util.sphericalPathLength
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -152,66 +158,40 @@ class SessionInteractor @Inject constructor(
 
     suspend fun deleteSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
-        Timber.i("Trying to delete sessions' data for user ${authInteractor.userUUID?.take(4)}")
+        Timber.d("Batch created to delete session data for user ${authInteractor.userUUID?.take(4)} from cloud")
         val batch = firestore.batch()
-        val finishedDeletingSessions = MutableStateFlow(false)
-        val finishedDeletingLocations = MutableStateFlow(false)
+        val completableDeferred = List(2) { CompletableDeferred<Unit>() }
         sessionNetworkDataSource.deleteAllSessions(
             batch = batch,
-            onWriteFinished = { finishedDeletingSessions.value = true }
+            onWriteFinished = { completableDeferred.completeNext() }
         )
         locationNetworkDataSource.deleteLocationsForUser(
             batch = batch,
-            onWriteFinished = { finishedDeletingLocations.value = true }
+            onWriteFinished = { completableDeferred.completeNext() }
         )
-        coroutineScopeIO.launch {
-            combine(
-                finishedDeletingSessions,
-                finishedDeletingLocations
-            ) {
-                sessions, locations ->
-                sessions && locations
-            }.first {
-                if (it) {
-                    batch.commit()
-                    true
-                } else {
-                    false
-                }
-            }
-        }
+        Timber.v("Awaiting modifications to batch")
+        awaitAll(*completableDeferred.toTypedArray())
+        Timber.d("Committing batch")
+        batch.commit()
     }
 
     suspend fun deleteAllSyncedData() {
         if (!authInteractor.isUserSignedIn) return
-        Timber.i("Trying to delete user data for user ${authInteractor.userUUID?.take(4)}")
+        Timber.d("Batch created to delete user ${authInteractor.userUUID?.take(4)} from cloud")
         val batch = firestore.batch()
-        val finishedDeletingUserData = MutableStateFlow(false)
-        val finishedDeletingLocations = MutableStateFlow(false)
+        val completableDeferred = List(2) { CompletableDeferred<Unit>() }
         userNetworkDataSource.deleteUserData(
             batch = batch,
-            onWriteFinished = { finishedDeletingUserData.value = true }
+            onWriteFinished = { completableDeferred.completeNext() }
         )
         locationNetworkDataSource.deleteLocationsForUser(
             batch = batch,
-            onWriteFinished = { finishedDeletingLocations.value = true }
+            onWriteFinished = { completableDeferred.completeNext() }
         )
-        coroutineScopeIO.launch {
-            combine(
-                finishedDeletingUserData,
-                finishedDeletingLocations
-            ) {
-                user, locations ->
-                user && locations
-            }.first {
-                if (it) {
-                    batch.commit()
-                    true
-                } else {
-                    false
-                }
-            }
-        }
+        Timber.v("Awaiting modifications to batch")
+        awaitAll(*completableDeferred.toTypedArray())
+        Timber.d("Committing batch")
+        batch.commit()
     }
 
     fun uploadSessions(
@@ -550,44 +530,32 @@ class SessionInteractor @Inject constructor(
         sessionDiskDataSource.deleteSessions(stoppedSessions)
     }
 
-    fun deleteSessionFromCloud(sessionUUID: String) = deleteSessionsFromCloud(listOf(sessionUUID))
+    suspend fun deleteSessionFromCloud(sessionUUID: String) = deleteSessionsFromCloud(listOf(sessionUUID))
 
     @JvmName("deleteSessionsFromCloudByUUIDs")
-    fun deleteSessionsFromCloud(sessionUUIDs: List<String>) {
+    suspend fun deleteSessionsFromCloud(sessionUUIDs: List<String>) {
+        Timber.d("Batch created to delete ${sessionUUIDs.size} sessions from cloud")
         val batch = firestore.batch()
-        val finishedDeletingSessions = MutableStateFlow(false)
-        val finishedDeletingLocations = MutableStateFlow(false)
+        val completableDeferred = List(2) { CompletableDeferred<Unit>() }
         sessionNetworkDataSource.deleteSessions(
             batch = batch,
             sessionUUIDs = sessionUUIDs,
-            onWriteFinished = { finishedDeletingSessions.value = true }
+            onWriteFinished = { completableDeferred.completeNext() }
         )
         locationNetworkDataSource.deleteLocationsForSessions(
             batch = batch,
             sessionUUIDs = sessionUUIDs,
-            onWriteFinished = { finishedDeletingLocations.value = true }
+            onWriteFinished = { completableDeferred.completeNext() }
         )
-        coroutineScopeIO.launch {
-            combine(
-                finishedDeletingSessions,
-                finishedDeletingLocations
-            ) {
-                sessions, locations ->
-                sessions && locations
-            }.first {
-                if (it) {
-                    batch.commit()
-                    true
-                } else {
-                    false
-                }
-            }
-        }
+        Timber.v("Awaiting modifications to batch")
+        awaitAll(*completableDeferred.toTypedArray())
+        Timber.d("Committing batch")
+        batch.commit()
     }
 
-    fun deleteSessionFromCloud(domainSession: DomainSession) = deleteSessionsFromCloud(listOf(domainSession))
+    suspend fun deleteSessionFromCloud(domainSession: DomainSession) = deleteSessionsFromCloud(listOf(domainSession))
 
-    fun deleteSessionsFromCloud(domainSessions: List<DomainSession>) {
+    suspend fun deleteSessionsFromCloud(domainSessions: List<DomainSession>) {
         deleteSessionsFromCloud(domainSessions.map { it.uuid })
     }
 

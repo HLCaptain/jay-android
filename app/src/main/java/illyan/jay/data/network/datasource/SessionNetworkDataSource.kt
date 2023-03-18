@@ -155,7 +155,7 @@ class SessionNetworkDataSource @Inject constructor(
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
             .document(userUUID)
-        Timber.i("Deleting ${domainSessions.size} sessions for user ${userUUID.take(4)} from the cloud")
+        Timber.i("Batch remove ${domainSessions.size} sessions for user ${userUUID.take(4)} from the cloud")
         batch.set(
             userRef,
             mapOf(FirestoreUser.FieldSessions to FieldValue.arrayRemove(*domainSessions.map { it.toFirestoreModel() }.toTypedArray())),

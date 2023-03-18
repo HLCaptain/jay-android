@@ -48,6 +48,7 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import illyan.jay.domain.model.DomainLocation
+import kotlinx.coroutines.CompletableDeferred
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -229,3 +230,5 @@ fun Color.setLightness(lightness: Float): Color {
     hsl[2] = lightness
     return Color.hsl(hsl[0], hsl[1], hsl[2], alpha = alpha)
 }
+
+fun List<CompletableDeferred<Unit>>.completeNext() = firstOrNull { !it.isCompleted }?.complete(Unit) ?: false
