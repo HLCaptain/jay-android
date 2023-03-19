@@ -43,6 +43,7 @@ import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapOptions
 import com.mapbox.maps.MapView
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
@@ -111,10 +112,14 @@ fun MapboxMap(
             .pitch(cameraPitch)
             .padding(cameraPadding)
             .build(),
+
     )
 
     val map = remember {
-        val initializedMap = MapView(context, options)
+        val initializedMap = MapView(
+            context = context,
+            mapInitOptions = options,
+        )
         onMapInitialized(initializedMap)
         initializedMap
     }
@@ -133,6 +138,7 @@ fun MapboxMap(
     )
 }
 
+@OptIn(MapboxExperimental::class)
 @Composable
 private fun MapboxMapContainer(
     modifier: Modifier,
@@ -152,9 +158,9 @@ private fun MapboxMapContainer(
         modifier = modifier,
         factory = { map }
     ) {
+        it.logo.position = 0
         it.logo.marginTop = fixedStatusBarHeight.toFloat()
         it.compass.marginTop = fixedStatusBarHeight.toFloat()
-        it.logo.position = 0
         it.gestures.scrollEnabled = true
         it.scalebar.isMetricUnits = true // TODO: set this in settings or based on location, etc.
         it.scalebar.enabled = false // TODO: enable it later if needed (though pay attention to ugly design)
