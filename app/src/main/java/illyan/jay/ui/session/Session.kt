@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.session
 
-import android.graphics.Color.parseColor
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -26,15 +25,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -45,6 +51,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +67,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
+import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.interpolate
 import com.mapbox.maps.extension.style.layers.addLayerBelow
 import com.mapbox.maps.extension.style.layers.generated.lineLayer
@@ -83,11 +93,13 @@ import illyan.jay.ui.home.tryFlyToPath
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
+import illyan.jay.ui.session.model.GradientFilter
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapMarkers
 import illyan.jay.ui.theme.signatureBlue
+import illyan.jay.ui.theme.signaturePink
 import illyan.jay.util.format
 import timber.log.Timber
 import java.math.RoundingMode
@@ -97,6 +109,101 @@ import java.util.TimeZone
 val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding * 2,
     bottom = RoundedCornerRadius + MenuItemPadding * 2
+)
+
+fun defaultGradient(
+    start: Color = Color(red = 0x00, green = 0xFF, blue = 0x8c),
+    end: Color = MaterialTheme.signatureBlue,
+): Expression {
+    return interpolate {
+        linear()
+        lineProgress()
+        stop(0.0) { color(start.toArgb()) }
+        stop(1.0) { color(end.toArgb()) }
+    }
+}
+
+fun createGradientFromLocations(
+    locations: List<UiLocation>,
+    start: Color = Color(red = 0x00, green = 0xFF, blue = 0x8c),
+    stop: Color = MaterialTheme.signatureBlue,
+    getColorFraction: (UiLocation) -> Float,
+): Expression {
+    if (locations.isEmpty()) return defaultGradient()
+    val startMilli = locations.minOf { it.zonedDateTime.toInstant().toEpochMilli() }
+    val endMilli = locations.maxOf { it.zonedDateTime.toInstant().toEpochMilli() }
+    val durationMilli = (endMilli - startMilli)
+    val colorsWithKeys = locations.sortedBy {
+        it.zonedDateTime.toInstant().toEpochMilli()
+    }.map {
+        val currentMilli = it.zonedDateTime.toInstant().toEpochMilli()
+        lerp(start, stop, getColorFraction(it).coerceIn(0f, 1f)) to
+                (currentMilli - startMilli).toDouble() / durationMilli
+    }
+    return interpolate {
+        linear()
+        lineProgress()
+        colorsWithKeys.forEach {
+            stop(it.second) { color(it.first.toArgb()) }
+        }
+    }
+}
+
+fun elevationGradient(
+    locations: List<UiLocation>,
+    deepestColor: Color = Color.Blue,
+    highestColor: Color = MaterialTheme.signaturePink,
+) = createGradientFromLocations(
+    locations = locations,
+    start = deepestColor,
+    stop = highestColor,
+    getColorFraction = { location ->
+        val minElevation = locations.minOf { it.altitude }
+        val maxElevation = locations.maxOf { it.altitude }
+        if (minElevation == maxElevation) {
+            0f
+        } else {
+            (location.altitude - minElevation).toFloat() / (maxElevation - minElevation)
+        }
+    }
+)
+
+fun velocityGradient(
+    locations: List<UiLocation>,
+    fastestColor: Color = Color(red = 0x00, green = 0xFF, blue = 0x8c),
+    slowestColor: Color = Color.Red,
+) = createGradientFromLocations(
+    locations = locations,
+    start = slowestColor,
+    stop = fastestColor,
+    getColorFraction = { location ->
+        val minVelocity = locations.minOf { it.speed }
+        val maxVelocity = locations.maxOf { it.speed }
+        if (minVelocity == maxVelocity) {
+            0f
+        } else {
+            (location.speed - minVelocity) / (maxVelocity - minVelocity)
+        }
+    }
+)
+
+fun gpsAccuracyGradient(
+    locations: List<UiLocation>,
+    mostAccurateColor: Color = Color(red = 0x00, green = 0xFF, blue = 0x8c),
+    leastAccurateColor: Color = Color.Red,
+) = createGradientFromLocations(
+    locations = locations,
+    start = leastAccurateColor,
+    stop = mostAccurateColor,
+    getColorFraction = { location ->
+        val leastAccurate = locations.maxOf { it.accuracy }
+        val mostAccurate = locations.minOf { it.accuracy }
+        if (leastAccurate == mostAccurate) {
+            0f
+        } else {
+            (location.accuracy - leastAccurate).toFloat() / (mostAccurate - leastAccurate)
+        }
+    }
 )
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -112,6 +219,7 @@ fun SessionScreen(
     LaunchedEffect(Unit) {
         viewModel.load(sessionUUID)
     }
+    val gradientFilter by viewModel.gradientFilter.collectAsStateWithLifecycle()
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     var flownToPath by remember { mutableStateOf(false) }
     val path by viewModel.path.collectAsStateWithLifecycle()
@@ -147,7 +255,8 @@ fun SessionScreen(
     val density = LocalDensity.current.density
     val mapMarkers by mapMarkers.collectAsStateWithLifecycle()
     DisposableEffect(
-        path
+        path,
+        gradientFilter
     ) {
         val points = path?.map {
             Point.fromLngLat(it.latLng.longitude, it.latLng.latitude)
@@ -179,11 +288,23 @@ fun SessionScreen(
                     lineJoin(LineJoin.ROUND)
                     lineWidth(lineWidth)
                     lineGradient(
-                        interpolate {
-                            linear()
-                            lineProgress()
-                            stop(0.0) { color(parseColor("#00ff8c")) }
-                            stop(1.0) { color(MaterialTheme.signatureBlue.toArgb()) }
+                        when(gradientFilter) {
+                            GradientFilter.Default -> defaultGradient()
+                            GradientFilter.Velocity -> velocityGradient(
+                                locations = path ?: emptyList(),
+                                slowestColor = Color.Red,
+                                fastestColor = Color.Green
+                            )
+                            GradientFilter.Elevation -> elevationGradient(
+                                locations = path ?: emptyList(),
+                                deepestColor = MaterialTheme.signatureBlue,
+                                highestColor = MaterialTheme.signaturePink
+                            )
+                            GradientFilter.GpsAccuracy -> gpsAccuracyGradient(
+                                locations = path ?: emptyList(),
+                                leastAccurateColor = Color.Red,
+                                mostAccurateColor = Color.Green
+                            )
                         }
                     )
                 },
@@ -220,11 +341,11 @@ fun SessionScreen(
     }
     val session by viewModel.session.collectAsStateWithLifecycle()
     SessionDetailsScreen(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(DefaultScreenOnSheetPadding),
+        modifier = Modifier.fillMaxWidth(),
         session = session,
         path = path,
+        gradientFilter = gradientFilter,
+        setGradientFilter = viewModel::setGradientFilter,
     )
 }
 
@@ -233,13 +354,19 @@ fun SessionDetailsScreen(
     modifier: Modifier = Modifier,
     session: UiSession? = null,
     path: List<UiLocation>? = null,
+    gradientFilter: GradientFilter = GradientFilter.Default,
+    setGradientFilter: (GradientFilter) -> Unit = {}
 ) {
+    val topPadding = DefaultScreenOnSheetPadding.calculateTopPadding()
+    val bottomPadding = DefaultScreenOnSheetPadding.calculateBottomPadding()
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = topPadding),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -361,6 +488,47 @@ fun SessionDetailsScreen(
                 stringResource(R.string.session_id) to session?.uuid
             ),
         )
+        val selectedTabIndex = gradientFilter.ordinal
+        TabRow(
+            modifier = Modifier.clip(
+                RoundedCornerShape(
+                    topStart = RoundedCornerRadius,
+                    topEnd = RoundedCornerRadius,
+                )
+            ),
+            divider = {},
+            selectedTabIndex = selectedTabIndex,
+            indicator = {
+                TabRowDefaults.Indicator(
+                    modifier = Modifier
+                        .tabIndicatorOffset(it[selectedTabIndex])
+                        .padding(start = 8.dp, end = 8.dp, bottom = bottomPadding - (MenuItemPadding.value * 1.5).dp)
+                        .clip(RoundedCornerShape(percent = 100))
+                )
+            }
+        ) {
+            GradientFilter.values().forEach {
+                Tab(
+                    selected = it == gradientFilter,
+                    onClick = { setGradientFilter(it) },
+                    text = {
+                        Column {
+                            Text(
+                                text = stringResource(
+                                    when(it) {
+                                        GradientFilter.Default -> R.string.gradient_filter_default
+                                        GradientFilter.Velocity -> R.string.gradient_filter_velocity
+                                        GradientFilter.Elevation -> R.string.gradient_filter_elevation
+                                        GradientFilter.GpsAccuracy -> R.string.gradient_filter_gps_accuracy
+                                    }
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(bottomPadding))
+                        }
+                    }
+                )
+            }
+        }
     }
 }
 
