@@ -24,6 +24,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.ui.session.model.GradientFilter
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
@@ -31,6 +32,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -47,8 +49,10 @@ class SessionViewModel @Inject constructor(
     private val _path = MutableStateFlow<List<UiLocation>?>(null)
     val path = _path.asStateFlow()
 
-    fun load(sessionUUID: String) {
+    private val _gradientFilter = MutableStateFlow(GradientFilter.Default)
+    val gradientFilter = _gradientFilter.asStateFlow()
 
+    fun load(sessionUUID: String) {
         viewModelScope.launch(dispatcherIO) {
             Timber.d("Trying to load session with ID: $sessionUUID")
             sessionInteractor.getSession(sessionUUID).collectLatest { session ->
@@ -70,5 +74,9 @@ class SessionViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun setGradientFilter(filter: GradientFilter) {
+        _gradientFilter.update { filter }
     }
 }
