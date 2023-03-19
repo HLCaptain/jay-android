@@ -159,7 +159,7 @@ fun elevationGradient(
         val minElevation = locations.minOf { it.altitude }
         val maxElevation = locations.maxOf { it.altitude }
         if (minElevation == maxElevation) {
-            0f
+            0.5f
         } else {
             (location.altitude - minElevation).toFloat() / (maxElevation - minElevation)
         }
@@ -178,7 +178,7 @@ fun velocityGradient(
         val minVelocity = locations.minOf { it.speed }
         val maxVelocity = locations.maxOf { it.speed }
         if (minVelocity == maxVelocity) {
-            0f
+            0.5f
         } else {
             (location.speed - minVelocity) / (maxVelocity - minVelocity)
         }
@@ -197,7 +197,7 @@ fun gpsAccuracyGradient(
         val leastAccurate = locations.maxOf { it.accuracy }
         val mostAccurate = locations.minOf { it.accuracy }
         if (leastAccurate == mostAccurate) {
-            0f
+            0.5f
         } else {
             (location.accuracy - leastAccurate).toFloat() / (mostAccurate - leastAccurate)
         }
