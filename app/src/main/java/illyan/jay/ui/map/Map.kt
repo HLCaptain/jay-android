@@ -21,6 +21,8 @@ package illyan.jay.ui.map
 import android.content.Context
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.AndroidView
@@ -45,8 +48,10 @@ import com.mapbox.maps.Style
 import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.plugin.LocationPuck2D
+import com.mapbox.maps.plugin.compass.compass
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
+import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
 import illyan.jay.R
 import illyan.jay.ui.poi.model.Place
@@ -141,12 +146,16 @@ private fun MapboxMapContainer(
         map.getMapboxMap().addOnCameraChangeListener { onCameraChanged(map.getMapboxMap().cameraState) }
         onDispose { map.getMapboxMap().removeOnMapLoadedListener(onMapLoadedListener) }
     }
+    val statusBarHeight =  LocalDensity.current.run { WindowInsets.statusBars.getTop(this) }
+    val fixedStatusBarHeight = remember { statusBarHeight }
     AndroidView(
         modifier = modifier,
         factory = { map }
     ) {
+        it.logo.marginTop = fixedStatusBarHeight.toFloat()
+        it.compass.marginTop = fixedStatusBarHeight.toFloat()
+        it.logo.position = 0
         it.gestures.scrollEnabled = true
-        // it.logo.enabled = false // Logo is enabled due to Terms of Service
         it.scalebar.isMetricUnits = true // TODO: set this in settings or based on location, etc.
         it.scalebar.enabled = false // TODO: enable it later if needed (though pay attention to ugly design)
     }
