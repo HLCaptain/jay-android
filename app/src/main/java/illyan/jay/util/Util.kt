@@ -40,14 +40,21 @@ import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.placeholder
 import com.google.accompanist.placeholder.material.shimmer
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.Task
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.WriteBatch
 import com.google.maps.android.SphericalUtil
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import illyan.jay.domain.model.DomainLocation
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.awaitAll
+import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -204,7 +211,7 @@ fun Modifier.cardPlaceholder(
 }
 
 /**
- * Finds all potential URLs's start and end indices in the String.
+ * Finds all potential URLs' start and end indices in the String.
  */
 fun String.findUrlIntervals(
     urlRegex: Regex = "[(http(s)?):\\/\\/(www\\.)?a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)".toRegex()
@@ -228,4 +235,28 @@ fun Color.setLightness(lightness: Float): Color {
     ColorUtils.colorToHSL(rgb, hsl)
     hsl[2] = lightness
     return Color.hsl(hsl[0], hsl[1], hsl[2], alpha = alpha)
+}
+
+fun Collection<CompletableDeferred<Unit>>.completeNext() = firstOrNull { !it.isCompleted }?.complete(Unit) ?: false
+
+suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(vararg deferred: Deferred<T>): Task<Void> {
+    Timber.v("Awaiting modifications to batch")
+    awaitAll(*deferred)
+    Timber.d("Committing batch")
+    return commit()
+}
+
+suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(deferred: List<Deferred<T>>) = awaitAllThenCommit(*deferred.toTypedArray())
+
+suspend fun FirebaseFirestore.runBatch(
+    numberOfWrites: Int,
+    body: suspend (
+        batch: WriteBatch,
+        completableDeferred: List<CompletableDeferred<Unit>>
+    ) -> Unit
+): Task<Void> {
+    val batch = batch()
+    val completableDeferred = List(numberOfWrites) { CompletableDeferred<Unit>() }
+    body(batch, completableDeferred)
+    return batch.awaitAllThenCommit(completableDeferred)
 }

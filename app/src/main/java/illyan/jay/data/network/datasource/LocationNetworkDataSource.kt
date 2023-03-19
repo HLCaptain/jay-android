@@ -28,7 +28,10 @@ import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
+import illyan.jay.util.completeNext
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -150,130 +153,110 @@ class LocationNetworkDataSource @Inject constructor(
         }
     }
 
-    fun deleteLocationsForUser(
-        userUUID: String = authInteractor.userUUID.toString()
+    suspend fun deleteLocationsForUser(
+        userUUID: String = authInteractor.userUUID.toString(),
+        onDelete: () -> Unit = {}
     ) {
-        firestore.runBatch {
-            deleteLocationsForUser(
-                batch = it,
-                userUUID = userUUID
-            )
-        }
+        val batch = firestore.batch()
+        deleteLocationsForUser(
+            batch = batch,
+            userUUID = userUUID,
+            onWriteFinished = {
+                batch.commit()
+                onDelete()
+            }
+        )
     }
 
-    fun deleteLocationsForUser(
+    suspend fun deleteLocationsForUser(
         batch: WriteBatch,
-        onWriteFinished: () -> Unit = {},
-        userUUID: String = authInteractor.userUUID.toString()
+        userUUID: String = authInteractor.userUUID.toString(),
+        onWriteFinished: () -> Unit = {}
     ) {
         if (!authInteractor.isUserSignedIn) return
-        val arePathsDeleted = MutableStateFlow(false)
+        val completableDeferred = CompletableDeferred<Unit>()
+        Timber.v("Adding snapshot listener to delete Sessions with ${userUUID.take(4)} as Owner")
         val pathSnapshotListener = firestore
             .collection(FirestorePath.CollectionName)
             .whereEqualTo(FirestorePath.FieldOwnerUUID, userUUID)
             .addSnapshotListener { pathSnapshot, pathError ->
                 if (pathError != null) {
                     Timber.e(pathError, "Error while deleting user data: ${pathError.message}")
-                } else if (!arePathsDeleted.value) {
-                    Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${userUUID.take(4)}")
-                    pathSnapshot.documents.forEach {
-                        batch.delete(it.reference)
-                    }
-                    arePathsDeleted.value = true
-                }
-            }
-        coroutineScopeIO.launch {
-            arePathsDeleted.first {
-                if (it) {
-                    Timber.d("Removing path listener from Firestore")
-                    pathSnapshotListener.remove()
-                    onWriteFinished()
-                }
-                it
-            }
-        }
-    }
-
-    fun deleteLocationsForSession(
-        batch: WriteBatch,
-        sessionUUID: String,
-        onDelete: () -> Unit = {}
-    ) {
-        val arePathsDeleted = MutableStateFlow(false)
-        val pathSnapshotListener = firestore
-            .collection(FirestorePath.CollectionName)
-            .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
-            .addSnapshotListener { pathSnapshot, pathError ->
-                if (pathError != null) {
-                    Timber.e(pathError, "Error while deleting path data: ${pathError.message}")
                 } else {
-                    Timber.d("Delete ${pathSnapshot!!.documents.size} path data for user ${authInteractor.userUUID?.take(4)}")
+                    Timber.d("Batch delete ${pathSnapshot!!.documents.size} path data for user ${userUUID.take(4)}")
                     pathSnapshot.documents.forEach {
                         batch.delete(it.reference)
                     }
-                    arePathsDeleted.value = true
-                    onDelete()
+                    onWriteFinished()
+                    completableDeferred.complete(Unit)
                 }
             }
-        coroutineScopeIO.launch {
-            arePathsDeleted.first { arePathsDeleted ->
-                if (arePathsDeleted) {
-                    Timber.d("Removing path listener from Firestore")
-                    pathSnapshotListener.remove()
-                }
-                arePathsDeleted
-            }
-        }
+        completableDeferred.await()
+        Timber.v("Removing snapshot listener from Firestore")
+        pathSnapshotListener.remove()
     }
 
-    fun deleteLocationsForSession(
+    suspend fun deleteLocationsForSession(
         sessionUUID: String,
         onDelete: () -> Unit = {}
     ) {
-        firestore.runBatch {
-            deleteLocationsForSession(
-                batch = it,
-                sessionUUID = sessionUUID,
-                onDelete = onDelete
-            )
-        }
+        val batch = firestore.batch()
+        deleteLocationsForSessions(
+            batch = batch,
+            sessionUUIDs = listOf(sessionUUID),
+            onWriteFinished = {
+                batch.commit()
+                onDelete()
+            }
+        )
     }
 
-    fun deleteLocationsForSessions(
+    suspend fun deleteLocationsForSessions(
         sessionUUIDs: List<String>,
-        onDelete: (String) -> Unit = {}
+        onDelete: () -> Unit = {}
     ) {
-        if (sessionUUIDs.isEmpty()) {
-            Timber.d("No sessions given to delete paths for!")
-            return
-        }
-        sessionUUIDs.forEach { deleteLocationsForSession(it) { onDelete(it) } }
+        val batch = firestore.batch()
+        deleteLocationsForSessions(
+            batch = batch,
+            sessionUUIDs = sessionUUIDs,
+            onWriteFinished = {
+                batch.commit()
+                onDelete()
+            }
+        )
     }
 
-    fun deleteLocationsForSessions(
+    suspend fun deleteLocationsForSessions(
         batch: WriteBatch,
         sessionUUIDs: List<String>,
         onWriteFinished: () -> Unit = {}
     ) {
-        val numberOfDeletions = MutableStateFlow(sessionUUIDs.size)
         if (sessionUUIDs.isEmpty()) {
-            Timber.d("No sessions given to delete paths for!")
+            Timber.d("No sessions given to delete paths for")
             return
         }
-        sessionUUIDs.forEach {
-            deleteLocationsForSession(batch, it) {
-                numberOfDeletions.value = numberOfDeletions.value - 1
-            }
-        }
-        coroutineScopeIO.launch {
-            numberOfDeletions.first {
-                if (it <= 0) {
-                    onWriteFinished()
-                    true
-                } else {
-                    false
+        // [Query.whereIn] can only take in at most 10 objects to compare
+        sessionUUIDs.chunked(10).forEach { chunk ->
+            val completableDeferred = CompletableDeferred<Unit>()
+            Timber.v("Adding snapshot listener to batch delete ${chunk.size} path data")
+            val pathSnapshotListener = firestore
+                .collection(FirestorePath.CollectionName)
+                .whereIn(FirestorePath.FieldSessionUUID, chunk)
+                .addSnapshotListener { pathSnapshot, pathError ->
+                    if (pathError != null) {
+                        Timber.e(pathError, "Error while deleting path data: ${pathError.message}")
+                    } else {
+                        Timber.d("Batch delete ${pathSnapshot!!.documents.size} path data for user ${authInteractor.userUUID?.take(4)}")
+                        pathSnapshot.documents.forEach {
+                            batch.delete(it.reference)
+                        }
+                        completableDeferred.complete(Unit)
+                        onWriteFinished()
+                    }
                 }
-            }
+            completableDeferred.await()
+            Timber.v("Removing snapshot listener from Firestore")
+            pathSnapshotListener.remove()
         }
     }
 }
