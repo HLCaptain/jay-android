@@ -23,6 +23,7 @@ import androidx.datastore.core.DataStore
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.perf.FirebasePerformance
 import dagger.hilt.android.HiltAndroidApp
 import illyan.jay.data.disk.model.AppSettings
 import illyan.jay.di.CoroutineScopeIO
@@ -43,6 +44,7 @@ class MainApplication : Application() {
     @Inject lateinit var authInteractor: AuthInteractor
     @Inject lateinit var crashlytics: FirebaseCrashlytics
     @Inject lateinit var analytics: FirebaseAnalytics
+    @Inject lateinit var performance: FirebasePerformance
     @Inject lateinit var settingsInteractor: SettingsInteractor
     @Inject @CoroutineScopeIO lateinit var coroutineScopeIO: CoroutineScope
 
@@ -73,10 +75,12 @@ class MainApplication : Application() {
                         Timber.plant(crashlyticsTree)
                         crashlytics.setCrashlyticsCollectionEnabled(true)
                         analytics.setAnalyticsCollectionEnabled(true)
+                        performance.isPerformanceCollectionEnabled = !BuildConfig.DEBUG // Don't measure performance in DEBUG mode
                     } else if (!it.analyticsEnabled && collectingData) {
                         Timber.uproot(crashlyticsTree)
                         crashlytics.setCrashlyticsCollectionEnabled(false)
                         analytics.setAnalyticsCollectionEnabled(false)
+                        performance.isPerformanceCollectionEnabled = false
                         crashlytics.deleteUnsentReports()
                         Timber.d("Analytics Off, Uprooting crashlyticsTree")
                     }
