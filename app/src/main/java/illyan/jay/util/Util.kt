@@ -40,7 +40,9 @@ import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.placeholder
 import com.google.accompanist.placeholder.material.shimmer
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.Task
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.WriteBatch
 import com.google.maps.android.SphericalUtil
@@ -235,13 +237,26 @@ fun Color.setLightness(lightness: Float): Color {
     return Color.hsl(hsl[0], hsl[1], hsl[2], alpha = alpha)
 }
 
-fun List<CompletableDeferred<Unit>>.completeNext() = firstOrNull { !it.isCompleted }?.complete(Unit) ?: false
+fun Collection<CompletableDeferred<Unit>>.completeNext() = firstOrNull { !it.isCompleted }?.complete(Unit) ?: false
 
-suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(vararg deferred: Deferred<T>) {
+suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(vararg deferred: Deferred<T>): Task<Void> {
     Timber.v("Awaiting modifications to batch")
     awaitAll(*deferred)
     Timber.d("Committing batch")
-    commit()
+    return commit()
 }
 
 suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(deferred: List<Deferred<T>>) = awaitAllThenCommit(*deferred.toTypedArray())
+
+suspend fun FirebaseFirestore.runBatch(
+    numberOfWrites: Int,
+    body: suspend (
+        batch: WriteBatch,
+        completableDeferred: List<CompletableDeferred<Unit>>
+    ) -> Unit
+): Task<Void> {
+    val batch = batch()
+    val completableDeferred = List(numberOfWrites) { CompletableDeferred<Unit>() }
+    body(batch, completableDeferred)
+    return batch.awaitAllThenCommit(completableDeferred)
+}
