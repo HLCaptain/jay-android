@@ -25,9 +25,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -341,7 +339,9 @@ fun SessionScreen(
     }
     val session by viewModel.session.collectAsStateWithLifecycle()
     SessionDetailsScreen(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(DefaultScreenOnSheetPadding),
         session = session,
         path = path,
         gradientFilter = gradientFilter,
@@ -357,16 +357,12 @@ fun SessionDetailsScreen(
     gradientFilter: GradientFilter = GradientFilter.Default,
     setGradientFilter: (GradientFilter) -> Unit = {}
 ) {
-    val topPadding = DefaultScreenOnSheetPadding.calculateTopPadding()
-    val bottomPadding = DefaultScreenOnSheetPadding.calculateBottomPadding()
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = topPadding),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -490,41 +486,35 @@ fun SessionDetailsScreen(
         )
         val selectedTabIndex = gradientFilter.ordinal
         TabRow(
-            modifier = Modifier.clip(
-                RoundedCornerShape(
-                    topStart = RoundedCornerRadius,
-                    topEnd = RoundedCornerRadius,
-                )
-            ),
+            modifier = Modifier
+                .padding(horizontal = MenuItemPadding),
             divider = {},
             selectedTabIndex = selectedTabIndex,
             indicator = {
                 TabRowDefaults.Indicator(
-                    modifier = Modifier
+                    Modifier
                         .tabIndicatorOffset(it[selectedTabIndex])
-                        .padding(start = 8.dp, end = 8.dp, bottom = bottomPadding - (MenuItemPadding.value * 1.5).dp)
+                        .padding(horizontal = MenuItemPadding)
                         .clip(RoundedCornerShape(percent = 100))
                 )
             }
         ) {
             GradientFilter.values().forEach {
                 Tab(
+                    modifier = Modifier.clip(RoundedCornerShape(MenuItemPadding)),
                     selected = it == gradientFilter,
                     onClick = { setGradientFilter(it) },
                     text = {
-                        Column {
-                            Text(
-                                text = stringResource(
-                                    when(it) {
-                                        GradientFilter.Default -> R.string.gradient_filter_default
-                                        GradientFilter.Velocity -> R.string.gradient_filter_velocity
-                                        GradientFilter.Elevation -> R.string.gradient_filter_elevation
-                                        GradientFilter.GpsAccuracy -> R.string.gradient_filter_gps_accuracy
-                                    }
-                                )
+                        Text(
+                            text = stringResource(
+                                when(it) {
+                                    GradientFilter.Default -> R.string.gradient_filter_default
+                                    GradientFilter.Velocity -> R.string.gradient_filter_velocity
+                                    GradientFilter.Elevation -> R.string.gradient_filter_elevation
+                                    GradientFilter.GpsAccuracy -> R.string.gradient_filter_gps_accuracy
+                                }
                             )
-                            Spacer(modifier = Modifier.height(bottomPadding))
-                        }
+                        )
                     }
                 )
             }

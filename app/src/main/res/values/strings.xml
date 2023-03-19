@@ -123,4 +123,5 @@
     <string name="gradient_filter_velocity">Velocity</string>
     <string name="gradient_filter_elevation">Elevation</string>
     <string name="gradient_filter_gps_accuracy">Accuracy</string>
+    <string name="filter_gradient_title">Filters</string>
 </resources>
