@@ -42,6 +42,7 @@ import com.google.accompanist.placeholder.material.shimmer
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.WriteBatch
 import com.google.maps.android.SphericalUtil
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import com.mapbox.geojson.Point
@@ -49,6 +50,9 @@ import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.awaitAll
+import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -232,3 +236,12 @@ fun Color.setLightness(lightness: Float): Color {
 }
 
 fun List<CompletableDeferred<Unit>>.completeNext() = firstOrNull { !it.isCompleted }?.complete(Unit) ?: false
+
+suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(vararg deferred: Deferred<T>) {
+    Timber.v("Awaiting modifications to batch")
+    awaitAll(*deferred)
+    Timber.d("Committing batch")
+    commit()
+}
+
+suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(deferred: List<Deferred<T>>) = awaitAllThenCommit(*deferred.toTypedArray())

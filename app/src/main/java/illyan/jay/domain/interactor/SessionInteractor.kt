@@ -30,6 +30,7 @@ import illyan.jay.data.network.datasource.UserNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
+import illyan.jay.util.awaitAllThenCommit
 import illyan.jay.util.completeNext
 import illyan.jay.util.sphericalPathLength
 import kotlinx.coroutines.CompletableDeferred
@@ -169,10 +170,7 @@ class SessionInteractor @Inject constructor(
             batch = batch,
             onWriteFinished = { completableDeferred.completeNext() }
         )
-        Timber.v("Awaiting modifications to batch")
-        awaitAll(*completableDeferred.toTypedArray())
-        Timber.d("Committing batch")
-        batch.commit()
+        batch.awaitAllThenCommit(completableDeferred)
     }
 
     suspend fun deleteAllSyncedData() {
@@ -188,10 +186,7 @@ class SessionInteractor @Inject constructor(
             batch = batch,
             onWriteFinished = { completableDeferred.completeNext() }
         )
-        Timber.v("Awaiting modifications to batch")
-        awaitAll(*completableDeferred.toTypedArray())
-        Timber.d("Committing batch")
-        batch.commit()
+        batch.awaitAllThenCommit(completableDeferred)
     }
 
     fun uploadSessions(
@@ -547,10 +542,7 @@ class SessionInteractor @Inject constructor(
             sessionUUIDs = sessionUUIDs,
             onWriteFinished = { completableDeferred.completeNext() }
         )
-        Timber.v("Awaiting modifications to batch")
-        awaitAll(*completableDeferred.toTypedArray())
-        Timber.d("Committing batch")
-        batch.commit()
+        batch.awaitAllThenCommit(completableDeferred)
     }
 
     suspend fun deleteSessionFromCloud(domainSession: DomainSession) = deleteSessionsFromCloud(listOf(domainSession))
