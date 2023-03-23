@@ -214,13 +214,8 @@ fun AboutButtons() {
             )
         }
         Button(
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.signaturePink
-            ),
-            onClick = {
-                // FIXME: change link to a real support link
-                uriHandler.openUri("https://github.com/HLCaptain/jay-android")
-            }
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.signaturePink),
+            onClick = { uriHandler.openUri("https://ko-fi.com/illyan") }
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -247,7 +242,7 @@ fun AboutAdSetting(
             showAds = isShowingAd,
             setAdVisibility = setAdVisibility
         )
-        AnimatedVisibility(visible = isShowingAd) {
+        AnimatedVisibility(visible = !isShowingAd) {
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer

@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Introduction
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Jay brings data analytics closer to you by creating easy-to-use tools and 
 
 ## Getting Started
 
