@@ -6,8 +6,22 @@
 }
 
 .featureImage {
-  max-width: 60rem;
-  max-height: 40rem;
+  max-width: 100%;
+  max-height: 50em;
   float: right;
   border-radius: 1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .featureImage {
+    float: left;
+  }
+}
+
+.featureText {
+  max-width: 25em;
+}
+
+.container {
+  max-width: 100%;
 }
