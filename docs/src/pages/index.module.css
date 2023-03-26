@@ -10,14 +10,9 @@
   overflow: hidden;
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
-}
-
 .heroContent {
-  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 2em rgba(0, 0, 0, 0.2));
 }
 
 .heroText {
@@ -30,5 +25,17 @@
 
 .buttons {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--ifm-spacing-horizontal);
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2em 0;
+    text-align: center;
+  }
+  .heroBanner img {
+    padding: 0 0 0 1em;
+  }
 }

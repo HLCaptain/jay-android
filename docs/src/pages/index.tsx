@@ -39,7 +39,7 @@ export default function Home(): JSX.Element {
   return (
     <Layout
       title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />">
+      description="Jay is a Data Analytics Solution. This page provides documentation and general information on the Android app client for Jay.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />
