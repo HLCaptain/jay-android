@@ -13,7 +13,6 @@
   --ifm-color-primary-light: hsl(210, 80%, 55%);
   --ifm-color-primary-lighter: hsl(210, 80%, 60%);
   --ifm-color-primary-lightest: hsl(210, 80%, 65%);
-  --ifm-navbar-background-color: rgb(255, 255, 255, 0.5);
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
@@ -27,15 +26,20 @@
   --ifm-color-primary-light: hsl(210, 80%, 55%);
   --ifm-color-primary-lighter: hsl(210, 80%, 60%);
   --ifm-color-primary-lightest: hsl(210, 80%, 65%);
-  --ifm-navbar-background-color: rgb(32, 32, 32, 0.5);
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-section > div.container {
-  max-width: 100%;
+@media screen and (min-width: 997px) {
+  :root {
+    --ifm-navbar-background-color: rgb(255, 255, 255, 0.5);
+  }
+  [data-theme='dark'] {
+    --ifm-navbar-background-color: rgb(32, 32, 32, 0.5);
+  }
 }
 
-.navbar {
-  box-shadow: none;
-  backdrop-filter: brightness(90%) saturate(80%) blur(8px);
+@media screen and (min-width: 997px) {
+  .navbar {
+    backdrop-filter: brightness(90%) saturate(80%) blur(8px);
+  }
 }

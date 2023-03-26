@@ -23,6 +23,6 @@
   max-width: 25em;
 }
 
-.container {
+.features > .container {
   max-width: 100%;
 }

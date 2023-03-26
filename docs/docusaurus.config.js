@@ -43,13 +43,13 @@ const config = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/HLCaptain/jay-android/tree/main/docs/docs',
+          editUrl: 'https://github.com/HLCaptain/jay-android/edit/main/docs',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/HLCaptain/jay-android/tree/main/docs/blog',
+          editUrl: 'https://github.com/HLCaptain/jay-android/edit/main/docs',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -61,8 +61,10 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      colorMode: {
+        defaultMode: 'dark',
+      },
       // Replace with your project's social card
-      image: 'img/docusaurus-social-card.jpg',
       navbar: {
         title: 'Jay',
         logo: {
@@ -71,9 +73,9 @@ const config = {
         },
         items: [
           {
-            type: 'doc',
-            docId: 'intro',
+            type: 'docSidebar',
             position: 'left',
+            sidebarId: 'docsSidebar',
             label: 'Docs',
           },
           {
