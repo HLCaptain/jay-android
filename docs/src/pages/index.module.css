@@ -4,8 +4,8 @@
  */
 
 .heroBanner {
-  padding: 4rem 0;
-  text-align: center;
+  justify-content: center;
+  text-align: left;
   position: relative;
   overflow: hidden;
 }
@@ -16,9 +16,19 @@
   }
 }
 
+.heroContent {
+  align-items: center;
+}
+
+.heroText {
+  padding: 0em 4em;
+}
+
+.heroBanner img {
+  height: 12em;
+}
+
 .buttons {
   display: flex;
-  align-items: center;
-  justify-content: center;
   gap: var(--ifm-spacing-horizontal);
 }

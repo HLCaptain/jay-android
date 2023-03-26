@@ -111,6 +111,19 @@ const config = {
               },
             ],
           },
+          {
+            title: 'Legal',
+            items: [
+              {
+                label: 'Privacy Policy',
+                to: '/docs/privacy-policy',
+              },
+              {
+                label: 'Terms & Conditions',
+                to: '/docs/terms-and-conditions',
+              },
+            ],
+          },
         ],
         copyright: `Copyright © ${new Date().getFullYear()} Balázs Püspök-Kiss. Built with Docusaurus.`,
       },

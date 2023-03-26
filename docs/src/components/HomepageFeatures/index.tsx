@@ -45,7 +45,8 @@ const FeatureList = [
         While Jay offers several functionalities to make data analytics more accessible
         to users, it is built on a fully offline basis. Jay's core functionality is and
         will be available when the device is offline and never require you to upload
-        or share your data ever. Data analytics is fully offline from collection to stats.
+        or share your data ever. Data analytics is fully offline from collection to
+        showing statistics.
       </>
     ),
   },
@@ -55,7 +56,7 @@ function Feature({Image, title, description}) {
   return (
     <div className={clsx('row padding--md')}>
       <div className="col col--7">
-        <img className={styles.featureImage} role="img" src={Image}  />
+        <img className={styles.featureImage} role="img" src={Image} />
       </div>
       <div className="col col--5 padding--lg ">
         <div className={styles.featureText}>
