@@ -277,6 +277,8 @@ data class Library(
             ),
             repositoryUrl = "https://github.com/HLCaptain/jay-android",
             authors = listOf("Balázs Püspök-Kiss (Illyan)"),
+            termsAndConditionsUrl = "https://hlcaptain.github.io/jay-android/docs/terms-and-conditions",
+            privacyPolicyUrl = "https://hlcaptain.github.io/jay-android/docs/privacy-policy",
         )
     }
 }
