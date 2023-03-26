@@ -21,6 +21,8 @@ const config = {
   organizationName: 'hlcaptain', // Usually your GitHub org/user name.
   projectName: 'jay-android', // Usually your repo name.
 
+  trailingSlash: false,
+
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
