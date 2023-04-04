@@ -32,9 +32,8 @@ import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.get
-import com.google.firebase.remoteconfig.ktx.remoteConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.di.CoroutineScopeIO
@@ -60,6 +59,7 @@ class AuthInteractor @Inject constructor(
     private val auth: FirebaseAuth,
     private val context: Context,
     private val analytics: FirebaseAnalytics,
+    private val remoteConfig: FirebaseRemoteConfig,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
     private val _currentUserStateFlow = MutableStateFlow(auth.currentUser)
@@ -137,12 +137,12 @@ class AuthInteractor @Inject constructor(
     fun signInViaGoogle(activity: MainActivity) {
         if (isUserSignedIn) return
         if (_googleSignInClient.value == null) {
-            Firebase.remoteConfig.fetchAndActivate().addOnCompleteListener {
+            remoteConfig.ensureInitialized().addOnCompleteListener {
                 _googleSignInClient.value = GoogleSignIn.getClient(
                     activity,
                     GoogleSignInOptions
                         .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestIdToken(Firebase.remoteConfig["default_web_client_id"].asString())
+                        .requestIdToken(remoteConfig["default_web_client_id"].asString())
                         .requestEmail()
                         .build()
                 )
