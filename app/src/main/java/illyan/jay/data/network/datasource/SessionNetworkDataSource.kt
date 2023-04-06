@@ -25,6 +25,7 @@ import com.google.firebase.firestore.WriteBatch
 import illyan.jay.data.DataStatus
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.data.network.toDomainModel
+import illyan.jay.data.network.toDomainSessionsStatus
 import illyan.jay.data.network.toFirestoreModel
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
@@ -64,14 +65,7 @@ class SessionNetworkDataSource @Inject constructor(
     val sessions = sessionsStatus.map { it.data }
         .stateIn(coroutineScopeIO, SharingStarted.Eagerly, sessionsStatus.value.data)
 
-    fun DataStatus<FirestoreUser>.toDomainSessionsStatus(): DataStatus<List<DomainSession>> {
-        return DataStatus(
-            data = data?.run { sessions.map { it.toDomainModel(uuid) } },
-            isLoading = isLoading
-        )
-    }
-
-    fun resolveSessionsFromStatus(
+    private fun resolveSessionsFromStatus(
         status: DataStatus<FirestoreUser>
     ): DataStatus<List<DomainSession>> {
         val user = status.data
@@ -86,8 +80,6 @@ class SessionNetworkDataSource @Inject constructor(
         }
         return DataStatus(data = sessions, isLoading = loading)
     }
-
-    // FIXME: may user `lazy` more often or change SharingStarted to Lazily instead of Eagerly
 
     fun deleteSession(
         sessionUUID: String,

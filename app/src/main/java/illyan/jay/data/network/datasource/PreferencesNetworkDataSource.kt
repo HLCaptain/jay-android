@@ -24,6 +24,7 @@ import com.google.firebase.firestore.WriteBatch
 import illyan.jay.data.DataStatus
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.data.network.toDomainModel
+import illyan.jay.data.network.toDomainPreferencesStatus
 import illyan.jay.data.network.toFirestoreModel
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
@@ -42,7 +43,6 @@ class PreferencesNetworkDataSource @Inject constructor(
     private val userNetworkDataSource: UserNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
-
     val preferences: StateFlow<DataStatus<DomainPreferences>> by lazy {
         userNetworkDataSource.userStatus.map { userStatus ->
             val status = resolvePreferencesFromStatus(userStatus)
@@ -71,14 +71,7 @@ class PreferencesNetworkDataSource @Inject constructor(
         )
     }
 
-    fun DataStatus<FirestoreUser>.toDomainPreferencesStatus(): DataStatus<DomainPreferences> {
-        return DataStatus(
-            data = data?.run { preferences?.toDomainModel(uuid) },
-            isLoading = isLoading
-        )
-    }
-
-    fun resolvePreferencesFromStatus(
+    private fun resolvePreferencesFromStatus(
         status: DataStatus<FirestoreUser>
     ): DataStatus<DomainPreferences> {
         val user = status.data
