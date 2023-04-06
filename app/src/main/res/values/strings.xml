@@ -31,7 +31,7 @@
     <string name="list_is_empty">List is empty</string>
     <string name="list_is_empty_description">This list would be more useful with items in it!</string>
     <string name="location_permission_denied_title">Location permission denied</string>
-    <string name="location_permission_denied_description">Navigation requires your precise location to give feedback and turn-by-turn instructions.</string>
+    <string name="location_permission_denied_description">Jay App collects location data to show analytics about your taken path, like your speed on your route and display where you have been while you were driving. Location data is collected in the background while a Session is running, even when Jay App is in the background or closed.</string>
     <string name="request_permission">Request permission</string>
     <string name="start_free_driving">Start free-driving</string>
     <string name="stop_free_driving">Stop free-driving</string>

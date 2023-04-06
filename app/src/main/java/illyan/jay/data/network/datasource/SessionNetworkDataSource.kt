@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.WriteBatch
+import illyan.jay.data.DataStatus
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.data.network.toDomainModel
 import illyan.jay.data.network.toFirestoreModel
@@ -31,8 +32,8 @@ import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -46,21 +47,44 @@ class SessionNetworkDataSource @Inject constructor(
     private val userNetworkDataSource: UserNetworkDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
-    val sessions: StateFlow<List<DomainSession>?> by lazy {
-        combine(
-            userNetworkDataSource.user,
-            userNetworkDataSource.isLoading
-        ) { user, loading ->
-            if (user != null) {
-                val domainSessions = user.sessions.map { it.toDomainModel(user.uuid) }
-                Timber.d("Firebase got sessions with IDs: ${domainSessions.map { it.uuid.take(4) }}")
-                domainSessions
-            } else if (loading) {
-                null
-            } else {
-                emptyList()
+    val sessionsStatus: StateFlow<DataStatus<List<DomainSession>>> by lazy {
+        userNetworkDataSource.userStatus.map { userStatus ->
+            val status = resolveSessionsFromStatus(userStatus)
+            status.data?.let { sessions ->
+                Timber.d("Firebase got sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
             }
-        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
+            status
+        }.stateIn(
+            coroutineScopeIO,
+            SharingStarted.Eagerly,
+            userNetworkDataSource.userStatus.value.toDomainSessionsStatus()
+        )
+    }
+
+    val sessions = sessionsStatus.map { it.data }
+        .stateIn(coroutineScopeIO, SharingStarted.Eagerly, sessionsStatus.value.data)
+
+    fun DataStatus<FirestoreUser>.toDomainSessionsStatus(): DataStatus<List<DomainSession>> {
+        return DataStatus(
+            data = data?.run { sessions.map { it.toDomainModel(uuid) } },
+            isLoading = isLoading
+        )
+    }
+
+    fun resolveSessionsFromStatus(
+        status: DataStatus<FirestoreUser>
+    ): DataStatus<List<DomainSession>> {
+        val user = status.data
+        val loading = status.isLoading
+        val sessions = if (user != null) {
+            val domainSessions = user.sessions.map { it.toDomainModel(user.uuid) }
+            domainSessions
+        } else if (loading != false) { // If loading or not initialized
+            null
+        } else {
+            emptyList()
+        }
+        return DataStatus(data = sessions, isLoading = loading)
     }
 
     // FIXME: may user `lazy` more often or change SharingStarted to Lazily instead of Eagerly
@@ -82,7 +106,7 @@ class SessionNetworkDataSource @Inject constructor(
         onCancel: () -> Unit = { Timber.i("Deleting sessions canceled") },
         onSuccess: () -> Unit = { Timber.i("Deleted sessions") }
     ) = deleteSessions(
-        sessionUUIDs = userNetworkDataSource.user.value?.sessions?.map { it.uuid } ?: emptyList(),
+        sessionUUIDs = userNetworkDataSource.userStatus.value.data?.sessions?.map { it.uuid } ?: emptyList(),
         onFailure = onFailure,
         onCancel = onCancel,
         onSuccess = onSuccess,
@@ -93,7 +117,7 @@ class SessionNetworkDataSource @Inject constructor(
         onWriteFinished: () -> Unit = {}
     ) = deleteSessions(
         batch = batch,
-        sessionUUIDs = userNetworkDataSource.user.value?.sessions?.map { it.uuid } ?: emptyList(),
+        sessionUUIDs = userNetworkDataSource.userStatus.value.data?.sessions?.map { it.uuid } ?: emptyList(),
         onWriteFinished = onWriteFinished,
     )
 

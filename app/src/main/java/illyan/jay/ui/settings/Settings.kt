@@ -367,11 +367,15 @@ fun SettingsScreen(
         } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text(text = stringResource(R.string.loading))
-                MediumCircularProgressIndicator()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(text = stringResource(R.string.loading))
+                    MediumCircularProgressIndicator()
+                }
             }
         }
     }
