@@ -25,8 +25,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -99,6 +102,7 @@ fun DataSettingsDialogContent(
     onDeleteAll: () -> Unit = {},
     onNavigateUp: () -> Unit = {},
 ) {
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
     JayDialogContent(
         modifier = modifier,
         icon = {
@@ -112,6 +116,7 @@ fun DataSettingsDialogContent(
         },
         text = {
             DataSettingsScreen(
+                modifier = Modifier.heightIn(max = (screenHeightDp * 0.4f).dp),
                 onDeleteCached = onDeleteCached,
                 onDeleteSynced = onDeleteSynced,
                 onDeleteAll = onDeleteAll,
@@ -202,28 +207,36 @@ fun DataSettingsButtons(
 
 @Composable
 fun DataSettingsScreen(
+    modifier: Modifier = Modifier,
     onDeleteCached: () -> Unit = {},
     onDeleteSynced: () -> Unit = {},
     onDeleteAll: () -> Unit = {},
 ) {
-    Column(
+    LazyColumn(
+        modifier = modifier.clip(CardDefaults.shape),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        MenuButtonWithDescription(
-            onClick = onDeleteCached,
-            text = stringResource(R.string.clear_cache),
-            description = stringResource(R.string.clear_cache_description)
-        )
-        MenuButtonWithDescription(
-            onClick = onDeleteSynced,
-            text = stringResource(R.string.delete_from_cloud),
-            description = stringResource(R.string.delete_from_cloud_description)
-        )
-        MenuButtonWithDescription(
-            onClick = onDeleteAll,
-            text = stringResource(R.string.delete_all_user_data),
-            description = stringResource(R.string.delete_all_user_data_description)
-        )
+        item {
+            MenuButtonWithDescription(
+                onClick = onDeleteCached,
+                text = stringResource(R.string.clear_cache),
+                description = stringResource(R.string.clear_cache_description)
+            )
+        }
+        item {
+            MenuButtonWithDescription(
+                onClick = onDeleteSynced,
+                text = stringResource(R.string.delete_from_cloud),
+                description = stringResource(R.string.delete_from_cloud_description)
+            )
+        }
+        item {
+            MenuButtonWithDescription(
+                onClick = onDeleteAll,
+                text = stringResource(R.string.delete_all_user_data),
+                description = stringResource(R.string.delete_all_user_data_description)
+            )
+        }
     }
 }
 
