@@ -23,6 +23,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -114,6 +115,7 @@ fun DataSettingsDialogContent(
         title = {
             DataSettingsTitleScreen()
         },
+        textPaddingValues = PaddingValues(),
         text = {
             DataSettingsScreen(
                 modifier = Modifier.heightIn(max = (screenHeightDp * 0.4f).dp),
