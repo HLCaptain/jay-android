@@ -16,21 +16,21 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.settings
+package illyan.jay.ui.settings.general
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
-import illyan.jay.ui.settings.model.toUiModel
+import illyan.jay.ui.settings.general.model.toUiModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class UserSettingsViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
     private val authInteractor: AuthInteractor
 ) : ViewModel() {

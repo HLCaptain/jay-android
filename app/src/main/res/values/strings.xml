@@ -124,4 +124,13 @@
     <string name="gradient_filter_elevation">Elevation</string>
     <string name="gradient_filter_gps_accuracy">Accuracy</string>
     <string name="filter_gradient_title">Filters</string>
+    <string name="data_settings">Data Settings</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="delete_all_user_data">Delete all user data</string>
+    <string name="bytes">Bytes</string>
+    <string name="back">Back</string>
+    <string name="clear_cache_description">Clearing cache deletes all user related data on-device. It does not affect data uploaded and synced to the cloud.</string>
+    <string name="delete_from_cloud_description">Deleting from cloud deletes all user related data from the cloud. User settings syncing will automatically stop. It won\'t affect any other data on-device.</string>
+    <string name="delete_all_user_data_description">Deletes data both from the cloud and on-device. Also deletes data not owned by anyone (any data publicly available to all users).</string>
+    <string name="my_data">My Data</string>
 </resources>

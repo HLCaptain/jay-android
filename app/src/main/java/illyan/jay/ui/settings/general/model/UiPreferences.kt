@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.settings.model
+package illyan.jay.ui.settings.general.model
 
 import illyan.jay.domain.model.DomainPreferences
 import java.time.ZonedDateTime

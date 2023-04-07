@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.settings
+package illyan.jay.ui.settings.general
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -68,8 +68,10 @@ import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipElevatedCard
+import illyan.jay.ui.destinations.DataSettingsDialogScreenDestination
+import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.settings.model.UiPreferences
+import illyan.jay.ui.settings.general.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -77,12 +79,11 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
-
 @ProfileNavGraph
 @Destination
 @Composable
-fun SettingsDialogScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
+fun UserSettingsDialogScreen(
+    viewModel: UserSettingsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
@@ -90,7 +91,7 @@ fun SettingsDialogScreen(
     val arePreferencesSynced by viewModel.arePreferencesSynced.collectAsStateWithLifecycle()
     val canSyncPreferences by viewModel.canSyncPreferences.collectAsStateWithLifecycle()
     val shouldSyncPreferences by viewModel.shouldSyncPreferences.collectAsStateWithLifecycle()
-    SettingsDialogContent(
+    UserSettingsDialogContent(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = max(200.dp, screenHeightDp - 256.dp)),
@@ -102,11 +103,12 @@ fun SettingsDialogScreen(
         setAnalytics = viewModel::setAnalytics,
         setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
         setAdVisibility = viewModel::setAdVisibility,
+        onDeleteUserData = { destinationsNavigator.navigate(DataSettingsDialogScreenDestination) },
     )
 }
 
 @Composable
-fun SettingsDialogContent(
+fun UserSettingsDialogContent(
     modifier: Modifier = Modifier,
     preferences: UiPreferences?,
     arePreferencesSynced: Boolean = false,
@@ -116,17 +118,18 @@ fun SettingsDialogContent(
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
     setAdVisibility: (Boolean) -> Unit = {},
+    onDeleteUserData: () -> Unit = {}
 ) {
     JayDialogContent(
         modifier = modifier,
         title = {
-            SettingsTitle(
+            UserSettingsTitle(
                 arePreferencesSynced = arePreferencesSynced,
                 preferences = preferences
             )
         },
         text = {
-            SettingsScreen(
+            UserSettingsScreen(
                 preferences = preferences,
                 setAnalytics = setAnalytics,
                 setFreeDriveAutoStart = setFreeDriveAutoStart,
@@ -134,12 +137,12 @@ fun SettingsDialogContent(
             )
         },
         buttons = {
-            // TODO: Toggle Settings Sync
-            SettingsButtons(
+            UserSettingsButtons(
                 modifier = Modifier.fillMaxWidth(),
                 canSyncPreferences = canSyncPreferences,
                 shouldSyncPreferences = shouldSyncPreferences,
                 onShouldSyncChanged = onShouldSyncChanged,
+                onDeleteUserData = onDeleteUserData,
             )
         },
         containerColor = Color.Transparent,
@@ -147,7 +150,7 @@ fun SettingsDialogContent(
 }
 
 @Composable
-fun SettingsTitle(
+fun UserSettingsTitle(
     arePreferencesSynced: Boolean = false,
     preferences: UiPreferences? = null,
 ) {
@@ -208,56 +211,75 @@ private fun SyncPreferencesLabel(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsButtons(
+fun UserSettingsButtons(
     modifier: Modifier = Modifier,
     canSyncPreferences: Boolean = false,
     shouldSyncPreferences: Boolean = false,
     onShouldSyncChanged: (Boolean) -> Unit = {},
+    onDeleteUserData: () -> Unit = {}
 ) {
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.End
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            enabled = canSyncPreferences,
-            onClick = { onShouldSyncChanged(!shouldSyncPreferences) }
+        MenuButton(
+            text = stringResource(R.string.data_settings),
+            onClick = onDeleteUserData
+        )
+        SyncPreferencesButton(
+            canSyncPreferences = canSyncPreferences,
+            onShouldSyncChanged = onShouldSyncChanged,
+            shouldSyncPreferences = shouldSyncPreferences,
+        )
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun SyncPreferencesButton(
+    canSyncPreferences: Boolean,
+    onShouldSyncChanged: (Boolean) -> Unit,
+    shouldSyncPreferences: Boolean
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        enabled = canSyncPreferences,
+        onClick = { onShouldSyncChanged(!shouldSyncPreferences) }
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    modifier = Modifier.animateContentSize(),
-                    text = stringResource(
-                        if (shouldSyncPreferences) {
-                            R.string.syncing
-                        } else {
-                            R.string.not_syncing
-                        }
-                    )
+            Text(
+                modifier = Modifier.animateContentSize(),
+                text = stringResource(
+                    if (shouldSyncPreferences) {
+                        R.string.syncing
+                    } else {
+                        R.string.not_syncing
+                    }
                 )
-                FilledIconToggleButton(
-                    checked = shouldSyncPreferences,
-                    onCheckedChange = onShouldSyncChanged,
-                    enabled = canSyncPreferences
-                ) {
-                    Icon(
-                        imageVector = if (shouldSyncPreferences) {
-                            Icons.Rounded.Cloud
-                        } else {
-                            Icons.Rounded.CloudOff
-                        },
-                        contentDescription = ""
-                    )
-                }
+            )
+            FilledIconToggleButton(
+                checked = shouldSyncPreferences,
+                onCheckedChange = onShouldSyncChanged,
+                enabled = canSyncPreferences
+            ) {
+                Icon(
+                    imageVector = if (shouldSyncPreferences) {
+                        Icons.Rounded.Cloud
+                    } else {
+                        Icons.Rounded.CloudOff
+                    },
+                    contentDescription = ""
+                )
             }
         }
     }
@@ -340,7 +362,7 @@ fun SettingLabel(
 }
 
 @Composable
-fun SettingsScreen(
+fun UserSettingsScreen(
     preferences: UiPreferences? = null,
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
@@ -479,10 +501,10 @@ fun SettingItem(
 
 @PreviewLightDarkTheme
 @Composable
-fun SettingsDialogScreenPreview() {
+fun UserSettingsDialogScreenPreview() {
     JayTheme {
         JayDialogSurface {
-            SettingsDialogContent(
+            UserSettingsDialogContent(
                 preferences = UiPreferences(
                     userUUID = UUID.randomUUID().toString(),
                     clientUUID = UUID.randomUUID().toString()

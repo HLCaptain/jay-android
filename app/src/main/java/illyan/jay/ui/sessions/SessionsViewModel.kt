@@ -34,7 +34,17 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.ZonedDateTime
@@ -59,7 +69,7 @@ class SessionsViewModel @Inject constructor(
     val ownedLocalSessionUUIDs = _ownedLocalSessionUUIDs.asStateFlow()
 
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
-    val signedInUser = authInteractor.currentUserStateFlow
+    val signedInUser = authInteractor.userStateFlow
 
     private val _syncedSessionsLoading = MutableStateFlow(false)
     val syncedSessionsLoading = _syncedSessionsLoading.asStateFlow()
@@ -192,7 +202,7 @@ class SessionsViewModel @Inject constructor(
             ) { owned, notOwned, ongoing ->
                 !owned && !notOwned && !ongoing
             }.collectLatest {
-                if (it) _localSessionsLoading.value = false
+                if (it) _localSessionsLoading.update { false }
             }
         }
 
@@ -200,39 +210,39 @@ class SessionsViewModel @Inject constructor(
             sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
                 _notOwnedSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
                 Timber.d("Got ${sessions.size} not owned sessions")
-                loadingNotOwnedSessions.value = false
+                loadingNotOwnedSessions.update { false }
             }
         }
         ongoingSessionsJob = viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getOngoingSessionUUIDs().collectLatest {
                 _ongoingSessionUUIDs.value = it
                 Timber.d("Got ${it.size} ongoing sessions")
-                loadingOngoingSessions.value = false
+                loadingOngoingSessions.update { false }
             }
         }
         ownedSessionsJob = viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getOwnSessions().collectLatest { sessions ->
                 _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
                 Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid?.take(4)}")
-                loadingOwnedSessions.value = false
+                loadingOwnedSessions.update { false }
             }
         }
     }
 
     fun loadCloudSessions() {
         _syncedSessions.value = emptyList()
-        _syncedSessionsLoading.value = true
+        _syncedSessionsLoading.update { true }
 
         if (isUserSignedIn.value) {
             viewModelScope.launch(dispatcherIO) {
-                sessionInteractor.syncedSessions.collectLatest {
-                    Timber.d("New number of synced sessions: ${_syncedSessions.value.size} -> ${it?.size}")
-                    _syncedSessions.value = it ?: emptyList()
-                    _syncedSessionsLoading.value = it == null
+                sessionInteractor.syncedSessions.collectLatest { sessions ->
+                    Timber.d("New number of synced sessions: ${_syncedSessions.value.size} -> ${sessions?.size}")
+                    _syncedSessions.update { sessions ?: emptyList() }
+                    _syncedSessionsLoading.update { sessions == null }
                 }
             }
         } else {
-            _syncedSessionsLoading.value = false
+            _syncedSessionsLoading.update { false }
         }
     }
 

@@ -61,9 +61,9 @@ import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
-import illyan.jay.ui.profile.ProfileMenuItem
+import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.settings.ShowAdsSetting
+import illyan.jay.ui.settings.general.ShowAdsSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
 import illyan.jay.util.TestAdUnitIds
@@ -142,24 +142,24 @@ fun AboutScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy((-12).dp)
         ) {
-            ProfileMenuItem(
+            MenuButton(
                 text = stringResource(R.string.libraries),
                 onClick = onNavigateToLibraries
             )
             AnimatedVisibility(visible = Library.Jay.license?.url != null) {
-                ProfileMenuItem(
+                MenuButton(
                     text = stringResource(R.string.jay_license),
                     onClick = { Library.Jay.license?.url?.let { uriHandler.openUri(it) } }
                 )
             }
             AnimatedVisibility(visible = Library.Jay.privacyPolicyUrl != null) {
-                ProfileMenuItem(
+                MenuButton(
                     text = stringResource(R.string.privacy_policy),
                     onClick = { Library.Jay.privacyPolicyUrl?.let { uriHandler.openUri(it) } }
                 )
             }
             AnimatedVisibility(visible = Library.Jay.termsAndConditionsUrl != null) {
-                ProfileMenuItem(
+                MenuButton(
                     text = stringResource(R.string.terms_and_conditions),
                     onClick = { Library.Jay.termsAndConditionsUrl?.let { uriHandler.openUri(it) } }
                 )

@@ -19,7 +19,6 @@
 package illyan.jay.domain.interactor
 
 import android.app.Activity
-import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -35,13 +34,12 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.get
 import illyan.jay.MainActivity
-import illyan.jay.R
 import illyan.jay.di.CoroutineScopeIO
+import illyan.jay.util.awaitOperations
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -57,13 +55,12 @@ import javax.inject.Singleton
 @Singleton
 class AuthInteractor @Inject constructor(
     private val auth: FirebaseAuth,
-    private val context: Context,
     private val analytics: FirebaseAnalytics,
     private val remoteConfig: FirebaseRemoteConfig,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
-    private val _currentUserStateFlow = MutableStateFlow(auth.currentUser)
-    val currentUserStateFlow = _currentUserStateFlow.asStateFlow()
+    private val _userStateFlow = MutableStateFlow(auth.currentUser)
+    val userStateFlow = _userStateFlow.asStateFlow()
 
     private val _isUserSignedInStateFlow = MutableStateFlow(auth.currentUser != null)
     val isUserSignedInStateFlow = _isUserSignedInStateFlow.asStateFlow()
@@ -73,6 +70,9 @@ class AuthInteractor @Inject constructor(
 
     private val _userUUIDStateFlow = MutableStateFlow(auth.currentUser?.uid)
     val userUUIDStateFlow = _userUUIDStateFlow.asStateFlow()
+
+    private val _userDisplayNameStateFlow = MutableStateFlow(auth.currentUser?.displayName)
+    val userDisplayNameStateFlow = _userDisplayNameStateFlow.asStateFlow()
 
     private val _googleSignInClient = MutableStateFlow<GoogleSignInClient?>(null)
     private val googleSignInClient = _googleSignInClient.asStateFlow()
@@ -86,51 +86,41 @@ class AuthInteractor @Inject constructor(
     val isUserSigningOut = _isSigningOut.asStateFlow()
 
     init {
-        addAuthStateListener {
-            if (it.currentUser != null) {
-                Timber.i("User ${it.currentUser!!.uid.take(4)} signed into Firebase")
+        addAuthStateListener { state ->
+            if (state.currentUser != null) {
+                Timber.i("User ${state.currentUser!!.uid.take(4)} signed into Firebase")
             } else {
                 Timber.i("User ${userUUID?.take(4)} signed out of Firebase")
             }
-            _currentUserStateFlow.value = it.currentUser
-            _isUserSignedInStateFlow.value = it.currentUser != null
-            _userPhotoUrlStateFlow.value = it.currentUser?.photoUrl
-            _userUUIDStateFlow.value = it.currentUser?.uid
+            _userStateFlow.update { state.currentUser }
+            _isUserSignedInStateFlow.update { state.currentUser != null }
+            _userPhotoUrlStateFlow.update { state.currentUser?.photoUrl }
+            _userUUIDStateFlow.update { state.currentUser?.uid }
+            _userDisplayNameStateFlow.update { state.currentUser?.displayName }
         }
     }
 
     fun signOut() {
         Timber.i("Sign out requested for user ${userUUID?.take(4)}")
-        _isSigningOut.value = true
+        _isSigningOut.update { true }
         val size = onSignOutListeners.size
         if (size == 0) {
             Timber.i("No sign out listeners detected, signing out user ${userUUID?.take(4)}")
-            auth.signOut()
-            googleSignInClient.value?.signOut()
-            _isSigningOut.value = false
         } else {
             Timber.i("Notifying sign out listeners")
-            val approvedListeners = MutableStateFlow(0)
-            onSignOutListeners.forEach {
-                coroutineScopeIO.launch {
-                    it(auth).first {
-                        approvedListeners.value++
-                        Timber.d("${approvedListeners.value++} listeners approved sign out")
-                        true
-                    }
-                }
-            }
             coroutineScopeIO.launch {
-                approvedListeners.first {
-                    if (it >= size) {
-                        Timber.i("All listeners notified, signing out user ${userUUID?.take(4)}")
-                        auth.signOut()
-                        googleSignInClient.value?.signOut()
-                        _isSigningOut.value = false
+                awaitOperations(size) { onOperationFinished ->
+                    onSignOutListeners.forEach {
+                        coroutineScopeIO.launch {
+                            it(onOperationFinished)
+                        }
                     }
-                    it >= size
                 }
+                Timber.i("All listeners notified, signing out user ${userUUID?.take(4)}")
             }
+            auth.signOut()
+            googleSignInClient.value?.signOut()
+            _isSigningOut.update { false }
         }
     }
 
@@ -174,7 +164,7 @@ class AuthInteractor @Inject constructor(
                 e,
                 "signInResult:failed code = ${e.statusCode}\n" +
                         "Used api key: " +
-                        context.getString(R.string.default_web_client_id)
+                        remoteConfig["default_web_client_id"].asString()
                             .take(4) + "..." +
                         "\n${e.message}"
             )
@@ -215,10 +205,10 @@ class AuthInteractor @Inject constructor(
     }
 
     // Each listener emit when they are ready to sign out
-    private val onSignOutListeners = mutableListOf<(FirebaseAuth) -> Flow<Unit>>()
+    private val onSignOutListeners = mutableListOf<(onOperationFinished: () -> Unit) -> Unit>()
 
     fun addOnSignOutListener(
-        listener: (FirebaseAuth) -> Flow<Unit>
+        listener: (() -> Unit) -> Unit
     ) {
         onSignOutListeners.add(listener)
     }

@@ -37,28 +37,28 @@ class ProfileViewModel @Inject constructor(
 
     val userUUID = authInteractor.userUUIDStateFlow
 
-    val userEmail = authInteractor.currentUserStateFlow
+    val userEmail = authInteractor.userStateFlow
         .map { it?.email }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            authInteractor.currentUserStateFlow.value?.email
+            authInteractor.userStateFlow.value?.email
         )
 
-    val userPhoneNumber = authInteractor.currentUserStateFlow
+    val userPhoneNumber = authInteractor.userStateFlow
         .map { it?.phoneNumber }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            authInteractor.currentUserStateFlow.value?.phoneNumber
+            authInteractor.userStateFlow.value?.phoneNumber
         )
 
-    val userName = authInteractor.currentUserStateFlow
+    val userName = authInteractor.userStateFlow
         .map { it?.displayName }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            authInteractor.currentUserStateFlow.value?.displayName
+            authInteractor.userStateFlow.value?.displayName
         )
 
     fun signOut() = authInteractor.signOut()

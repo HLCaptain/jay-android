@@ -280,19 +280,19 @@ class SettingsInteractor @Inject constructor(
             } else {
                 if (localPreferences == null && syncedPreferences == null) {
                     // User don't have local nor synced preferences? Create and upload local preferences.
-                    Timber.v("User don't have local nor synced preferences, create and upload one")
+                    Timber.v("User doesn't have local nor synced preferences, create and upload one")
                     val freshPreferences = DomainPreferences(userUUID = authInteractor.userUUID)
                     preferencesDiskDataSource.upsertPreferences(freshPreferences)
                     preferencesNetworkDataSource.setPreferences(freshPreferences)
                     null
                 } else if (localPreferences == null && syncedPreferences != null) {
                     // User don't have local but have synced Preferences? Use synced preferences.
-                    Timber.v("User don't have local but have synced preferences, save synced preferences")
+                    Timber.v("User doesn't have local but have synced preferences, save synced preferences")
                     preferencesDiskDataSource.upsertPreferences(syncedPreferences)
                     syncedPreferences
-                } else if (localPreferences != null && syncedPreferences == null) {
+                } else if (localPreferences != null && localPreferences.shouldSync && syncedPreferences == null) {
                     // User have local but not synced preferences? Upload local preferences.
-                    Timber.v("User have local but not synced preferences, upload local preferences")
+                    Timber.v("User has local preferences which need to be synced but has no preferences in cloud, upload local preferences")
                     preferencesNetworkDataSource.setPreferences(localPreferences)
                     localPreferences
                 } else { // Both sessions are now loaded in and not null

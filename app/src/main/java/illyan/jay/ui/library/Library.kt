@@ -21,10 +21,26 @@ package illyan.jay.ui.library
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +57,7 @@ import illyan.jay.ui.components.LicenseOfType
 import illyan.jay.ui.components.PreviewLightDarkTheme
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.libraries.model.toUiModel
-import illyan.jay.ui.profile.ProfileMenuItem
+import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -133,13 +149,13 @@ fun LibraryScreen(
     val uriHandler = LocalUriHandler.current
     Column(modifier = modifier) {
         AnimatedVisibility(visible = library.privacyPolicyUrl != null) {
-            ProfileMenuItem(
+            MenuButton(
                 text = stringResource(R.string.privacy_policy),
                 onClick = { library.privacyPolicyUrl?.let { uriHandler.openUri(it) } }
             )
         }
         AnimatedVisibility(visible = library.termsAndConditionsUrl != null) {
-            ProfileMenuItem(
+            MenuButton(
                 text = stringResource(R.string.license),
                 onClick = { library.termsAndConditionsUrl?.let { uriHandler.openUri(it) } }
             )
@@ -149,7 +165,7 @@ fun LibraryScreen(
             targetState = library.license?.url
         ) {
             if (it != null) {
-                ProfileMenuItem(
+                MenuButton(
                     text = stringResource(R.string.license),
                     onClick = { uriHandler.openUri(it) }
                 )

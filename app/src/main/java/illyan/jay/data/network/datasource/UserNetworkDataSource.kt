@@ -32,11 +32,13 @@ import illyan.jay.data.DataStatus
 import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
+import illyan.jay.util.runBatch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -84,12 +86,13 @@ class UserNetworkDataSource @Inject constructor(
     }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, cloudUserStatus.value.data)
 
     init {
-        authInteractor.addAuthStateListener {
+        authInteractor.addAuthStateListener { state ->
             if (authInteractor.isUserSignedIn) {
                 if (authInteractor.userUUID != null &&
                     authInteractor.userUUID != _userStatus.value.data?.uuid
                 ) {
-                    Timber.d("Reloading snapshot listener for user ${_userStatus.value.data?.uuid?.take(4)}")
+                    Timber.d("Reloading snapshot listener for user ${state.currentUser?.uid?.take(4)}")
+                    resetUserListenerData()
                     refreshUser()
                 } else {
                     Timber.d("User not changed from ${_userStatus.value.data?.uuid?.take(4)}, not reloading snapshot listener on auth state change")
@@ -103,6 +106,7 @@ class UserNetworkDataSource @Inject constructor(
     }
 
     private fun resetUserListenerData() {
+        Timber.v("Resetting user listener state")
         _userListenerRegistration.value?.remove()
         if (_userListenerRegistration.value != null) _userListenerRegistration.update { null }
         if (_userReference.value != null) _userReference.update { null }
@@ -126,8 +130,9 @@ class UserNetworkDataSource @Inject constructor(
     private fun refreshUser(
         userUUID: String = authInteractor.userUUID.toString(),
         onError: (Exception) -> Unit = { Timber.e(it, "Error while getting user data: ${it.message}") },
-        onSuccess: (FirestoreUser) -> Unit = {},
+        onSuccess: (FirestoreUser?) -> Unit = {},
     ) {
+        Timber.v("Refreshing user ${userUUID.take(4)} requested")
         if (!authInteractor.isUserSignedIn || _cloudUserStatus.value.isLoading == true) {
             Timber.d("Not refreshing user, due to another being loaded in or user is not signed in")
             return
@@ -142,11 +147,7 @@ class UserNetworkDataSource @Inject constructor(
                 onError(error)
             } else {
                 val user = snapshot?.toObject<FirestoreUser>()
-                if (user == null) {
-                    onError(NoSuchElementException("User document does not exist"))
-                } else {
-                    onSuccess(user)
-                }
+                onSuccess(user)
                 if (snapshot != null) {
                     // Update _userReference value with snapshot when snapshot is not null
                     _userReference.update { snapshot }
@@ -163,7 +164,7 @@ class UserNetworkDataSource @Inject constructor(
                         Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cache")
                     }
                     _userStatus.update { DataStatus(data = user, isLoading = false) }
-                } else if (_userStatus.value.data != null) {
+                } else {
                     _userStatus.update { DataStatus(data = null, isLoading = false) }
                 }
 
@@ -176,7 +177,7 @@ class UserNetworkDataSource @Inject constructor(
                             Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cloud")
                         }
                         _cloudUserStatus.update { DataStatus(data = user, isLoading = false) }
-                    } else if (_cloudUserStatus.value.data != null) {
+                    } else {
                         _cloudUserStatus.update { DataStatus(data = null, isLoading = false) }
                     }
                 }
@@ -188,13 +189,16 @@ class UserNetworkDataSource @Inject constructor(
             .addSnapshotListener(executor, MetadataChanges.INCLUDE, snapshotListener)
     }
 
-    fun deleteUserData(
+    suspend fun deleteUserData(
         onCancel: () -> Unit = { Timber.i("User data deletion canceled") },
         onFailure: (Exception) -> Unit = { Timber.e(it) },
         onSuccess: () -> Unit = { Timber.i("User data deletion successful") },
     ) {
-        firestore.runBatch {
-            deleteUserData(batch = it)
+        firestore.runBatch(1) { batch, onOperationFinished ->
+            deleteUserData(
+                batch = batch,
+                onWriteFinished = onOperationFinished
+            )
         }.addOnSuccessListener {
             onSuccess()
         }.addOnFailureListener {
@@ -204,13 +208,16 @@ class UserNetworkDataSource @Inject constructor(
         }
     }
 
-    fun deleteUserData(
+    suspend fun deleteUserData(
         batch: WriteBatch,
         onWriteFinished: () -> Unit = {}
     ) {
-        _userReference.value?.apply {
-            batch.delete(reference)
-            onWriteFinished()
+        _userReference.first { snapshot ->
+            snapshot?.let {
+                batch.delete(it.reference)
+                onWriteFinished()
+            }
+            true
         }
     }
 }
