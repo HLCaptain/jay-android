@@ -40,8 +40,8 @@ android {
         applicationId "illyan.jay"
         minSdk 21
         targetSdk 33
-        versionCode 9
-        versionName "0.2.6-alpha"
+        versionCode 10
+        versionName "0.2.7-alpha"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
