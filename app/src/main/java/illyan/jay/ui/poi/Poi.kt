@@ -58,7 +58,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
@@ -273,7 +273,7 @@ fun PoiScreen(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun PoiScreenPreview() {
     JayTheme {

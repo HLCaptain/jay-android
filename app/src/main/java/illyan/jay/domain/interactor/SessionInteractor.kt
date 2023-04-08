@@ -19,6 +19,7 @@
 package illyan.jay.domain.interactor
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.WriteBatch
 import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
 import illyan.jay.data.disk.datasource.LocationDiskDataSource
@@ -30,7 +31,7 @@ import illyan.jay.data.network.datasource.UserNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
-import illyan.jay.util.completeNext
+import illyan.jay.util.awaitOperations
 import illyan.jay.util.runBatch
 import illyan.jay.util.sphericalPathLength
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +45,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.*
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -153,14 +154,14 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
         Timber.d("Batch created to delete session data for user ${authInteractor.userUUID?.take(4)} from cloud")
-        firestore.runBatch(2) { batch, completableDeferred ->
+        firestore.runBatch(2) { batch, onOperationFinished ->
             sessionNetworkDataSource.deleteAllSessions(
                 batch = batch,
-                onWriteFinished = { completableDeferred.completeNext() }
+                onWriteFinished = { onOperationFinished() }
             )
             locationNetworkDataSource.deleteLocationsForUser(
                 batch = batch,
-                onWriteFinished = { completableDeferred.completeNext() }
+                onWriteFinished = { onOperationFinished() }
             )
         }
     }
@@ -168,16 +169,29 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteAllSyncedData() {
         if (!authInteractor.isUserSignedIn) return
         Timber.d("Batch created to delete user ${authInteractor.userUUID?.take(4)} from cloud")
-        firestore.runBatch(2) { batch, completableDeferred ->
-            userNetworkDataSource.deleteUserData(
+        firestore.runBatch(1) { batch, onOperationFinished ->
+            deleteAllSyncedData(
                 batch = batch,
-                onWriteFinished = { completableDeferred.completeNext() }
+                onWriteFinished = onOperationFinished
+            )
+        }
+    }
+
+    suspend fun deleteAllSyncedData(
+        batch: WriteBatch,
+        onWriteFinished: () -> Unit = {}
+    ) {
+        awaitOperations(2) { onOperationFinished ->
+            sessionNetworkDataSource.deleteAllSessions(
+                batch = batch,
+                onWriteFinished = onOperationFinished
             )
             locationNetworkDataSource.deleteLocationsForUser(
                 batch = batch,
-                onWriteFinished = { completableDeferred.completeNext() }
+                onWriteFinished = onOperationFinished
             )
         }
+        onWriteFinished()
     }
 
     fun uploadSessions(
@@ -430,8 +444,6 @@ class SessionInteractor @Inject constructor(
      */
     suspend fun stopOngoingSessions() {
         getOngoingSessions().first { sessions ->
-            sessionDiskDataSource.stopSessions(sessions)
-            refreshDistanceForSessions(sessions)
             sessions.forEach { session ->
                 coroutineScopeIO.launch {
                     stopSession(session)
@@ -443,14 +455,7 @@ class SessionInteractor @Inject constructor(
 
     suspend fun stopDanglingSessions() {
         if (!serviceInteractor.isJayServiceRunning()) {
-            getOngoingSessions().first { sessions ->
-                sessions.forEach { session ->
-                    coroutineScopeIO.launch {
-                        stopSession(session)
-                    }
-                }
-                true
-            }
+            stopOngoingSessions()
         }
     }
 
@@ -521,16 +526,16 @@ class SessionInteractor @Inject constructor(
     @JvmName("deleteSessionsFromCloudByUUIDs")
     suspend fun deleteSessionsFromCloud(sessionUUIDs: List<String>) {
         Timber.d("Batch created to delete ${sessionUUIDs.size} sessions from cloud")
-        firestore.runBatch(2) { batch, completableDeferred ->
+        firestore.runBatch(2) { batch, onOperationFinished ->
             sessionNetworkDataSource.deleteSessions(
                 batch = batch,
                 sessionUUIDs = sessionUUIDs,
-                onWriteFinished = { completableDeferred.completeNext() }
+                onWriteFinished = onOperationFinished
             )
             locationNetworkDataSource.deleteLocationsForSessions(
                 batch = batch,
                 sessionUUIDs = sessionUUIDs,
-                onWriteFinished = { completableDeferred.completeNext() }
+                onWriteFinished = onOperationFinished
             )
         }
     }

@@ -19,9 +19,15 @@
 package illyan.jay.ui.about
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -39,16 +45,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -59,11 +71,12 @@ import illyan.jay.BuildConfig
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.JayDialogContentPadding
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
-import illyan.jay.ui.profile.ProfileMenuItem
+import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.settings.ShowAdsSetting
+import illyan.jay.ui.settings.general.ShowAdsSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
 import illyan.jay.util.TestAdUnitIds
@@ -95,22 +108,43 @@ fun AboutDialogContent(
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
-    JayDialogContent(
+    Column(
         modifier = modifier,
-        title = { AboutTitle() },
-        text = {
-            AboutScreen(
-                isShowingAd = isShowingAd,
-                setAdVisibility = setAdVisibility,
-                onNavigateToLibraries = onNavigateToLibraries,
-                aboutBannerAdUnitId = aboutBannerAdUnitId,
-            )
-        },
-        buttons = {
-            AboutButtons()
-        },
-        containerColor = Color.Transparent,
-    )
+    ) {
+        JayDialogContent(
+            title = { AboutTitle() },
+            textPaddingValues = PaddingValues(),
+            text = {
+                AboutScreen(
+                    isShowingAd = isShowingAd,
+                    setAdVisibility = setAdVisibility,
+                    onNavigateToLibraries = onNavigateToLibraries,
+                )
+            },
+            containerColor = Color.Transparent,
+            dialogPaddingValues = PaddingValues(
+                start = JayDialogContentPadding.calculateStartPadding(LayoutDirection.Ltr),
+                end = JayDialogContentPadding.calculateEndPadding(LayoutDirection.Ltr),
+                top = JayDialogContentPadding.calculateTopPadding()
+            ),
+        )
+        AboutAdScreen(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            isShowingAd = isShowingAd,
+            adUnitId = aboutBannerAdUnitId
+        )
+        JayDialogContent(
+            buttons = {
+                AboutButtons()
+            },
+            containerColor = Color.Transparent,
+            dialogPaddingValues = PaddingValues(
+                start = JayDialogContentPadding.calculateStartPadding(LayoutDirection.Ltr),
+                end = JayDialogContentPadding.calculateEndPadding(LayoutDirection.Ltr),
+                bottom = JayDialogContentPadding.calculateBottomPadding()
+            ),
+        )
+    }
 }
 
 @Composable
@@ -132,34 +166,36 @@ fun AboutTitle() {
 
 @Composable
 fun AboutScreen(
+    modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
-    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
-    Column {
+    Column(
+        modifier = modifier,
+    ) {
         Column(
             verticalArrangement = Arrangement.spacedBy((-12).dp)
         ) {
-            ProfileMenuItem(
+            MenuButton(
                 text = stringResource(R.string.libraries),
                 onClick = onNavigateToLibraries
             )
             AnimatedVisibility(visible = Library.Jay.license?.url != null) {
-                ProfileMenuItem(
+                MenuButton(
                     text = stringResource(R.string.jay_license),
                     onClick = { Library.Jay.license?.url?.let { uriHandler.openUri(it) } }
                 )
             }
             AnimatedVisibility(visible = Library.Jay.privacyPolicyUrl != null) {
-                ProfileMenuItem(
+                MenuButton(
                     text = stringResource(R.string.privacy_policy),
                     onClick = { Library.Jay.privacyPolicyUrl?.let { uriHandler.openUri(it) } }
                 )
             }
             AnimatedVisibility(visible = Library.Jay.termsAndConditionsUrl != null) {
-                ProfileMenuItem(
+                MenuButton(
                     text = stringResource(R.string.terms_and_conditions),
                     onClick = { Library.Jay.termsAndConditionsUrl?.let { uriHandler.openUri(it) } }
                 )
@@ -170,7 +206,6 @@ fun AboutScreen(
         DonationScreen(
             isShowingAd = isShowingAd,
             setAdVisibility = setAdVisibility,
-            aboutBannerAdUnitId = aboutBannerAdUnitId
         )
     }
 }
@@ -180,7 +215,6 @@ fun DonationScreen(
     modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
     setAdVisibility: (Boolean) -> Unit = {},
-    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
 ) {
     Column(
         modifier = modifier
@@ -189,11 +223,6 @@ fun DonationScreen(
             modifier = Modifier.fillMaxWidth(),
             isShowingAd = isShowingAd,
             setAdVisibility = setAdVisibility,
-        )
-        AboutAdScreen(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            isShowingAd = isShowingAd,
-            adUnitId = aboutBannerAdUnitId
         )
     }
 }
@@ -244,6 +273,7 @@ fun AboutAdSetting(
         )
         AnimatedVisibility(visible = !isShowingAd) {
             Card(
+                modifier = Modifier.padding(bottom = 8.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer
                 )
@@ -274,20 +304,35 @@ fun AboutAdScreen(
             .clip(RoundedCornerShape(6.dp)),
         visible = isShowingAd
     ) {
+        var isAdLoaded by rememberSaveable { mutableStateOf(false) }
+        val adAlpha by animateFloatAsState(
+            targetValue = if (isAdLoaded) 1f else 0f,
+            animationSpec = spring(
+                stiffness = Spring.StiffnessLow
+            )
+        )
         AndroidView(
-            modifier = Modifier.heightIn(min = AdSize.BANNER.height.dp),
+            modifier = Modifier
+                .alpha(adAlpha)
+                .heightIn(min = AdSize.BANNER.height.dp),
             factory = { context ->
                 AdView(context).apply {
                     setAdSize(AdSize.BANNER)
                     this.adUnitId = adUnitId
                     loadAd(AdRequest.Builder().build())
+                    this.adListener = object : AdListener() {
+                        override fun onAdLoaded() {
+                            super.onAdLoaded()
+                            isAdLoaded = true
+                        }
+                    }
                 }
             }
         )
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun AboutDialogScreenPreview() {
     JayTheme {

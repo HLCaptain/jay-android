@@ -83,7 +83,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.MediumCircularProgressIndicator
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
@@ -553,7 +553,7 @@ fun SessionDetailsList(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun SessionDetailsScreenPreview(
     session: UiSession? = null,

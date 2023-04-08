@@ -24,12 +24,10 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -53,7 +51,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.data.disk.model.AppSettings
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.absoluteBottom
 import illyan.jay.ui.home.absoluteTop
@@ -66,6 +64,7 @@ import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
+import illyan.jay.ui.settings.general.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.plus
 
@@ -188,21 +187,13 @@ fun FreeDriveScreenWithPermission(
                 )
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.automatically_turn_on_free_driving),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Switch(
-                checked = startServiceAutomatically,
-                onCheckedChange = { setStartServiceAutomatically(it) }
-            )
-        }
+        BooleanSetting(
+            settingName = stringResource(R.string.automatically_turn_on_free_driving),
+            value = startServiceAutomatically,
+            setValue = setStartServiceAutomatically,
+            enabledText = stringResource(R.string.on),
+            disabledText = stringResource(R.string.off),
+        )
     }
 }
 
@@ -222,7 +213,7 @@ fun FreeDriveScreenWithoutPermission(
         )
         Text(
             text = stringResource(R.string.location_permission_denied_description),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Column(
@@ -240,14 +231,14 @@ fun FreeDriveScreenWithoutPermission(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun FreeDriveScreenWithPermissionPreview() {
     JayTheme {
         FreeDriveScreenWithPermission()
     }
 }
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun FreeDriveScreenWithoutPermissionPreview() {
     JayTheme {

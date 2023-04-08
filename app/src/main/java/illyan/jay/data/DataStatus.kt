@@ -16,20 +16,9 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.components
+package illyan.jay.data
 
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
-import androidx.compose.ui.tooling.preview.Preview
-
-@Preview(
-    name = "Dark theme",
-    group = "themes",
-    uiMode = UI_MODE_NIGHT_YES,
-    showBackground = true,
+data class DataStatus<T>(
+    val data: T? = null,
+    val isLoading: Boolean? = null
 )
-@Preview(
-    name = "Light theme",
-    group = "themes",
-    showBackground = true,
-)
-annotation class PreviewLightDarkTheme

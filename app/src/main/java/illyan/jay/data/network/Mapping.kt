@@ -25,9 +25,11 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentSnapshot
 import illyan.jay.BuildConfig
+import illyan.jay.data.DataStatus
 import illyan.jay.data.network.model.FirestoreLocation
 import illyan.jay.data.network.model.FirestorePath
 import illyan.jay.data.network.model.FirestoreSession
+import illyan.jay.data.network.model.FirestoreUser
 import illyan.jay.data.network.model.FirestoreUserPreferences
 import illyan.jay.data.network.serializers.TimestampSerializer
 import illyan.jay.domain.model.DomainLocation
@@ -379,3 +381,17 @@ fun FirestoreLocation.toDomainModel(
     speedAccuracy = speedAccuracy,
     verticalAccuracy = verticalAccuracy.toShort()
 )
+
+fun DataStatus<FirestoreUser>.toDomainPreferencesStatus(): DataStatus<DomainPreferences> {
+    return DataStatus(
+        data = data?.run { preferences?.toDomainModel(uuid) },
+        isLoading = isLoading
+    )
+}
+
+fun DataStatus<FirestoreUser>.toDomainSessionsStatus(): DataStatus<List<DomainSession>> {
+    return DataStatus(
+        data = data?.run { sessions.map { it.toDomainModel(uuid) } },
+        isLoading = isLoading
+    )
+}

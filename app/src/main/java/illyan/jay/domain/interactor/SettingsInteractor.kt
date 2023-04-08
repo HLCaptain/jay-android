@@ -19,6 +19,7 @@
 package illyan.jay.domain.interactor
 
 import androidx.datastore.core.DataStore
+import illyan.jay.data.DataStatus
 import illyan.jay.data.disk.datasource.PreferencesDiskDataSource
 import illyan.jay.data.disk.model.AppSettings
 import illyan.jay.data.network.datasource.PreferencesNetworkDataSource
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.ZonedDateTime
@@ -62,7 +64,7 @@ class SettingsInteractor @Inject constructor(
         get() = userPreferences.value?.freeDriveAutoStart
         set(value) {
             Timber.v("FreeDriveAutoStart preference change requested to $value")
-            if (value != null && !isLoading.value) {
+            if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
                         preferencesDiskDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
@@ -77,7 +79,7 @@ class SettingsInteractor @Inject constructor(
         get() = userPreferences.value?.analyticsEnabled
         set(value) {
             Timber.v("AnalyticsEnabled preference change requested to $value")
-            if (value != null && !isLoading.value) {
+            if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
                         preferencesDiskDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
@@ -94,7 +96,7 @@ class SettingsInteractor @Inject constructor(
         get() = userPreferences.value?.showAds
         set(value) {
             Timber.v("ShowAds preference change requested to $value")
-            if (value != null && !isLoading.value) {
+            if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
                         preferencesDiskDataSource.setShowAds(authInteractor.userUUID!!, value)
@@ -111,7 +113,7 @@ class SettingsInteractor @Inject constructor(
         get() = userPreferences.value?.shouldSync
         set(value) {
             Timber.v("ShouldSync preference change requested to $value")
-            if (value != null && !isLoading.value) {
+            if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
                         preferencesDiskDataSource.setShouldSync(authInteractor.userUUID!!, value)
@@ -123,19 +125,18 @@ class SettingsInteractor @Inject constructor(
     val arePreferencesSynced by lazy {
         combine(
             isLoading,
-            preferencesNetworkDataSource.isLoadingFromCloud,
             localUserPreferences,
-            syncedUserPreferences
-        ) { loading, cloudLoading, local, synced ->
-            if (!loading && !cloudLoading) {
-                local == synced
+            cloudPreferencesStatus
+        ) { loading, local, syncedStatus ->
+            if (loading == false && syncedStatus.isLoading == false) {
+                local == syncedStatus.data
             } else {
                 false
             }
         }.stateIn(
             coroutineScopeIO,
             SharingStarted.Eagerly,
-            localUserPreferences.value == syncedUserPreferences.value
+            localUserPreferences.value == cloudPreferencesStatus.value.data
         )
     }
 
@@ -151,29 +152,29 @@ class SettingsInteractor @Inject constructor(
             isLoading,
             localUserPreferences
         ) { userSignedIn, loading, local ->
-            userSignedIn && !loading && local != null
+            userSignedIn && loading == false && local != null
         }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
     }
 
     private val _localUserPreferences = MutableStateFlow<DomainPreferences?>(null)
     val localUserPreferences = _localUserPreferences.asStateFlow()
 
-    val isSyncLoading = preferencesNetworkDataSource.isLoading
 
-    private val _isLocalLoading = MutableStateFlow(false)
-    val isLocalLoading: StateFlow<Boolean>
-        get() {
-            return _isLocalLoading.asStateFlow()
-        }
+    private val _isLocalLoading = MutableStateFlow<Boolean?>(null)
+    val isLocalLoading: StateFlow<Boolean?> = _isLocalLoading.asStateFlow()
 
-    val syncedUserPreferences = preferencesNetworkDataSource.cloudPreferences
+    val cloudPreferencesStatus = preferencesNetworkDataSource.cloudPreferencesStatus
 
     val isLoading = combine(
-        preferencesNetworkDataSource.isLoading,
+        cloudPreferencesStatus,
         isLocalLoading
-    ) { loadingFromCache, loadingFromDisk ->
-        loadingFromCache || loadingFromDisk
-    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
+    ) { status, loadingFromDisk ->
+        if (status.isLoading == null && loadingFromDisk == null) {
+            null
+        } else {
+            status.isLoading == true || loadingFromDisk == true
+        }
+    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
 
     init {
         _isLocalLoading.value = true
@@ -183,7 +184,7 @@ class SettingsInteractor @Inject constructor(
                     coroutineScopeIO.launch {
                         preferencesDiskDataSource.getPreferences(uuid).collectLatest {
                             _localUserPreferences.value = it
-                            if (_isLocalLoading.value) _isLocalLoading.value = false
+                            if (_isLocalLoading.value != false) _isLocalLoading.update { false }
                         }
                     }
                 } else { // Offline user
@@ -191,34 +192,32 @@ class SettingsInteractor @Inject constructor(
                     coroutineScopeIO.launch {
                         appSettingsFlow.collectLatest {
                             _localUserPreferences.value = it.preferences
-                            if (_isLocalLoading.value) _isLocalLoading.value = false
+                            if (_isLocalLoading.value != false) _isLocalLoading.update { false }
                         }
                     }
                 }
             }
         }
     }
-    // TODO: store local settings for each user
+
     val userPreferences by lazy {
         combine(
-            syncedUserPreferences,
+            cloudPreferencesStatus,
             localUserPreferences,
             authInteractor.isUserSignedInStateFlow,
             isLocalLoading,
-            isSyncLoading
         ) { flows ->
-            val syncedPreferences = flows[0] as DomainPreferences?
+            val syncedStatus = flows[0] as DataStatus<DomainPreferences>
             val localPreferences = flows[1] as DomainPreferences?
             val isUserSignedIn = flows[2] as Boolean
-            val isLocalLoading = flows[3] as Boolean
-            val isSyncedLoading = flows[4] as Boolean
+            val isLocalLoading = flows[3] as Boolean?
 
             resolvePreferences(
-                syncedPreferences = syncedPreferences,
+                syncedPreferences = syncedStatus.data,
                 localPreferences = localPreferences,
                 isUserSignedIn = isUserSignedIn,
                 isLocalLoading = isLocalLoading,
-                isSyncedLoading = isSyncedLoading
+                isSyncLoading = syncedStatus.isLoading
             )
         }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
     }
@@ -237,7 +236,7 @@ class SettingsInteractor @Inject constructor(
      * @param localPreferences The user's preferences stored on the device.
      * @param isUserSignedIn Whether the user is currently signed in.
      * @param isLocalLoading Whether local preferences are currently loading.
-     * @param isSyncedLoading Whether synced preferences are currently loading.
+     * @param isSyncLoading Whether synced preferences are currently loading.
      * @return The resolved user preferences.
      * If both local and synced preferences are null, null will be returned.
      *
@@ -252,8 +251,8 @@ class SettingsInteractor @Inject constructor(
         syncedPreferences: DomainPreferences?,
         localPreferences: DomainPreferences?,
         isUserSignedIn: Boolean,
-        isLocalLoading: Boolean,
-        isSyncedLoading: Boolean
+        isLocalLoading: Boolean?,
+        isSyncLoading: Boolean?,
     ): DomainPreferences? {
         // While either is loading, preferences are null
         // If local is loaded, the preferences are local, cloud still loading
@@ -269,31 +268,31 @@ class SettingsInteractor @Inject constructor(
         // If local is more fresh, then update synced version. (EASIER)
 
         return if (isUserSignedIn) {
-            if (isLocalLoading && isSyncedLoading) { // While either is loading, preferences are null
+            if (isLocalLoading != false && isSyncLoading != false) { // While either is loading, preferences are null
                 Timber.v("While local or synced preferences are loading, returning null")
                 null
-            } else if (!isLocalLoading && isSyncedLoading) { // If local is loaded, the preferences are local, cloud still loading
+            } else if (isLocalLoading == false && isSyncLoading != false) { // If local is loaded, the preferences are local, cloud still loading
                 Timber.v("If local is loaded and cloud is not, returning local preferences")
                 localPreferences
-            } else if (isLocalLoading && !isSyncedLoading) { // If cloud is loaded, the preferences are cloud, local still loading
+            } else if (isLocalLoading != false && isSyncLoading == false) { // If cloud is loaded, the preferences are cloud, local still loading
                 Timber.v("If cloud is loaded and local is not, returning cloud preferences")
                 syncedPreferences
             } else {
                 if (localPreferences == null && syncedPreferences == null) {
                     // User don't have local nor synced preferences? Create and upload local preferences.
-                    Timber.v("User don't have local nor synced preferences, create and upload one")
+                    Timber.v("User doesn't have local nor synced preferences, create and upload one")
                     val freshPreferences = DomainPreferences(userUUID = authInteractor.userUUID)
                     preferencesDiskDataSource.upsertPreferences(freshPreferences)
                     preferencesNetworkDataSource.setPreferences(freshPreferences)
                     null
                 } else if (localPreferences == null && syncedPreferences != null) {
                     // User don't have local but have synced Preferences? Use synced preferences.
-                    Timber.v("User don't have local but have synced preferences, save synced preferences")
+                    Timber.v("User doesn't have local but have synced preferences, save synced preferences")
                     preferencesDiskDataSource.upsertPreferences(syncedPreferences)
                     syncedPreferences
-                } else if (localPreferences != null && syncedPreferences == null) {
+                } else if (localPreferences != null && localPreferences.shouldSync && syncedPreferences == null) {
                     // User have local but not synced preferences? Upload local preferences.
-                    Timber.v("User have local but not synced preferences, upload local preferences")
+                    Timber.v("User has local preferences which need to be synced but has no preferences in cloud, upload local preferences")
                     preferencesNetworkDataSource.setPreferences(localPreferences)
                     localPreferences
                 } else { // Both sessions are now loaded in and not null

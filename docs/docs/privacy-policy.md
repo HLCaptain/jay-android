@@ -12,6 +12,11 @@ The terms used in this Privacy Policy have the same meanings as in our Terms and
 
 For a better experience, while using our Service, I may require you to provide us with certain personally identifiable information. The information that I request will be retained on your device and is not collected by me in any way.
 
+Additonal information which are required to provide app functionality:
+
+- Jay App collects location data to show analytics about your taken path, like your speed on your route and display where you have been while you were driving. Location data is collected in the background while a Session is running, even when Jay App is in the background or closed.
+- Jay App collects client IDs, which are generated on first startup. This enables Jay to help filter data (e.g. Sessions) based on a client it is recorded on.
+
 The app does use third-party services that may collect information used to identify you.
 
 Link to the privacy policy of third-party service providers used by the app
@@ -59,7 +64,7 @@ These Services do not address anyone under the age of 13. I do not knowingly col
 
 I may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. I will notify you of any changes by posting the new Privacy Policy on this page.
 
-This policy is effective as of 2023-03-20
+This policy is effective as of 2023-04-06
 
 ## Contact Us
 

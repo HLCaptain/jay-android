@@ -249,14 +249,36 @@ suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(vararg deferred: De
 suspend inline fun <reified T> WriteBatch.awaitAllThenCommit(deferred: List<Deferred<T>>) = awaitAllThenCommit(*deferred.toTypedArray())
 
 suspend fun FirebaseFirestore.runBatch(
-    numberOfWrites: Int,
+    numberOfOperations: Int,
     body: suspend (
         batch: WriteBatch,
-        completableDeferred: List<CompletableDeferred<Unit>>
+        onOperationFinished: () -> Unit
     ) -> Unit
 ): Task<Void> {
     val batch = batch()
-    val completableDeferred = List(numberOfWrites) { CompletableDeferred<Unit>() }
-    body(batch, completableDeferred)
+    val completableDeferred = List(numberOfOperations) { CompletableDeferred<Unit>() }
+    val onOperationFinished = {
+        completableDeferred.completeNext()
+        Timber.v("${completableDeferred.filter { it.isCompleted }.size} operations done.")
+    }
+    body(batch, onOperationFinished)
     return batch.awaitAllThenCommit(completableDeferred)
+}
+
+suspend fun awaitOperations(
+    numberOfOperations: Int,
+    body: suspend (onOperationFinished: () -> Unit) -> Unit
+) {
+    val completableDeferred = List(numberOfOperations) { CompletableDeferred<Unit>() }
+    val onOperationFinished = {
+        val isCompleted = completableDeferred.completeNext()
+        val numberOfCompletedOperations = completableDeferred.filter { it.isCompleted }.size
+        if (isCompleted) {
+            Timber.v("$numberOfCompletedOperations operations completed.")
+        } else {
+            Timber.v("Failed to complete operation. Completed $numberOfCompletedOperations so far.")
+        }
+    }
+    body(onOperationFinished)
+    awaitAll(deferreds = completableDeferred.toTypedArray())
 }

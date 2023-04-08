@@ -50,9 +50,10 @@ fun JayDialogContent(
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
     buttons: @Composable (() -> Unit)? = null,
-    iconPaddingValues: PaddingValues = IconPadding,
-    titlePaddingValues: PaddingValues = TitlePadding,
-    textPaddingValues: PaddingValues = TextPadding,
+    dialogPaddingValues: PaddingValues = JayDialogContentPadding,
+    iconPaddingValues: PaddingValues = JayDialogIconPadding,
+    titlePaddingValues: PaddingValues = JayDialogTitlePadding,
+    textPaddingValues: PaddingValues = JayDialogTextPadding,
     shape: Shape = AlertDialogDefaults.shape,
     containerColor: Color = AlertDialogDefaults.containerColor,
     iconContentColor: Color = AlertDialogDefaults.iconContentColor,
@@ -74,7 +75,7 @@ fun JayDialogContent(
         }
     ) {
         Column(
-            modifier = Modifier.padding(DialogPadding)
+            modifier = Modifier.padding(dialogPaddingValues)
         ) {
             AnimatedVisibility(visible = icon != null) {
                 icon?.let {
@@ -176,7 +177,7 @@ internal val DialogMinWidth = 280.dp
 internal val DialogMaxWidth = 560.dp
 
 // Paddings for each of the dialog's parts.
-private val DialogPadding = PaddingValues(all = 24.dp)
-private val IconPadding = PaddingValues(bottom = 16.dp)
-private val TitlePadding = PaddingValues(bottom = 16.dp)
-private val TextPadding = PaddingValues(bottom = 16.dp)
+val JayDialogContentPadding = PaddingValues(all = 24.dp)
+val JayDialogIconPadding = PaddingValues(bottom = 16.dp)
+val JayDialogTitlePadding = PaddingValues(bottom = 16.dp)
+val JayDialogTextPadding = PaddingValues(bottom = 16.dp)

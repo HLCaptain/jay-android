@@ -94,6 +94,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -151,7 +152,7 @@ import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.padding
@@ -361,7 +362,7 @@ fun calculateCornerRadius(
             maxCornerRadius,
             minCornerRadius,
             (max - (max - fraction) / threshold).coerceIn(min, max)
-        ).coerceAtLeast(0.dp)
+        ).coerceIn(minCornerRadius, maxCornerRadius)
     }
 }
 
@@ -472,7 +473,17 @@ fun HomeScreen(
         val bottomSheetState = scaffoldState.bottomSheetState
         sheetState = bottomSheetState
         var isTextFieldFocused by remember { mutableStateOf(false) }
-        var roundDp by remember { mutableStateOf(RoundedCornerRadius) }
+        var roundDp by rememberSaveable(
+            stateSaver = run {
+                val key = "searchBarCornerDp"
+                mapSaver(
+                    save = { mapOf(key to it.value) },
+                    restore = { Dp(it[key] as Float) }
+                )
+            }
+        ) {
+            mutableStateOf(RoundedCornerRadius)
+        }
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
         val softwareKeyboardController = LocalSoftwareKeyboardController.current
         val sheetCollapsing = bottomSheetState.isCollapsing()
@@ -925,7 +936,7 @@ fun BottomSearchBar(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 fun BottomSearchBarPreview() {
     JayTheme {
