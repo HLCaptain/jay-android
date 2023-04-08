@@ -45,9 +45,15 @@ class DataSettingsViewModel @Inject constructor(
         }
     }
 
+    fun deletePublicData() {
+        viewModelScope.launch(dispatcherIO) {
+            userInteractor.deleteAllPublicData()
+        }
+    }
+
     fun deleteAllUserData() {
         viewModelScope.launch(dispatcherIO) {
-            userInteractor.deleteAllData()
+            userInteractor.deleteAllUserData()
         }
     }
 

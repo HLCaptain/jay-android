@@ -69,19 +69,23 @@ class UserInteractor @Inject constructor(
     }
 
     suspend fun deleteAllLocalData() {
-        Timber.v("Deleting local data requested")
-        sessionInteractor.deleteNotOwnedSessions()
+        Timber.v("Deleting local user data requested")
         if (authInteractor.isUserSignedIn) {
             sessionInteractor.deleteOwnedSessions()
         }
     }
 
-    suspend fun deleteAllData() {
+    suspend fun deleteAllUserData() {
         // 1. delete all synced data
         // 2. delete all local data
         if (authInteractor.isUserSignedIn) {
             deleteAllSyncedData()
         }
         deleteAllLocalData()
+    }
+
+    suspend fun deleteAllPublicData() {
+        Timber.v("Deleting local not owned data requested")
+        sessionInteractor.deleteNotOwnedSessions()
     }
 }

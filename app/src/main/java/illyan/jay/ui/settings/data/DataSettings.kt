@@ -86,6 +86,7 @@ fun DataSettingsDialogScreen(
         isUserSignedIn = isUserSignedIn,
         cachedDataSizeInBytes = cachedDataSizeInBytes,
         onDeleteCached = viewModel::deleteCachedUserData,
+        onDeletePublic = viewModel::deletePublicData,
         onDeleteSynced = viewModel::deleteSyncedUserData,
         onDeleteAll = viewModel::deleteAllUserData,
         onNavigateUp = destinationsNavigator::navigateUp
@@ -99,6 +100,7 @@ fun DataSettingsDialogContent(
     isUserSignedIn: Boolean = true,
     cachedDataSizeInBytes: Long? = null,
     onDeleteCached: () -> Unit = {},
+    onDeletePublic: () -> Unit = {},
     onDeleteSynced: () -> Unit = {},
     onDeleteAll: () -> Unit = {},
     onNavigateUp: () -> Unit = {},
@@ -120,6 +122,7 @@ fun DataSettingsDialogContent(
             DataSettingsScreen(
                 modifier = Modifier.heightIn(max = (screenHeightDp * 0.4f).dp),
                 onDeleteCached = onDeleteCached,
+                onDeletePublic = onDeletePublic,
                 onDeleteSynced = onDeleteSynced,
                 onDeleteAll = onDeleteAll,
             )
@@ -211,6 +214,7 @@ fun DataSettingsButtons(
 fun DataSettingsScreen(
     modifier: Modifier = Modifier,
     onDeleteCached: () -> Unit = {},
+    onDeletePublic: () -> Unit = {},
     onDeleteSynced: () -> Unit = {},
     onDeleteAll: () -> Unit = {},
 ) {
@@ -220,9 +224,16 @@ fun DataSettingsScreen(
     ) {
         item {
             MenuButtonWithDescription(
+                onClick = onDeletePublic,
+                text = stringResource(R.string.delete_public_data),
+                description = stringResource(R.string.delete_public_data_description)
+            )
+        }
+        item {
+            MenuButtonWithDescription(
                 onClick = onDeleteCached,
-                text = stringResource(R.string.clear_cache),
-                description = stringResource(R.string.clear_cache_description)
+                text = stringResource(R.string.delete_from_device),
+                description = stringResource(R.string.delete_from_device_description)
             )
         }
         item {
