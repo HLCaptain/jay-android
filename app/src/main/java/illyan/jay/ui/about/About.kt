@@ -19,6 +19,9 @@
 package illyan.jay.ui.about
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,8 +45,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
@@ -53,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -296,13 +304,28 @@ fun AboutAdScreen(
             .clip(RoundedCornerShape(6.dp)),
         visible = isShowingAd
     ) {
+        var isAdLoaded by rememberSaveable { mutableStateOf(false) }
+        val adAlpha by animateFloatAsState(
+            targetValue = if (isAdLoaded) 1f else 0f,
+            animationSpec = spring(
+                stiffness = Spring.StiffnessLow
+            )
+        )
         AndroidView(
-            modifier = Modifier.heightIn(min = AdSize.BANNER.height.dp),
+            modifier = Modifier
+                .alpha(adAlpha)
+                .heightIn(min = AdSize.BANNER.height.dp),
             factory = { context ->
                 AdView(context).apply {
                     setAdSize(AdSize.BANNER)
                     this.adUnitId = adUnitId
                     loadAd(AdRequest.Builder().build())
+                    this.adListener = object : AdListener() {
+                        override fun onAdLoaded() {
+                            super.onAdLoaded()
+                            isAdLoaded = true
+                        }
+                    }
                 }
             }
         )
