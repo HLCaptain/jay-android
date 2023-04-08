@@ -133,4 +133,6 @@
     <string name="delete_from_cloud_description">Deleting from cloud deletes all user related data from the cloud. User settings syncing will automatically stop. It won\'t affect any other data on-device.</string>
     <string name="delete_all_user_data_description">Deletes data both from the cloud and on-device.</string>
     <string name="my_data">My Data</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
 </resources>

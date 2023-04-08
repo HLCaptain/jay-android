@@ -252,6 +252,7 @@ fun ProfileDialogContent(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileButtons(
     onShowSettingsScreen: () -> Unit = {},
@@ -262,7 +263,7 @@ fun ProfileButtons(
     isUserSigningOut: Boolean = false,
 ) {
     val onDialogClosed = LocalDialogDismissRequest.current
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom
@@ -272,7 +273,8 @@ fun ProfileButtons(
             onShowAboutScreen = onShowAboutScreen,
         )
         Row(
-            verticalAlignment = Alignment.Bottom
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = { onDialogClosed() }) {
                 Text(text = stringResource(R.string.close))

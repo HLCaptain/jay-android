@@ -23,6 +23,8 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -149,12 +151,13 @@ fun UserSettingsDialogContent(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun UserSettingsTitle(
     arePreferencesSynced: Boolean = false,
     preferences: UiPreferences? = null,
 ) {
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -162,16 +165,22 @@ fun UserSettingsTitle(
             Text(text = stringResource(R.string.settings))
             SyncPreferencesLabel(arePreferencesSynced = arePreferencesSynced)
         }
-        Crossfade(targetState = preferences != null) {
-            if (it && preferences != null) {
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    ClientLabel(clientUUID = preferences.clientUUID)
-                    LastUpdateLabel(lastUpdate = preferences.lastUpdate)
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.Top
+        ) {
+            Crossfade(targetState = preferences != null) {
+                if (it && preferences != null) {
+                    Column(
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        ClientLabel(clientUUID = preferences.clientUUID)
+                        LastUpdateLabel(lastUpdate = preferences.lastUpdate)
+                    }
+                } else {
+                    MediumCircularProgressIndicator()
                 }
-            } else {
-                MediumCircularProgressIndicator()
             }
         }
     }
@@ -408,13 +417,17 @@ fun BooleanSetting(
     value: Boolean,
     setValue: (Boolean) -> Unit,
     settingName: String,
-    enabledText: String = stringResource(R.string.enabled),
-    disabledText: String = stringResource(R.string.disabled),
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    fontWeight: FontWeight = FontWeight.Normal,
+    enabledText: String = stringResource(R.string.on),
+    disabledText: String = stringResource(R.string.off),
 ) {
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
         name = settingName,
-        onClick = { setValue(!value) }
+        onClick = { setValue(!value) },
+        textStyle = textStyle,
+        fontWeight = fontWeight,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -424,7 +437,11 @@ fun BooleanSetting(
                 modifier = Modifier.animateContentSize(),
                 targetState = value
             ) { enabled ->
-                Text(text = if (enabled) enabledText else disabledText)
+                Text(
+                    text = if (enabled) enabledText else disabledText,
+                    style = textStyle,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
             Switch(
                 checked = value,
@@ -476,6 +493,8 @@ fun ShowAdsSetting(
 fun SettingItem(
     modifier: Modifier = Modifier,
     name: String,
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    fontWeight: FontWeight = FontWeight.Normal,
     onClick: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
@@ -493,7 +512,13 @@ fun SettingItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = name)
+            Text(
+                modifier = Modifier.weight(1f, fill = false),
+                text = name,
+                style = textStyle,
+                fontWeight = fontWeight,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             content()
         }
     }
