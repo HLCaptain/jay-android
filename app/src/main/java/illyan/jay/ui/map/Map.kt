@@ -152,8 +152,8 @@ private fun MapboxMapContainer(
         map.getMapboxMap().addOnCameraChangeListener { onCameraChanged(map.getMapboxMap().cameraState) }
         onDispose { map.getMapboxMap().removeOnMapLoadedListener(onMapLoadedListener) }
     }
-    val statusBarHeight =  LocalDensity.current.run { WindowInsets.statusBars.getTop(this) }
-    val fixedStatusBarHeight = remember { statusBarHeight }
+    val statusBarHeight = LocalDensity.current.run { WindowInsets.statusBars.getTop(this) }
+    val fixedStatusBarHeight = rememberSaveable { statusBarHeight }
     AndroidView(
         modifier = modifier,
         factory = { map }

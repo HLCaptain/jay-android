@@ -45,7 +45,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -79,6 +82,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 @ProfileNavGraph
@@ -298,21 +302,40 @@ private fun SyncPreferencesButton(
 private fun LastUpdateLabel(
     lastUpdate: ZonedDateTime,
 ) {
+    val time = lastUpdate
+        .withZoneSameInstant(ZoneId.systemDefault())
+        .minusNanos(lastUpdate.nano.toLong()) // No millis in formatted time
+        .format(DateTimeFormatter.ISO_LOCAL_TIME)
+    val date = lastUpdate
+        .withZoneSameInstant(ZoneId.systemDefault())
+        .minusNanos(lastUpdate.nano.toLong()) // No millis in formatted time
+        .format(DateTimeFormatter.ISO_LOCAL_DATE)
+    val isDateVisible by remember {
+        derivedStateOf {
+            lastUpdate.toEpochSecond().seconds.inWholeDays !=
+                    ZonedDateTime.now().toEpochSecond().seconds.inWholeDays
+        }
+    }
+    val textStyle = MaterialTheme.typography.bodyMedium
     SettingLabel(
         settingName = stringResource(R.string.last_update),
-        settingText = lastUpdate
-            .withZoneSameInstant(ZoneId.systemDefault())
-            .minusNanos(lastUpdate.nano.toLong()) // No millis in formatted time
-            .format(
-                if (lastUpdate.second.seconds.inWholeDays ==
-                    ZonedDateTime.now().second.seconds.inWholeDays
-                ) {
-                    DateTimeFormatter.ISO_LOCAL_TIME
-                } else {
-                    DateTimeFormatter.ISO_LOCAL_DATE
+        settingNameStyle = textStyle.plus(TextStyle(fontWeight = FontWeight.SemiBold)),
+        settingIndicator = {
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                AnimatedVisibility(visible = isDateVisible) {
+                    Text(
+                        text = date,
+                        style = textStyle,
+                    )
                 }
-            ),
-        style = MaterialTheme.typography.bodyMedium
+                Text(
+                    text = time,
+                    style = textStyle
+                )
+            }
+        },
     )
 }
 
@@ -331,7 +354,7 @@ fun ClientLabel(
                 modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
                 settingName = stringResource(R.string.client_id),
                 settingText = clientUUID?.take(8),
-                style = MaterialTheme.typography.bodyMedium
+                settingTextStyle = MaterialTheme.typography.bodyMedium
             )
         }
     }
@@ -342,8 +365,39 @@ fun SettingLabel(
     modifier: Modifier = Modifier,
     settingText: String? = null,
     settingName: String,
-    style: TextStyle = LocalTextStyle.current,
-    styleName: TextStyle = style.plus(TextStyle(fontWeight = FontWeight.SemiBold)),
+    settingTextStyle: TextStyle = LocalTextStyle.current,
+    settingNameStyle: TextStyle = settingTextStyle.plus(TextStyle(fontWeight = FontWeight.SemiBold)),
+    settingValueTextAlign: TextAlign? = null,
+) {
+    SettingLabel(
+        modifier = modifier,
+        settingIndicator = {
+            Crossfade(
+                modifier = Modifier.animateContentSize(),
+                targetState = settingText
+            ) {
+                if (it != null) {
+                    Text(
+                        text = it,
+                        style = settingTextStyle,
+                        textAlign = settingValueTextAlign,
+                    )
+                } else {
+                    SmallCircularProgressIndicator()
+                }
+            }
+        },
+        settingName = settingName,
+        settingNameStyle = settingNameStyle
+    )
+}
+
+@Composable
+fun SettingLabel(
+    modifier: Modifier = Modifier,
+    settingName: String,
+    settingNameStyle: TextStyle = LocalTextStyle.current.plus(TextStyle(fontWeight = FontWeight.SemiBold)),
+    settingIndicator: @Composable () -> Unit,
 ) {
     Row(
         modifier = modifier,
@@ -352,21 +406,9 @@ fun SettingLabel(
     ) {
         Text(
             text = settingName,
-            style = styleName
+            style = settingNameStyle,
         )
-        Crossfade(
-            modifier = Modifier.animateContentSize(),
-            targetState = settingText
-        ) {
-            if (it != null) {
-                Text(
-                    text = it,
-                    style = style
-                )
-            } else {
-                SmallCircularProgressIndicator()
-            }
-        }
+        settingIndicator()
     }
 }
 
@@ -529,11 +571,21 @@ fun SettingItem(
 fun UserSettingsDialogScreenPreview() {
     JayTheme {
         JayDialogSurface {
+            val canSyncPreferences = Random.nextBoolean()
+            val arePreferencesSynced = if (canSyncPreferences) Random.nextBoolean() else false
+            val shouldSyncPreferences = if (arePreferencesSynced) true else Random.nextBoolean()
             UserSettingsDialogContent(
                 preferences = UiPreferences(
                     userUUID = UUID.randomUUID().toString(),
-                    clientUUID = UUID.randomUUID().toString()
-                )
+                    clientUUID = UUID.randomUUID().toString(),
+                    lastUpdate = ZonedDateTime.now().minusDays(if (Random.nextBoolean()) 1 else 0),
+                    analyticsEnabled = Random.nextBoolean(),
+                    freeDriveAutoStart = Random.nextBoolean(),
+                    showAds = Random.nextBoolean(),
+                ),
+                canSyncPreferences = canSyncPreferences,
+                arePreferencesSynced = arePreferencesSynced,
+                shouldSyncPreferences = shouldSyncPreferences
             )
         }
     }

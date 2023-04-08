@@ -21,7 +21,10 @@ package illyan.jay.ui.about
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -45,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -59,6 +63,7 @@ import illyan.jay.BuildConfig
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
+import illyan.jay.ui.components.JayDialogContentPadding
 import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
 import illyan.jay.ui.profile.MenuButton
@@ -95,22 +100,43 @@ fun AboutDialogContent(
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
-    JayDialogContent(
+    Column(
         modifier = modifier,
-        title = { AboutTitle() },
-        text = {
-            AboutScreen(
-                isShowingAd = isShowingAd,
-                setAdVisibility = setAdVisibility,
-                onNavigateToLibraries = onNavigateToLibraries,
-                aboutBannerAdUnitId = aboutBannerAdUnitId,
-            )
-        },
-        buttons = {
-            AboutButtons()
-        },
-        containerColor = Color.Transparent,
-    )
+    ) {
+        JayDialogContent(
+            title = { AboutTitle() },
+            textPaddingValues = PaddingValues(),
+            text = {
+                AboutScreen(
+                    isShowingAd = isShowingAd,
+                    setAdVisibility = setAdVisibility,
+                    onNavigateToLibraries = onNavigateToLibraries,
+                )
+            },
+            containerColor = Color.Transparent,
+            dialogPaddingValues = PaddingValues(
+                start = JayDialogContentPadding.calculateStartPadding(LayoutDirection.Ltr),
+                end = JayDialogContentPadding.calculateEndPadding(LayoutDirection.Ltr),
+                top = JayDialogContentPadding.calculateTopPadding()
+            ),
+        )
+        AboutAdScreen(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            isShowingAd = isShowingAd,
+            adUnitId = aboutBannerAdUnitId
+        )
+        JayDialogContent(
+            buttons = {
+                AboutButtons()
+            },
+            containerColor = Color.Transparent,
+            dialogPaddingValues = PaddingValues(
+                start = JayDialogContentPadding.calculateStartPadding(LayoutDirection.Ltr),
+                end = JayDialogContentPadding.calculateEndPadding(LayoutDirection.Ltr),
+                bottom = JayDialogContentPadding.calculateBottomPadding()
+            ),
+        )
+    }
 }
 
 @Composable
@@ -132,13 +158,15 @@ fun AboutTitle() {
 
 @Composable
 fun AboutScreen(
+    modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
-    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
     setAdVisibility: (Boolean) -> Unit = {},
     onNavigateToLibraries: () -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
-    Column {
+    Column(
+        modifier = modifier,
+    ) {
         Column(
             verticalArrangement = Arrangement.spacedBy((-12).dp)
         ) {
@@ -170,7 +198,6 @@ fun AboutScreen(
         DonationScreen(
             isShowingAd = isShowingAd,
             setAdVisibility = setAdVisibility,
-            aboutBannerAdUnitId = aboutBannerAdUnitId
         )
     }
 }
@@ -180,7 +207,6 @@ fun DonationScreen(
     modifier: Modifier = Modifier,
     isShowingAd: Boolean = false,
     setAdVisibility: (Boolean) -> Unit = {},
-    aboutBannerAdUnitId: String = TestAdUnitIds.Banner,
 ) {
     Column(
         modifier = modifier
@@ -189,11 +215,6 @@ fun DonationScreen(
             modifier = Modifier.fillMaxWidth(),
             isShowingAd = isShowingAd,
             setAdVisibility = setAdVisibility,
-        )
-        AboutAdScreen(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            isShowingAd = isShowingAd,
-            adUnitId = aboutBannerAdUnitId
         )
     }
 }
@@ -244,6 +265,7 @@ fun AboutAdSetting(
         )
         AnimatedVisibility(visible = !isShowingAd) {
             Card(
+                modifier = Modifier.padding(bottom = 8.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer
                 )
