@@ -71,7 +71,7 @@ import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import illyan.jay.R
 import illyan.jay.ui.components.MediumCircularProgressIndicator
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.search.model.UiRecord
 import illyan.jay.ui.theme.JayTheme
@@ -197,7 +197,7 @@ fun SearchList(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun SearchListPreview() {
     JayTheme {
@@ -405,7 +405,7 @@ fun FavoriteButton(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun SuggestionCardPreview() {
     JayTheme {
@@ -439,7 +439,7 @@ fun HistoryCard(
     )
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun HistoryCardPreview() {
     JayTheme {
@@ -473,7 +473,7 @@ fun FavoriteCard(
     )
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun FavoriteCardPreview() {
     JayTheme {

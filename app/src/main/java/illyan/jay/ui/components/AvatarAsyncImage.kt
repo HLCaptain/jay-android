@@ -90,7 +90,7 @@ fun DefaultAvatar(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun DefaultAvatarPreview() {
     JayTheme {
@@ -109,7 +109,7 @@ fun BrokenAvatar(
     )
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun BrokenAvatarPreview() {
     JayTheme {
@@ -130,7 +130,7 @@ fun PlaceholderAvatar(
     )
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun PlaceholderAvatarPreview() {
     JayTheme {

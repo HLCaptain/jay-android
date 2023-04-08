@@ -65,7 +65,7 @@ import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.MediumCircularProgressIndicator
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.destinations.DataSettingsDialogScreenDestination
@@ -499,7 +499,7 @@ fun SettingItem(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 fun UserSettingsDialogScreenPreview() {
     JayTheme {

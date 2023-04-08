@@ -95,7 +95,7 @@ import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.destinations.AboutDialogScreenDestination
 import illyan.jay.ui.destinations.LoginDialogScreenDestination
@@ -320,7 +320,7 @@ fun ProfileScreen(
     )
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun PreviewProfileDialogScreen(
     name: String = "Illyan",

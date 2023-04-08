@@ -53,7 +53,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.data.disk.model.AppSettings
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.absoluteBottom
 import illyan.jay.ui.home.absoluteTop
@@ -240,14 +240,14 @@ fun FreeDriveScreenWithoutPermission(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun FreeDriveScreenWithPermissionPreview() {
     JayTheme {
         FreeDriveScreenWithPermission()
     }
 }
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun FreeDriveScreenWithoutPermissionPreview() {
     JayTheme {

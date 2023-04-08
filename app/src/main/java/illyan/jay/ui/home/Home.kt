@@ -152,7 +152,7 @@ import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.padding
@@ -936,7 +936,7 @@ fun BottomSearchBar(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 fun BottomSearchBarPreview() {
     JayTheme {

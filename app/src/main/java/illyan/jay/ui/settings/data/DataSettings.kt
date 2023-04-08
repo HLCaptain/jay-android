@@ -65,7 +65,7 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.JayDialogContent
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
@@ -321,7 +321,7 @@ fun DescriptionCard(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 fun PreviewDataSettingsDialogContent() {
     JayTheme {

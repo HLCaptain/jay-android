@@ -59,7 +59,7 @@ import illyan.jay.BuildConfig
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
 import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
@@ -287,7 +287,7 @@ fun AboutAdScreen(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun AboutDialogScreenPreview() {
     JayTheme {

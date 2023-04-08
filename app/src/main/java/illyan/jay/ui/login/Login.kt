@@ -43,7 +43,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
-import illyan.jay.ui.components.PreviewLightDarkTheme
+import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.profile.LocalDialogActivityProvider
 import illyan.jay.ui.profile.LocalDialogDismissRequest
 import illyan.jay.ui.profile.ProfileNavGraph
@@ -160,7 +160,7 @@ fun LoginButtons(
     }
 }
 
-@PreviewLightDarkTheme
+@PreviewThemesScreensFonts
 @Composable
 private fun PreviewLoginDialog() {
     JayTheme {
