@@ -64,7 +64,7 @@ class UserSettingsViewModel @Inject constructor(
             // or it was turned off a while ago, show the dialog again
             val shouldShowAnalyticsRequest = uiPreferences?.let {
                 if (it.lastUpdateToAnalytics == null) return@let true
-                val thresholdTime = it.lastUpdateToAnalytics.plusDays(60)
+                val thresholdTime = it.lastUpdateToAnalytics.plusDays(DaysToWaitForRequest)
                 val isAnalyticsSetLongTimeAgo = thresholdTime < ZonedDateTime.now()
                 isAnalyticsSetLongTimeAgo && !it.analyticsEnabled
             } ?: true
@@ -87,5 +87,9 @@ class UserSettingsViewModel @Inject constructor(
 
     fun setAdVisibility(visible: Boolean) {
         settingsInteractor.showAds = visible
+    }
+
+    companion object {
+        const val DaysToWaitForRequest = 30L // days
     }
 }
