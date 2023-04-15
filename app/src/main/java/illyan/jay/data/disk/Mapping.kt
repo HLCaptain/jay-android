@@ -158,7 +158,8 @@ fun RoomPreferences.toDomainModel() = DomainPreferences(
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
     lastUpdate = Instant.ofEpochMilli(lastUpdate).toZonedDateTime(),
-    shouldSync = shouldSync
+    lastUpdateToAnalytics = lastUpdateToAnalytics?.let { return@let Instant.ofEpochMilli(it).toZonedDateTime() },
+    shouldSync = shouldSync,
 )
 
 fun DomainPreferences.toRoomModel(
@@ -170,5 +171,6 @@ fun DomainPreferences.toRoomModel(
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
     lastUpdate = lastUpdate.toInstant().toEpochMilli(),
-    shouldSync = shouldSync
+    lastUpdateToAnalytics = lastUpdateToAnalytics?.toInstant()?.toEpochMilli(),
+    shouldSync = shouldSync,
 )

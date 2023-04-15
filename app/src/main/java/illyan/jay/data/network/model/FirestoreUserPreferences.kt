@@ -27,11 +27,13 @@ data class FirestoreUserPreferences(
     @PropertyName(FieldFreeDriveAutoStart) val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
     @PropertyName(FieldShowAds) val showAds: Boolean = DomainPreferences.Default.showAds,
     @PropertyName(FieldLastUpdate) val lastUpdate: Timestamp = Timestamp.now(),
+    @PropertyName(FieldLastUpdateToAnalytics) val lastUpdateToAnalytics: Timestamp? = null,
 ) {
     companion object {
         const val FieldAnalyticsEnabled = "analyticsEnabled"
         const val FieldFreeDriveAutoStart = "freeDriveAutoStart"
         const val FieldLastUpdate = "lastUpdate"
         const val FieldShowAds = "showAds"
+        const val FieldLastUpdateToAnalytics = "lastUpdateToAnalytics"
     }
 }

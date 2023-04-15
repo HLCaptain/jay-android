@@ -20,8 +20,10 @@ package illyan.jay.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialogDefaults
@@ -46,10 +48,10 @@ import androidx.compose.ui.unit.dp
 fun JayDialogContent(
     modifier: Modifier = Modifier,
     textModifier: Modifier = Modifier.heightIn(max = (LocalConfiguration.current.screenHeightDp * 0.66f).dp),
-    icon: @Composable (() -> Unit)? = null,
-    title: @Composable (() -> Unit)? = null,
-    text: @Composable (() -> Unit)? = null,
-    buttons: @Composable (() -> Unit)? = null,
+    icon: @Composable (BoxScope.() -> Unit)? = null,
+    title: @Composable (BoxScope.() -> Unit)? = null,
+    text: @Composable (BoxScope.() -> Unit)? = null,
+    buttons: @Composable (BoxScope.() -> Unit)? = null,
     dialogPaddingValues: PaddingValues = JayDialogContentPadding,
     iconPaddingValues: PaddingValues = JayDialogIconPadding,
     titlePaddingValues: PaddingValues = JayDialogTitlePadding,
@@ -82,6 +84,7 @@ fun JayDialogContent(
                     CompositionLocalProvider(LocalContentColor provides iconContentColor) {
                         Box(
                             Modifier
+                                .fillMaxWidth()
                                 .padding(iconPaddingValues)
                                 .align(Alignment.CenterHorizontally)
                         ) {
@@ -98,6 +101,7 @@ fun JayDialogContent(
                             Box(
                                 // Align the title to the center when an icon is present.
                                 Modifier
+                                    .fillMaxWidth()
                                     .padding(titlePaddingValues)
                                     .align(
                                         if (icon == null) {
@@ -120,6 +124,7 @@ fun JayDialogContent(
                         ProvideTextStyle(textStyle) {
                             Box(
                                 textModifier
+                                    .fillMaxWidth()
                                     .weight(weight = 1f, fill = false)
                                     .padding(textPaddingValues)
                                     .align(Alignment.Start)
@@ -132,10 +137,16 @@ fun JayDialogContent(
             }
             AnimatedVisibility(visible = buttons != null) {
                 buttons?.let {
-                    Box(modifier = Modifier.align(Alignment.End)) {
-                        CompositionLocalProvider(LocalContentColor provides buttonContentColor) {
-                            val textStyle = MaterialTheme.typography.labelLarge
-                            ProvideTextStyle(value = textStyle, content = buttons)
+                    CompositionLocalProvider(LocalContentColor provides buttonContentColor) {
+                        val textStyle = MaterialTheme.typography.labelLarge
+                        ProvideTextStyle(value = textStyle) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.End)
+                            ) {
+                                buttons()
+                            }
                         }
                     }
                 }

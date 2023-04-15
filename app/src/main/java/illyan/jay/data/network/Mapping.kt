@@ -93,7 +93,8 @@ fun FirestoreUserPreferences.toDomainModel(
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
     lastUpdate = lastUpdate.toZonedDateTime(),
-    shouldSync = true
+    lastUpdateToAnalytics = lastUpdateToAnalytics?.toZonedDateTime(),
+    shouldSync = true,
 )
 
 fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
@@ -101,6 +102,7 @@ fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
     lastUpdate = lastUpdate.toTimestamp(),
+    lastUpdateToAnalytics = lastUpdateToAnalytics?.toTimestamp(),
 )
 
 @OptIn(ExperimentalSerializationApi::class)

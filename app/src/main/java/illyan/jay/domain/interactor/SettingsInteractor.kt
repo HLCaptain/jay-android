@@ -85,7 +85,10 @@ class SettingsInteractor @Inject constructor(
                         preferencesDiskDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
                     } else {
                         updateAppPreferences {
-                            it.copy(analyticsEnabled = value)
+                            it.copy(
+                                analyticsEnabled = value,
+                                lastUpdateToAnalytics = ZonedDateTime.now()
+                            )
                         }
                     }
                 }
@@ -159,7 +162,6 @@ class SettingsInteractor @Inject constructor(
     private val _localUserPreferences = MutableStateFlow<DomainPreferences?>(null)
     val localUserPreferences = _localUserPreferences.asStateFlow()
 
-
     private val _isLocalLoading = MutableStateFlow<Boolean?>(null)
     val isLocalLoading: StateFlow<Boolean?> = _isLocalLoading.asStateFlow()
 
@@ -182,16 +184,16 @@ class SettingsInteractor @Inject constructor(
             authInteractor.userUUIDStateFlow.collectLatest { uuid ->
                 if (uuid != null) { // User signed in
                     coroutineScopeIO.launch {
-                        preferencesDiskDataSource.getPreferences(uuid).collectLatest {
-                            _localUserPreferences.value = it
+                        preferencesDiskDataSource.getPreferences(uuid).collectLatest { preferences ->
+                            _localUserPreferences.update { preferences }
                             if (_isLocalLoading.value != false) _isLocalLoading.update { false }
                         }
                     }
                 } else { // Offline user
                     // Simple, we only use the baseline preferences for offline users
                     coroutineScopeIO.launch {
-                        appSettingsFlow.collectLatest {
-                            _localUserPreferences.value = it.preferences
+                        appSettingsFlow.collectLatest { settings ->
+                            _localUserPreferences.update { settings.preferences }
                             if (_isLocalLoading.value != false) _isLocalLoading.update { false }
                         }
                     }

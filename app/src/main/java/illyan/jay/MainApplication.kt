@@ -71,18 +71,18 @@ class MainApplication : Application() {
                     analytics.setUserId(it.userUUID)
                     val collectingData = Timber.forest().contains(crashlyticsTree)
                     if (it.analyticsEnabled && !collectingData) {
-                        Timber.d("Analytics On, Planting crashlyticsTree")
                         Timber.plant(crashlyticsTree)
+                        Timber.d("Analytics On, planted crashlyticsTree")
                         crashlytics.setCrashlyticsCollectionEnabled(true)
                         analytics.setAnalyticsCollectionEnabled(true)
                         performance.isPerformanceCollectionEnabled = !BuildConfig.DEBUG // Don't measure performance in DEBUG mode
                     } else if (!it.analyticsEnabled && collectingData) {
+                        Timber.d("Analytics Off, uprooting crashlyticsTree")
                         Timber.uproot(crashlyticsTree)
+                        crashlytics.sendUnsentReports()
                         crashlytics.setCrashlyticsCollectionEnabled(false)
                         analytics.setAnalyticsCollectionEnabled(false)
                         performance.isPerformanceCollectionEnabled = false
-                        crashlytics.deleteUnsentReports()
-                        Timber.d("Analytics Off, Uprooting crashlyticsTree")
                     }
                 }
             }

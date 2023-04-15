@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.settings.general.model
+package illyan.jay.ui.settings.user.model
 
 import illyan.jay.domain.model.DomainPreferences
 import java.time.ZonedDateTime
@@ -27,6 +27,7 @@ data class UiPreferences(
     val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
     val showAds: Boolean = DomainPreferences.Default.showAds,
     val lastUpdate: ZonedDateTime = DomainPreferences.Default.lastUpdate,
+    val lastUpdateToAnalytics: ZonedDateTime? = null,
     val clientUUID: String? = null,
 )
 
@@ -38,5 +39,6 @@ fun DomainPreferences.toUiModel(
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
     lastUpdate = lastUpdate,
+    lastUpdateToAnalytics = lastUpdateToAnalytics,
     clientUUID = clientUUID,
 )

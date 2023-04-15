@@ -41,8 +41,8 @@ interface PreferencesDao {
     @Query("DELETE FROM preferences WHERE userUUID IS :userUUID")
     fun deletePreferences(userUUID: String)
 
-    @Query("UPDATE preferences SET analyticsEnabled = :analyticsEnabled, lastUpdate = :lastUpdate WHERE userUUID IS :userUUID")
-    fun setAnalyticsEnabled(userUUID: String, analyticsEnabled: Boolean, lastUpdate: Long = Instant.now().toEpochMilli())
+    @Query("UPDATE preferences SET analyticsEnabled = :analyticsEnabled, lastUpdate = :lastUpdate, lastUpdateToAnalytics = :lastUpdateToAnalytics WHERE userUUID IS :userUUID")
+    fun setAnalyticsEnabled(userUUID: String, analyticsEnabled: Boolean, lastUpdate: Long = Instant.now().toEpochMilli(), lastUpdateToAnalytics: Long = Instant.now().toEpochMilli())
 
     @Query("UPDATE preferences SET freeDriveAutoStart = :freeDriveAutoStart, lastUpdate = :lastUpdate WHERE userUUID IS :userUUID")
     fun setFreeDriveAutoStart(userUUID: String, freeDriveAutoStart: Boolean, lastUpdate: Long = Instant.now().toEpochMilli())

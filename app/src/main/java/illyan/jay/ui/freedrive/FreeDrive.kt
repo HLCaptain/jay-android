@@ -64,7 +64,7 @@ import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.settings.general.BooleanSetting
+import illyan.jay.ui.settings.user.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.plus
 

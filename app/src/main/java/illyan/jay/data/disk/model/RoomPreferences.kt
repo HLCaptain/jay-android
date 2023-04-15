@@ -34,5 +34,6 @@ data class RoomPreferences(
     val analyticsEnabled: Boolean = DomainPreferences.Default.analyticsEnabled,
     val showAds: Boolean = DomainPreferences.Default.showAds,
     val lastUpdate: Long = ZonedDateTime.now().toInstant().toEpochMilli(),
+    val lastUpdateToAnalytics: Long? = null,
     val shouldSync: Boolean = DomainPreferences.Default.shouldSync,
 )

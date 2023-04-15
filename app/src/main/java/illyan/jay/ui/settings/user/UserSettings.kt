@@ -16,7 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.ui.settings.general
+package illyan.jay.ui.settings.user
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -27,14 +27,16 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,22 +46,25 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
@@ -76,7 +81,7 @@ import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.destinations.DataSettingsDialogScreenDestination
 import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.settings.general.model.UiPreferences
+import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -92,19 +97,19 @@ fun UserSettingsDialogScreen(
     viewModel: UserSettingsViewModel = hiltViewModel(),
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+    val preferences by viewModel.preferences.collectAsStateWithLifecycle()
     val arePreferencesSynced by viewModel.arePreferencesSynced.collectAsStateWithLifecycle()
     val canSyncPreferences by viewModel.canSyncPreferences.collectAsStateWithLifecycle()
     val shouldSyncPreferences by viewModel.shouldSyncPreferences.collectAsStateWithLifecycle()
+    val showAnalyticsRequestDialog by viewModel.showAnalyticsRequestDialog.collectAsStateWithLifecycle()
+
     UserSettingsDialogContent(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = max(200.dp, screenHeightDp - 256.dp)),
+        modifier = Modifier.fillMaxWidth(),
         preferences = preferences,
         arePreferencesSynced = arePreferencesSynced,
         canSyncPreferences = canSyncPreferences,
         shouldSyncPreferences = shouldSyncPreferences,
+        showAnalyticsRequestDialog = showAnalyticsRequestDialog,
         onShouldSyncChanged = viewModel::setPreferencesSync,
         setAnalytics = viewModel::setAnalytics,
         setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
@@ -120,39 +125,121 @@ fun UserSettingsDialogContent(
     arePreferencesSynced: Boolean = false,
     canSyncPreferences: Boolean = false,
     shouldSyncPreferences: Boolean = false,
+    showAnalyticsRequestDialog: Boolean = false,
     onShouldSyncChanged: (Boolean) -> Unit = {},
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
     setAdVisibility: (Boolean) -> Unit = {},
     onDeleteUserData: () -> Unit = {}
 ) {
+    Crossfade(
+        modifier = modifier.animateContentSize(),
+        targetState = showAnalyticsRequestDialog
+    ) {
+        if (it) {
+            AnalyticsRequestDialogContent(
+                analyticsEnabled = preferences?.analyticsEnabled,
+                setAnalytics = setAnalytics
+            )
+        } else {
+            JayDialogContent(
+                title = {
+                    UserSettingsTitle(
+                        arePreferencesSynced = arePreferencesSynced,
+                        preferences = preferences
+                    )
+                },
+                text = {
+                    UserSettingsScreen(
+                        preferences = preferences,
+                        setAnalytics = setAnalytics,
+                        setFreeDriveAutoStart = setFreeDriveAutoStart,
+                        setAdVisibility = setAdVisibility
+                    )
+                },
+                buttons = {
+                    UserSettingsButtons(
+                        canSyncPreferences = canSyncPreferences,
+                        shouldSyncPreferences = shouldSyncPreferences,
+                        onShouldSyncChanged = onShouldSyncChanged,
+                        onDeleteUserData = onDeleteUserData,
+                    )
+                },
+                containerColor = Color.Transparent,
+            )
+        }
+    }
+}
+
+@Composable
+fun AnalyticsRequestDialogContent(
+    modifier: Modifier = Modifier,
+    analyticsEnabled: Boolean? = null,
+    setAnalytics: (Boolean) -> Unit = {},
+) {
+    var analyticsSet by rememberSaveable { mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!analyticsSet) setAnalytics(analyticsEnabled ?: false)
+        }
+    }
     JayDialogContent(
         modifier = modifier,
+        icon = {
+            Icon(
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.TopCenter),
+                imageVector = Icons.Rounded.Insights,
+                contentDescription = ""
+            )
+        },
         title = {
-            UserSettingsTitle(
-                arePreferencesSynced = arePreferencesSynced,
-                preferences = preferences
+            Text(
+                modifier = Modifier.align(Alignment.TopCenter),
+                text = stringResource(R.string.turn_on_analytics),
+                textAlign = TextAlign.Center
             )
         },
         text = {
-            UserSettingsScreen(
-                preferences = preferences,
-                setAnalytics = setAnalytics,
-                setFreeDriveAutoStart = setFreeDriveAutoStart,
-                setAdVisibility = setAdVisibility
-            )
+            LazyColumn {
+                item {
+                    Text(text = stringResource(R.string.turn_on_analytics_description))
+                }
+            }
         },
         buttons = {
-            UserSettingsButtons(
-                modifier = Modifier.fillMaxWidth(),
-                canSyncPreferences = canSyncPreferences,
-                shouldSyncPreferences = shouldSyncPreferences,
-                onShouldSyncChanged = onShouldSyncChanged,
-                onDeleteUserData = onDeleteUserData,
+            AnalyticsRequestButtons(
+                modifier = Modifier.align(Alignment.BottomEnd),
+                onDismiss = {
+                    analyticsSet = true
+                    setAnalytics(false)
+                },
+                onTurnOnAnalytics = {
+                    analyticsSet = true
+                    setAnalytics(true)
+                }
             )
-        },
-        containerColor = Color.Transparent,
+        }
     )
+}
+
+@Composable
+fun AnalyticsRequestButtons(
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit = {},
+    onTurnOnAnalytics: () -> Unit = {}
+) {
+    Row(
+        modifier = modifier
+    ) {
+        TextButton(onClick = onDismiss) {
+            Text(text = stringResource(R.string.dismiss))
+        }
+        Button(onClick = onTurnOnAnalytics) {
+            Text(text = stringResource(R.string.turn_on))
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -414,12 +501,16 @@ fun SettingLabel(
 
 @Composable
 fun UserSettingsScreen(
+    modifier: Modifier = Modifier,
     preferences: UiPreferences? = null,
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
     setAdVisibility: (Boolean) -> Unit = {},
 ) {
-    Crossfade(targetState = preferences != null) {
+    Crossfade(
+        modifier = modifier,
+        targetState = preferences != null
+    ) {
         if (it && preferences != null) {
             LazyColumn {
                 item {
@@ -566,26 +657,44 @@ fun SettingItem(
     }
 }
 
+private fun generateRandomUserPreferences(): UiPreferences {
+    return UiPreferences(
+        userUUID = UUID.randomUUID().toString(),
+        clientUUID = UUID.randomUUID().toString(),
+        lastUpdate = ZonedDateTime.now().minusDays(if (Random.nextBoolean()) 1 else 0),
+        analyticsEnabled = Random.nextBoolean(),
+        freeDriveAutoStart = Random.nextBoolean(),
+        showAds = Random.nextBoolean(),
+    )
+}
+
 @PreviewThemesScreensFonts
 @Composable
 fun UserSettingsDialogScreenPreview() {
     JayTheme {
         JayDialogSurface {
+            val preferences = generateRandomUserPreferences()
             val canSyncPreferences = Random.nextBoolean()
             val arePreferencesSynced = if (canSyncPreferences) Random.nextBoolean() else false
             val shouldSyncPreferences = if (arePreferencesSynced) true else Random.nextBoolean()
             UserSettingsDialogContent(
-                preferences = UiPreferences(
-                    userUUID = UUID.randomUUID().toString(),
-                    clientUUID = UUID.randomUUID().toString(),
-                    lastUpdate = ZonedDateTime.now().minusDays(if (Random.nextBoolean()) 1 else 0),
-                    analyticsEnabled = Random.nextBoolean(),
-                    freeDriveAutoStart = Random.nextBoolean(),
-                    showAds = Random.nextBoolean(),
-                ),
+                preferences = preferences,
                 canSyncPreferences = canSyncPreferences,
                 arePreferencesSynced = arePreferencesSynced,
                 shouldSyncPreferences = shouldSyncPreferences
+            )
+        }
+    }
+}
+
+@PreviewThemesScreensFonts
+@Composable
+fun AnalyticsRequestDialogContentPreview() {
+    JayTheme {
+        JayDialogSurface {
+            val preferences = generateRandomUserPreferences()
+            AnalyticsRequestDialogContent(
+                analyticsEnabled = preferences.analyticsEnabled,
             )
         }
     }

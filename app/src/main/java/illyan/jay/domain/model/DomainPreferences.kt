@@ -18,6 +18,7 @@
 
 package illyan.jay.domain.model
 
+import illyan.jay.data.serializers.ZonedDateTimeNullableSerializer
 import illyan.jay.data.serializers.ZonedDateTimeSerializer
 import kotlinx.serialization.Serializable
 import java.time.ZonedDateTime
@@ -31,6 +32,8 @@ data class DomainPreferences(
     val showAds: Boolean = false,
     @Serializable(with = ZonedDateTimeSerializer::class)
     val lastUpdate: ZonedDateTime = ZonedDateTime.now(),
+    @Serializable(with = ZonedDateTimeNullableSerializer::class)
+    val lastUpdateToAnalytics: ZonedDateTime? = null,
     val shouldSync: Boolean = false,
 ) {
     fun isBefore(other: DomainPreferences): Boolean {
