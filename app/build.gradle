@@ -155,9 +155,9 @@ dependencies {
     implementation "me.saket.swipe:swipe:1.1.1"
 
     // Mapbox
-    implementation "com.mapbox.maps:android:10.11.0-beta.1"
-    implementation "com.mapbox.search:mapbox-search-android-ui:1.0.0-beta.44"
-    implementation "com.mapbox.navigation:android:2.11.0-beta.1"
+    implementation "com.mapbox.maps:android:10.13.0-beta.1"
+    implementation "com.mapbox.search:mapbox-search-android-ui:1.0.0-rc.3"
+    implementation "com.mapbox.navigation:android:2.13.0-beta.1"
 
     // Accompanist
     def accompanist_version = '0.29.1-alpha'

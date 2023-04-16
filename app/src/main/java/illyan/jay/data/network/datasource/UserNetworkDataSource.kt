@@ -130,12 +130,6 @@ class UserNetworkDataSource @Inject constructor(
 
     private fun refreshUser(
         userUUID: String = authInteractor.userUUID.toString(),
-        onError: (Exception) -> Unit = {
-            Timber.e(
-                it,
-                "Error while getting user data: ${it.message}"
-            )
-        },
         onSuccess: (FirestoreUser?) -> Unit = {},
     ) {
         Timber.v("Refreshing user ${userUUID.take(4)} requested")
