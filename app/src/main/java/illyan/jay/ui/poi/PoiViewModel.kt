@@ -56,7 +56,7 @@ class PoiViewModel @Inject constructor(
     private val _places = MutableStateFlow(persistentListOf<Place>())
     val place = _places
         .map { it.lastOrNull() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), null)
 
     var isNewPlace by mutableStateOf(true)
 
@@ -68,7 +68,7 @@ class PoiViewModel @Inject constructor(
         places.lastOrNull()?.let { lastPlace ->
             infoForPlace[lastPlace]?.toUiModel()
         }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), null)
 
     val shouldShowAddress = place.map {
         if (it == null) {
@@ -85,7 +85,7 @@ class PoiViewModel @Inject constructor(
                 }
             }
         }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), true)
 
     private val receiver: BaseReceiver = BaseReceiver { intent ->
         if (Build.VERSION.SDK_INT >= 33) {

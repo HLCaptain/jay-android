@@ -37,11 +37,11 @@ data class DomainPreferences(
     val shouldSync: Boolean = false,
 ) {
     fun isBefore(other: DomainPreferences): Boolean {
-        return lastUpdate.toInstant().epochSecond < other.lastUpdate.toInstant().epochSecond
+        return lastUpdate.toInstant().toEpochMilli() < other.lastUpdate.toInstant().toEpochMilli()
     }
 
     fun isAfter(other: DomainPreferences): Boolean {
-        return lastUpdate.toInstant().epochSecond > other.lastUpdate.toInstant().epochSecond
+        return lastUpdate.toInstant().toEpochMilli() > other.lastUpdate.toInstant().toEpochMilli()
     }
 
     companion object {

@@ -63,7 +63,7 @@ class FreeDriveViewModel @Inject constructor(
         .map { it?.freeDriveAutoStart ?: AppSettings.default.preferences.freeDriveAutoStart }
         .stateIn(
             viewModelScope,
-            SharingStarted.Eagerly,
+            SharingStarted.WhileSubscribed(5000L),
             AppSettings.default.preferences.freeDriveAutoStart
         )
 

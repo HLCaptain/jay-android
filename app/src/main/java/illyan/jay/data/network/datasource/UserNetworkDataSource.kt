@@ -71,7 +71,7 @@ class UserNetworkDataSource @Inject constructor(
 
     val user = userStatus.map {
         it.data
-    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, userStatus.value.data)
+    }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), userStatus.value.data)
 
     val cloudUserStatus: StateFlow<DataStatus<FirestoreUser>> by lazy {
         if (_userListenerRegistration.value == null && _cloudUserStatus.value.isLoading != true) {
@@ -83,7 +83,7 @@ class UserNetworkDataSource @Inject constructor(
 
     val cloudUser = cloudUserStatus.map {
         it.data
-    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, cloudUserStatus.value.data)
+    }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), cloudUserStatus.value.data)
 
     init {
         authInteractor.addAuthStateListener { state ->

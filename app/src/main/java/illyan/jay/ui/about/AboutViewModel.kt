@@ -39,7 +39,7 @@ class AboutViewModel @Inject constructor(
 
     val showAds = settingsInteractor.userPreferences.map {
         it?.showAds ?: DomainPreferences.Default.showAds
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, DomainPreferences.Default.showAds)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), DomainPreferences.Default.showAds)
 
     val aboutBannerAdUnitId = remoteConfig[FirebaseRemoteConfigKeys.BannerOnAboutScreenAdUnitIdKey].asString()
 
