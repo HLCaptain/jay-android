@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep custom model classes
+# TODO: remove this line when implemented Flows with Firestore
+-keep class illyan.jay.data.network.model.** { *; }

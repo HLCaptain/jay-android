@@ -51,7 +51,7 @@ class UserSettingsViewModel @Inject constructor(
         val uiPreferences = preferences?.toUiModel(clientUUID = appSettings.clientUUID)
         updateAnalyticsRequestDialogVisibility(uiPreferences)
         uiPreferences
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), null)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val arePreferencesSynced = settingsInteractor.arePreferencesSynced
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow

@@ -57,7 +57,7 @@ class SessionNetworkDataSource @Inject constructor(
             status
         }.stateIn(
             coroutineScopeIO,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             userNetworkDataSource.userStatus.value.toDomainSessionsStatus()
         )
     }
@@ -71,16 +71,16 @@ class SessionNetworkDataSource @Inject constructor(
             status
         }.stateIn(
             coroutineScopeIO,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             userNetworkDataSource.cloudUserStatus.value.toDomainSessionsStatus()
         )
     }
 
     val sessions = sessionsStatus.map { it.data }
-        .stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), sessionsStatus.value.data)
+        .stateIn(coroutineScopeIO, SharingStarted.Eagerly, sessionsStatus.value.data)
 
     val cloudSessions = cloudSessionsStatus.map { it.data }
-        .stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), cloudSessionsStatus.value.data)
+        .stateIn(coroutineScopeIO, SharingStarted.Eagerly, cloudSessionsStatus.value.data)
 
     private fun resolveSessionsFromStatus(
         status: DataStatus<FirestoreUser>

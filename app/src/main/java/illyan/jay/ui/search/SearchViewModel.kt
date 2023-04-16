@@ -71,7 +71,7 @@ class SearchViewModel @Inject constructor(
 
     val favoriteRecords = _favoriteRecords.map { favorites ->
         favorites.reversed().take(4).map { it.toUiModel() }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val historyRecords = combine(
         _historyRecords,
@@ -80,14 +80,14 @@ class SearchViewModel @Inject constructor(
         history
             .sortedByDescending { it.timestamp }.take(4)
             .map { it.toUiModel(isFavorite(it.id)) }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val searchSuggestions = combine(
         _searchSuggestions,
         _favoriteRecords,
     ) { suggestions, _ ->
         suggestions.map { it.toUiModel(isFavorite(it.id)) }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _isLoadingSuggestions = MutableStateFlow(false)
     val isLoadingSuggestions = _isLoadingSuggestions.asStateFlow()

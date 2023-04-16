@@ -61,7 +61,7 @@ class HomeViewModel @Inject constructor(
     val initialLocationLoaded = initialLocation.map {
         locationLoadTrace.apply { if (it != null) stop() else start() }
         it != null
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _cameraOptionsBuilder = MutableStateFlow<CameraOptions.Builder?>(null)
     val cameraOptionsBuilder = _cameraOptionsBuilder.asStateFlow()

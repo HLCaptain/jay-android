@@ -22,8 +22,7 @@ import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.PropertyName
 
 data class FirestoreUser(
-    @DocumentId
-    val uuid: String = "",
+    @DocumentId val uuid: String = "",
     @PropertyName(FieldSessions) val sessions: List<FirestoreSession> = emptyList(),
     @PropertyName(FieldPreferences) val preferences: FirestoreUserPreferences? = null
 ) {

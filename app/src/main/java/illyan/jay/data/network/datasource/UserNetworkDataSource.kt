@@ -71,7 +71,7 @@ class UserNetworkDataSource @Inject constructor(
 
     val user = userStatus.map {
         it.data
-    }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), userStatus.value.data)
+    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, userStatus.value.data)
 
     val cloudUserStatus: StateFlow<DataStatus<FirestoreUser>> by lazy {
         if (_userListenerRegistration.value == null && _cloudUserStatus.value.isLoading != true) {
@@ -83,7 +83,7 @@ class UserNetworkDataSource @Inject constructor(
 
     val cloudUser = cloudUserStatus.map {
         it.data
-    }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), cloudUserStatus.value.data)
+    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, cloudUserStatus.value.data)
 
     init {
         authInteractor.addAuthStateListener { state ->
@@ -155,38 +155,53 @@ class UserNetworkDataSource @Inject constructor(
                     // If snapshot is null, then _userReference is invalid if not null. Assign null to it.
                     _userReference.update { null }
                 }
-
-                // Cache
-                if (user != null) {
-                    if (_userStatus.value.data != null) {
-                        Timber.v("Refreshing Cached ${userUUID.take(4)} user's data")
-                    } else {
-                        Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cache")
-                    }
-                    _userStatus.update { DataStatus(data = user, isLoading = false) }
-                } else {
-                    _userStatus.update { DataStatus(data = null, isLoading = false) }
-                }
-
-                // Cloud
-                if (snapshot?.metadata?.isFromCache == false) {
-                    if (user != null) {
-                        if (_cloudUserStatus.value.data != null) {
-                            Timber.v("Firestore loaded fresh ${userUUID.take(4)} user's data from Cloud")
-                        } else {
-                            Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cloud")
-                        }
-                        _cloudUserStatus.update { DataStatus(data = user, isLoading = false) }
-                    } else {
-                        _cloudUserStatus.update { DataStatus(data = null, isLoading = false) }
-                    }
-                }
+                processUser(
+                    user = user,
+                    isFromCache = snapshot?.metadata?.isFromCache ?: false,
+                    userUUID = userUUID
+                )
             }
         }
         _userListenerRegistration.value = firestore
             .collection(FirestoreUser.CollectionName)
             .document(userUUID)
             .addSnapshotListener(executor, MetadataChanges.INCLUDE, snapshotListener)
+    }
+
+    private fun processUser(
+        user: FirestoreUser?,
+        isFromCache: Boolean,
+        userUUID: String,
+    ) {
+        // Cache
+        if (user != null) {
+            if (_userStatus.value.data != null) {
+                Timber.v("Refreshing Cached ${userUUID.take(4)} user's data")
+            } else {
+                Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cache")
+            }
+            _userStatus.update { DataStatus(data = user, isLoading = false) }
+        } else {
+            _userStatus.update { DataStatus(data = null, isLoading = false) }
+        }
+
+        // Cloud
+        if (!isFromCache) {
+            if (user != null) {
+                if (_cloudUserStatus.value.data != null) {
+                    Timber.v("Firestore loaded fresh ${userUUID.take(4)} user's data from Cloud")
+                } else {
+                    Timber.d("Firestore loaded ${userUUID.take(4)} user's data from Cloud")
+                }
+                _cloudUserStatus.update { DataStatus(data = user, isLoading = false) }
+            } else {
+                _cloudUserStatus.update { DataStatus(data = null, isLoading = false) }
+            }
+        }
+    }
+
+    private fun processUser(user: FirestoreUser) {
+
     }
 
     suspend fun deleteUserData(

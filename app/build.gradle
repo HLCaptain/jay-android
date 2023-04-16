@@ -23,7 +23,7 @@ plugins {
     id 'kotlin-kapt'
     id 'kotlin-android'
     id 'com.google.dagger.hilt.android'
-    id 'com.google.devtools.ksp' version "$kotlin_version-1.0.10" // Depends on your kotlin version
+    id 'com.google.devtools.ksp' version "$kotlin_version-1.0.11-SNAPSHOT" // Depends on your kotlin version
     id 'de.mannodermaus.android-junit5'
     id 'kotlin-parcelize'
     id 'org.jetbrains.kotlin.plugin.serialization'
@@ -166,7 +166,6 @@ dependencies {
     implementation "com.google.accompanist:accompanist-placeholder-material:$accompanist_version"
 
     // Hilt
-    def hilt_version = '2.44.2'
     implementation "com.google.dagger:hilt-android:$hilt_version"
     kapt "com.google.dagger:hilt-compiler:$hilt_version"
     implementation "androidx.hilt:hilt-navigation-compose:1.0.0"
@@ -180,7 +179,7 @@ dependencies {
     ksp "io.github.raamcosta.compose-destinations:ksp:$compose_nav_version"
 
     // Coil
-    implementation "io.coil-kt:coil-compose:2.2.2"
+    implementation 'io.coil-kt:coil-compose:2.3.0'
 
     // Room
     def room_version = '2.5.1'
@@ -195,8 +194,8 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0'
 
     // Compression
-    implementation 'com.github.luben:zstd-jni:1.5.4-2@aar'
-    testImplementation "com.github.luben:zstd-jni:1.5.4-2"
+    implementation 'com.github.luben:zstd-jni:1.5.5-1@aar'
+    testImplementation 'com.github.luben:zstd-jni:1.5.5-1'
 
     // Coroutine
     def coroutines_version = '1.6.4'
@@ -208,11 +207,11 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.google.android.gms:play-services-auth:20.5.0'
     implementation 'com.google.android.gms:play-services-ads:22.0.0'
-    implementation 'com.google.maps.android:android-maps-utils:2.4.0'
+    implementation 'com.google.maps.android:android-maps-utils:3.4.0'
     implementation 'com.google.maps.android:maps-utils-ktx:3.4.0'
 
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:31.0.3')
+    implementation platform('com.google.firebase:firebase-bom:31.5.0')
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'com.google.firebase:firebase-config-ktx'
     implementation 'com.google.firebase:firebase-analytics-ktx'

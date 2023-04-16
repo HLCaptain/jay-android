@@ -41,7 +41,7 @@ class ProfileViewModel @Inject constructor(
         .map { it?.email }
         .stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             authInteractor.userStateFlow.value?.email
         )
 
@@ -49,7 +49,7 @@ class ProfileViewModel @Inject constructor(
         .map { it?.phoneNumber }
         .stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             authInteractor.userStateFlow.value?.phoneNumber
         )
 
@@ -57,7 +57,7 @@ class ProfileViewModel @Inject constructor(
         .map { it?.displayName }
         .stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             authInteractor.userStateFlow.value?.displayName
         )
 

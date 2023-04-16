@@ -26,7 +26,7 @@ import javax.inject.Inject
 class CrashlyticsTree @Inject constructor(
     private val crashlytics: FirebaseCrashlytics,
 ) : Timber.DebugTree() {
-    var minPriorityToLog: Int = Log.INFO
+    var minPriorityToLog: Int = Log.VERBOSE
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         val severity = when (priority) {
@@ -36,7 +36,7 @@ class CrashlyticsTree @Inject constructor(
             Log.WARN -> "Warn"
             Log.ERROR -> "Error"
             Log.ASSERT -> "Assert"
-            else -> "Unknown severity"
+            else -> "Unknown Tag"
         }
         if (minPriorityToLog <= priority) crashlytics.log("$tag | $severity | $message")
         t?.let { crashlytics.recordException(it) }

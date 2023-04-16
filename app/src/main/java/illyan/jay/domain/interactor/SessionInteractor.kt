@@ -127,7 +127,7 @@ class SessionInteractor @Inject constructor(
             sessionDiskDataSource.saveSessions(sessions)
         }
         sessions
-    }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), null)
+    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
 
     suspend fun uploadNotSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return

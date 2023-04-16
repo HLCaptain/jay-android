@@ -61,7 +61,7 @@ class SessionViewModel @Inject constructor(
         session?.copy(
             totalDistance = path?.map { it.latLng }?.sphericalPathLength() ?: session.totalDistance
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), _session.value)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, _session.value)
 
     private val _gradientFilter = MutableStateFlow(GradientFilter.Default)
     val gradientFilter = _gradientFilter.asStateFlow()

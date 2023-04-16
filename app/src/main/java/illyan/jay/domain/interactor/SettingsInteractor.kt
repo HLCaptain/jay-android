@@ -140,7 +140,7 @@ class SettingsInteractor @Inject constructor(
             }
         }.stateIn(
             coroutineScopeIO,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             localUserPreferences.value == cloudPreferencesStatus.value.data
         )
     }
@@ -148,7 +148,7 @@ class SettingsInteractor @Inject constructor(
     val shouldSyncPreferences by lazy {
         localUserPreferences.map {
             it?.shouldSync ?: DomainPreferences.Default.shouldSync
-        }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), DomainPreferences.Default.shouldSync)
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, DomainPreferences.Default.shouldSync)
     }
 
     val canSyncPreferences by lazy {
@@ -158,7 +158,7 @@ class SettingsInteractor @Inject constructor(
             localUserPreferences
         ) { userSignedIn, loading, local ->
             userSignedIn && loading == false && local != null
-        }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), false)
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, false)
     }
 
     private val _localUserPreferences = MutableStateFlow<DomainPreferences?>(null)
@@ -178,7 +178,7 @@ class SettingsInteractor @Inject constructor(
         } else {
             status.isLoading == true || loadingFromDisk == true
         }
-    }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), null)
+    }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
 
     init {
         _isLocalLoading.value = true
@@ -225,7 +225,7 @@ class SettingsInteractor @Inject constructor(
                 isLocalLoading = isLocalLoading,
                 isSyncLoading = syncedStatus.isLoading
             )
-        }.stateIn(coroutineScopeIO, SharingStarted.WhileSubscribed(5000L), null)
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
     }
 
     /**

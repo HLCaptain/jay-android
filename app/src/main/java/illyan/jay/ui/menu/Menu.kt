@@ -144,7 +144,7 @@ fun MenuContent(
     val gridState = rememberLazyStaggeredGridState()
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
-        verticalArrangement = Arrangement.spacedBy(MenuItemPadding * 2),
+        verticalItemSpacing = MenuItemPadding * 2,
         horizontalArrangement = Arrangement.spacedBy(MenuItemPadding * 2),
         //contentPadding = DefaultContentPadding, // TODO: include this when finally devs fixed contentPadding on StaggeredGrids
         modifier = Modifier

@@ -78,7 +78,7 @@ class SessionsViewModel @Inject constructor(
     val localSessionsLoading = _localSessionsLoading.asStateFlow()
 
     private val clientUUID = settingsInteractor.appSettingsFlow.map { it.clientUUID ?: "" }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), "")
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())
     val syncedSessions = combine(
@@ -93,7 +93,7 @@ class SessionsViewModel @Inject constructor(
                 isLocal = sessionStateFlows[it.uuid]?.value?.isLocal ?: false
             )
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _notOwnedSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
 
@@ -102,11 +102,11 @@ class SessionsViewModel @Inject constructor(
         syncedSessionsLoading
     ) { localLoading, syncedLoading ->
         localLoading || syncedLoading
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), true)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     val notOwnedSessionUUIDs = _notOwnedSessionUUIDs.asStateFlow()
     val areThereSessionsNotOwned = notOwnedSessionUUIDs.map { it.isNotEmpty() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _ongoingSessionUUIDs = MutableStateFlow(listOf<String>())
     val ongoingSessionUUIDs = _ongoingSessionUUIDs.asStateFlow()
@@ -117,7 +117,7 @@ class SessionsViewModel @Inject constructor(
         ongoingSessionUUIDs,
     ) { owned, notOwned, ongoing ->
         owned.size + notOwned.size - ongoing.size > 0
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val allSessionUUIDs = combine(
         syncedSessions,
@@ -142,7 +142,7 @@ class SessionsViewModel @Inject constructor(
         }
         // Session is not being deleted
         sortedSessions.filter { !deleting.contains(it) }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val noSessionsToShow = combine(
         allSessionUUIDs,
@@ -153,7 +153,7 @@ class SessionsViewModel @Inject constructor(
         } else {
             sessions.isEmpty()
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val canSyncSessions = combine(
         syncedSessions,
@@ -163,7 +163,7 @@ class SessionsViewModel @Inject constructor(
         // There is at least one session which can be synced (not ongoing).
         // The number of local sessions in the cloud is lower than local not ongoing sessions.
         synced.size < owned.size - ongoing.size
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun reloadData() {
         Timber.v("Requested data reload")

@@ -52,7 +52,7 @@ class PreferencesNetworkDataSource @Inject constructor(
             status
         }.stateIn(
             coroutineScopeIO,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             userNetworkDataSource.userStatus.value.toDomainPreferencesStatus()
         )
     }
@@ -66,7 +66,7 @@ class PreferencesNetworkDataSource @Inject constructor(
             status
         }.stateIn(
             coroutineScopeIO,
-            SharingStarted.WhileSubscribed(5000L),
+            SharingStarted.Eagerly,
             userNetworkDataSource.cloudUserStatus.value.toDomainPreferencesStatus()
         )
     }
