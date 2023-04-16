@@ -52,7 +52,7 @@ class SessionNetworkDataSource @Inject constructor(
         userNetworkDataSource.userStatus.map { userStatus ->
             val status = resolveSessionsFromStatus(userStatus)
             status.data?.let { sessions ->
-                Timber.d("Firebase got sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
+                Timber.d("Firebase cache got sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
             }
             status
         }.stateIn(

@@ -26,6 +26,7 @@ import illyan.jay.data.network.datasource.PreferencesNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainPreferences
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +42,7 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
 
 @Singleton
 class SettingsInteractor @Inject constructor(
@@ -181,9 +183,11 @@ class SettingsInteractor @Inject constructor(
     init {
         _isLocalLoading.value = true
         coroutineScopeIO.launch {
+            var dataCollectionJob: Job? = null
             authInteractor.userUUIDStateFlow.collectLatest { uuid ->
+                dataCollectionJob?.cancel(CancellationException("User Authentication changed, need to cancel jobs depending on User Authentication"))
                 if (uuid != null) { // User signed in
-                    coroutineScopeIO.launch {
+                    dataCollectionJob = coroutineScopeIO.launch {
                         preferencesDiskDataSource.getPreferences(uuid).collectLatest { preferences ->
                             _localUserPreferences.update { preferences }
                             if (_isLocalLoading.value != false) _isLocalLoading.update { false }
@@ -191,7 +195,7 @@ class SettingsInteractor @Inject constructor(
                     }
                 } else { // Offline user
                     // Simple, we only use the baseline preferences for offline users
-                    coroutineScopeIO.launch {
+                    dataCollectionJob = coroutineScopeIO.launch {
                         appSettingsFlow.collectLatest { settings ->
                             _localUserPreferences.update { settings.preferences }
                             if (_isLocalLoading.value != false) _isLocalLoading.update { false }

@@ -32,7 +32,7 @@ data class UiSession(
     val endDateTime: ZonedDateTime?,
     val startCoordinate: LatLng?,
     val endCoordinate: LatLng?,
-    val totalDistance: Double,
+    val totalDistance: Double?,
     val startLocationName: String?,
     val endLocationName: String?,
     val duration: Duration,
@@ -65,7 +65,7 @@ fun DomainSession.toUiModel(
 }
 
 fun DomainSession.toUiModel(
-    totalDistance: Double = distance?.toDouble() ?: -1.0,
+    totalDistance: Double? = distance?.toDouble(),
     currentClientUUID: String,
     isLocal: Boolean = clientUUID == currentClientUUID,
     currentTime: ZonedDateTime = ZonedDateTime.now(),

@@ -91,7 +91,10 @@ class PreferencesNetworkDataSource @Inject constructor(
         preferences: DomainPreferences,
         batch: WriteBatch,
     ) {
-        if (!authInteractor.isUserSignedIn) return
+        if (!authInteractor.isUserSignedIn) {
+            return
+        }
+        Timber.d("Set user preferences for user ${authInteractor.userUUID?.take(4)}")
         val userRef = firestore
             .collection(FirestoreUser.CollectionName)
             .document(authInteractor.userUUID!!)

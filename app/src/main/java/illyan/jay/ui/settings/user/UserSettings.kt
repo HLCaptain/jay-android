@@ -74,6 +74,7 @@ import illyan.jay.R
 import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
+import illyan.jay.ui.components.LoadingIndicator
 import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.components.SmallCircularProgressIndicator
@@ -529,18 +530,7 @@ fun UserSettingsScreen(
                 }
             }
         } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(text = stringResource(R.string.loading))
-                    MediumCircularProgressIndicator()
-                }
-            }
+            LoadingIndicator()
         }
     }
 }

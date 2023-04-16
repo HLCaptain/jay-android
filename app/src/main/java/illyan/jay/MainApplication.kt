@@ -31,10 +31,12 @@ import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.util.log.CrashlyticsTree
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltAndroidApp
 class MainApplication : Application() {
@@ -47,6 +49,8 @@ class MainApplication : Application() {
     @Inject lateinit var performance: FirebasePerformance
     @Inject lateinit var settingsInteractor: SettingsInteractor
     @Inject @CoroutineScopeIO lateinit var coroutineScopeIO: CoroutineScope
+
+    private var logJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -64,7 +68,8 @@ class MainApplication : Application() {
             Timber.plant(debugTree)
             Timber.d("Planting debugTree")
         }
-        coroutineScopeIO.launch {
+        logJob?.cancel(CancellationException("Existing job to listen to preferences changes cancelled to avoid multiple threads listening to the same data"))
+        logJob = coroutineScopeIO.launch {
             settingsInteractor.userPreferences.collectLatest { preferences ->
                 preferences?.let {
                     crashlytics.setUserId(it.userUUID ?: "")

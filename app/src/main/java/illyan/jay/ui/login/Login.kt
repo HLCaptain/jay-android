@@ -18,8 +18,10 @@
 
 package illyan.jay.ui.login
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
@@ -36,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,6 +46,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
+import illyan.jay.ui.components.LoadingIndicator
 import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.profile.LocalDialogActivityProvider
 import illyan.jay.ui.profile.LocalDialogDismissRequest
@@ -56,6 +60,7 @@ fun LoginDialogScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
+    val isUserSigningIn by viewModel.isSigningIn.collectAsStateWithLifecycle()
     val activity = LocalDialogActivityProvider.current
     val dismissDialog = LocalDialogDismissRequest.current
     LaunchedEffect(isUserSignedIn) {
@@ -63,6 +68,7 @@ fun LoginDialogScreen(
     }
     LoginDialogContent(
         modifier = Modifier.fillMaxWidth(),
+        isUserSigningIn = isUserSigningIn,
         signInViaGoogle = { activity?.let { viewModel.signInViaGoogle(it) } }
     )
 }
@@ -70,20 +76,32 @@ fun LoginDialogScreen(
 @Composable
 fun LoginDialogContent(
     modifier: Modifier = Modifier,
+    isUserSigningIn: Boolean = false,
     signInViaGoogle: () -> Unit = {},
 ) {
-    JayDialogContent(
+    Crossfade(
         modifier = modifier,
-        title = { LoginTitle() },
-        text = {
-            LoginScreen(
-                modifier = Modifier.fillMaxWidth(),
-                signInViaGoogle = signInViaGoogle
+        targetState = isUserSigningIn
+    ) {
+        if (it) {
+            JayDialogContent(
+                text = { LoadingIndicator() },
+                textPaddingValues = PaddingValues()
             )
-        },
-        buttons = { LoginButtons(modifier = Modifier.fillMaxWidth()) },
-        containerColor = Color.Transparent,
-    )
+        } else {
+            JayDialogContent(
+                title = { LoginTitle() },
+                text = {
+                    LoginScreen(
+                        modifier = Modifier.fillMaxWidth(),
+                        signInViaGoogle = signInViaGoogle
+                    )
+                },
+                buttons = { LoginButtons(modifier = Modifier.fillMaxWidth()) },
+                containerColor = Color.Transparent,
+            )
+        }
+    }
 }
 
 @Composable
@@ -105,7 +123,10 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             onClick = signInViaGoogle
         ) {
-            Text(text = stringResource(R.string.google_sign_in))
+            Text(
+                text = stringResource(R.string.google_sign_in),
+                textAlign = TextAlign.Center
+            )
         }
         // TODO: make login via email/password combo
         var email by remember { mutableStateOf("") }

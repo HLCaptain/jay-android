@@ -127,16 +127,20 @@ class AuthInteractor @Inject constructor(
     fun signInViaGoogle(activity: MainActivity) {
         if (isUserSignedIn) return
         if (_googleSignInClient.value == null) {
-            remoteConfig.ensureInitialized().addOnCompleteListener {
-                _googleSignInClient.value = GoogleSignIn.getClient(
-                    activity,
-                    GoogleSignInOptions
-                        .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestIdToken(remoteConfig["default_web_client_id"].asString())
-                        .requestEmail()
-                        .build()
-                )
-                activity.googleSignInLauncher.launch(googleSignInClient.value!!.signInIntent)
+            remoteConfig.fetchAndActivate().addOnCompleteListener {
+                remoteConfig.ensureInitialized().addOnCompleteListener {
+                    _googleSignInClient.update {
+                        GoogleSignIn.getClient(
+                            activity,
+                            GoogleSignInOptions
+                                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                .requestIdToken(remoteConfig["default_web_client_id"].asString())
+                                .requestEmail()
+                                .build()
+                        )
+                    }
+                    activity.googleSignInLauncher.launch(googleSignInClient.value!!.signInIntent)
+                }
             }
         } else {
             activity.googleSignInLauncher.launch(googleSignInClient.value!!.signInIntent)
@@ -178,16 +182,15 @@ class AuthInteractor @Inject constructor(
         activity: Activity,
         credential: AuthCredential
     ) {
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(activity) { task ->
-                if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
-                    Timber.i("Firebase authentication successful")
-                } else {
-                    // If sign in fails, display a message to the user.
-                    Timber.e(task.exception, task.exception?.message)
-                }
+        auth.signInWithCredential(credential).addOnCompleteListener(activity) { task ->
+            if (task.isSuccessful) {
+                // Sign in success, update UI with the signed-in user's information
+                Timber.i("Firebase authentication successful")
+            } else {
+                // If sign in fails, display a message to the user.
+                Timber.e(task.exception, task.exception?.message)
             }
+        }
     }
 
     /**
@@ -196,20 +199,19 @@ class AuthInteractor @Inject constructor(
      * @param listener listener to add to state changes.
      * @receiver receives a copy of current FirebaseAuth object as a state.
      */
-    fun addAuthStateListener(
-        listener: (FirebaseAuth) -> Unit
-    ) {
-        auth.addAuthStateListener {
-            listener(it)
-        }
+    fun addAuthStateListener(listener: (FirebaseAuth) -> Unit) {
+        auth.addAuthStateListener(listener)
     }
 
     // Each listener emit when they are ready to sign out
-    private val onSignOutListeners = mutableListOf<(onOperationFinished: () -> Unit) -> Unit>()
+    private val onSignOutListeners = mutableListOf<(approveSignOut: () -> Unit) -> Unit>()
 
-    fun addOnSignOutListener(
-        listener: (() -> Unit) -> Unit
-    ) {
+    /**
+     * Sign Out listeners used to be called when the user is would like to sign out.
+     * Each and every sign out listener should approve this sign out request by
+     * calling the lambda method passed in as a parameter.
+     */
+    fun addOnSignOutListener(listener: (approveSignOut: () -> Unit) -> Unit) {
         onSignOutListeners.add(listener)
     }
 

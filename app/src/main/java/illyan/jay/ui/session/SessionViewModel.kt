@@ -20,6 +20,7 @@ package illyan.jay.ui.session
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.maps.android.ktx.utils.sphericalPathLength
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.LocationInteractor
@@ -29,13 +30,18 @@ import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
 class SessionViewModel @Inject constructor(
@@ -43,34 +49,44 @@ class SessionViewModel @Inject constructor(
     private val locationInteractor: LocationInteractor,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
-    private val _session = MutableStateFlow<UiSession?>(null)
-    val session = _session.asStateFlow()
 
     private val _path = MutableStateFlow<List<UiLocation>?>(null)
     val path = _path.asStateFlow()
 
+    private val _session = MutableStateFlow<UiSession?>(null)
+    val session = combine(
+        _session,
+        _path
+    ) { session, path ->
+        session?.copy(
+            totalDistance = path?.map { it.latLng }?.sphericalPathLength() ?: session.totalDistance
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, _session.value)
+
     private val _gradientFilter = MutableStateFlow(GradientFilter.Default)
     val gradientFilter = _gradientFilter.asStateFlow()
 
+    private val jobs = mutableListOf<Job>()
+
     fun load(sessionUUID: String) {
-        viewModelScope.launch(dispatcherIO) {
+        jobs.forEach { it.cancel(CancellationException("Requested reload to data collection job, cancelling running jobs"))}
+        jobs += viewModelScope.launch(dispatcherIO) {
             Timber.d("Trying to load session with ID: $sessionUUID")
             sessionInteractor.getSession(sessionUUID).collectLatest { session ->
                 if (session != null) {
                     Timber.d("Loaded session with ID: $sessionUUID")
-                    _session.value = session.toUiModel()
-                    viewModelScope.launch(dispatcherIO) {
-                        locationInteractor.getSyncedPath(sessionUUID).collectLatest { locations ->
-                            Timber.d("Loaded path with ${locations?.size} locations for session with ID: $sessionUUID")
-                            if (!locations.isNullOrEmpty()) {
-                                val sortedPath = locations.sortedBy { it.zonedDateTime.toInstant() }
-                                _path.value = sortedPath.map { it.toUiModel() }
-                                _session.value = session.toUiModel(locations = sortedPath)
-                            }
-                        }
-                    }
+                    _session.update { session.toUiModel() }
                 } else {
                     Timber.d("Session not found (collected null)")
+                }
+            }
+        }
+        jobs += viewModelScope.launch(dispatcherIO) {
+            locationInteractor.getSyncedPath(sessionUUID).collectLatest { locations ->
+                Timber.d("Loaded path with ${locations?.size} locations for session with ID: $sessionUUID")
+                if (!locations.isNullOrEmpty()) {
+                    val sortedPath = locations.sortedBy { it.zonedDateTime.toInstant() }
+                    _path.update { sortedPath.map { it.toUiModel() } }
                 }
             }
         }
