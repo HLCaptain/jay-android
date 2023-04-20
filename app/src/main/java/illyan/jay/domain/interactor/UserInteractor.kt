@@ -19,7 +19,7 @@
 package illyan.jay.domain.interactor
 
 import com.google.firebase.firestore.FirebaseFirestore
-import illyan.jay.data.network.datasource.UserNetworkDataSource
+import illyan.jay.data.firestore.datasource.UserNetworkDataSource
 import illyan.jay.util.runBatch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

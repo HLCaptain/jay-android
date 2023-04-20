@@ -50,7 +50,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
-import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.data.datastore.model.AppSettings
 import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.absoluteBottom

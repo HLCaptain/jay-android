@@ -20,9 +20,9 @@ package illyan.jay.domain.interactor
 
 import androidx.datastore.core.DataStore
 import illyan.jay.data.DataStatus
-import illyan.jay.data.disk.datasource.PreferencesDiskDataSource
-import illyan.jay.data.disk.model.AppSettings
-import illyan.jay.data.network.datasource.PreferencesNetworkDataSource
+import illyan.jay.data.room.datasource.PreferencesRoomDataSource
+import illyan.jay.data.datastore.model.AppSettings
+import illyan.jay.data.firestore.datasource.PreferencesNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainPreferences
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +48,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class SettingsInteractor @Inject constructor(
     private val appSettingsDataStore: DataStore<AppSettings>,
     private val preferencesNetworkDataSource: PreferencesNetworkDataSource,
-    private val preferencesDiskDataSource: PreferencesDiskDataSource,
+    private val preferencesRoomDataSource: PreferencesRoomDataSource,
     private val authInteractor: AuthInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
@@ -69,7 +69,7 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
+                        preferencesRoomDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
                     } else {
                         updateAppPreferences { it.copy(freeDriveAutoStart = value) }
                     }
@@ -84,7 +84,7 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
+                        preferencesRoomDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
                     } else {
                         updateAppPreferences {
                             it.copy(
@@ -104,7 +104,7 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setShowAds(authInteractor.userUUID!!, value)
+                        preferencesRoomDataSource.setShowAds(authInteractor.userUUID!!, value)
                     } else {
                         updateAppPreferences {
                             it.copy(showAds = value)
@@ -121,7 +121,7 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setShouldSync(authInteractor.userUUID!!, value)
+                        preferencesRoomDataSource.setShouldSync(authInteractor.userUUID!!, value)
                     }
                 }
             }
@@ -188,7 +188,7 @@ class SettingsInteractor @Inject constructor(
                 dataCollectionJob?.cancel(CancellationException("User Authentication changed, need to cancel jobs depending on User Authentication"))
                 if (uuid != null) { // User signed in
                     dataCollectionJob = coroutineScopeIO.launch {
-                        preferencesDiskDataSource.getPreferences(uuid).collectLatest { preferences ->
+                        preferencesRoomDataSource.getPreferences(uuid).collectLatest { preferences ->
                             _localUserPreferences.update { preferences }
                             if (_isLocalLoading.value != false) _isLocalLoading.update { false }
                         }
@@ -288,13 +288,13 @@ class SettingsInteractor @Inject constructor(
                     // User don't have local nor synced preferences? Create and upload local preferences.
                     Timber.v("User doesn't have local nor synced preferences, create and upload one")
                     val freshPreferences = DomainPreferences(userUUID = authInteractor.userUUID)
-                    preferencesDiskDataSource.upsertPreferences(freshPreferences)
+                    preferencesRoomDataSource.upsertPreferences(freshPreferences)
                     preferencesNetworkDataSource.setPreferences(freshPreferences)
                     null
                 } else if (localPreferences == null && syncedPreferences != null) {
                     // User don't have local but have synced Preferences? Use synced preferences.
                     Timber.v("User doesn't have local but have synced preferences, save synced preferences")
-                    preferencesDiskDataSource.upsertPreferences(syncedPreferences)
+                    preferencesRoomDataSource.upsertPreferences(syncedPreferences)
                     syncedPreferences
                 } else if (localPreferences != null && localPreferences.shouldSync && syncedPreferences == null) {
                     // User have local but not synced preferences? Upload local preferences.
@@ -317,7 +317,7 @@ class SettingsInteractor @Inject constructor(
                         } else {
                             // If synced is more fresh, then update local preferences.
                             Timber.v("Synced preferences are more fresh, saving it onto disk")
-                            preferencesDiskDataSource.upsertPreferences(syncedPreferences)
+                            preferencesRoomDataSource.upsertPreferences(syncedPreferences)
                             syncedPreferences
                         }
                     }

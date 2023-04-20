@@ -18,9 +18,9 @@
 
 package illyan.jay.domain.interactor
 
-import illyan.jay.data.disk.datasource.LocationDiskDataSource
-import illyan.jay.data.network.datasource.LocationNetworkDataSource
-import illyan.jay.data.network.datasource.SessionNetworkDataSource
+import illyan.jay.data.room.datasource.LocationRoomDataSource
+import illyan.jay.data.firestore.datasource.LocationNetworkDataSource
+import illyan.jay.data.firestore.datasource.SessionNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.CoroutineScope
@@ -39,12 +39,12 @@ import javax.inject.Singleton
  * Location interactor is a layer which aims to be the intermediary
  * between a higher level logic and lower level data source.
  *
- * @property locationDiskDataSource local datasource
+ * @property locationRoomDataSource local datasource
  * @constructor Create empty Location interactor
  */
 @Singleton
 class LocationInteractor @Inject constructor(
-    private val locationDiskDataSource: LocationDiskDataSource,
+    private val locationRoomDataSource: LocationRoomDataSource,
     private val locationNetworkDataSource: LocationNetworkDataSource,
     private val authInteractor: AuthInteractor,
     private val sessionInteractor: SessionInteractor,
@@ -63,10 +63,10 @@ class LocationInteractor @Inject constructor(
      * the freshest location to older location data.
      */
     fun getLatestLocations(sessionUUID: String, limit: Long): Flow<List<DomainLocation>> {
-        return locationDiskDataSource.getLatestLocations(sessionUUID, limit)
+        return locationRoomDataSource.getLatestLocations(sessionUUID, limit)
     }
 
-    fun getLatestLocations(limit: Long) = locationDiskDataSource.getLatestLocations(limit)
+    fun getLatestLocations(limit: Long) = locationRoomDataSource.getLatestLocations(limit)
 
     /**
      * Get locations' data as a Flow for a particular session.
@@ -78,12 +78,12 @@ class LocationInteractor @Inject constructor(
      */
     fun getLocations(sessionUUID: String): Flow<List<DomainLocation>> {
         Timber.d("Trying to load path for session with ID from disk: ${sessionUUID.take(4)}")
-        return locationDiskDataSource.getLocations(sessionUUID)
+        return locationRoomDataSource.getLocations(sessionUUID)
     }
 
     fun getLocations(sessionUUIDs: List<String>): Flow<List<DomainLocation>> {
         Timber.d("Trying to load paths for session with ID from disk: ${sessionUUIDs.map { it.take(4) }}")
-        return locationDiskDataSource.getLocations(sessionUUIDs)
+        return locationRoomDataSource.getLocations(sessionUUIDs)
     }
 
     suspend fun getSyncedPath(sessionUUID: String): StateFlow<List<DomainLocation>?> {
@@ -103,7 +103,7 @@ class LocationInteractor @Inject constructor(
                                 locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
                                     coroutineScopeIO.launch {
                                         Timber.v("Found location for session, caching it on disk")
-                                        locationDiskDataSource.saveLocations(remoteLocations)
+                                        locationRoomDataSource.saveLocations(remoteLocations)
                                     }
                                     syncedPaths.value = remoteLocations
                                 }
@@ -130,7 +130,7 @@ class LocationInteractor @Inject constructor(
                                     locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
                                         coroutineScopeIO.launch {
                                             Timber.v("Found location for session, caching it on disk")
-                                            locationDiskDataSource.saveLocations(remoteLocations)
+                                            locationRoomDataSource.saveLocations(remoteLocations)
                                         }
                                         Timber.i("Found path in cloud")
                                         syncedPaths.value = remoteLocations
@@ -155,7 +155,7 @@ class LocationInteractor @Inject constructor(
      *
      * @return id of location updated.
      */
-    fun saveLocation(location: DomainLocation) = locationDiskDataSource.saveLocation(location)
+    fun saveLocation(location: DomainLocation) = locationRoomDataSource.saveLocation(location)
 
     /**
      * Save locations' data to Room database.
@@ -164,12 +164,12 @@ class LocationInteractor @Inject constructor(
      * @param locations list of location data saved onto the Room database.
      */
     fun saveLocations(locations: List<DomainLocation>) {
-        locationDiskDataSource.saveLocations(locations)
+        locationRoomDataSource.saveLocations(locations)
     }
 
     fun isPathStoredForSession(sessionUUID: String): Flow<Boolean> {
         Timber.d("Checking if a path is stored for session $sessionUUID")
-        return locationDiskDataSource.getLatestLocations(sessionUUID, 1).map { it.isNotEmpty() }
+        return locationRoomDataSource.getLatestLocations(sessionUUID, 1).map { it.isNotEmpty() }
     }
 
 

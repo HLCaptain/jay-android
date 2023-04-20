@@ -506,7 +506,6 @@ fun SessionDetailsScreen(
                     onClick = { setGradientFilter(it) },
                     text = {
                         Text(
-                            modifier = Modifier.padding((-12).dp),
                             text = stringResource(
                                 when(it) {
                                     GradientFilter.Default -> R.string.gradient_filter_default

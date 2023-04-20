@@ -27,7 +27,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import illyan.jay.data.disk.JayDatabase
+import illyan.jay.data.room.JayDatabase
 import timber.log.Timber
 import javax.inject.Singleton
 
