@@ -5,28 +5,32 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.SnapshotMetadata
 import com.google.firebase.firestore.ktx.snapshots
+import illyan.jay.di.CoroutineScopeIO
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.launch
 
 class FirestoreDocumentSnapshotHandler<DataType>(
-    private val snapshotToObject: (DocumentSnapshot) -> DataType,
-    private val documentReference: DocumentReference
+    private val snapshotToObject: (DocumentSnapshot) -> DataType?,
+    override val snapshotSourceFlow: Flow<Flow<DocumentSnapshot>?>,
+    private val initialReference: DocumentReference? = null,
 ) : FirestoreSnapshotHandler<DataType, DocumentSnapshot>() {
 
     init {
-        documentReferences.update { listOf(documentReference) }
+        initialReference?.let { documentReferences.update { listOf(initialReference) } }
     }
 
-    override fun toObject(snapshot: DocumentSnapshot): Pair<DataType, SnapshotMetadata> {
+    override fun toObject(snapshot: DocumentSnapshot): Pair<DataType?, SnapshotMetadata> {
         return snapshotToObject(snapshot) to snapshot.metadata
     }
 
-    override fun snapshot(metadataChanges: MetadataChanges): Flow<DocumentSnapshot> {
-        return documentReference.snapshots(metadataChanges)
-    }
-
     override fun references(): Flow<List<DocumentReference>> {
-        return snapshot().map { listOf(it.reference) }
+        return snapshots.map { snapshot ->
+            documentReferences.updateAndGet { listOf(snapshot.reference) }!!
+        }
     }
 }

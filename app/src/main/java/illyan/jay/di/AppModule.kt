@@ -92,6 +92,7 @@ object AppModule {
     fun provideCrashlytics() = Firebase.crashlytics
 
     @Provides
+    @Singleton
     fun provideDebugTree() = Timber.DebugTree()
 
     @Provides
