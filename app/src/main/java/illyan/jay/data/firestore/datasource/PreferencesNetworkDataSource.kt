@@ -40,11 +40,11 @@ import javax.inject.Inject
 class PreferencesNetworkDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
-    private val userNetworkDataSource: UserNetworkDataSource,
+    private val userFirestoreDataFlow: UserFirestoreDataFlow,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
     val preferences: StateFlow<DataStatus<DomainPreferences>> by lazy {
-        userNetworkDataSource.userStatus.map { userStatus ->
+        userFirestoreDataFlow.dataStatus.map { userStatus ->
             val status = resolvePreferencesFromStatus(userStatus)
             status.data?.let {
                 Timber.d("Firebase got preferences for user ${it.userUUID?.take(4)}")
@@ -53,12 +53,12 @@ class PreferencesNetworkDataSource @Inject constructor(
         }.stateIn(
             coroutineScopeIO,
             SharingStarted.Eagerly,
-            userNetworkDataSource.userStatus.value.toDomainPreferencesStatus()
+            userFirestoreDataFlow.dataStatus.value.toDomainPreferencesStatus()
         )
     }
 
     val cloudPreferencesStatus: StateFlow<DataStatus<DomainPreferences>> by lazy {
-        userNetworkDataSource.cloudUserStatus.map { userStatus ->
+        userFirestoreDataFlow.cloudDataStatus.map { userStatus ->
             val status = resolvePreferencesFromStatus(userStatus)
             status.data?.let {
                 Timber.d("Firebase got cloud preferences for user ${it.userUUID?.take(4)}")
@@ -67,7 +67,7 @@ class PreferencesNetworkDataSource @Inject constructor(
         }.stateIn(
             coroutineScopeIO,
             SharingStarted.Eagerly,
-            userNetworkDataSource.cloudUserStatus.value.toDomainPreferencesStatus()
+            userFirestoreDataFlow.cloudDataStatus.value.toDomainPreferencesStatus()
         )
     }
 
@@ -92,6 +92,7 @@ class PreferencesNetworkDataSource @Inject constructor(
         batch: WriteBatch,
     ) {
         if (!authInteractor.isUserSignedIn) {
+            Timber.e("User not signed in, operation cancelled")
             return
         }
         Timber.d("Set user preferences for user ${authInteractor.userUUID?.take(4)}")

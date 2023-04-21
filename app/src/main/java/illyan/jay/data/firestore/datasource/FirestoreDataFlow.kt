@@ -21,31 +21,36 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.coroutines.cancellation.CancellationException
 
-abstract class BaseFirestoreDataStore<DataType, SnapshotType>(
+abstract class FirestoreDataFlow<FirestoreType, DomainType>(
     private val firestore: FirebaseFirestore,
-    private val appLifecycle: Lifecycle,
     private val coroutineScopeIO: CoroutineScope,
-    private val snapshotHandler: FirestoreSnapshotHandler<DataType, SnapshotType>,
+    private val toDomainModel: (FirestoreType?) -> DomainType?,
+    private val snapshotHandler: FirestoreSnapshotHandler<FirestoreType, out Any>,
+    private val appLifecycle: Lifecycle? = null,
 ) : DefaultLifecycleObserver {
 
     private val _dataListenerJob = MutableStateFlow<Job?>(null)
-    private val _dataStatus = MutableStateFlow(DataStatus<DataType>())
-    private val _cloudDataStatus = MutableStateFlow(DataStatus<DataType>())
+    private val _dataStatus = MutableStateFlow(DataStatus<DomainType>())
+    private val _cloudDataStatus = MutableStateFlow(DataStatus<DomainType>())
 
-    val dataStatus: StateFlow<DataStatus<DataType>> by lazy { _dataStatus.asStateFlow() }
+    val dataStatus: StateFlow<DataStatus<DomainType>> by lazy { _dataStatus.asStateFlow() }
     val data = dataStatus.map { it.data }
         .stateIn(coroutineScopeIO, SharingStarted.Eagerly, dataStatus.value.data)
     val dataLoading = dataStatus.map { it.isLoading }
         .stateIn(coroutineScopeIO, SharingStarted.Eagerly, dataStatus.value.isLoading)
 
-    val cloudDataStatus: StateFlow<DataStatus<DataType>> by lazy { _cloudDataStatus.asStateFlow() }
+    val cloudDataStatus: StateFlow<DataStatus<DomainType>> by lazy { _cloudDataStatus.asStateFlow() }
     val cloudData = cloudDataStatus.map { it.data }
         .stateIn(coroutineScopeIO, SharingStarted.Eagerly, cloudDataStatus.value.data)
     val cloudDataLoading = cloudDataStatus.map { it.isLoading }
         .stateIn(coroutineScopeIO, SharingStarted.Eagerly, cloudDataStatus.value.isLoading)
 
+    init {
+        init()
+    }
+
     fun init() {
-        appLifecycle.addObserver(this)
+        appLifecycle?.addObserver(this)
         resetDataListenerState()
         refreshData()
     }
@@ -86,7 +91,7 @@ abstract class BaseFirestoreDataStore<DataType, SnapshotType>(
                 snapshotHandler.dataObjects().collectLatest { (data, metadata) ->
                     Timber.v("New snapshot from ${if (metadata.isFromCache) "Cache" else "Cloud"}")
                     processData(
-                        data = data,
+                        data = toDomainModel(data),
                         isFromCache = metadata.isFromCache,
                         updateCachedDataStatus = { status -> _dataStatus.update { status } },
                         updateCloudDataStatus = { status -> _cloudDataStatus.update { status } },
@@ -97,10 +102,10 @@ abstract class BaseFirestoreDataStore<DataType, SnapshotType>(
     }
 
     private fun processData(
-        data: DataType?,
+        data: DomainType?,
         isFromCache: Boolean,
-        updateCachedDataStatus: (DataStatus<DataType>) -> Unit,
-        updateCloudDataStatus: (DataStatus<DataType>) -> Unit,
+        updateCachedDataStatus: (DataStatus<DomainType>) -> Unit,
+        updateCloudDataStatus: (DataStatus<DomainType>) -> Unit,
     ) {
         // Cache
         if (data != null) {

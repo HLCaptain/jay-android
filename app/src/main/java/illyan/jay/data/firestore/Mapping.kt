@@ -354,15 +354,12 @@ fun List<DomainLocation>.toPaths(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-fun List<DocumentSnapshot>.toDomainLocations(): List<DomainLocation> {
+fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
 
-    forEach { document ->
-        val sessionUUID = document.getString(FirestorePath.FieldSessionUUID) ?: ""
-        val locations = document.getBlob(FirestorePath.FieldLocations)?.toBytes()
-            ?.let { ProtoBuf.decodeFromByteArray<List<FirestoreLocation>>(Zstd.decompress(it, 1_000_000)) }
-            ?: emptyList()
-        domainLocations.addAll(locations.map { it.toDomainModel(sessionUUID) })
+    forEach { path ->
+        val locations = ProtoBuf.decodeFromByteArray<List<FirestoreLocation>>(Zstd.decompress(path.locations.toBytes(), 1_000_000))
+        domainLocations.addAll(locations.map { it.toDomainModel(path.sessionUUID) })
     }
 
     return domainLocations.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }

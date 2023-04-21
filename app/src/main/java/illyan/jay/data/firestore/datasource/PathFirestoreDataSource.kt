@@ -1,31 +1,12 @@
-/*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
- *
- * Jay is a driver behaviour analytics app.
- *
- * This file is part of Jay.
- *
- * Jay is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later version.
- * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with Jay.
- * If not, see <https://www.gnu.org/licenses/>.
- */
-
 package illyan.jay.data.firestore.datasource
 
-import com.google.firebase.firestore.DocumentSnapshot
+import androidx.lifecycle.Lifecycle
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.WriteBatch
-import com.google.firebase.firestore.ktx.dataObjects
 import com.google.firebase.firestore.ktx.snapshots
 import com.google.firebase.firestore.ktx.toObjects
 import com.google.maps.android.ktx.utils.sphericalPathLength
-import illyan.jay.data.DataStatus
 import illyan.jay.data.firestore.model.FirestorePath
 import illyan.jay.data.firestore.toDomainLocations
 import illyan.jay.data.firestore.toPaths
@@ -35,37 +16,46 @@ import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class LocationNetworkDataSource @Inject constructor(
+class PathFirestoreDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
+    private val appLifecycle: Lifecycle,
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
     fun getLocations(
         sessionUUID: String,
-        listener: (List<DomainLocation>) -> Unit
-    ) {
-        if (authInteractor.isUserSignedIn) {
-            firestore
-                .collection(FirestorePath.CollectionName)
-                .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        Timber.e(error, "Error while getting path for session $sessionUUID: ${error.message}")
-                    } else {
-                        listener(snapshot!!.toObjects<FirestorePath>().toDomainLocations())
+    ): Flow<List<DomainLocation>?> = flow {
+        emitAll(
+            object : FirestoreDataFlow<List<FirestorePath>, List<DomainLocation>>(
+                firestore = firestore,
+                coroutineScopeIO = coroutineScopeIO,
+                toDomainModel = { it?.toDomainLocations() },
+                appLifecycle = appLifecycle,
+                snapshotHandler = FirestoreQuerySnapshotHandler(
+                    snapshotToObject = { it.toObjects() },
+                    snapshotSourceFlow = authInteractor.userUUIDStateFlow.map { uuid ->
+                        if (uuid != null) {
+                            firestore
+                                .collection(FirestorePath.CollectionName)
+                                .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
+                                .snapshots(MetadataChanges.INCLUDE)
+                        } else {
+                            null
+                        }
                     }
-                }
-        } else {
-            listener(emptyList())
-        }
+                )
+            ) {}.data
+        )
     }
 
     fun insertLocations(

@@ -8,4 +8,4 @@ annotation class UserSnapshotHandler
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class PathSnapshotHandler
+annotation class PathsSnapshotHandler

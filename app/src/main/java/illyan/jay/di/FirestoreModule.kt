@@ -2,6 +2,7 @@ package illyan.jay.di
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.snapshots
 import com.google.firebase.firestore.ktx.toObject
@@ -35,7 +36,7 @@ object FirestoreModule {
                     firestore
                         .collection(FirestoreUser.CollectionName)
                         .document(uuid)
-                        .snapshots()
+                        .snapshots(MetadataChanges.INCLUDE)
                 } else {
                     null
                 }
@@ -49,7 +50,7 @@ object FirestoreModule {
     }
 
     @Provides
-    @PathSnapshotHandler
+    @PathsSnapshotHandler
     fun provideFirestorePathSnapshotHandler(
         firestore: FirebaseFirestore,
         authInteractor: AuthInteractor,
@@ -61,7 +62,7 @@ object FirestoreModule {
                     firestore
                         .collection(FirestorePath.CollectionName)
                         .whereEqualTo(FirestorePath.FieldOwnerUUID, uuid)
-                        .snapshots()
+                        .snapshots(MetadataChanges.INCLUDE)
                 } else {
                     null
                 }
