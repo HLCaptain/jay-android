@@ -1,6 +1,25 @@
+/*
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.data.firestore.datasource
 
 import androidx.lifecycle.Lifecycle
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.WriteBatch
@@ -14,12 +33,11 @@ import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
-import kotlinx.coroutines.CompletableDeferred
+import illyan.jay.util.awaitOperations
+import illyan.jay.util.delete
+import illyan.jay.util.runBatch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
@@ -31,32 +49,37 @@ class PathFirestoreDataSource @Inject constructor(
     private val authInteractor: AuthInteractor,
     private val appLifecycle: Lifecycle,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
+) : FirestoreDataSource<FirestorePath>(
+    firestore = firestore
 ) {
-    fun getLocations(
-        sessionUUID: String,
-    ): Flow<List<DomainLocation>?> = flow {
-        emitAll(
-            object : FirestoreDataFlow<List<FirestorePath>, List<DomainLocation>>(
-                firestore = firestore,
-                coroutineScopeIO = coroutineScopeIO,
-                toDomainModel = { it?.toDomainLocations() },
-                appLifecycle = appLifecycle,
-                snapshotHandler = FirestoreQuerySnapshotHandler(
-                    snapshotToObject = { it.toObjects() },
-                    snapshotSourceFlow = authInteractor.userUUIDStateFlow.map { uuid ->
-                        if (uuid != null) {
-                            firestore
-                                .collection(FirestorePath.CollectionName)
-                                .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
-                                .snapshots(MetadataChanges.INCLUDE)
-                        } else {
-                            null
-                        }
-                    }
-                )
-            ) {}.data
-        )
+    override fun getReference(data: FirestorePath): DocumentReference {
+        return firestore
+            .collection(FirestorePath.CollectionName)
+            .document(data.uuid)
     }
+
+    fun getLocationsBySession(
+        sessionUUID: String,
+    ): Flow<List<DomainLocation>?> =
+        object : FirestoreDataFlow<List<FirestorePath>, List<DomainLocation>>(
+            firestore = firestore,
+            coroutineScopeIO = coroutineScopeIO,
+            toDomainModel = { it?.toDomainLocations() },
+            appLifecycle = appLifecycle,
+            snapshotHandler = FirestoreQuerySnapshotHandler(
+                snapshotToObject = { it.toObjects() },
+                snapshotSourceFlow = authInteractor.userUUIDStateFlow.map { uuid ->
+                    if (uuid != null) {
+                        firestore
+                            .collection(FirestorePath.CollectionName)
+                            .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
+                            .snapshots(MetadataChanges.INCLUDE)
+                    } else {
+                        null
+                    }
+                }
+            )
+        ) {}.data
 
     fun insertLocations(
         domainSessions: List<DomainSession>,
@@ -65,8 +88,8 @@ class PathFirestoreDataSource @Inject constructor(
         onCancel: () -> Unit = { Timber.i("Operation canceled") },
         onSuccess: () -> Unit = { Timber.d("Successfully inserted locations for ${domainSessions.size} sessions") }
     ) {
-        insertPaths(
-            paths = getPathsFromSessions(domainSessions, domainLocations),
+        insertData(
+            data = getPathsFromSessions(domainSessions, domainLocations),
             onFailure = onFailure,
             onCancel = onCancel,
             onSuccess = onSuccess,
@@ -78,8 +101,8 @@ class PathFirestoreDataSource @Inject constructor(
         domainLocations: List<DomainLocation>,
         batch: WriteBatch,
     ) {
-        insertPaths(
-            paths = getPathsFromSessions(domainSessions, domainLocations),
+        insertData(
+            data = getPathsFromSessions(domainSessions, domainLocations),
             batch = batch,
         )
     }
@@ -101,73 +124,17 @@ class PathFirestoreDataSource @Inject constructor(
         return paths
     }
 
-    fun insertPath(
-        path: FirestorePath,
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting path ${path.uuid.take(4)} for session ${path.sessionUUID.take(4)}: ${it.message}") },
-        onCancel: () -> Unit = { Timber.i("Operation canceled") },
-        onSuccess: () -> Unit = { Timber.d("Successfully inserted path ${path.uuid.take(4)}") }
-    ) = insertPaths(
-        paths = listOf(path),
-        onFailure = onFailure,
-        onCancel = onCancel,
-        onSuccess = onSuccess
-    )
-
-    fun insertPaths(
-        paths: List<FirestorePath>,
-        onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting paths: ${it.message}") },
-        onCancel: () -> Unit = { Timber.i("Operation canceled") },
-        onSuccess: () -> Unit = { Timber.d("Successfully inserted ${paths.size} paths") },
-    ) {
-        if (!authInteractor.isUserSignedIn) {
-            Timber.e("User not signed in, canceling operation")
-            onCancel()
-            return
-        }
-        if (paths.isEmpty()) {
-            Timber.v("Path list was empty, no path to upload")
-            onCancel()
-            return
-        }
-        firestore.runBatch { batch ->
-            insertPaths(paths, batch)
-        }.addOnSuccessListener {
-            onSuccess()
-        }.addOnFailureListener { exception ->
-            onFailure(exception)
-        }.addOnCanceledListener {
-            onCancel()
-        }
-    }
-
-    fun insertPaths(
-        paths: List<FirestorePath>,
-        batch: WriteBatch,
-    ) {
-        if (!authInteractor.isUserSignedIn || paths.isEmpty()) return
-        val pathRefs = paths.map {
-            firestore
-                .collection(FirestorePath.CollectionName)
-                .document(it.uuid) to it
-        }
-        pathRefs.forEach {
-            batch.set(it.first, it.second)
-        }
-    }
-
     suspend fun deleteLocationsForUser(
         userUUID: String = authInteractor.userUUID.toString(),
         onDelete: () -> Unit = {}
     ) {
-        val batch = firestore.batch()
-        deleteLocationsForUser(
-            batch = batch,
-            userUUID = userUUID,
-            onWriteFinished = {
-                batch.commit()
-                onDelete()
-            }
-        )
+        firestore.runBatch(1) { batch, onOperationFinished ->
+            deleteLocationsForUser(
+                batch = batch,
+                userUUID = userUUID,
+                onWriteFinished = onOperationFinished
+            )
+        }.addOnSuccessListener { onDelete() }
     }
 
     suspend fun deleteLocationsForUser(
@@ -175,48 +142,38 @@ class PathFirestoreDataSource @Inject constructor(
         userUUID: String = authInteractor.userUUID.toString(),
         onWriteFinished: () -> Unit = {}
     ) {
-        if (!authInteractor.isUserSignedIn) return
-        firestore
-            .collection(FirestorePath.CollectionName)
-            .whereEqualTo(FirestorePath.FieldOwnerUUID, userUUID)
-            .snapshots().first { pathSnapshot ->
-                Timber.d("Batch delete ${pathSnapshot.documents.size} path data for user ${userUUID.take(4)}")
-                pathSnapshot.documents.forEach {
-                    batch.delete(it.reference)
-                }
-                onWriteFinished()
-                true
-            }
+        batch.delete(
+            query = firestore
+                .collection(FirestorePath.CollectionName)
+                .whereEqualTo(FirestorePath.FieldOwnerUUID, userUUID),
+            onOperationFinished = onWriteFinished
+        )
     }
 
     suspend fun deleteLocationsForSession(
         sessionUUID: String,
         onDelete: () -> Unit = {}
     ) {
-        val batch = firestore.batch()
-        deleteLocationsForSessions(
-            batch = batch,
-            sessionUUIDs = listOf(sessionUUID),
-            onWriteFinished = {
-                batch.commit()
-                onDelete()
-            }
-        )
+        firestore.runBatch(1) { batch, onOperationFinished ->
+            deleteLocationsForSessions(
+                batch = batch,
+                sessionUUIDs = listOf(sessionUUID),
+                onWriteFinished = onOperationFinished
+            )
+        }.addOnSuccessListener { onDelete() }
     }
 
     suspend fun deleteLocationsForSessions(
         sessionUUIDs: List<String>,
         onDelete: () -> Unit = {}
     ) {
-        val batch = firestore.batch()
-        deleteLocationsForSessions(
-            batch = batch,
-            sessionUUIDs = sessionUUIDs,
-            onWriteFinished = {
-                batch.commit()
-                onDelete()
-            }
-        )
+        firestore.runBatch(1) { batch, onOperationFinished ->
+            deleteLocationsForSessions(
+                batch = batch,
+                sessionUUIDs = sessionUUIDs,
+                onWriteFinished = onOperationFinished
+            )
+        }.addOnSuccessListener { onDelete() }
     }
 
     suspend fun deleteLocationsForSessions(
@@ -224,32 +181,18 @@ class PathFirestoreDataSource @Inject constructor(
         sessionUUIDs: List<String>,
         onWriteFinished: () -> Unit = {}
     ) {
-        if (sessionUUIDs.isEmpty()) {
-            Timber.d("No sessions given to delete paths for")
-            return
-        }
         // [Query.whereIn] can only take in at most 10 objects to compare
-        sessionUUIDs.chunked(10).forEach { chunk ->
-            val completableDeferred = CompletableDeferred<Unit>()
-            Timber.v("Adding snapshot listener to batch delete ${chunk.size} path data")
-            val pathSnapshotListener = firestore
-                .collection(FirestorePath.CollectionName)
-                .whereIn(FirestorePath.FieldSessionUUID, chunk)
-                .addSnapshotListener { pathSnapshot, pathError ->
-                    if (pathError != null) {
-                        Timber.e(pathError, "Error while deleting path data: ${pathError.message}")
-                    } else {
-                        Timber.d("Batch delete ${pathSnapshot!!.documents.size} path data for user ${authInteractor.userUUID?.take(4)}")
-                        pathSnapshot.documents.forEach {
-                            batch.delete(it.reference)
-                        }
-                        completableDeferred.complete(Unit)
-                        onWriteFinished()
-                    }
-                }
-            completableDeferred.await()
-            Timber.v("Removing snapshot listener from Firestore")
-            pathSnapshotListener.remove()
+        val chunkedUUIDs = sessionUUIDs.chunked(10)
+        awaitOperations(chunkedUUIDs.size) { onOperationFinished ->
+            chunkedUUIDs.forEach { chunk ->
+                batch.delete(
+                    query = firestore
+                        .collection(FirestorePath.CollectionName)
+                        .whereIn(FirestorePath.FieldSessionUUID, chunk),
+                    onOperationFinished = onOperationFinished
+                )
+            }
         }
+        onWriteFinished()
     }
 }
