@@ -22,12 +22,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.WriteBatch
 import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
-import illyan.jay.data.disk.datasource.LocationDiskDataSource
-import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
-import illyan.jay.data.disk.datasource.SessionDiskDataSource
-import illyan.jay.data.network.datasource.LocationNetworkDataSource
-import illyan.jay.data.network.datasource.SessionNetworkDataSource
-import illyan.jay.data.network.datasource.UserNetworkDataSource
+import illyan.jay.data.firestore.datasource.PathFirestoreDataSource
+import illyan.jay.data.firestore.datasource.SessionFirestoreDataSource
+import illyan.jay.data.room.datasource.LocationRoomDataSource
+import illyan.jay.data.room.datasource.SensorEventRoomDataSource
+import illyan.jay.data.room.datasource.SessionRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
@@ -53,21 +52,20 @@ import javax.inject.Singleton
  * Session interactor is a layer which aims to be the intermediary
  * between a higher level logic and lower level data source.
  *
- * @property sessionDiskDataSource local database
+ * @property sessionRoomDataSource local database
  * @constructor Create empty Session interactor
  */
 @Singleton
 class SessionInteractor @Inject constructor(
-    private val sessionDiskDataSource: SessionDiskDataSource,
-    private val sensorEventDiskDataSource: SensorEventDiskDataSource,
-    private val locationDiskDataSource: LocationDiskDataSource,
+    private val sessionRoomDataSource: SessionRoomDataSource,
+    private val sensorEventRoomDataSource: SensorEventRoomDataSource,
+    private val locationRoomDataSource: LocationRoomDataSource,
     private val searchInteractor: SearchInteractor,
-    private val sessionNetworkDataSource: SessionNetworkDataSource,
+    private val sessionFirestoreDataSource: SessionFirestoreDataSource,
     private val authInteractor: AuthInteractor,
     private val settingsInteractor: SettingsInteractor,
     private val serviceInteractor: ServiceInteractor,
-    private val locationNetworkDataSource: LocationNetworkDataSource,
-    private val userNetworkDataSource: UserNetworkDataSource,
+    private val pathFirestoreDataSource: PathFirestoreDataSource,
     private val firestore: FirebaseFirestore,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
@@ -108,30 +106,30 @@ class SessionInteractor @Inject constructor(
      * otherwise a flow with null in it.
      */
     fun getSession(uuid: String): Flow<DomainSession?> {
-        return sessionDiskDataSource.getSession(uuid, authInteractor.userUUID).map { session ->
+        return sessionRoomDataSource.getSession(uuid, authInteractor.userUUID).map { session ->
             session?.let { refreshSessionLocation(it) }
             session
         }
     }
 
     private fun getSessions(uuids: List<String>): Flow<List<DomainSession>> {
-        return sessionDiskDataSource.getSessions(uuids).map { sessions ->
+        return sessionRoomDataSource.getSessions(uuids).map { sessions ->
             sessions.forEach { refreshSessionLocation(it) }
             sessions
         }
     }
 
-    val syncedSessions: StateFlow<List<DomainSession>?> get() = sessionNetworkDataSource.sessions.map { sessions ->
+    val syncedSessions: StateFlow<List<DomainSession>?> get() = sessionFirestoreDataSource.sessions.map { sessions ->
         sessions?.let {
             Timber.i("Got ${sessions.size} synced sessions for user ${sessions.firstOrNull()?.ownerUUID?.take(4)}")
-            sessionDiskDataSource.saveSessions(sessions)
+            sessionRoomDataSource.saveSessions(sessions)
         }
         sessions
     }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
 
     suspend fun uploadNotSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
-        sessionDiskDataSource.getStoppedSessions(authInteractor.userUUID!!).first { sessions ->
+        sessionRoomDataSource.getStoppedSessions(authInteractor.userUUID!!).first { sessions ->
             val localOnlySessions = sessions.filter { localSession ->
                 if (syncedSessions.value != null) {
                     !syncedSessions.value!!.any { it.uuid == localSession.uuid }
@@ -140,7 +138,7 @@ class SessionInteractor @Inject constructor(
                 }
             }
             Timber.i("${localOnlySessions.size} sessions are not synced with IDs: ${localOnlySessions.map { it.uuid.take(4) }}")
-            locationDiskDataSource.getLocations(localOnlySessions.map { it.uuid }).first { locations ->
+            locationRoomDataSource.getLocations(localOnlySessions.map { it.uuid }).first { locations ->
                 uploadSessions(
                     localOnlySessions,
                     locations,
@@ -155,11 +153,11 @@ class SessionInteractor @Inject constructor(
         if (!authInteractor.isUserSignedIn) return
         Timber.d("Batch created to delete session data for user ${authInteractor.userUUID?.take(4)} from cloud")
         firestore.runBatch(2) { batch, onOperationFinished ->
-            sessionNetworkDataSource.deleteAllSessions(
+            sessionFirestoreDataSource.deleteAllSessions(
                 batch = batch,
                 onWriteFinished = { onOperationFinished() }
             )
-            locationNetworkDataSource.deleteLocationsForUser(
+            pathFirestoreDataSource.deleteLocationsForUser(
                 batch = batch,
                 onWriteFinished = { onOperationFinished() }
             )
@@ -182,11 +180,11 @@ class SessionInteractor @Inject constructor(
         onWriteFinished: () -> Unit = {}
     ) {
         awaitOperations(2) { onOperationFinished ->
-            sessionNetworkDataSource.deleteAllSessions(
+            sessionFirestoreDataSource.deleteAllSessions(
                 batch = batch,
                 onWriteFinished = onOperationFinished
             )
-            locationNetworkDataSource.deleteLocationsForUser(
+            pathFirestoreDataSource.deleteLocationsForUser(
                 batch = batch,
                 onWriteFinished = onOperationFinished
             )
@@ -202,11 +200,11 @@ class SessionInteractor @Inject constructor(
         if (!authInteractor.isUserSignedIn || sessions.isEmpty()) return
         Timber.i("Upload ${sessions.size} sessions with location info to the cloud")
         firestore.runBatch { batch ->
-            sessionNetworkDataSource.insertSessions(
+            sessionFirestoreDataSource.insertSessions(
                 batch = batch,
                 domainSessions = sessions
             )
-            locationNetworkDataSource.insertLocations(
+            pathFirestoreDataSource.insertLocations(
                 batch = batch,
                 domainSessions = sessions,
                 domainLocations = locations
@@ -227,17 +225,17 @@ class SessionInteractor @Inject constructor(
      *
      * @return all session as a flow.
      */
-    fun getSessions() = sessionDiskDataSource.getSessions(authInteractor.userUUID)
+    fun getSessions() = sessionRoomDataSource.getSessions(authInteractor.userUUID)
 
-    fun getSessionUUIDs() = sessionDiskDataSource.getSessionUUIDs(authInteractor.userUUID)
+    fun getSessionUUIDs() = sessionRoomDataSource.getSessionUUIDs(authInteractor.userUUID)
 
-    fun getNotOwnedSessions() = sessionDiskDataSource.getAllNotOwnedSessions()
+    fun getNotOwnedSessions() = sessionRoomDataSource.getAllNotOwnedSessions()
 
     fun getOwnSessions(): Flow<List<DomainSession>> {
         return if (!authInteractor.isUserSignedIn) {
             flowOf(emptyList())
         } else {
-            sessionDiskDataSource.getSessionsByOwner(authInteractor.userUUID)
+            sessionRoomDataSource.getSessionsByOwner(authInteractor.userUUID)
         }
     }
 
@@ -246,7 +244,7 @@ class SessionInteractor @Inject constructor(
      *
      * @return a flow of ongoing sessions.
      */
-    fun getOngoingSessions() = sessionDiskDataSource.getOngoingSessions(authInteractor.userUUID)
+    fun getOngoingSessions() = sessionRoomDataSource.getOngoingSessions(authInteractor.userUUID)
 
     /**
      * Get ongoing sessions' IDs in a quicker way than getting all
@@ -255,7 +253,7 @@ class SessionInteractor @Inject constructor(
      * @return a flow of ongoing sessions' IDs.
      */
     fun getOngoingSessionUUIDs() =
-        sessionDiskDataSource.getOngoingSessionIds(authInteractor.userUUID)
+        sessionRoomDataSource.getOngoingSessionIds(authInteractor.userUUID)
 
     /**
      * Save session data.
@@ -273,7 +271,7 @@ class SessionInteractor @Inject constructor(
      */
     fun saveSessions(sessions: List<DomainSession>) {
         Timber.i("Saving ${sessions.size} sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
-        sessionDiskDataSource.saveSessions(sessions)
+        sessionRoomDataSource.saveSessions(sessions)
     }
 
     /**
@@ -283,7 +281,7 @@ class SessionInteractor @Inject constructor(
      * @return ID of the newly started session.
      */
     suspend fun startSession(): String {
-        val sessionUUID = sessionDiskDataSource.startSession(
+        val sessionUUID = sessionRoomDataSource.startSession(
             ownerUUID = authInteractor.userUUID,
         )
         Timber.i("Starting a session with ID: $sessionUUID")
@@ -305,7 +303,7 @@ class SessionInteractor @Inject constructor(
                         }
                         Timber.d("Assigned client ${it.clientUUID?.take(4)} to session: $sessionUUID")
                         coroutineScopeIO.launch {
-                            sessionDiskDataSource.assignClientToSession(sessionUUID, session.clientUUID)
+                            sessionRoomDataSource.assignClientToSession(sessionUUID, session.clientUUID)
                             refreshSessionStartLocation(session)
                         }
                         true
@@ -326,7 +324,7 @@ class SessionInteractor @Inject constructor(
      * @return id of session stopped.
      */
     suspend fun stopSession(session: DomainSession): Long {
-        val sessionId = sessionDiskDataSource.stopSession(session)
+        val sessionId = sessionRoomDataSource.stopSession(session)
         refreshDistanceForSession(session)
         refreshSessionEndLocation(session)
         return sessionId
@@ -352,14 +350,14 @@ class SessionInteractor @Inject constructor(
     suspend fun refreshSessionStartLocation(
         session: DomainSession,
     ) {
-        locationDiskDataSource.getLocations(session.uuid).first { locations ->
+        locationRoomDataSource.getLocations(session.uuid).first { locations ->
             val startLocationLatLng = locations.minByOrNull {
                 it.zonedDateTime.toInstant().toEpochMilli()
             }?.latLng
             session.startLocation = startLocationLatLng
             startLocationLatLng?.let {
                 coroutineScopeIO.launch {
-                    sessionDiskDataSource.saveStartLocationForSession(
+                    sessionRoomDataSource.saveStartLocationForSession(
                         session.uuid,
                         startLocationLatLng
                     )
@@ -380,7 +378,7 @@ class SessionInteractor @Inject constructor(
                         session.startLocationName = it.address?.place
                         session.startLocationName?.let {
                             coroutineScopeIO.launch {
-                                sessionDiskDataSource.saveStartLocationNameForSession(
+                                sessionRoomDataSource.saveStartLocationNameForSession(
                                     session.uuid,
                                     it
                                 )
@@ -396,7 +394,7 @@ class SessionInteractor @Inject constructor(
     suspend fun refreshSessionEndLocation(
         session: DomainSession,
     ) {
-        locationDiskDataSource.getLocations(session.uuid).first { locations ->
+        locationRoomDataSource.getLocations(session.uuid).first { locations ->
             val endLocation = locations.maxByOrNull {
                 it.zonedDateTime.toInstant().toEpochMilli()
             }
@@ -405,7 +403,7 @@ class SessionInteractor @Inject constructor(
             if (session.endDateTime == null) session.endDateTime = endLocation?.zonedDateTime
             endLocationLatLng?.let {
                 coroutineScopeIO.launch {
-                    sessionDiskDataSource.saveEndLocationForSession(
+                    sessionRoomDataSource.saveEndLocationForSession(
                         session.uuid,
                         endLocationLatLng
                     )
@@ -426,7 +424,7 @@ class SessionInteractor @Inject constructor(
                         session.endLocationName = it.address?.place
                         session.endLocationName?.let {
                             coroutineScopeIO.launch {
-                                sessionDiskDataSource.saveEndLocationNameForSession(
+                                sessionRoomDataSource.saveEndLocationNameForSession(
                                     session.uuid,
                                     it
                                 )
@@ -460,7 +458,7 @@ class SessionInteractor @Inject constructor(
     }
 
     suspend fun refreshDistanceForSessions(sessions: List<DomainSession>) {
-        locationDiskDataSource.getLocations(sessions.map { it.uuid }).first { locations ->
+        locationRoomDataSource.getLocations(sessions.map { it.uuid }).first { locations ->
             sessions.forEach {
                 it.distance = locations.sphericalPathLength().toFloat()
             }
@@ -470,9 +468,9 @@ class SessionInteractor @Inject constructor(
     }
 
     suspend fun refreshDistanceForSession(session: DomainSession) {
-        locationDiskDataSource.getLocations(session.uuid).first { locations ->
+        locationRoomDataSource.getLocations(session.uuid).first { locations ->
             coroutineScopeIO.launch {
-                sessionDiskDataSource.saveDistanceForSession(
+                sessionRoomDataSource.saveDistanceForSession(
                     session.uuid,
                     locations.sphericalPathLength().toFloat()
                 )
@@ -485,12 +483,12 @@ class SessionInteractor @Inject constructor(
 
     fun ownSessions(sessionUUIDs: List<String>) {
         if (!authInteractor.isUserSignedIn) return
-        sessionDiskDataSource.ownSessions(sessionUUIDs, authInteractor.userUUID!!)
+        sessionRoomDataSource.ownSessions(sessionUUIDs, authInteractor.userUUID!!)
     }
 
     fun ownAllNotOwnedSessions() {
         if (!authInteractor.isUserSignedIn) return
-        sessionDiskDataSource.ownAllNotOwnedSessions(authInteractor.userUUID!!)
+        sessionRoomDataSource.ownAllNotOwnedSessions(authInteractor.userUUID!!)
     }
 
     fun deleteSessionLocally(sessionUUID: String) = deleteSessionsLocally(listOf(sessionUUID))
@@ -501,10 +499,10 @@ class SessionInteractor @Inject constructor(
             getSessions(sessionUUIDs).first {  sessions ->
                 val stoppedSessions = sessions.filter { session -> session.endDateTime != null }
                 stoppedSessions.forEach { session ->
-                    sensorEventDiskDataSource.deleteSensorEventsForSession(session.uuid)
-                    locationDiskDataSource.deleteLocationForSession(session.uuid)
+                    sensorEventRoomDataSource.deleteSensorEventsForSession(session.uuid)
+                    locationRoomDataSource.deleteLocationForSession(session.uuid)
                 }
-                sessionDiskDataSource.deleteSessions(stoppedSessions)
+                sessionRoomDataSource.deleteSessions(stoppedSessions)
                 true
             }
         }
@@ -515,10 +513,10 @@ class SessionInteractor @Inject constructor(
     fun deleteSessionsLocally(domainSessions: List<DomainSession>) {
         val stoppedSessions = domainSessions.filter { session -> session.endDateTime != null }
         stoppedSessions.forEach { session ->
-            sensorEventDiskDataSource.deleteSensorEventsForSession(session.uuid)
-            locationDiskDataSource.deleteLocationForSession(session.uuid)
+            sensorEventRoomDataSource.deleteSensorEventsForSession(session.uuid)
+            locationRoomDataSource.deleteLocationForSession(session.uuid)
         }
-        sessionDiskDataSource.deleteSessions(stoppedSessions)
+        sessionRoomDataSource.deleteSessions(stoppedSessions)
     }
 
     suspend fun deleteSessionFromCloud(sessionUUID: String) = deleteSessionsFromCloud(listOf(sessionUUID))
@@ -527,12 +525,12 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteSessionsFromCloud(sessionUUIDs: List<String>) {
         Timber.d("Batch created to delete ${sessionUUIDs.size} sessions from cloud")
         firestore.runBatch(2) { batch, onOperationFinished ->
-            sessionNetworkDataSource.deleteSessions(
+            sessionFirestoreDataSource.deleteSessions(
                 batch = batch,
                 sessionUUIDs = sessionUUIDs,
                 onWriteFinished = onOperationFinished
             )
-            locationNetworkDataSource.deleteLocationsForSessions(
+            pathFirestoreDataSource.deleteLocationsForSessions(
                 batch = batch,
                 sessionUUIDs = sessionUUIDs,
                 onWriteFinished = onOperationFinished
@@ -551,7 +549,7 @@ class SessionInteractor @Inject constructor(
      * their endTime properties not null.
      */
     suspend fun deleteStoppedSessions() {
-        sessionDiskDataSource.getStoppedSessions(authInteractor.userUUID).first { sessions ->
+        sessionRoomDataSource.getStoppedSessions(authInteractor.userUUID).first { sessions ->
             Timber.i("${authInteractor.userUUID} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
             deleteSessionsLocally(sessions)
             true
@@ -560,7 +558,7 @@ class SessionInteractor @Inject constructor(
 
     suspend fun deleteOwnedSessions() {
         authInteractor.userUUID?.let { ownerUUID ->
-            sessionDiskDataSource.getSessionsByOwner(ownerUUID).first { sessions ->
+            sessionRoomDataSource.getSessionsByOwner(ownerUUID).first { sessions ->
                 Timber.i("${authInteractor.userUUID} deleting (all of its) owned sessions: ${sessions.map { it.uuid.take(4) }}")
                 deleteSessionsLocally(sessions)
                 true
@@ -569,7 +567,7 @@ class SessionInteractor @Inject constructor(
     }
 
     suspend fun deleteNotOwnedSessions() {
-        sessionDiskDataSource.getAllNotOwnedSessions().first { sessions ->
+        sessionRoomDataSource.getAllNotOwnedSessions().first { sessions ->
             Timber.i("Deleting all not owned sessions: ${sessions.map { it.uuid.take(4) }}")
             deleteSessionsLocally(sessions)
             true

@@ -22,7 +22,10 @@
 
 # Keep custom model classes
 # TODO: remove this line when implemented Flows with Firestore
--keep class illyan.jay.data.network.model.** { *; }
+-keep class illyan.jay.data.firestore.model.** { *; }
 
 # Needed for Kotlin suspend functions according to https://r8.googlesource.com/r8/+/refs/heads/master/compatibility-faq.md#kotlin-suspend-functions-and-generic-signatures
 -keep class kotlin.coroutines.Continuation
+
+# Needed for Firebase Auth to not crash when user signs in
+-keep class com.google.android.gms.internal.** { *; }

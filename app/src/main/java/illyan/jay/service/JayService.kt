@@ -23,7 +23,7 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import androidx.core.graphics.drawable.IconCompat
 import dagger.hilt.android.AndroidEntryPoint
-import illyan.jay.data.disk.model.SensorOptions
+import illyan.jay.data.room.model.SensorOptions
 import illyan.jay.domain.interactor.SensorInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.service.listener.JaySensorEventListener

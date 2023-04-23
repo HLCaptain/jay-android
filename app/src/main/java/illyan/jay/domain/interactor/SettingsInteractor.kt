@@ -20,9 +20,9 @@ package illyan.jay.domain.interactor
 
 import androidx.datastore.core.DataStore
 import illyan.jay.data.DataStatus
-import illyan.jay.data.disk.datasource.PreferencesDiskDataSource
-import illyan.jay.data.disk.model.AppSettings
-import illyan.jay.data.network.datasource.PreferencesNetworkDataSource
+import illyan.jay.data.datastore.model.AppSettings
+import illyan.jay.data.firestore.datasource.PreferencesFirestoreDataSource
+import illyan.jay.data.room.datasource.PreferencesRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainPreferences
 import kotlinx.coroutines.CoroutineScope
@@ -47,8 +47,8 @@ import kotlin.coroutines.cancellation.CancellationException
 @Singleton
 class SettingsInteractor @Inject constructor(
     private val appSettingsDataStore: DataStore<AppSettings>,
-    private val preferencesNetworkDataSource: PreferencesNetworkDataSource,
-    private val preferencesDiskDataSource: PreferencesDiskDataSource,
+    private val preferencesFirestoreDataSource: PreferencesFirestoreDataSource,
+    private val preferencesRoomDataSource: PreferencesRoomDataSource,
     private val authInteractor: AuthInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
@@ -69,7 +69,7 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
+                        preferencesRoomDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
                     } else {
                         updateAppPreferences { it.copy(freeDriveAutoStart = value) }
                     }
@@ -84,8 +84,10 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
+                        Timber.v("Setting Analytics $value for signed in user")
+                        preferencesRoomDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
                     } else {
+                        Timber.v("Setting Analytics $value for offline user")
                         updateAppPreferences {
                             it.copy(
                                 analyticsEnabled = value,
@@ -104,7 +106,7 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setShowAds(authInteractor.userUUID!!, value)
+                        preferencesRoomDataSource.setShowAds(authInteractor.userUUID!!, value)
                     } else {
                         updateAppPreferences {
                             it.copy(showAds = value)
@@ -121,7 +123,7 @@ class SettingsInteractor @Inject constructor(
             if (value != null && isLoading.value == false) {
                 coroutineScopeIO.launch {
                     if (authInteractor.isUserSignedIn) {
-                        preferencesDiskDataSource.setShouldSync(authInteractor.userUUID!!, value)
+                        preferencesRoomDataSource.setShouldSync(authInteractor.userUUID!!, value)
                     }
                 }
             }
@@ -167,42 +169,22 @@ class SettingsInteractor @Inject constructor(
     private val _isLocalLoading = MutableStateFlow<Boolean?>(null)
     val isLocalLoading: StateFlow<Boolean?> = _isLocalLoading.asStateFlow()
 
-    val cloudPreferencesStatus = preferencesNetworkDataSource.cloudPreferencesStatus
+    val cloudPreferencesStatus = preferencesFirestoreDataSource.cloudPreferencesStatus
 
     val isLoading = combine(
         cloudPreferencesStatus,
         isLocalLoading
-    ) { status, loadingFromDisk ->
-        if (status.isLoading == null && loadingFromDisk == null) {
+    ) { cloudStatus, loadingFromDisk ->
+        if (cloudStatus.isLoading == null && loadingFromDisk == null) {
             null
         } else {
-            status.isLoading == true || loadingFromDisk == true
+            cloudStatus.isLoading == true || loadingFromDisk == true
         }
     }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, null)
 
     init {
-        _isLocalLoading.value = true
         coroutineScopeIO.launch {
-            var dataCollectionJob: Job? = null
-            authInteractor.userUUIDStateFlow.collectLatest { uuid ->
-                dataCollectionJob?.cancel(CancellationException("User Authentication changed, need to cancel jobs depending on User Authentication"))
-                if (uuid != null) { // User signed in
-                    dataCollectionJob = coroutineScopeIO.launch {
-                        preferencesDiskDataSource.getPreferences(uuid).collectLatest { preferences ->
-                            _localUserPreferences.update { preferences }
-                            if (_isLocalLoading.value != false) _isLocalLoading.update { false }
-                        }
-                    }
-                } else { // Offline user
-                    // Simple, we only use the baseline preferences for offline users
-                    dataCollectionJob = coroutineScopeIO.launch {
-                        appSettingsFlow.collectLatest { settings ->
-                            _localUserPreferences.update { settings.preferences }
-                            if (_isLocalLoading.value != false) _isLocalLoading.update { false }
-                        }
-                    }
-                }
-            }
+            refreshLocalPreferences()
         }
     }
 
@@ -288,18 +270,18 @@ class SettingsInteractor @Inject constructor(
                     // User don't have local nor synced preferences? Create and upload local preferences.
                     Timber.v("User doesn't have local nor synced preferences, create and upload one")
                     val freshPreferences = DomainPreferences(userUUID = authInteractor.userUUID)
-                    preferencesDiskDataSource.upsertPreferences(freshPreferences)
-                    preferencesNetworkDataSource.setPreferences(freshPreferences)
+                    preferencesRoomDataSource.upsertPreferences(freshPreferences)
+                    preferencesFirestoreDataSource.setPreferences(freshPreferences)
                     null
                 } else if (localPreferences == null && syncedPreferences != null) {
                     // User don't have local but have synced Preferences? Use synced preferences.
                     Timber.v("User doesn't have local but have synced preferences, save synced preferences")
-                    preferencesDiskDataSource.upsertPreferences(syncedPreferences)
+                    preferencesRoomDataSource.upsertPreferences(syncedPreferences)
                     syncedPreferences
                 } else if (localPreferences != null && localPreferences.shouldSync && syncedPreferences == null) {
                     // User have local but not synced preferences? Upload local preferences.
                     Timber.v("User has local preferences which need to be synced but has no preferences in cloud, upload local preferences")
-                    preferencesNetworkDataSource.setPreferences(localPreferences)
+                    preferencesFirestoreDataSource.setPreferences(localPreferences)
                     localPreferences
                 } else { // Both sessions are now loaded in and not null
                     if (!localPreferences!!.shouldSync) {
@@ -312,12 +294,12 @@ class SettingsInteractor @Inject constructor(
                         } else if (localPreferences.isAfter(syncedPreferences)) {
                             // If local is more fresh, then update synced preferences.
                             Timber.v("Local preferences are more fresh, uploading it to cloud")
-                            preferencesNetworkDataSource.setPreferences(localPreferences)
+                            preferencesFirestoreDataSource.setPreferences(localPreferences)
                             localPreferences
                         } else {
                             // If synced is more fresh, then update local preferences.
                             Timber.v("Synced preferences are more fresh, saving it onto disk")
-                            preferencesDiskDataSource.upsertPreferences(syncedPreferences)
+                            preferencesRoomDataSource.upsertPreferences(syncedPreferences)
                             syncedPreferences
                         }
                     }
@@ -326,6 +308,33 @@ class SettingsInteractor @Inject constructor(
         } else {
             Timber.v("User not signed in, returning local app preferences.")
             localPreferences
+        }
+    }
+
+    private suspend fun refreshLocalPreferences() {
+        _isLocalLoading.update { true }
+        Timber.v("Refreshing local user preferences data collection")
+        var dataCollectionJob: Job? = null
+        authInteractor.userUUIDStateFlow.collectLatest { uuid ->
+            dataCollectionJob?.cancel(CancellationException("User Authentication changed, need to cancel jobs depending on User Authentication"))
+            if (uuid != null) { // User signed in
+                Timber.v("Collecting signed in user preferences from disk")
+                dataCollectionJob = coroutineScopeIO.launch {
+                    preferencesRoomDataSource.getPreferences(uuid).collectLatest { preferences ->
+                        _localUserPreferences.update { preferences }
+                        _isLocalLoading.update { false }
+                    }
+                }
+            } else { // Offline user
+                Timber.v("Collecting offline user preferences from disk")
+                // Simple, we only use the baseline preferences for offline users
+                dataCollectionJob = coroutineScopeIO.launch {
+                    appSettingsFlow.collectLatest { settings ->
+                        _localUserPreferences.update { settings.preferences }
+                        _isLocalLoading.update { false }
+                    }
+                }
+            }
         }
     }
 

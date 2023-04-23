@@ -19,7 +19,7 @@
 package illyan.jay.domain.interactor
 
 import com.google.firebase.firestore.FirebaseFirestore
-import illyan.jay.data.network.datasource.UserNetworkDataSource
+import illyan.jay.data.firestore.datasource.UserFirestoreDataFlow
 import illyan.jay.util.runBatch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +32,7 @@ import javax.inject.Singleton
 class UserInteractor @Inject constructor(
     private val authInteractor: AuthInteractor,
     private val settingsInteractor: SettingsInteractor,
-    private val userNetworkDataSource: UserNetworkDataSource,
+    private val userFirestoreDataFlow: UserFirestoreDataFlow,
     private val sessionInteractor: SessionInteractor,
     private val firestore: FirebaseFirestore,
 ) {
@@ -57,7 +57,7 @@ class UserInteractor @Inject constructor(
                 )
                 settingsInteractor.localUserPreferences.first {
                     if (it?.shouldSync == false) {
-                        userNetworkDataSource.deleteUserData(
+                        userFirestoreDataFlow.deleteData(
                             batch = batch,
                             onWriteFinished = onOperationFinished
                         )

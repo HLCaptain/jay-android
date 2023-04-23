@@ -27,7 +27,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.data.datastore.model.AppSettings
 import illyan.jay.data.serializers.AppSettingsSerializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
