@@ -29,9 +29,9 @@ import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
+import illyan.jay.util.awaitOperations
 import illyan.jay.util.sphericalPathLength
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +41,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -49,6 +48,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.ZonedDateTime
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
 class SessionsViewModel @Inject constructor(
@@ -165,10 +165,6 @@ class SessionsViewModel @Inject constructor(
         synced.size < owned.size - ongoing.size
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    var ownedSessionsJob: Job? = null
-    var ongoingSessionsJob: Job? = null
-    var notOwnedSessionsJob: Job? = null
-
     fun reloadData() {
         Timber.v("Requested data reload")
         disposeSessionStateFlows()
@@ -179,58 +175,47 @@ class SessionsViewModel @Inject constructor(
     }
 
     private fun disposeJobs() {
-        val cancellationException = CancellationException("Jobs are cancelled on session data reload")
-        ownedSessionsJob?.cancel(cancellationException)
-        ongoingSessionsJob?.cancel(cancellationException)
-        notOwnedSessionsJob?.cancel(cancellationException)
+        val cancellationException = CancellationException("Requested disposing data collection jobs currently running")
+        realtimeDataCollectionJobs.forEach { it.cancel(cancellationException) }
     }
 
+    val realtimeDataCollectionJobs = mutableListOf<Job>()
     fun loadLocalSessions() {
-        _notOwnedSessionUUIDs.value = emptyList()
-        _ongoingSessionUUIDs.value = emptyList()
-        _ownedLocalSessionUUIDs.value = emptyList()
-        _localSessionsLoading.value = true
-        val loadingOwnedSessions = MutableStateFlow(true)
-        val loadingOngoingSessions = MutableStateFlow(true)
-        val loadingNotOwnedSessions = MutableStateFlow(true)
+        _notOwnedSessionUUIDs.update { emptyList() }
+        _ongoingSessionUUIDs.update { emptyList() }
+        _ownedLocalSessionUUIDs.update { emptyList() }
+        _localSessionsLoading.update { true }
 
         viewModelScope.launch(dispatcherIO) {
-            combine(
-                loadingOwnedSessions,
-                loadingNotOwnedSessions,
-                loadingOngoingSessions
-            ) { owned, notOwned, ongoing ->
-                !owned && !notOwned && !ongoing
-            }.collectLatest {
-                if (it) _localSessionsLoading.update { false }
+            awaitOperations(3) { onOperationFinished ->
+                realtimeDataCollectionJobs += viewModelScope.launch(dispatcherIO) {
+                    sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
+                        _notOwnedSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
+                        Timber.d("Got ${sessions.size} not owned sessions")
+                        onOperationFinished()
+                    }
+                }
+                realtimeDataCollectionJobs += viewModelScope.launch(dispatcherIO) {
+                    sessionInteractor.getOngoingSessionUUIDs().collectLatest {
+                        _ongoingSessionUUIDs.value = it
+                        Timber.d("Got ${it.size} ongoing sessions")
+                        onOperationFinished()
+                    }
+                }
+                realtimeDataCollectionJobs += viewModelScope.launch(dispatcherIO) {
+                    sessionInteractor.getOwnSessions().collectLatest { sessions ->
+                        _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
+                        Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid?.take(4)}")
+                        onOperationFinished()
+                    }
+                }
             }
-        }
-
-        notOwnedSessionsJob = viewModelScope.launch(dispatcherIO) {
-            sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
-                _notOwnedSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
-                Timber.d("Got ${sessions.size} not owned sessions")
-                loadingNotOwnedSessions.update { false }
-            }
-        }
-        ongoingSessionsJob = viewModelScope.launch(dispatcherIO) {
-            sessionInteractor.getOngoingSessionUUIDs().collectLatest {
-                _ongoingSessionUUIDs.value = it
-                Timber.d("Got ${it.size} ongoing sessions")
-                loadingOngoingSessions.update { false }
-            }
-        }
-        ownedSessionsJob = viewModelScope.launch(dispatcherIO) {
-            sessionInteractor.getOwnSessions().collectLatest { sessions ->
-                _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
-                Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid?.take(4)}")
-                loadingOwnedSessions.update { false }
-            }
+            _localSessionsLoading.update { false }
         }
     }
 
     fun loadCloudSessions() {
-        _syncedSessions.value = emptyList()
+        _syncedSessions.update { emptyList() }
         _syncedSessionsLoading.update { true }
 
         if (isUserSignedIn.value) {
@@ -283,7 +268,7 @@ class SessionsViewModel @Inject constructor(
     }
 
     fun deleteSession(uuid: String) {
-        deleteRequestedOnSessions.getAndUpdate { it.add(uuid) }
+        deleteRequestedOnSessions.update { it.add(uuid) }
         deleteSessionLocally(uuid)
         deleteSessionFromCloud(uuid)
     }
@@ -349,14 +334,16 @@ class SessionsViewModel @Inject constructor(
         viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getSession(sessionUUID).collectLatest { session ->
                 if (session != null) {
-                    sessionMutableStateFlow.value = session.toUiModel(
-                        currentClientUUID = clientUUID.value,
-                        isLocal = sessionStateFlows[sessionUUID]?.value?.isLocal ?: false,
-                        isSynced = syncedSessions.value.any { it.uuid == sessionUUID }
-                    )
+                    sessionMutableStateFlow.update {
+                        session.toUiModel(
+                            currentClientUUID = clientUUID.value,
+                            isLocal = sessionStateFlows[sessionUUID]?.value?.isLocal ?: false,
+                            isSynced = syncedSessions.value.any { it.uuid == sessionUUID }
+                        )
+                    }
                 } else {
                     val remoteSession = syncedSessions.value.firstOrNull { it.uuid == sessionUUID }
-                    sessionMutableStateFlow.value = remoteSession
+                    sessionMutableStateFlow.update { remoteSession }
                     if (remoteSession != null) {
                         Timber.v("Session ${sessionUUID.take(4)} found in cloud")
                     } else {
@@ -371,19 +358,15 @@ class SessionsViewModel @Inject constructor(
                 val totalDistance = if (storingLocations) {
                     locations.sphericalPathLength()
                 } else {
-                    sessionMutableStateFlow.value?.totalDistance ?: -1.0
+                    sessionMutableStateFlow.value?.totalDistance
                 }
                 if (sessionMutableStateFlow.value != null) {
-                    sessionMutableStateFlow.value = sessionMutableStateFlow.value?.copy(
-                        totalDistance = totalDistance,
-                        isLocal = storingLocations,
-                    )
-                }
-                sessionMutableStateFlow.collectLatest { session ->
-                    sessionMutableStateFlow.value = session?.copy(
-                        totalDistance = if (storingLocations) totalDistance else session.totalDistance,
-                        isLocal = storingLocations,
-                    )
+                    sessionMutableStateFlow.update {
+                        it?.copy(
+                            totalDistance = totalDistance,
+                            isLocal = storingLocations,
+                        )
+                    }
                 }
             }
         }

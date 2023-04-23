@@ -77,9 +77,9 @@ fun DefaultAvatar(
     if (LocalInspectionMode.current) {
         Image(
             modifier = modifier,
-            painter = painterResource(id = R.drawable.ic_illyan_avatar_color),
+            painter = painterResource(R.drawable.ic_illyan_avatar_color),
             contentDescription = stringResource(R.string.avatar_profile_picture),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Fit
         )
     } else {
         Icon(

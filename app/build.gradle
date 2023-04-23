@@ -23,7 +23,7 @@ plugins {
     id 'kotlin-kapt'
     id 'kotlin-android'
     id 'com.google.dagger.hilt.android'
-    id 'com.google.devtools.ksp' version '1.8.0-1.0.9' // Depends on your kotlin version
+    id 'com.google.devtools.ksp' version "$kotlin_version-1.0.11-SNAPSHOT" // Depends on your kotlin version
     id 'de.mannodermaus.android-junit5'
     id 'kotlin-parcelize'
     id 'org.jetbrains.kotlin.plugin.serialization'
@@ -40,8 +40,8 @@ android {
         applicationId "illyan.jay"
         minSdk 21
         targetSdk 33
-        versionCode 10
-        versionName "0.2.7-alpha"
+        versionCode 13
+        versionName "0.3.2-alpha"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -69,29 +69,36 @@ android {
             matchingFallbacks = ['release']
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
         coreLibraryDesugaringEnabled true
     }
+
     kotlin {
         jvmToolchain(17)
     }
+
     buildFeatures {
         compose true
     }
+
     composeOptions {
-        kotlinCompilerExtensionVersion "1.4.0"
+        kotlinCompilerExtensionVersion "1.4.5"
     }
+
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+
     testOptions {
         unitTests.returnDefaultValues = true
         animationsDisabled = true
     }
+
     lint {
         // If set to true (default), stops the build if errors are found.
         // This is needed because CICD pipeline will flop without it.
@@ -101,17 +108,17 @@ android {
 
 dependencies {
     // Core
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
-    implementation "androidx.core:core-ktx:1.9.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'androidx.core:core-ktx:1.10.0'
     implementation "androidx.collection:collection-ktx:1.2.0" // The Collection extensions contain utility functions for working with Android's memory-efficient collection libraries, including ArrayMap, LongSparseArray, LruCache, and others.
     implementation "androidx.appcompat:appcompat:1.6.1"
-    implementation 'androidx.activity:activity-ktx:1.6.1'
+    implementation 'androidx.activity:activity-ktx:1.7.1'
     implementation "com.google.android.material:material:1.8.0"
     implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'], exclude: [])
 
     // Compose
-    def activity_version = '1.7.0-beta02'
-    def lifecycle_version = '2.6.0-rc01'
+    def activity_version = '1.7.0'
+    def lifecycle_version = '2.6.1'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation 'androidx.compose.material3:material3:1.1.0-alpha07'
@@ -119,7 +126,7 @@ dependencies {
     implementation "androidx.compose.ui:ui-util:$compose_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-process:lifecycle_version"
     implementation "androidx.activity:activity-compose:$activity_version"
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
@@ -128,7 +135,7 @@ dependencies {
     implementation "androidx.compose.foundation:foundation:$compose_version"
 
     // Baseline Profiles and benchmarking
-    implementation 'androidx.profileinstaller:profileinstaller:1.3.0-beta01'
+    implementation 'androidx.profileinstaller:profileinstaller:1.3.0'
 
     // Scrollbar
     implementation 'com.github.HLCaptain:compose-scrollbar:0.0.3-alpha'
@@ -148,9 +155,9 @@ dependencies {
     implementation "me.saket.swipe:swipe:1.1.1"
 
     // Mapbox
-    implementation "com.mapbox.maps:android:10.11.0-beta.1"
-    implementation "com.mapbox.search:mapbox-search-android-ui:1.0.0-beta.44"
-    implementation "com.mapbox.navigation:android:2.11.0-beta.1"
+    implementation "com.mapbox.maps:android:10.13.0-beta.1"
+    implementation "com.mapbox.search:mapbox-search-android-ui:1.0.0-rc.3"
+    implementation "com.mapbox.navigation:android:2.13.0-beta.1"
 
     // Accompanist
     def accompanist_version = '0.29.1-alpha'
@@ -159,7 +166,6 @@ dependencies {
     implementation "com.google.accompanist:accompanist-placeholder-material:$accompanist_version"
 
     // Hilt
-    def hilt_version = '2.44.2'
     implementation "com.google.dagger:hilt-android:$hilt_version"
     kapt "com.google.dagger:hilt-compiler:$hilt_version"
     implementation "androidx.hilt:hilt-navigation-compose:1.0.0"
@@ -173,18 +179,13 @@ dependencies {
     ksp "io.github.raamcosta.compose-destinations:ksp:$compose_nav_version"
 
     // Coil
-    implementation "io.coil-kt:coil-compose:2.2.2"
+    implementation 'io.coil-kt:coil-compose:2.3.0'
 
     // Room
-    def room_version = '2.5.0'
+    def room_version = '2.5.1'
     implementation "androidx.room:room-ktx:$room_version"
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
-    implementation "androidx.room:room-rxjava2:$room_version" // optional - RxJava2 support for Room
-    implementation "androidx.room:room-rxjava3:$room_version" // optional - RxJava3 support for Room
-    implementation "androidx.room:room-guava:$room_version" // optional - Guava support for Room, including Optional and ListenableFuture
-    testImplementation "androidx.room:room-testing:$room_version" // optional - Test helpers
-    implementation "androidx.room:room-paging:$room_version" // optional - Paging 3 Integration
 
     // Serialization
     implementation "androidx.datastore:datastore:1.0.0"
@@ -193,8 +194,8 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0'
 
     // Compression
-    implementation 'com.github.luben:zstd-jni:1.5.4-2@aar'
-    testImplementation "com.github.luben:zstd-jni:1.5.4-2"
+    implementation 'com.github.luben:zstd-jni:1.5.5-2@aar'
+    testImplementation 'com.github.luben:zstd-jni:1.5.5-2'
 
     // Coroutine
     def coroutines_version = '1.6.4'
@@ -204,13 +205,13 @@ dependencies {
 
     // Google services
     implementation 'com.google.android.gms:play-services-location:21.0.1'
-    implementation 'com.google.android.gms:play-services-auth:20.4.1'
-    implementation 'com.google.android.gms:play-services-ads:21.5.0'
-    implementation 'com.google.maps.android:android-maps-utils:2.4.0'
+    implementation 'com.google.android.gms:play-services-auth:20.5.0'
+    implementation 'com.google.android.gms:play-services-ads:22.0.0'
+    implementation 'com.google.maps.android:android-maps-utils:3.4.0'
     implementation 'com.google.maps.android:maps-utils-ktx:3.4.0'
 
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:31.0.3')
+    implementation platform('com.google.firebase:firebase-bom:31.5.0')
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'com.google.firebase:firebase-config-ktx'
     implementation 'com.google.firebase:firebase-analytics-ktx'
@@ -232,7 +233,7 @@ dependencies {
     // MockK test tool
     def mockk_version = '1.13.2'
     testImplementation "io.mockk:mockk:$mockk_version"
-    androidTestImplementation "io.mockk:mockk-android:$mockk_version"
+    androidTestImplementation "io.mockk:mockk-android:mockk_version"
 
     // Other testing tools
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
@@ -243,7 +244,7 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.5.0'
 
     // Desugaring
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 }
 
 kapt {

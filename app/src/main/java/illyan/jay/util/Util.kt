@@ -42,9 +42,12 @@ import com.google.accompanist.placeholder.material.shimmer
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.WriteBatch
+import com.google.firebase.firestore.ktx.snapshots
 import com.google.maps.android.SphericalUtil
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import com.mapbox.geojson.Point
@@ -54,6 +57,7 @@ import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneOffset
@@ -281,4 +285,13 @@ suspend fun awaitOperations(
     }
     body(onOperationFinished)
     awaitAll(deferreds = completableDeferred.toTypedArray())
+}
+
+suspend fun WriteBatch.delete(query: Query, onOperationFinished: () -> Unit) {
+    query.snapshots().first().documents.forEach { delete(it.reference) }
+    onOperationFinished()
+}
+
+fun WriteBatch.delete(references: Collection<DocumentReference>) {
+    references.forEach { delete(it) }
 }

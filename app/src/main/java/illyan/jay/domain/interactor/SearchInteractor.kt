@@ -21,7 +21,6 @@ package illyan.jay.domain.interactor
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.mapbox.search.CompletionCallback
 import com.mapbox.search.ResponseInfo
 import com.mapbox.search.ReverseGeoOptions
 import com.mapbox.search.SearchCallback
@@ -29,6 +28,7 @@ import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchOptions
 import com.mapbox.search.SearchSelectionCallback
 import com.mapbox.search.SearchSuggestionsCallback
+import com.mapbox.search.common.CompletionCallback
 import com.mapbox.search.record.FavoriteRecord
 import com.mapbox.search.record.FavoritesDataProvider
 import com.mapbox.search.record.HistoryDataProvider

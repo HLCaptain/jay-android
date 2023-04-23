@@ -137,4 +137,7 @@
     <string name="delete_public_data_description">Delete data visible to everyone. Public data cannot be synced, nor belong to a user. This data (e.g. Session) can be owned and become the user\'s private property.</string>
     <string name="delete_from_device">Delete from device</string>
     <string name="delete_from_device_description">Deletes all user related data on-device. It does not affect data uploaded and synced to the cloud.</string>
+    <string name="turn_on_analytics">Turn On Analytics</string>
+    <string name="turn_on_analytics_description">Analytics help the development of Jay to provide a more stable and better experience. By turning on analytics, you anonymously send event data to us with Firebase Analytics, crash logs via Firebase Crashlytics and performance metrics via Firebase Performance monitoring. App restart may be required for the setting to be active.</string>
+    <string name="turn_on">Turn On</string>
 </resources>

@@ -33,7 +33,7 @@ import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
 import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.data.datastore.model.AppSettings
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.domain.interactor.ServiceInteractor

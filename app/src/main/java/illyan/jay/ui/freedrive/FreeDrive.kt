@@ -50,7 +50,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
-import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.data.datastore.model.AppSettings
 import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.absoluteBottom
@@ -64,7 +64,7 @@ import illyan.jay.ui.map.turnOnWithDefaultPuck
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.settings.general.BooleanSetting
+import illyan.jay.ui.settings.user.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.util.plus
 

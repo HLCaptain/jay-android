@@ -49,6 +49,7 @@ import com.mapbox.maps.Style
 import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.plugin.LocationPuck2D
+import com.mapbox.maps.plugin.attribution.attribution
 import com.mapbox.maps.plugin.compass.compass
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
@@ -160,6 +161,9 @@ private fun MapboxMapContainer(
     ) {
         it.logo.position = 0
         it.logo.marginTop = fixedStatusBarHeight.toFloat()
+        it.attribution.position = 0
+        it.attribution.marginTop = fixedStatusBarHeight.toFloat()
+        it.attribution.marginLeft = 240f
         it.compass.marginTop = fixedStatusBarHeight.toFloat()
         it.gestures.scrollEnabled = true
         it.scalebar.isMetricUnits = true // TODO: set this in settings or based on location, etc.

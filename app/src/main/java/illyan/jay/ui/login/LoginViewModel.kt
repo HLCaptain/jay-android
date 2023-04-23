@@ -24,6 +24,7 @@ import illyan.jay.MainActivity
 import illyan.jay.domain.interactor.AuthInteractor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,7 +43,7 @@ class LoginViewModel @Inject constructor(
 
     fun signInViaGoogle(activity: MainActivity) {
         if (!isSigningIn.value) {
-            _isSigningIn.value = true
+            _isSigningIn.update { true }
             authInteractor.signInViaGoogle(activity)
         }
     }

@@ -33,6 +33,7 @@ import dagger.hilt.components.SingletonComponent
 import illyan.jay.R
 import timber.log.Timber
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.days
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -57,18 +58,18 @@ object FirebaseModule {
     fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
         val remoteConfig = Firebase.remoteConfig
         val configSettings = remoteConfigSettings {
-            minimumFetchIntervalInSeconds = 3600
+            minimumFetchIntervalInSeconds = 30.days.inWholeSeconds
+            fetchTimeoutInSeconds
         }
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         remoteConfig.setConfigSettingsAsync(configSettings)
-        remoteConfig.fetchAndActivate()
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Timber.d("Successfully fetched and activated remoteConfig key-value pairs!")
-                } else {
-                    Timber.e(task.exception, "Error when fetching key-value pairs via FirebaseRemoteConfig: ${task.exception?.message}")
-                }
+        remoteConfig.fetchAndActivate().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Timber.d("Successfully fetched and activated remoteConfig key-value pairs!")
+            } else {
+                Timber.e(task.exception, "Error when fetching key-value pairs via FirebaseRemoteConfig: ${task.exception?.message}")
             }
+        }
         return remoteConfig
     }
 }

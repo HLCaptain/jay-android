@@ -23,7 +23,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import illyan.jay.data.disk.toDomainModel
+import illyan.jay.data.room.toDomainModel
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor

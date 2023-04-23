@@ -76,7 +76,7 @@ import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
 import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.settings.general.ShowAdsSetting
+import illyan.jay.ui.settings.user.ShowAdsSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
 import illyan.jay.util.TestAdUnitIds

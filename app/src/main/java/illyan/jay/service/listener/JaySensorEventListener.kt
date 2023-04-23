@@ -19,7 +19,7 @@
 package illyan.jay.service.listener
 
 import android.hardware.SensorEvent
-import illyan.jay.data.disk.toDomainModel
+import illyan.jay.data.room.toDomainModel
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.SensorEventInteractor
 import illyan.jay.domain.interactor.SessionInteractor

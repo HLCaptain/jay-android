@@ -18,7 +18,7 @@
 
 package illyan.jay.domain.interactor
 
-import illyan.jay.data.disk.datasource.SensorEventDiskDataSource
+import illyan.jay.data.room.datasource.SensorEventRoomDataSource
 import illyan.jay.domain.model.DomainSensorEvent
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -27,12 +27,12 @@ import javax.inject.Singleton
  * Acceleration interactor is a layer which aims to be the intermediary
  * between a higher level logic and lower level data source.
  *
- * @property sensorEventDiskDataSource local datasource
+ * @property sensorEventRoomDataSource local datasource
  * @constructor Create empty Acceleration interactor
  */
 @Singleton
 class SensorEventInteractor @Inject constructor(
-    private val sensorEventDiskDataSource: SensorEventDiskDataSource
+    private val sensorEventRoomDataSource: SensorEventRoomDataSource
 ) {
     /**
      * Save an acceleration data instance.
@@ -40,7 +40,7 @@ class SensorEventInteractor @Inject constructor(
      * @param sensorEvent acceleration data to be saved.
      */
     fun saveSensorEvent(sensorEvent: DomainSensorEvent) =
-        sensorEventDiskDataSource.saveSensorEvent(sensorEvent)
+        sensorEventRoomDataSource.saveSensorEvent(sensorEvent)
 
     /**
      * Save multiple acceleration data instances.
@@ -48,5 +48,5 @@ class SensorEventInteractor @Inject constructor(
      * @param sensorEvents multiple accelerations to be saved.
      */
     fun saveSensorEvents(sensorEvents: List<DomainSensorEvent>) =
-        sensorEventDiskDataSource.saveSensorEvents(sensorEvents)
+        sensorEventRoomDataSource.saveSensorEvents(sensorEvents)
 }

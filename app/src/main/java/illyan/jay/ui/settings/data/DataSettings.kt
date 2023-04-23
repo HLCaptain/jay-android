@@ -110,12 +110,15 @@ fun DataSettingsDialogContent(
         modifier = modifier,
         icon = {
             DataSettingsIconScreen(
+                modifier.align(Alignment.TopCenter),
                 userPhotoUrl = userPhotoUrl,
                 isUserSignedIn = isUserSignedIn,
             )
         },
         title = {
-            DataSettingsTitleScreen()
+            DataSettingsTitleScreen(
+                modifier = modifier.align(Alignment.TopCenter)
+            )
         },
         textPaddingValues = PaddingValues(),
         text = {
@@ -143,19 +146,13 @@ fun DataSettingsIconScreen(
     isUserSignedIn: Boolean = true,
     userPhotoUrl: Uri? = null
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        AvatarAsyncImage(
-            modifier = Modifier
-                .size(RoundedCornerRadius * 4)
-                .clip(CircleShape),
-            placeholderEnabled = !isUserSignedIn || userPhotoUrl == null,
-            userPhotoUrl = userPhotoUrl
-        )
-    }
-
+    AvatarAsyncImage(
+        modifier = modifier
+            .size(RoundedCornerRadius * 4)
+            .clip(CircleShape),
+        placeholderEnabled = !isUserSignedIn || userPhotoUrl == null,
+        userPhotoUrl = userPhotoUrl
+    )
 }
 
 @Composable

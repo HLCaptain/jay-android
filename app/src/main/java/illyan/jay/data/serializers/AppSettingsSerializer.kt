@@ -19,7 +19,7 @@
 package illyan.jay.data.serializers
 
 import androidx.datastore.core.Serializer
-import illyan.jay.data.disk.model.AppSettings
+import illyan.jay.data.datastore.model.AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
