@@ -29,26 +29,26 @@ abstract class FirestoreDataSource<FirestoreType : Any>(
 
     abstract fun getReference(data: FirestoreType): DocumentReference
 
-    fun insertData(
+    fun setData(
         data: FirestoreType,
         onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting data: ${it.message}") },
         onCancel: () -> Unit = { Timber.i("Operation canceled") },
         onSuccess: () -> Unit = { Timber.d("Successfully inserted data") }
-    ) = insertData(
+    ) = setData(
         data = listOf(data),
         onFailure = onFailure,
         onCancel = onCancel,
         onSuccess = onSuccess
     )
 
-    fun insertData(
+    fun setData(
         data: List<FirestoreType>,
         onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting data: ${it.message}") },
         onCancel: () -> Unit = { Timber.i("Operation canceled") },
         onSuccess: () -> Unit = { Timber.d("Successfully inserted data") },
     ) {
         firestore.runBatch { batch ->
-            insertData(data, batch)
+            setData(data, batch)
         }.addOnSuccessListener {
             onSuccess()
         }.addOnFailureListener { exception ->
@@ -58,7 +58,7 @@ abstract class FirestoreDataSource<FirestoreType : Any>(
         }
     }
 
-    fun insertData(data: List<FirestoreType>, batch: WriteBatch) {
+    fun setData(data: List<FirestoreType>, batch: WriteBatch) {
         data.forEach { batch.set(getReference(it), it) }
     }
 

@@ -22,12 +22,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.WriteBatch
 import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
+import illyan.jay.data.firestore.datasource.PathFirestoreDataSource
+import illyan.jay.data.firestore.datasource.SessionFirestoreDataSource
 import illyan.jay.data.room.datasource.LocationRoomDataSource
 import illyan.jay.data.room.datasource.SensorEventRoomDataSource
 import illyan.jay.data.room.datasource.SessionRoomDataSource
-import illyan.jay.data.firestore.datasource.LocationNetworkDataSource
-import illyan.jay.data.firestore.datasource.SessionNetworkDataSource
-import illyan.jay.data.firestore.datasource.UserNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
@@ -62,12 +61,11 @@ class SessionInteractor @Inject constructor(
     private val sensorEventRoomDataSource: SensorEventRoomDataSource,
     private val locationRoomDataSource: LocationRoomDataSource,
     private val searchInteractor: SearchInteractor,
-    private val sessionNetworkDataSource: SessionNetworkDataSource,
+    private val sessionFirestoreDataSource: SessionFirestoreDataSource,
     private val authInteractor: AuthInteractor,
     private val settingsInteractor: SettingsInteractor,
     private val serviceInteractor: ServiceInteractor,
-    private val locationNetworkDataSource: LocationNetworkDataSource,
-    private val userNetworkDataSource: UserNetworkDataSource,
+    private val pathFirestoreDataSource: PathFirestoreDataSource,
     private val firestore: FirebaseFirestore,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
@@ -121,7 +119,7 @@ class SessionInteractor @Inject constructor(
         }
     }
 
-    val syncedSessions: StateFlow<List<DomainSession>?> get() = sessionNetworkDataSource.sessions.map { sessions ->
+    val syncedSessions: StateFlow<List<DomainSession>?> get() = sessionFirestoreDataSource.sessions.map { sessions ->
         sessions?.let {
             Timber.i("Got ${sessions.size} synced sessions for user ${sessions.firstOrNull()?.ownerUUID?.take(4)}")
             sessionRoomDataSource.saveSessions(sessions)
@@ -155,11 +153,11 @@ class SessionInteractor @Inject constructor(
         if (!authInteractor.isUserSignedIn) return
         Timber.d("Batch created to delete session data for user ${authInteractor.userUUID?.take(4)} from cloud")
         firestore.runBatch(2) { batch, onOperationFinished ->
-            sessionNetworkDataSource.deleteAllSessions(
+            sessionFirestoreDataSource.deleteAllSessions(
                 batch = batch,
                 onWriteFinished = { onOperationFinished() }
             )
-            locationNetworkDataSource.deleteLocationsForUser(
+            pathFirestoreDataSource.deleteLocationsForUser(
                 batch = batch,
                 onWriteFinished = { onOperationFinished() }
             )
@@ -182,11 +180,11 @@ class SessionInteractor @Inject constructor(
         onWriteFinished: () -> Unit = {}
     ) {
         awaitOperations(2) { onOperationFinished ->
-            sessionNetworkDataSource.deleteAllSessions(
+            sessionFirestoreDataSource.deleteAllSessions(
                 batch = batch,
                 onWriteFinished = onOperationFinished
             )
-            locationNetworkDataSource.deleteLocationsForUser(
+            pathFirestoreDataSource.deleteLocationsForUser(
                 batch = batch,
                 onWriteFinished = onOperationFinished
             )
@@ -202,11 +200,11 @@ class SessionInteractor @Inject constructor(
         if (!authInteractor.isUserSignedIn || sessions.isEmpty()) return
         Timber.i("Upload ${sessions.size} sessions with location info to the cloud")
         firestore.runBatch { batch ->
-            sessionNetworkDataSource.insertSessions(
+            sessionFirestoreDataSource.insertSessions(
                 batch = batch,
                 domainSessions = sessions
             )
-            locationNetworkDataSource.insertLocations(
+            pathFirestoreDataSource.insertLocations(
                 batch = batch,
                 domainSessions = sessions,
                 domainLocations = locations
@@ -527,12 +525,12 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteSessionsFromCloud(sessionUUIDs: List<String>) {
         Timber.d("Batch created to delete ${sessionUUIDs.size} sessions from cloud")
         firestore.runBatch(2) { batch, onOperationFinished ->
-            sessionNetworkDataSource.deleteSessions(
+            sessionFirestoreDataSource.deleteSessions(
                 batch = batch,
                 sessionUUIDs = sessionUUIDs,
                 onWriteFinished = onOperationFinished
             )
-            locationNetworkDataSource.deleteLocationsForSessions(
+            pathFirestoreDataSource.deleteLocationsForSessions(
                 batch = batch,
                 sessionUUIDs = sessionUUIDs,
                 onWriteFinished = onOperationFinished

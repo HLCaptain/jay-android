@@ -18,18 +18,21 @@
 
 package illyan.jay.domain.interactor
 
+import illyan.jay.data.firestore.datasource.PathFirestoreDataSource
+import illyan.jay.data.firestore.datasource.SessionFirestoreDataSource
 import illyan.jay.data.room.datasource.LocationRoomDataSource
-import illyan.jay.data.firestore.datasource.LocationNetworkDataSource
-import illyan.jay.data.firestore.datasource.SessionNetworkDataSource
 import illyan.jay.di.CoroutineScopeIO
+import illyan.jay.di.CoroutineScopeMain
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -45,11 +48,12 @@ import javax.inject.Singleton
 @Singleton
 class LocationInteractor @Inject constructor(
     private val locationRoomDataSource: LocationRoomDataSource,
-    private val locationNetworkDataSource: LocationNetworkDataSource,
+    private val pathFirestoreDataSource: PathFirestoreDataSource,
     private val authInteractor: AuthInteractor,
     private val sessionInteractor: SessionInteractor,
-    private val sessionNetworkDataSource: SessionNetworkDataSource,
+    private val sessionFirestoreDataSource: SessionFirestoreDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
+    @CoroutineScopeMain private val coroutineScopeMain: CoroutineScope,
 ) {
     /**
      * Get latest (most up to date) locations as a Flow for a particular session.
@@ -98,19 +102,21 @@ class LocationInteractor @Inject constructor(
                             Timber.v("Not found path for session on disk, checking cloud")
                             if (!authInteractor.isUserSignedIn) {
                                 Timber.i("Not authenticated to access cloud, return an empty list")
-                                syncedPaths.value = emptyList()
+                                syncedPaths.update { emptyList() }
                             } else {
-                                locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
-                                    coroutineScopeIO.launch {
-                                        Timber.v("Found location for session, caching it on disk")
-                                        locationRoomDataSource.saveLocations(remoteLocations)
+                                coroutineScopeMain.launch {
+                                    pathFirestoreDataSource.getLocationsBySession(sessionUUID).collectLatest { remoteLocations ->
+                                        coroutineScopeIO.launch {
+                                            Timber.v("Found location for session, caching it on disk")
+                                            remoteLocations?.let { locationRoomDataSource.saveLocations(it) }
+                                        }
+                                        syncedPaths.update { remoteLocations }
                                     }
-                                    syncedPaths.value = remoteLocations
                                 }
                             }
                         } else {
                             Timber.i("Found path on disk")
-                            syncedPaths.value = locations
+                            syncedPaths.update { locations }
                         }
                         true
                     }
@@ -119,21 +125,23 @@ class LocationInteractor @Inject constructor(
                 Timber.v("Not found session on disk, checking cloud")
                 if (!authInteractor.isUserSignedIn) {
                     Timber.i("Not authenticated to access cloud, return an empty list")
-                    syncedPaths.value = emptyList()
+                    syncedPaths.update { emptyList() }
                 } else {
                     coroutineScopeIO.launch {
-                        sessionNetworkDataSource.sessions.first { sessions ->
+                        sessionFirestoreDataSource.sessions.first { sessions ->
                             if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
                                 Timber.v("Found session in cloud, caching it on disk")
                                 coroutineScopeIO.launch {
                                     sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
-                                    locationNetworkDataSource.getLocations(sessionUUID) { remoteLocations ->
-                                        coroutineScopeIO.launch {
-                                            Timber.v("Found location for session, caching it on disk")
-                                            locationRoomDataSource.saveLocations(remoteLocations)
+                                    coroutineScopeMain.launch {
+                                        pathFirestoreDataSource.getLocationsBySession(sessionUUID).collectLatest { remoteLocations ->
+                                            coroutineScopeIO.launch {
+                                                Timber.v("Found location for session, caching it on disk")
+                                                remoteLocations?.let { locationRoomDataSource.saveLocations(it) }
+                                            }
+                                            Timber.i("Found path in cloud")
+                                            syncedPaths.update { remoteLocations }
                                         }
-                                        Timber.i("Found path in cloud")
-                                        syncedPaths.value = remoteLocations
                                     }
                                 }
                             }

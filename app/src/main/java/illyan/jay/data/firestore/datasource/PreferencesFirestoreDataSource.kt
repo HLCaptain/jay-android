@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
 import javax.inject.Inject
 
-class PreferencesNetworkDataSource @Inject constructor(
+class PreferencesFirestoreDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
     private val userFirestoreDataFlow: UserFirestoreDataFlow,

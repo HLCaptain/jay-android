@@ -1,5 +1,24 @@
+/*
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.di
 
+import androidx.lifecycle.Lifecycle
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
@@ -14,9 +33,11 @@ import dagger.hilt.components.SingletonComponent
 import illyan.jay.data.firestore.datasource.FirestoreDocumentSnapshotHandler
 import illyan.jay.data.firestore.datasource.FirestoreQuerySnapshotHandler
 import illyan.jay.data.firestore.datasource.FirestoreSnapshotHandler
+import illyan.jay.data.firestore.datasource.UserPathsFirestoreDataFlow
 import illyan.jay.data.firestore.model.FirestorePath
 import illyan.jay.data.firestore.model.FirestoreUser
 import illyan.jay.domain.interactor.AuthInteractor
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 
 @Module
@@ -50,7 +71,7 @@ object FirestoreModule {
     }
 
     @Provides
-    @PathsSnapshotHandler
+    @UserPathsSnapshotHandler
     fun provideFirestorePathSnapshotHandler(
         firestore: FirebaseFirestore,
         authInteractor: AuthInteractor,
@@ -67,6 +88,24 @@ object FirestoreModule {
                     null
                 }
             }
+        )
+    }
+
+    @Provides
+    fun provideUserPathsFirestoreDataFlow(
+        firestore: FirebaseFirestore,
+        authInteractor: AuthInteractor,
+        appLifecycle: Lifecycle,
+        @CoroutineScopeIO coroutineScopeIO: CoroutineScope
+    ): () -> UserPathsFirestoreDataFlow = {
+        UserPathsFirestoreDataFlow(
+            firestore = firestore,
+            appLifecycle = appLifecycle,
+            coroutineScopeIO = coroutineScopeIO,
+            snapshotHandler = provideFirestorePathSnapshotHandler(
+                firestore = firestore,
+                authInteractor = authInteractor
+            )
         )
     }
 }

@@ -37,7 +37,6 @@ import illyan.jay.util.awaitOperations
 import illyan.jay.util.delete
 import illyan.jay.util.runBatch
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
@@ -48,7 +47,8 @@ class PathFirestoreDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
     private val appLifecycle: Lifecycle,
-    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
+    private val userPathsDataFlowBuilder: () -> UserPathsFirestoreDataFlow,
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) : FirestoreDataSource<FirestorePath>(
     firestore = firestore
 ) {
@@ -58,9 +58,9 @@ class PathFirestoreDataSource @Inject constructor(
             .document(data.uuid)
     }
 
-    fun getLocationsBySession(
-        sessionUUID: String,
-    ): Flow<List<DomainLocation>?> =
+    private val locationsByUser = lazy { userPathsDataFlowBuilder().data }
+
+    fun getLocationsBySession(sessionUUID: String) =
         object : FirestoreDataFlow<List<FirestorePath>, List<DomainLocation>>(
             firestore = firestore,
             coroutineScopeIO = coroutineScopeIO,
@@ -88,7 +88,7 @@ class PathFirestoreDataSource @Inject constructor(
         onCancel: () -> Unit = { Timber.i("Operation canceled") },
         onSuccess: () -> Unit = { Timber.d("Successfully inserted locations for ${domainSessions.size} sessions") }
     ) {
-        insertData(
+        setData(
             data = getPathsFromSessions(domainSessions, domainLocations),
             onFailure = onFailure,
             onCancel = onCancel,
@@ -101,7 +101,7 @@ class PathFirestoreDataSource @Inject constructor(
         domainLocations: List<DomainLocation>,
         batch: WriteBatch,
     ) {
-        insertData(
+        setData(
             data = getPathsFromSessions(domainSessions, domainLocations),
             batch = batch,
         )

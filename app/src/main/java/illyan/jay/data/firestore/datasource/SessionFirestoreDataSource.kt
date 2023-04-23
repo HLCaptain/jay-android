@@ -42,14 +42,14 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SessionNetworkDataSource @Inject constructor(
+class SessionFirestoreDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,
-    private val userNetworkDataSource: UserNetworkDataSource,
+    private val userFirestoreDataFlow: UserFirestoreDataFlow,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
     val sessionsStatus: StateFlow<DataStatus<List<DomainSession>>> by lazy {
-        userNetworkDataSource.userStatus.map { userStatus ->
+        userFirestoreDataFlow.dataStatus.map { userStatus ->
             val status = resolveSessionsFromStatus(userStatus)
             status.data?.let { sessions ->
                 Timber.d("Firebase cache got sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
@@ -58,12 +58,12 @@ class SessionNetworkDataSource @Inject constructor(
         }.stateIn(
             coroutineScopeIO,
             SharingStarted.Eagerly,
-            userNetworkDataSource.userStatus.value.toDomainSessionsStatus()
+            userFirestoreDataFlow.dataStatus.value.toDomainSessionsStatus()
         )
     }
 
     val cloudSessionsStatus: StateFlow<DataStatus<List<DomainSession>>> by lazy {
-        userNetworkDataSource.cloudUserStatus.map { userStatus ->
+        userFirestoreDataFlow.cloudDataStatus.map { userStatus ->
             val status = resolveSessionsFromStatus(userStatus)
             status.data?.let { sessions ->
                 Timber.d("Firebase got sessions with IDs: ${sessions.map { it.uuid.take(4) }}")
@@ -72,7 +72,7 @@ class SessionNetworkDataSource @Inject constructor(
         }.stateIn(
             coroutineScopeIO,
             SharingStarted.Eagerly,
-            userNetworkDataSource.cloudUserStatus.value.toDomainSessionsStatus()
+            userFirestoreDataFlow.cloudDataStatus.value.toDomainSessionsStatus()
         )
     }
 
@@ -153,7 +153,7 @@ class SessionNetworkDataSource @Inject constructor(
             return
         }
         coroutineScopeIO.launch {
-            userNetworkDataSource.user.first { user ->
+            userFirestoreDataFlow.data.first { user ->
                 user?.let {
                     val domainSessions = user.sessions.map { it.toDomainModel(userUUID) }
                     val sessionsToDelete = domainSessions.filter { sessionUUIDs.contains(it.uuid) }

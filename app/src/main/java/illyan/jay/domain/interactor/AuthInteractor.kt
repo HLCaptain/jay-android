@@ -86,18 +86,21 @@ class AuthInteractor @Inject constructor(
     val isUserSigningOut = _isSigningOut.asStateFlow()
 
     init {
-        addAuthStateListener { state ->
-            if (state.currentUser != null) {
-                Timber.i("User ${state.currentUser!!.uid.take(4)} signed into Firebase")
-            } else {
-                Timber.i("User ${userUUID?.take(4)} signed out of Firebase")
-            }
-            _userStateFlow.update { state.currentUser }
-            _isUserSignedInStateFlow.update { state.currentUser != null }
-            _userPhotoUrlStateFlow.update { state.currentUser?.photoUrl }
-            _userUUIDStateFlow.update { state.currentUser?.uid }
-            _userDisplayNameStateFlow.update { state.currentUser?.displayName }
+        refreshUserState(auth)
+        addAuthStateListener(::refreshUserState)
+    }
+
+    private fun refreshUserState(state: FirebaseAuth = auth) {
+        if (state.currentUser != null) {
+            Timber.i("User ${state.currentUser!!.uid.take(4)} signed into Firebase")
+        } else {
+            Timber.i("User is signed out of Firebase")
         }
+        _userStateFlow.update { state.currentUser }
+        _isUserSignedInStateFlow.update { state.currentUser != null }
+        _userPhotoUrlStateFlow.update { state.currentUser?.photoUrl }
+        _userUUIDStateFlow.update { state.currentUser?.uid }
+        _userDisplayNameStateFlow.update { state.currentUser?.displayName }
     }
 
     fun signOut() {
