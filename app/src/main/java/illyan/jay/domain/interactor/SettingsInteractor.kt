@@ -268,10 +268,9 @@ class SettingsInteractor @Inject constructor(
             } else {
                 if (localPreferences == null && syncedPreferences == null) {
                     // User don't have local nor synced preferences? Create and upload local preferences.
-                    Timber.v("User doesn't have local nor synced preferences, create and upload one")
+                    Timber.v("User doesn't have local nor synced preferences, create and insert one into local database")
                     val freshPreferences = DomainPreferences(userUUID = authInteractor.userUUID)
                     preferencesRoomDataSource.upsertPreferences(freshPreferences)
-                    preferencesFirestoreDataSource.setPreferences(freshPreferences)
                     null
                 } else if (localPreferences == null && syncedPreferences != null) {
                     // User don't have local but have synced Preferences? Use synced preferences.
@@ -352,6 +351,12 @@ class SettingsInteractor @Inject constructor(
     suspend fun updateAppPreferences(transform: (DomainPreferences) -> DomainPreferences) {
         updateAppSettings {
             it.copy(preferences = transform(it.preferences).copy(lastUpdate = ZonedDateTime.now()))
+        }
+    }
+
+    fun deleteLocalUserPreferences() {
+        if (authInteractor.isUserSignedIn) {
+            preferencesRoomDataSource.deletePreferences(authInteractor.userUUID!!)
         }
     }
 }
