@@ -136,9 +136,14 @@ class SessionsViewModel @Inject constructor(
         sortedSessions.intersect(sessionStateFlows.keys).forEach { uuid ->
             val sessionFlow = sessionStateFlows[uuid]!!
             val isSynced = synced.any { it.uuid == uuid }
-            if (sessionFlow.value?.isSynced != isSynced) {
-                sessionFlow.value = sessionFlow.value?.copy(isSynced = isSynced)
+            sessionFlow.update {
+                if (it?.isSynced != isSynced) {
+                    it?.copy(isSynced = isSynced)
+                } else {
+                    it
+                }
             }
+
         }
         // Session is not being deleted
         sortedSessions.filter { !deleting.contains(it) }
@@ -190,21 +195,21 @@ class SessionsViewModel @Inject constructor(
             awaitOperations(3) { onOperationFinished ->
                 realtimeDataCollectionJobs += viewModelScope.launch(dispatcherIO) {
                     sessionInteractor.getNotOwnedSessions().collectLatest { sessions ->
-                        _notOwnedSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
+                        _notOwnedSessionUUIDs.update { sessions.map { it.uuid to it.startDateTime } }
                         Timber.d("Got ${sessions.size} not owned sessions")
                         onOperationFinished()
                     }
                 }
                 realtimeDataCollectionJobs += viewModelScope.launch(dispatcherIO) {
-                    sessionInteractor.getOngoingSessionUUIDs().collectLatest {
-                        _ongoingSessionUUIDs.value = it
-                        Timber.d("Got ${it.size} ongoing sessions")
+                    sessionInteractor.getOngoingSessionUUIDs().collectLatest { uuids ->
+                        _ongoingSessionUUIDs.update { uuids }
+                        Timber.d("Got ${uuids.size} ongoing sessions")
                         onOperationFinished()
                     }
                 }
                 realtimeDataCollectionJobs += viewModelScope.launch(dispatcherIO) {
                     sessionInteractor.getOwnSessions().collectLatest { sessions ->
-                        _ownedLocalSessionUUIDs.value = sessions.map { it.uuid to it.startDateTime }
+                        _ownedLocalSessionUUIDs.update { sessions.map { it.uuid to it.startDateTime } }
                         Timber.d("Got ${sessions.size} owned sessions by ${signedInUser.value?.uid?.take(4)}")
                         onOperationFinished()
                     }
