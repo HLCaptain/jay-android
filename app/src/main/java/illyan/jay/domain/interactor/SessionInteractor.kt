@@ -550,7 +550,7 @@ class SessionInteractor @Inject constructor(
      */
     suspend fun deleteStoppedSessions() {
         sessionRoomDataSource.getStoppedSessions(authInteractor.userUUID).first { sessions ->
-            Timber.i("${authInteractor.userUUID} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
+            Timber.i("${authInteractor.userUUID?.take(4)} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
             deleteSessionsLocally(sessions)
             true
         }

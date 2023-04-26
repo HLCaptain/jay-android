@@ -90,6 +90,7 @@ class LocationInteractor @Inject constructor(
         return locationRoomDataSource.getLocations(sessionUUIDs)
     }
 
+    // TODO: make a map tracking all synced paths
     suspend fun getSyncedPath(sessionUUID: String): StateFlow<List<DomainLocation>?> {
         val syncedPaths = MutableStateFlow<List<DomainLocation>?>(null)
         Timber.i("Trying to load path for session with ID: $sessionUUID")
