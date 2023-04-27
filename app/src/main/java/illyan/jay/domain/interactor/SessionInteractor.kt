@@ -119,7 +119,7 @@ class SessionInteractor @Inject constructor(
         }
     }
 
-    val syncedSessions: StateFlow<List<DomainSession>?> get() = sessionFirestoreDataSource.sessions.map { sessions ->
+    val syncedSessions: StateFlow<List<DomainSession>?> = sessionFirestoreDataSource.sessions.map { sessions ->
         sessions?.let {
             Timber.i("Got ${sessions.size} synced sessions for user ${sessions.firstOrNull()?.ownerUUID?.take(4)}")
             sessionRoomDataSource.saveSessions(sessions)
