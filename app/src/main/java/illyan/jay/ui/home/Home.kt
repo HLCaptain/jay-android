@@ -77,6 +77,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.rememberBottomSheetScaffoldState
+import androidx.compose.material.rememberBottomSheetState
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -173,6 +174,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -249,6 +251,7 @@ fun tryFlyToLocation(
     )
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 fun flyToLocation(
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
 ) {
@@ -405,9 +408,9 @@ fun refreshCameraPadding() {
     val bottomSpace = screenHeight - absoluteBottom.value
     val topSpace = absoluteTop.value
     val sheetOffset = sheetState.getOffsetAsDp(density.value)
-    _cameraPadding.value = PaddingValues(
-        bottom = max(0.dp, screenHeight + bottomSpace + topSpace - sheetOffset)
-    )
+    _cameraPadding.update {
+        PaddingValues(bottom = max(0.dp, screenHeight + bottomSpace + topSpace - sheetOffset))
+    }
 }
 
 @HomeNavGraph(start = true)
@@ -437,8 +440,8 @@ fun HomeScreen(
     }
     val density = LocalDensity.current.density
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    LaunchedEffect(density) { _density.value = density }
-    LaunchedEffect(screenHeightDp) { _screenHeight.value = screenHeightDp }
+    LaunchedEffect(density) { _density.update { density } }
+    LaunchedEffect(screenHeightDp) { _screenHeight.update { screenHeightDp } }
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()
@@ -446,7 +449,7 @@ fun HomeScreen(
                 var topSet = false
                 val absoluteTopPosition = (coordinates.positionInWindow().y / density).dp
                 if (_absoluteTop.value != absoluteTopPosition) {
-                    _absoluteTop.value = absoluteTopPosition
+                    _absoluteTop.update { absoluteTopPosition }
                     topSet = true
                 }
                 var bottomSet = false
@@ -454,23 +457,25 @@ fun HomeScreen(
                     ((coordinates.positionInWindow().y + coordinates.size.height) / density).dp
                 if (_absoluteBottom.value != absoluteBottomPosition) {
                     bottomSet = true
-                    _absoluteBottom.value = absoluteBottomPosition
+                    _absoluteBottom.update { absoluteBottomPosition }
                 }
                 if (topSet || bottomSet) {
                     refreshCameraPadding()
                     Timber.d(
                         "Camera bottom padding: ${
-                            absoluteBottomPosition - sheetState.getOffsetAsDp(
-                                density
-                            )
+                            absoluteBottomPosition - sheetState.getOffsetAsDp(density)
                         }"
                     )
                 }
             }
     ) {
         val (searchBar, scaffold) = createRefs()
-        val scaffoldState = rememberBottomSheetScaffoldState()
-        val bottomSheetState = scaffoldState.bottomSheetState
+        val bottomSheetState = rememberBottomSheetState(
+            initialValue = BottomSheetValue.Expanded
+        )
+        val scaffoldState = rememberBottomSheetScaffoldState(
+            bottomSheetState = bottomSheetState
+        )
         sheetState = bottomSheetState
         var isTextFieldFocused by remember { mutableStateOf(false) }
         var roundDp by rememberSaveable(
@@ -732,16 +737,16 @@ fun HomeScreen(
                                 .accessToken(BuildConfig.MapboxAccessToken)
                                 .build(),
                             onMapFullyLoaded = { isMapVisible = true },
-                            onMapInitialized = {
+                            onMapInitialized = { view ->
                                 isMapInitialized = true
-                                _mapView.value = it
+                                _mapView.update { view }
                                 when (locationPermissionState.status) {
                                     is PermissionStatus.Granted -> {
-                                        it.location.turnOnWithDefaultPuck(context)
+                                        view.location.turnOnWithDefaultPuck(context)
                                     }
 
                                     is PermissionStatus.Denied -> {
-                                        it.location.enabled = false
+                                        view.location.enabled = false
                                     }
                                 }
                             },
@@ -955,7 +960,7 @@ fun BottomSheetScreen(
             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp))
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
-                _sheetContentHeight.value = (placeable.height / density).dp
+                _sheetContentHeight.update { (placeable.height / density).dp }
                 layout(placeable.width, placeable.height) {
                     placeable.placeRelative(0, 0)
                 }
@@ -988,7 +993,7 @@ fun BottomSheetScreen(
         val density = LocalDensity.current
         val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
         LaunchedEffect(bottomSheetFraction) {
-            _bottomSheetFraction.value = bottomSheetFraction
+            _bottomSheetFraction.update { bottomSheetFraction }
         }
         onBottomSheetFractionChange(bottomSheetFraction)
         ConstraintLayout(
