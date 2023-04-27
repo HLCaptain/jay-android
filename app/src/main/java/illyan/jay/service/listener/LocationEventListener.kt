@@ -82,10 +82,12 @@ class LocationEventListener @Inject constructor(
     /**
      * Default location request for use to register updates on LocationCallback.
      */
-    var locationRequest = LocationRequest.create()
-        .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-        .setInterval(LocationInteractor.LOCATION_REQUEST_INTERVAL_FREQUENT)
-        .setSmallestDisplacement(LocationInteractor.LOCATION_REQUEST_DISPLACEMENT_DEFAULT)
+    var locationRequest = LocationRequest.Builder(
+        Priority.PRIORITY_HIGH_ACCURACY,
+        LocationInteractor.LOCATION_REQUEST_INTERVAL_FREQUENT
+    )
+        .setMinUpdateDistanceMeters(LocationInteractor.LOCATION_REQUEST_DISPLACEMENT_DEFAULT)
+        .build()
 
     init {
         locationCallback = object : LocationCallback() {}

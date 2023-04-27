@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.data.resolver
 
 import illyan.jay.data.DataStatus
@@ -129,7 +147,7 @@ abstract class DataResolver<DataType>(
         // If synced is more fresh, then update local preferences.
         // If local is more fresh, then update synced version. (EASIER)
 
-        return if (enableSyncedData && shouldSyncData(localData)) {
+        return if (enableSyncedData) {
             if (isLocalDataLoading != false && isSyncedDataLoading != false) { // While either is loading, preferences are null
                 Timber.v("While local or synced data are loading, returning null")
                 null
@@ -151,23 +169,27 @@ abstract class DataResolver<DataType>(
                     Timber.v("User doesn't have local but have synced data, save synced data")
                     upsertDataToLocal(syncedData)
                     syncedData
-                } else if (localData != null && syncedData == null) {
+                } else if (localData != null && syncedData == null && shouldSyncData(localData)) {
                     // User have local but not synced preferences? Upload local preferences.
                     Timber.v("User has local data which need to be synced but has no data in cloud, upload local data")
                     uploadDataToCloud(localData)
                     localData
                 } else { // Both sessions are now loaded in and not null
-                    return when (resolve(localData!!, syncedData!!)) {
-                        ResolvedState.Equal -> {
-                            localData
-                        }
-                        ResolvedState.Synced -> {
-                            upsertDataToLocal(syncedData)
-                            syncedData
-                        }
-                        ResolvedState.Local -> {
-                            uploadDataToCloud(localData)
-                            localData
+                    if (!shouldSyncData(localData)) {
+                        localData
+                    } else {
+                        when (resolve(localData!!, syncedData!!)) {
+                            ResolvedState.Equal -> {
+                                localData
+                            }
+                            ResolvedState.Synced -> {
+                                upsertDataToLocal(syncedData)
+                                syncedData
+                            }
+                            ResolvedState.Local -> {
+                                uploadDataToCloud(localData)
+                                localData
+                            }
                         }
                     }
                 }

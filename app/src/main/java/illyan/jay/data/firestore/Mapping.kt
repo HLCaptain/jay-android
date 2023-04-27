@@ -23,7 +23,6 @@ import android.os.Parcelable
 import com.github.luben.zstd.Zstd
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
-import com.google.firebase.firestore.DocumentSnapshot
 import illyan.jay.BuildConfig
 import illyan.jay.data.DataStatus
 import illyan.jay.data.firestore.model.FirestoreLocation

@@ -74,7 +74,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     start = MenuItemPadding * 2,
     end = MenuItemPadding * 2,
     top = MenuItemPadding * 2,
-    bottom = RoundedCornerRadius
+    bottom = RoundedCornerRadius + MenuItemPadding
 )
 
 fun calculatePaddingOffset(): PaddingValues {

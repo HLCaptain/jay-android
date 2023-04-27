@@ -24,23 +24,6 @@ import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import java.time.ZonedDateTime
 
-/**
- * Domain location used for general data handling
- * between DataSources, Interactors and ViewModels.
- *
- * @property id
- * @property latLng
- * @property speed
- * @property sessionId
- * @property zonedDateTime
- * @property accuracy
- * @property bearing
- * @property bearingAccuracy
- * @property altitude
- * @property speedAccuracy
- * @property verticalAccuracy
- * @constructor Create empty Domain location
- */
 @Parcelize
 data class DomainLocation(
     var sessionUUID: String,
