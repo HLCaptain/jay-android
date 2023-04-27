@@ -120,20 +120,18 @@ fun FreeDrive(
                 onDispose {
                     viewModel.disposeViewport()
                     viewModel.lastLocation.value?.let { location ->
-                        flyToLocation(
-                            extraCameraOptions = { builder ->
-                                builder
-                                    .pitch(0.0)
-                                    .bearing(0.0)
-                                    .zoom(12.0)
-                                    .center(
-                                        Point.fromLngLat(
-                                            location.longitude,
-                                            location.latitude
-                                        )
+                        flyToLocation {
+                            it
+                                .pitch(0.0)
+                                .bearing(0.0)
+                                .zoom(12.0)
+                                .center(
+                                    Point.fromLngLat(
+                                        location.longitude,
+                                        location.latitude
                                     )
-                            }
-                        )
+                                )
+                        }
                     }
                 }
             }

@@ -83,7 +83,7 @@ abstract class DataResolver<DataType>(
             localDataLoading,
             enableSyncedData
         ) { cloudDataLoading, localDataLoading, enableSyncedData ->
-            if (enableSyncedData) {
+            if (!enableSyncedData) {
                 localDataLoading
             } else {
                 if (cloudDataLoading == null && localDataLoading == null) {

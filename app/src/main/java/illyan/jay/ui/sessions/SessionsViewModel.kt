@@ -21,11 +21,11 @@ package illyan.jay.ui.sessions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.SessionInteractor
-import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.sessions.model.toUiModel
@@ -55,7 +55,7 @@ class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
     private val authInteractor: AuthInteractor,
-    private val settingsInteractor: SettingsInteractor,
+    private val appSettingsDataSource: AppSettingsDataSource,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<String, MutableStateFlow<UiSession?>>()
@@ -77,7 +77,7 @@ class SessionsViewModel @Inject constructor(
     private val _localSessionsLoading = MutableStateFlow(false)
     val localSessionsLoading = _localSessionsLoading.asStateFlow()
 
-    private val clientUUID = settingsInteractor.appSettingsFlow.map { it.clientUUID ?: "" }
+    private val clientUUID = appSettingsDataSource.appSettings.map { it.clientUUID ?: "" }
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     private val _syncedSessions = MutableStateFlow(listOf<DomainSession>())

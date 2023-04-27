@@ -18,38 +18,27 @@
 
 package illyan.jay.domain.interactor
 
-import androidx.datastore.core.DataStore
-import illyan.jay.data.datastore.model.AppSettings
+import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.data.resolver.PreferencesResolver
 import illyan.jay.data.room.datasource.PreferencesRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainPreferences
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.ZonedDateTime
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SettingsInteractor @Inject constructor(
-    private val appSettingsDataStore: DataStore<AppSettings>,
+    private val appSettingsDataSource: AppSettingsDataSource,
     private val preferencesResolver: PreferencesResolver,
     private val preferencesRoomDataSource: PreferencesRoomDataSource,
     private val authInteractor: AuthInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope
 ) {
-    val appSettingsFlow = appSettingsDataStore.data.map { settings ->
-        if (settings.clientUUID == null) {
-            val newSettings = settings.copy(clientUUID = UUID.randomUUID().toString())
-            updateAppSettings { newSettings }
-            newSettings
-        } else {
-            settings
-        }
-    }
+    val appSettings = appSettingsDataSource.appSettings
 
     var freeDriveAutoStart: Boolean?
         get() = userPreferences.value?.freeDriveAutoStart
@@ -60,7 +49,7 @@ class SettingsInteractor @Inject constructor(
                     if (authInteractor.isUserSignedIn) {
                         preferencesRoomDataSource.setFreeDriveAutoStart(authInteractor.userUUID!!, value)
                     } else {
-                        updateAppPreferences { it.copy(freeDriveAutoStart = value) }
+                        appSettingsDataSource.updateAppPreferences { it.copy(freeDriveAutoStart = value) }
                     }
                 }
             }
@@ -77,7 +66,7 @@ class SettingsInteractor @Inject constructor(
                         preferencesRoomDataSource.setAnalyticsEnabled(authInteractor.userUUID!!, value)
                     } else {
                         Timber.v("Setting Analytics $value for offline user")
-                        updateAppPreferences {
+                        appSettingsDataSource.updateAppPreferences {
                             it.copy(
                                 analyticsEnabled = value,
                                 lastUpdateToAnalytics = ZonedDateTime.now()
@@ -97,7 +86,7 @@ class SettingsInteractor @Inject constructor(
                     if (authInteractor.isUserSignedIn) {
                         preferencesRoomDataSource.setShowAds(authInteractor.userUUID!!, value)
                     } else {
-                        updateAppPreferences {
+                        appSettingsDataSource.updateAppPreferences {
                             it.copy(showAds = value)
                         }
                     }
@@ -124,22 +113,9 @@ class SettingsInteractor @Inject constructor(
     val localUserPreferences = preferencesResolver.localData
     val userPreferences = preferencesResolver.data
 
-    suspend fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
-        appSettingsDataStore.updateData {
-            val newSettings = transform(it)
-            Timber.v("Changed settings from $it to $newSettings")
-            newSettings
-        }
-    }
-
     /**
      * Automatically updates [DomainPreferences.lastUpdate]
      */
-    suspend fun updateAppPreferences(transform: (DomainPreferences) -> DomainPreferences) {
-        updateAppSettings {
-            it.copy(preferences = transform(it.preferences).copy(lastUpdate = ZonedDateTime.now()))
-        }
-    }
 
     fun deleteLocalUserPreferences() {
         if (authInteractor.isUserSignedIn) {

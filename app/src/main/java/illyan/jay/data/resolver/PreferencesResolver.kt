@@ -1,8 +1,25 @@
+/*
+ * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package illyan.jay.data.resolver
 
-import androidx.datastore.core.DataStore
 import illyan.jay.data.DataStatus
-import illyan.jay.data.datastore.model.AppSettings
+import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.data.firestore.datasource.PreferencesFirestoreDataSource
 import illyan.jay.data.room.datasource.PreferencesRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
@@ -14,6 +31,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -22,7 +40,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class PreferencesResolver @Inject constructor(
     private val authInteractor: AuthInteractor,
-    private val appSettingsDataStore: DataStore<AppSettings>,
+    private val appSettingsDataSource: AppSettingsDataSource,
     private val preferencesFirestoreDataSource: PreferencesFirestoreDataSource,
     private val preferencesRoomDataSource: PreferencesRoomDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
@@ -35,31 +53,41 @@ class PreferencesResolver @Inject constructor(
     override val localDataStatus: StateFlow<DataStatus<DomainPreferences>> by lazy {
         val statusStateFlow = MutableStateFlow(DataStatus<DomainPreferences>())
         Timber.v("Refreshing local user preferences data collection")
-        var dataCollectionJob: Job? = null
+        var dataCollectionJob: Job?
         coroutineScopeIO.launch {
+            dataCollectionJob = refreshLocalPreferences(authInteractor.userUUID, statusStateFlow)
             authInteractor.userUUIDStateFlow.collectLatest { uuid ->
-                statusStateFlow.update { DataStatus(data = null, isLoading = true) }
                 dataCollectionJob?.cancel(CancellationException("User Authentication changed, need to cancel jobs depending on User Authentication"))
-                if (uuid != null) { // User signed in
-                    Timber.v("Collecting signed in user preferences from disk")
-                    dataCollectionJob = coroutineScopeIO.launch {
-                        preferencesRoomDataSource.getPreferences(uuid).collectLatest { preferences ->
-                            statusStateFlow.update { DataStatus(preferences, false) }
-                        }
-                    }
-                } else { // Offline user
-                    Timber.v("Collecting offline user preferences from disk")
-                    // Simple, we only use the baseline preferences for offline users
-                    dataCollectionJob = coroutineScopeIO.launch {
-                        appSettingsDataStore.data.collectLatest { settings ->
-                            statusStateFlow.update { DataStatus(settings.preferences, false) }
-                        }
-                    }
-                }
+                dataCollectionJob = refreshLocalPreferences(uuid, statusStateFlow)
             }
         }
         statusStateFlow.asStateFlow()
     }
+
+    private suspend fun refreshLocalPreferences(
+        uuid: String?,
+        statusStateFlow: MutableStateFlow<DataStatus<DomainPreferences>>,
+    ): Job {
+        statusStateFlow.update { DataStatus(data = null, isLoading = true) }
+        return if (uuid != null) { // User signed in
+            Timber.v("Collecting signed in user preferences from disk")
+            coroutineScopeIO.launch {
+                preferencesRoomDataSource.getPreferences(uuid).collectLatest { preferences ->
+                    statusStateFlow.update { DataStatus(preferences, false) }
+                }
+            }
+        } else { // Offline user
+            Timber.v("Collecting offline user preferences from disk")
+            // Simple, we only use the baseline preferences for offline users
+            coroutineScopeIO.launch {
+                appPreferences.collectLatest { preferences ->
+                    statusStateFlow.update { DataStatus(preferences, false) }
+                }
+            }
+        }
+    }
+
+    val appPreferences by lazy { appSettingsDataSource.appSettings.map { it.preferences } }
 
     override fun shouldSyncData(localData: DomainPreferences?): Boolean {
         return localData?.shouldSync ?: DomainPreferences.Default.shouldSync

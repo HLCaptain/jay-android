@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.WriteBatch
 import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
+import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.data.firestore.datasource.PathFirestoreDataSource
 import illyan.jay.data.firestore.datasource.SessionFirestoreDataSource
 import illyan.jay.data.room.datasource.LocationRoomDataSource
@@ -63,7 +64,7 @@ class SessionInteractor @Inject constructor(
     private val searchInteractor: SearchInteractor,
     private val sessionFirestoreDataSource: SessionFirestoreDataSource,
     private val authInteractor: AuthInteractor,
-    private val settingsInteractor: SettingsInteractor,
+    private val appSettingsDataSource: AppSettingsDataSource,
     private val serviceInteractor: ServiceInteractor,
     private val pathFirestoreDataSource: PathFirestoreDataSource,
     private val firestore: FirebaseFirestore,
@@ -289,12 +290,12 @@ class SessionInteractor @Inject constructor(
             getSession(sessionUUID).first { session ->
                 session?.let {
                     Timber.i("Trying to assign client to session $sessionUUID")
-                    settingsInteractor.appSettingsFlow.first { settings ->
+                    appSettingsDataSource.appSettings.first { settings ->
                         Timber.d("Client UUID = ${settings.clientUUID}")
                         if (settings.clientUUID == null) {
                             val clientUUID = UUID.randomUUID().toString()
                             Timber.d("Generating new client UUID: $clientUUID")
-                            settingsInteractor.updateAppSettings {
+                            appSettingsDataSource.updateAppSettings {
                                 it.copy(clientUUID = clientUUID)
                             }
                             it.clientUUID = clientUUID
