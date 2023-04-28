@@ -14,8 +14,11 @@ For a better experience, while using our Service, I may require you to provide u
 
 Additonal information which are required to provide app functionality:
 
-- Jay App collects location data to show analytics about your taken path, like your speed on your route and display where you have been while you were driving. Location data is collected in the background while a Session is running, even when Jay App is in the background or closed.
-- Jay App collects client IDs, which are generated on first startup. This enables Jay to help filter data (e.g. Sessions) based on a client it is recorded on.
+- Personally Identifiable Information (PII): We may collect PII such as your name, email address, and phone number when you provide it to us (via Firebase services), for example during registration or when you contact us for support.
+- Device Information: We collect device-specific information such as your device's unique identifier (Client ID, which is generated on first startup of the app), device name, and operating system version. This information helps us to provide a better experience and to troubleshoot issues.
+- Location Data: We collect location data, including, but not limited to GeoPoint, altitude, and speed data, along with Timestamps, when a (user controlled) Session is running, even when the app is in the background or closed. This information is used to provide analytics about your taken path, such as your speed on your route and to display where you have been while driving.
+- Sensory Data: We collect custom sensory data containing the type of sensor, three values (probably floating-point numbers), and a Timestamp when the measure was taken.
+- User Preferences: We collect user preferences, which represent your settings and preferences within the app. Preferences can affect data collection, client behavior, and synchronization between devices.
 
 The app does use third-party services that may collect information used to identify you.
 
@@ -26,6 +29,16 @@ Link to the privacy policy of third-party service providers used by the app
 - [Google Analytics for Firebase](https://firebase.google.com/policies/analytics)
 - [Firebase Crashlytics](https://firebase.google.com/support/privacy/)
 - [Mapbox](https://www.mapbox.com/legal/privacy)
+
+We use the information we collect for the following purposes:
+
+- Provide and maintain our Service and quality assurance.
+- Improve and personalize your experience with our Service.
+- Enable supervisors/managers to oversee fleet operations in real-time.
+- Provide analytics for quality assurance, detecting anomalies, and improving road infrastructure.
+- Troubleshoot issues and provide customer support.
+
+To excersice your right to request the deletion of your personal information, refere to the [Data Deletion](data-deletion.md) page.
 
 ## Log Data
 
@@ -64,7 +77,7 @@ These Services do not address anyone under the age of 13. I do not knowingly col
 
 I may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. I will notify you of any changes by posting the new Privacy Policy on this page.
 
-This policy is effective as of 2023-04-06
+This policy is effective as of 2023-04-28
 
 ## Contact Us
 
