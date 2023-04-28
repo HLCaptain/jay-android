@@ -126,6 +126,10 @@ const config = {
                 label: 'Terms & Conditions',
                 to: '/docs/terms-and-conditions',
               },
+              {
+                label: 'Data Deletion',
+                to: '/docs/data-deletion',
+              },
             ],
           },
         ],

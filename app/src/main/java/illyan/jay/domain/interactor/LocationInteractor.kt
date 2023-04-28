@@ -25,6 +25,8 @@ import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.di.CoroutineScopeMain
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +39,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Location interactor is a layer which aims to be the intermediary
@@ -90,67 +93,69 @@ class LocationInteractor @Inject constructor(
         return locationRoomDataSource.getLocations(sessionUUIDs)
     }
 
+
+    val syncedPathCollectionJobs = hashMapOf<String, Job>()
+
+    /**
+     * Get the path for a session, either it being in the cloud or in the local database.
+     * Cannot react to user/session/location state changes, if the location was found in
+     * the local database, gets uploaded, then gets deleted from the local database, the listener
+     * would still listen to the local database's data.
+     */
     suspend fun getSyncedPath(sessionUUID: String): StateFlow<List<DomainLocation>?> {
-        val syncedPaths = MutableStateFlow<List<DomainLocation>?>(null)
         Timber.i("Trying to load path for session with ID: $sessionUUID")
-        sessionInteractor.getSession(sessionUUID).first { session ->
-            if (session != null) {
-                Timber.v("Found session on disk")
+        if (syncedPathCollectionJobs[sessionUUID] != null) {
+            Timber.v("Cancelling current data collection job regarding the path of $sessionUUID")
+            syncedPathCollectionJobs[sessionUUID]?.cancel(CancellationException("New data collection job requested"))
+            syncedPathCollectionJobs.remove(sessionUUID)
+        }
+        val syncedPaths = MutableStateFlow<List<DomainLocation>?>(null)
+        syncedPathCollectionJobs[sessionUUID] = coroutineScopeMain.launch(start = CoroutineStart.LAZY) {
+            pathFirestoreDataSource.getLocationsBySession(sessionUUID).collectLatest { remoteLocations ->
                 coroutineScopeIO.launch {
-                    getLocations(sessionUUID).first { locations ->
-                        if (locations.isEmpty()) {
-                            Timber.v("Not found path for session on disk, checking cloud")
-                            if (!authInteractor.isUserSignedIn) {
-                                Timber.i("Not authenticated to access cloud, return an empty list")
-                                syncedPaths.update { emptyList() }
-                            } else {
-                                coroutineScopeMain.launch {
-                                    pathFirestoreDataSource.getLocationsBySession(sessionUUID).collectLatest { remoteLocations ->
-                                        coroutineScopeIO.launch {
-                                            Timber.v("Found location for session, caching it on disk")
-                                            remoteLocations?.let { locationRoomDataSource.saveLocations(it) }
-                                        }
-                                        syncedPaths.update { remoteLocations }
-                                    }
-                                }
-                            }
-                        } else {
-                            Timber.i("Found path on disk")
-                            syncedPaths.update { locations }
-                        }
-                        true
-                    }
+                    Timber.v("Found location for session, caching it on disk")
+                    remoteLocations?.let { saveLocations(it) }
                 }
-            } else {
-                Timber.v("Not found session on disk, checking cloud")
-                if (!authInteractor.isUserSignedIn) {
-                    Timber.i("Not authenticated to access cloud, return an empty list")
-                    syncedPaths.update { emptyList() }
+                syncedPaths.update { remoteLocations }
+            }
+        }
+        val session = sessionInteractor.getSession(sessionUUID).first()
+        if (session != null) {
+            Timber.v("Found session on disk")
+            coroutineScopeIO.launch {
+                val locations = getLocations(sessionUUID).first()
+                if (locations.isEmpty()) {
+                    Timber.v("Not found path for session on disk, checking cloud")
+                    if (!authInteractor.isUserSignedIn) {
+                        Timber.i("Not authenticated to access cloud, return an empty list")
+                        syncedPaths.update { emptyList() }
+                    } else {
+                        syncedPathCollectionJobs[sessionUUID]?.start()
+                    }
                 } else {
-                    coroutineScopeIO.launch {
-                        sessionFirestoreDataSource.sessions.first { sessions ->
-                            if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
-                                Timber.v("Found session in cloud, caching it on disk")
-                                coroutineScopeIO.launch {
-                                    sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
-                                    coroutineScopeMain.launch {
-                                        pathFirestoreDataSource.getLocationsBySession(sessionUUID).collectLatest { remoteLocations ->
-                                            coroutineScopeIO.launch {
-                                                Timber.v("Found location for session, caching it on disk")
-                                                remoteLocations?.let { locationRoomDataSource.saveLocations(it) }
-                                            }
-                                            Timber.i("Found path in cloud")
-                                            syncedPaths.update { remoteLocations }
-                                        }
-                                    }
-                                }
+                    Timber.i("Found path on disk")
+                    syncedPaths.update { locations }
+                }
+            }
+        } else {
+            Timber.v("Not found session on disk, checking cloud")
+            if (!authInteractor.isUserSignedIn) {
+                Timber.i("Not authenticated to access cloud, return an empty list")
+                syncedPaths.update { emptyList() }
+            } else {
+                coroutineScopeIO.launch {
+                    sessionFirestoreDataSource.sessions.first { sessions ->
+                        if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
+                            Timber.v("Found session in cloud, caching it on disk")
+                            coroutineScopeIO.launch {
+                                sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
+                                syncedPathCollectionJobs[sessionUUID]?.start()
                             }
-                            sessions != null
                         }
+                        sessions != null
                     }
                 }
             }
-            true
         }
         return syncedPaths.asStateFlow()
     }

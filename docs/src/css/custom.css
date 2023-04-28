@@ -43,3 +43,11 @@
     backdrop-filter: brightness(90%) saturate(80%) blur(8px);
   }
 }
+
+img {
+  max-height: 48rem;
+  max-width: 100%;
+  border-radius: 1rem;
+  width: auto;
+  height: auto;
+}

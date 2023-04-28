@@ -19,13 +19,11 @@
 package illyan.jay
 
 import android.app.Application
-import androidx.datastore.core.DataStore
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
 import dagger.hilt.android.HiltAndroidApp
-import illyan.jay.data.datastore.model.AppSettings
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
@@ -42,7 +40,6 @@ import kotlin.coroutines.cancellation.CancellationException
 class MainApplication : Application() {
     @Inject lateinit var crashlyticsTree: CrashlyticsTree
     @Inject lateinit var debugTree: Timber.DebugTree
-    @Inject lateinit var appSettingsDataStore: DataStore<AppSettings>
     @Inject lateinit var authInteractor: AuthInteractor
     @Inject lateinit var crashlytics: FirebaseCrashlytics
     @Inject lateinit var analytics: FirebaseAnalytics

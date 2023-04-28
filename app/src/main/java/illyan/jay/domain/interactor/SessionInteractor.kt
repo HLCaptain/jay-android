@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.WriteBatch
 import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
+import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.data.firestore.datasource.PathFirestoreDataSource
 import illyan.jay.data.firestore.datasource.SessionFirestoreDataSource
 import illyan.jay.data.room.datasource.LocationRoomDataSource
@@ -63,7 +64,7 @@ class SessionInteractor @Inject constructor(
     private val searchInteractor: SearchInteractor,
     private val sessionFirestoreDataSource: SessionFirestoreDataSource,
     private val authInteractor: AuthInteractor,
-    private val settingsInteractor: SettingsInteractor,
+    private val appSettingsDataSource: AppSettingsDataSource,
     private val serviceInteractor: ServiceInteractor,
     private val pathFirestoreDataSource: PathFirestoreDataSource,
     private val firestore: FirebaseFirestore,
@@ -119,7 +120,7 @@ class SessionInteractor @Inject constructor(
         }
     }
 
-    val syncedSessions: StateFlow<List<DomainSession>?> get() = sessionFirestoreDataSource.sessions.map { sessions ->
+    val syncedSessions: StateFlow<List<DomainSession>?> = sessionFirestoreDataSource.sessions.map { sessions ->
         sessions?.let {
             Timber.i("Got ${sessions.size} synced sessions for user ${sessions.firstOrNull()?.ownerUUID?.take(4)}")
             sessionRoomDataSource.saveSessions(sessions)
@@ -289,12 +290,12 @@ class SessionInteractor @Inject constructor(
             getSession(sessionUUID).first { session ->
                 session?.let {
                     Timber.i("Trying to assign client to session $sessionUUID")
-                    settingsInteractor.appSettingsFlow.first { settings ->
+                    appSettingsDataSource.appSettings.first { settings ->
                         Timber.d("Client UUID = ${settings.clientUUID}")
                         if (settings.clientUUID == null) {
                             val clientUUID = UUID.randomUUID().toString()
                             Timber.d("Generating new client UUID: $clientUUID")
-                            settingsInteractor.updateAppSettings {
+                            appSettingsDataSource.updateAppSettings {
                                 it.copy(clientUUID = clientUUID)
                             }
                             it.clientUUID = clientUUID
@@ -550,7 +551,7 @@ class SessionInteractor @Inject constructor(
      */
     suspend fun deleteStoppedSessions() {
         sessionRoomDataSource.getStoppedSessions(authInteractor.userUUID).first { sessions ->
-            Timber.i("${authInteractor.userUUID} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
+            Timber.i("${authInteractor.userUUID?.take(4)} deleting stopped sessions: ${sessions.map { it.uuid.take(4) }}")
             deleteSessionsLocally(sessions)
             true
         }

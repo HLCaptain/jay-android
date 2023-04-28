@@ -130,19 +130,24 @@ class AuthInteractor @Inject constructor(
     fun signInViaGoogle(activity: MainActivity) {
         if (isUserSignedIn) return
         if (_googleSignInClient.value == null) {
-            remoteConfig.fetchAndActivate().addOnCompleteListener {
-                remoteConfig.ensureInitialized().addOnCompleteListener {
-                    _googleSignInClient.update {
-                        GoogleSignIn.getClient(
-                            activity,
-                            GoogleSignInOptions
-                                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                                .requestIdToken(remoteConfig["default_web_client_id"].asString())
-                                .requestEmail()
-                                .build()
-                        )
+            remoteConfig.fetchAndActivate().addOnSuccessListener {
+                remoteConfig.ensureInitialized().addOnSuccessListener {
+                    val defaultWebClientId = remoteConfig["default_web_client_id"].asString()
+                    if (defaultWebClientId.isEmpty()) {
+                        // TODO: throw error or show error message (use local broadcast manager to send a broadcast to UI?)
+                    } else {
+                        _googleSignInClient.update {
+                            GoogleSignIn.getClient(
+                                activity,
+                                GoogleSignInOptions
+                                    .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestIdToken(defaultWebClientId)
+                                    .requestEmail()
+                                    .build()
+                            )
+                        }
+                        activity.googleSignInLauncher.launch(googleSignInClient.value!!.signInIntent)
                     }
-                    activity.googleSignInLauncher.launch(googleSignInClient.value!!.signInIntent)
                 }
             }
         } else {

@@ -74,7 +74,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     start = MenuItemPadding * 2,
     end = MenuItemPadding * 2,
     top = MenuItemPadding * 2,
-    bottom = RoundedCornerRadius
+    bottom = RoundedCornerRadius + MenuItemPadding
 )
 
 fun calculatePaddingOffset(): PaddingValues {
@@ -120,20 +120,18 @@ fun FreeDrive(
                 onDispose {
                     viewModel.disposeViewport()
                     viewModel.lastLocation.value?.let { location ->
-                        flyToLocation(
-                            extraCameraOptions = { builder ->
-                                builder
-                                    .pitch(0.0)
-                                    .bearing(0.0)
-                                    .zoom(12.0)
-                                    .center(
-                                        Point.fromLngLat(
-                                            location.longitude,
-                                            location.latitude
-                                        )
+                        flyToLocation {
+                            it
+                                .pitch(0.0)
+                                .bearing(0.0)
+                                .zoom(12.0)
+                                .center(
+                                    Point.fromLngLat(
+                                        location.longitude,
+                                        location.latitude
                                     )
-                            }
-                        )
+                                )
+                        }
                     }
                 }
             }

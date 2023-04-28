@@ -72,6 +72,7 @@ class UserInteractor @Inject constructor(
         Timber.v("Deleting local user data requested")
         if (authInteractor.isUserSignedIn) {
             sessionInteractor.deleteOwnedSessions()
+            settingsInteractor.deleteLocalUserPreferences()
         }
     }
 

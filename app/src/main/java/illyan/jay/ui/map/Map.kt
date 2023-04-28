@@ -43,7 +43,6 @@ import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapOptions
 import com.mapbox.maps.MapView
-import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
@@ -139,7 +138,6 @@ fun MapboxMap(
     )
 }
 
-@OptIn(MapboxExperimental::class)
 @Composable
 private fun MapboxMapContainer(
     modifier: Modifier,

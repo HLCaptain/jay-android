@@ -46,7 +46,7 @@ class UserSettingsViewModel @Inject constructor(
 
     val preferences = combine(
         settingsInteractor.userPreferences,
-        settingsInteractor.appSettingsFlow
+        settingsInteractor.appSettings
     ) { preferences, appSettings ->
         val uiPreferences = preferences?.toUiModel(clientUUID = appSettings.clientUUID)
         updateAnalyticsRequestDialogVisibility(uiPreferences)

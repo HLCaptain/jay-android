@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.os.ConfigurationCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.maps.model.LatLng
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
@@ -127,7 +128,7 @@ fun createGradientFromLocations(
     stop: Color = MaterialTheme.signatureBlue,
     getColorFraction: (UiLocation) -> Float,
 ): Expression {
-    if (locations.isEmpty()) return defaultGradient()
+    if (locations.size < 2) return defaultGradient()
     val startMilli = locations.minOf { it.zonedDateTime.toInstant().toEpochMilli() }
     val endMilli = locations.maxOf { it.zonedDateTime.toInstant().toEpochMilli() }
     val durationMilli = (endMilli - startMilli)
@@ -256,12 +257,10 @@ fun SessionScreen(
         path,
         gradientFilter
     ) {
-        val points = path?.map {
-            Point.fromLngLat(it.latLng.longitude, it.latLng.latitude)
-        } ?: emptyList()
         val sortedLocations = path?.sortedBy { it.zonedDateTime }?.map { it.latLng }
         val startPoint = sortedLocations?.first()
         val endPoint = sortedLocations?.last()
+        val points = sortedLocations?.map { it.toMapboxPoint() } ?: emptyList()
         val annotationsPlugin = mapView.value?.annotations
         val lineWidth = (2.dp * density).value.toDouble()
         // FIXME: extract source and layer id functionality to a different class
@@ -566,3 +565,5 @@ private fun SessionDetailsScreenPreview(
         )
     }
 }
+
+fun LatLng.toMapboxPoint() = Point.fromLngLat(longitude, latitude)
