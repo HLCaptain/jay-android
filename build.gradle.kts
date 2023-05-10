@@ -16,13 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-buildscript {
-    repositories {
-//        google()
-//        mavenCentral()
-    }
-}
-
+// TODO: remove @Suppress after updating AGP to 8.1+
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.android.application) apply false

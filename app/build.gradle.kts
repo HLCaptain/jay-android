@@ -47,15 +47,6 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += listOf(
-                        "room.schemaLocation" to "$projectDir/schemas",
-                        "room.incremental" to "true"
-                )
-            }
-        }
     }
 
     buildTypes {
@@ -81,7 +72,7 @@ android {
         create("benchmark") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
-//            matchingFallbacks = listOf("release")
+            matchingFallbacks += listOf("release")
         }
     }
 
@@ -191,7 +182,6 @@ dependencies {
 
     // Room
     implementation(libs.androidx.room.ktx)
-    annotationProcessor(libs.androidx.room.compiler) // Needed for annotationProcessor arguments
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
 
