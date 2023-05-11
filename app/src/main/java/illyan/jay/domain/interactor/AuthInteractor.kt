@@ -79,7 +79,7 @@ class AuthInteractor @Inject constructor(
 
     private val googleAuthStateListeners = mutableStateListOf<(Int) -> Unit>()
 
-    val isUserSignedIn get() = isUserSignedInStateFlow.value
+    val isUserSignedIn get() = auth.currentUser != null
     val userUUID get() = auth.currentUser?.uid
 
     private val _isSigningOut = MutableStateFlow(false)
