@@ -5,7 +5,7 @@ compose-compiler = "1.4.7"
 kotlin = "1.8.21"
 ksp = "1.8.21-1.0.11"
 agp = "8.0.1"
-accompanist = "0.31.1-alpha"
+accompanist = "0.31.2-alpha"
 room = "2.5.1"
 
 jetbrains-kotlinx-serialization = "1.5.0"
