@@ -43,9 +43,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -100,10 +102,12 @@ import illyan.jay.ui.theme.mapMarkers
 import illyan.jay.ui.theme.signatureBlue
 import illyan.jay.ui.theme.signaturePink
 import illyan.jay.util.format
+import kotlinx.coroutines.delay
 import timber.log.Timber
 import java.math.RoundingMode
 import java.time.format.DateTimeFormatter
 import java.util.TimeZone
+import kotlin.math.abs
 
 val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding * 2,
@@ -219,24 +223,32 @@ fun SessionScreen(
         viewModel.load(sessionUUID)
     }
     val gradientFilter by viewModel.gradientFilter.collectAsStateWithLifecycle()
-    var sheetHeightNotSet by remember { mutableStateOf(true) }
-    var flownToPath by remember { mutableStateOf(false) }
-    val path by viewModel.path.collectAsStateWithLifecycle()
-    var fakeStateChangeStopped by remember { mutableStateOf(false) }
-    LaunchedEffect(sheetState.isAnimationRunning) {
-        if (fakeStateChangeStopped) {
-            sheetHeightNotSet = sheetState.isAnimationRunning
-        }
-        if (!sheetState.isAnimationRunning) {
-            fakeStateChangeStopped = true
+    var previousOffset by rememberSaveable { mutableStateOf<Float?>(null) }
+    var currentOffset by rememberSaveable { mutableStateOf(sheetState.requireOffset()) }
+    var noMoreOffsetChanges by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(sheetState.requireOffset()) {
+        previousOffset = currentOffset
+        currentOffset = sheetState.requireOffset()
+        delay(100) // Wait 100ms for the next offset change
+        noMoreOffsetChanges = true
+    }
+    val sheetHeightNotSet by remember {
+        derivedStateOf {
+            val isAnimationRunning = sheetState.progress != 1f
+            val almostReachedTargetHeight = abs(currentOffset - (previousOffset ?: 0f)) < 2f
+            isAnimationRunning || !almostReachedTargetHeight || !noMoreOffsetChanges
         }
     }
+    var flownToPath by remember { mutableStateOf(false) }
+    val path by viewModel.path.collectAsStateWithLifecycle()
+
     LaunchedEffect(
         path,
         sheetHeightNotSet
     ) {
         path?.let {
             if (!flownToPath) {
+                Timber.d("Try to fly")
                 tryFlyToPath(
                     path = path!!.map { location ->
                         Point.fromLngLat(

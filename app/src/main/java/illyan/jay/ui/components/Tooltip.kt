@@ -38,6 +38,7 @@ import androidx.compose.material3.PlainTooltipBox
 import androidx.compose.material3.PlainTooltipState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberPlainTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -77,7 +78,7 @@ fun TooltipElevatedCard(
     onDismissTooltip: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    val tooltipState = remember { PlainTooltipState() }
+    val tooltipState = rememberPlainTooltipState()
     val coroutineScope = rememberCoroutineScope()
     val tryShowTooltip = {
         coroutineScope.launch {
@@ -133,7 +134,7 @@ fun TooltipButton(
     onDismissTooltip: () -> Unit = {},
     content: @Composable RowScope.() -> Unit
 ) {
-    val tooltipState = remember { PlainTooltipState() }
+    val tooltipState = rememberPlainTooltipState()
     val coroutineScope = rememberCoroutineScope()
     val tryShowTooltip = { coroutineScope.launch { tooltipState.show() } }
     ContentWithTooltip(
@@ -177,7 +178,7 @@ fun TooltipButton(
 @Composable
 fun ContentWithTooltip(
     modifier: Modifier = Modifier,
-    tooltipState: PlainTooltipState = remember { PlainTooltipState() },
+    tooltipState: PlainTooltipState = rememberPlainTooltipState(),
     tooltip: @Composable () -> Unit,
     disabledTooltip: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,

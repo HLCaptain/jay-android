@@ -266,14 +266,15 @@ fun ProfileButtons(
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom
     ) {
         ProfileMenu(
             onShowSettingsScreen = onShowSettingsScreen,
             onShowAboutScreen = onShowAboutScreen,
         )
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .align(Alignment.Bottom),
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = { onDialogClosed() }) {

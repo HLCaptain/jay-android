@@ -91,6 +91,7 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -300,11 +301,14 @@ fun tryFlyToPath(
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
     onFly: () -> Unit = {},
 ) {
-    if (path.isEmpty()) return
-    if (sheetState.progress == 1f &&
-        sheetState.requireOffset() >= 10f &&
-        extraCondition()
-    ) {
+    if (path.isEmpty()) {
+        Timber.e(IllegalArgumentException("Path is empty, flying cancelled"))
+        return
+    }
+    val canFly = sheetState.progress == 1f &&
+            sheetState.requireOffset() >= 10f &&
+            extraCondition()
+    if (canFly) {
         onFly()
         flyToLocation {
             val cameraOptions = mapView.value?.getMapboxMap()?.cameraForCoordinates(
@@ -485,7 +489,7 @@ fun HomeScreen(
         BackPressHandler {
             onHomeBackPress(isTextFieldFocused, focusManager, context)
         }
-        LaunchedEffect(bottomSheetState.offset) { refreshCameraPadding() }
+        LaunchedEffect(bottomSheetState.progress) { refreshCameraPadding() }
         LaunchedEffect(sheetCollapsing) {
             onSheetStateChanged(
                 isTextFieldFocused,
@@ -704,15 +708,18 @@ fun HomeScreen(
                             resourceOptions = ResourceOptions.Builder().applyDefaultParams(context)
                                 .accessToken(BuildConfig.MapboxAccessToken)
                                 .build(),
-                            onMapFullyLoaded = { isMapVisible = true },
+                            onMapFullyLoaded = {
+                                isMapVisible = true
+                                coroutineScope.launch { sheetState.expand() }
+                            },
                             onMapInitialized = { view ->
                                 isMapInitialized = true
                                 _mapView.update { view }
+
                                 when (locationPermissionState.status) {
                                     is PermissionStatus.Granted -> {
                                         view.location.turnOnWithDefaultPuck(context)
                                     }
-
                                     is PermissionStatus.Denied -> {
                                         view.location.enabled = false
                                     }
@@ -786,7 +793,7 @@ fun BottomSearchBar(
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    val sheetCollapsing = bottomSheetState?.isCollapsed ?: false
+    val sheetCollapsing by remember { derivedStateOf { bottomSheetState?.isCollapsed ?: false } }
     LaunchedEffect(sheetCollapsing) {
         if (sheetCollapsing) {
             launch {
@@ -837,8 +844,11 @@ fun BottomSearchBar(
                         contentDescription = stringResource(R.string.search_marker_icon)
                     )
                 }
-                val colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent,
+                val colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    errorContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
                     errorIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
@@ -957,13 +967,13 @@ fun BottomSheetScreen(
             }
         }
         val screenHeight by _screenHeight.collectAsStateWithLifecycle()
-        val offset = sheetState.requireOffset()
         val density = LocalDensity.current
-        val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
-        LaunchedEffect(bottomSheetFraction) {
+        LaunchedEffect(sheetState.progress) {
+            val offset = sheetState.requireOffset()
+            val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
             _bottomSheetFraction.update { bottomSheetFraction }
+            onBottomSheetFractionChange(bottomSheetFraction)
         }
-        onBottomSheetFractionChange(bottomSheetFraction)
         ConstraintLayout(
             modifier = modifier
         ) {
