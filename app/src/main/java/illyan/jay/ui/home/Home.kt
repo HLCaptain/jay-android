@@ -167,9 +167,6 @@ import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapStyleUrl
 import illyan.jay.util.extraOptions
-import illyan.jay.util.isCollapsedOrWillBe
-import illyan.jay.util.isCollapsing
-import illyan.jay.util.isExpanding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -257,7 +254,7 @@ fun flyToLocation(
     Timber.d(
         "Focusing camera to location\n" +
                 "Current sheetHeight: ${sheetState.getOffsetAsDp(density.value)}\n" +
-                "Current sheetState:\n${sheetState.asString()}"
+                "Current sheetState:\n${sheetState}"
     )
     refreshCameraPadding()
     mapView.value?.camera?.flyTo(
@@ -281,8 +278,8 @@ fun tryFlyToLocation(
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
     onFly: () -> Unit = {},
 ) {
-    if (!sheetState.isAnimationRunning &&
-        sheetState.offset.value >= 10f &&
+    if (sheetState.progress == 1f && // animation is not running
+        sheetState.requireOffset() >= 10f &&
         extraCondition()
     ) {
         onFly()
@@ -304,8 +301,8 @@ fun tryFlyToPath(
     onFly: () -> Unit = {},
 ) {
     if (path.isEmpty()) return
-    if (!sheetState.isAnimationRunning &&
-        sheetState.offset.value >= 10f &&
+    if (sheetState.progress == 1f &&
+        sheetState.requireOffset() >= 10f &&
         extraCondition()
     ) {
         onFly()
@@ -352,7 +349,7 @@ fun calculateCornerRadius(
     threshold: Float = BottomSheetPartialExpendedFraction,
     fraction: Float = 0f,
 ): Dp {
-    return if (bottomSheetState.isCollapsedOrWillBe()) {
+    return if (bottomSheetState.isCollapsed) {
         maxCornerRadius
     } else {
         val max = BottomSheetPartialMaxFraction
@@ -483,7 +480,7 @@ fun HomeScreen(
         }
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
         val softwareKeyboardController = LocalSoftwareKeyboardController.current
-        val sheetCollapsing = bottomSheetState.isCollapsing()
+        val sheetCollapsing = bottomSheetState.isCollapsed
         val focusManager = LocalFocusManager.current
         BackPressHandler {
             onHomeBackPress(isTextFieldFocused, focusManager, context)
@@ -497,11 +494,9 @@ fun HomeScreen(
             )
         }
         // When the bottom sheet reaches its target state, reset onDrag trigger
-        LaunchedEffect(bottomSheetState.targetValue, bottomSheetState.currentValue) {
-            if (bottomSheetState.targetValue == bottomSheetState.currentValue) {
-                // Resetting the trigger to enable bottom sheet toggle
-                shouldTriggerBottomSheetOnDrag = true
-            }
+        LaunchedEffect(bottomSheetState.currentValue) {
+            // Resetting the trigger to enable bottom sheet toggle
+            shouldTriggerBottomSheetOnDrag = true
         }
         var isProfileDialogShowing by rememberSaveable { mutableStateOf(false) }
         ProfileDialog(
@@ -624,14 +619,13 @@ fun HomeScreen(
                         cameraOptionsBuilder != null &&
                         initialLocationLoaded &&
                         isMapVisible &&
-                        bottomSheetState.progress.to == BottomSheetValue.Expanded &&
                         sheetContentHeight >= 20.dp &&
                         cameraPadding.value.calculateBottomPadding() >= 20.dp
                     ) {
                         Timber.d(
                             "Focusing camera to location\n" +
                                     "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
-                                    "Current sheetState:\n${sheetState.asString()}" +
+                                    "Current sheetState:\n${sheetState}" +
                                     "Sheet content height = $sheetContentHeight"
                         )
                         didLoadInLocation = true
@@ -648,14 +642,13 @@ fun HomeScreen(
                         !didLoadInLocationWithoutPermissions &&
                         !locationPermissionState.status.isGranted &&
                         isMapVisible &&
-                        bottomSheetState.progress.to == BottomSheetValue.Expanded &&
                         sheetContentHeight >= 20.dp &&
                         cameraPadding.value.calculateBottomPadding() >= 20.dp
                     ) {
                         Timber.d(
                             "Focusing camera to location" +
                                     "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
-                                    "Current sheetState:\n${sheetState.asString()}\n" +
+                                    "Current sheetState:\n${sheetState}\n" +
                                     "Sheet content height = $sheetContentHeight"
                         )
                         didLoadInLocationWithoutPermissions = true
@@ -740,7 +733,7 @@ private fun onHomeBackPress(
     context: Context,
 ) {
     Timber.d("Handling back press from Home!")
-    if (sheetState.isCollapsedOrWillBe()) (context as MainActivity).moveTaskToBack(false)
+    if (sheetState.isCollapsed) (context as MainActivity).moveTaskToBack(false)
     if (isTextFieldFocused) {
         // Remove the focus from the textfield
         focusManager.clearFocus()
@@ -754,7 +747,7 @@ private suspend fun onSheetStateChanged(
     bottomSheetState: BottomSheetState,
     softwareKeyboardController: SoftwareKeyboardController?,
 ) {
-    if (bottomSheetState.isCollapsing()) {
+    if (bottomSheetState.isCollapsed) {
         // Close the keyboard when closing the bottom sheet
         if (isTextFieldFocused) {
             // If searching right now, expand bottom sheet
@@ -793,7 +786,7 @@ fun BottomSearchBar(
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    val sheetCollapsing = bottomSheetState?.isCollapsing() ?: false
+    val sheetCollapsing = bottomSheetState?.isCollapsed ?: false
     LaunchedEffect(sheetCollapsing) {
         if (sheetCollapsing) {
             launch {
@@ -812,7 +805,7 @@ fun BottomSearchBar(
     // We should help gestures when not searching
     // and bottomSheet is collapsed or collapsing
     val shouldHelpGestures = searchFieldFocusState?.isFocused == false &&
-            bottomSheetState?.isCollapsedOrWillBe() == true
+            bottomSheetState?.isCollapsed == true
     ElevatedCard(
         modifier = modifier
             .then(if (shouldHelpGestures) draggable else Modifier)
@@ -964,7 +957,7 @@ fun BottomSheetScreen(
             }
         }
         val screenHeight by _screenHeight.collectAsStateWithLifecycle()
-        val offset by sheetState.offset
+        val offset = sheetState.requireOffset()
         val density = LocalDensity.current
         val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
         LaunchedEffect(bottomSheetFraction) {
@@ -1019,7 +1012,6 @@ private fun SheetNavHost(
                 val placeable = measurable.measure(constraints)
                 val height = placeable.measuredHeight.toDp()
                 if (sheetState.isExpanded &&
-                    sheetState.progress.fraction == 1f &&
                     height >= sheetMinHeight &&
                     height != sheetState.getOffsetAsDp(density)
                 ) {
@@ -1089,22 +1081,6 @@ private fun SearchNavHost(
     )
 }
 
-fun BottomSheetState.asString(density: Float = 2.75f): String {
-    return "isExpanded ${isExpanded}\n" +
-            "isExpanding ${isExpanding()}\n" +
-            "isCollapsed ${isCollapsed}\n" +
-            "isCollapsing ${isCollapsing()}\n" +
-            "targetValue ${targetValue.name}\n" +
-            "currentValue ${currentValue.name}\n" +
-            "direction ${direction}\n" +
-            "isAnimationRunning ${isAnimationRunning}\n" +
-            "offset ${getOffsetAsDp(density)}\n" +
-            "overflow ${overflow.value}\n" +
-            "progress.fraction ${progress.fraction}\n" +
-            "progress.from ${progress.from.name}\n" +
-            "progress.to ${progress.to.name}\n"
-}
-
 fun BottomSheetState.getOffsetAsDp(density: Float): Dp {
-    return (offset.value / density).dp
+    return (requireOffset() / density).dp
 }

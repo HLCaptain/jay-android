@@ -25,8 +25,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.BottomSheetState
-import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
@@ -99,18 +97,6 @@ fun Duration.format(
         builder.toString()
     }
 }
-
-fun BottomSheetState.isExpanding() =
-    isAnimationRunning && targetValue == BottomSheetValue.Expanded
-
-fun BottomSheetState.isCollapsing() =
-    isAnimationRunning && targetValue == BottomSheetValue.Collapsed
-
-fun BottomSheetState.isExpandedOrWillBe() =
-    isExpanding() || isExpanded
-
-fun BottomSheetState.isCollapsedOrWillBe() =
-    isCollapsing() || isCollapsed
 
 fun CameraOptions.Builder.extraOptions(
     extraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
