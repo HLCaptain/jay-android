@@ -82,7 +82,6 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.util.isCollapsedOrWillBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -293,7 +292,7 @@ fun SheetScreenBackPressHandler(
         onBackPressed()
         Timber.d("Handling back press in Navigation!")
         // If searching and back is pressed, close the sheet instead of the app
-        if (sheetState.isCollapsedOrWillBe()) (context as MainActivity).moveTaskToBack(false)
+        if (sheetState.isCollapsed) (context as MainActivity).moveTaskToBack(false)
         if (isSearching) {
             coroutineScope.launch {
                 // This call will automatically unfocus the textfield

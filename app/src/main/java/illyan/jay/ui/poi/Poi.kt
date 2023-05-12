@@ -115,8 +115,8 @@ fun Poi(
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     val place by viewModel.place.collectAsStateWithLifecycle()
     val placeMetadata by viewModel.placeInfo.collectAsStateWithLifecycle()
-    LaunchedEffect(sheetState.isAnimationRunning) {
-        sheetHeightNotSet = sheetState.isAnimationRunning
+    LaunchedEffect(sheetState.progress) {
+        sheetHeightNotSet = sheetState.progress != 1f
     }
     val context = LocalContext.current
     val mapMarkers by mapMarkers.collectAsStateWithLifecycle()
