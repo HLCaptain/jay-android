@@ -1,10 +1,10 @@
 [versions]
 
-compose = "1.5.0-alpha04"
+compose = "1.5.0-beta02"
 compose-compiler = "1.4.7"
 kotlin = "1.8.21"
 ksp = "1.8.21-1.0.11"
-agp = "8.0.1"
+agp = "8.0.2"
 accompanist = "0.31.2-alpha"
 room = "2.5.1"
 
@@ -15,8 +15,8 @@ jetbrains-kotlinx-coroutines = "1.7.0"
 androidx-core = "1.10.1"
 androidx-collection = "1.2.0"
 androidx-appcompat = "1.6.1"
-androidx-activity = "1.7.1"
-androidx-compose-material3 = "1.2.0-alpha01"
+androidx-activity = "1.7.2"
+androidx-compose-material3 = "1.2.0-alpha02"
 androidx-constraintlayout-compose = "1.0.1"
 androidx-profileinstaller = "1.3.1"
 androidx-datastore = "1.0.0"
@@ -43,13 +43,13 @@ google-secrets = "2.0.1"
 google-gms-services = "4.3.15"
 google-gms-play-services-location = "21.0.1"
 google-gms-play-services-auth = "20.5.0"
-google-gms-play-services-ads = "22.0.0"
+google-gms-play-services-ads = "22.1.0"
 google-maps-utils = "3.4.0"
 google-material = "1.9.0"
 
 firebase-crashlytics = "2.9.5"
 firebase-perf = "1.4.2"
-firebase-bom = "32.0.0"
+firebase-bom = "32.1.0"
 
 junit5 = "1.9.3.0"
 junit = "5.9.3"
@@ -98,11 +98,11 @@ androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "a
 androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-junit" }
 
 google-material = { module = "com.google.android.material:material", version.ref = "google-material" }
-google-gms-play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "google-gms-play-services-location"}
-google-gms-play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "google-gms-play-services-auth"}
-google-gms-play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "google-gms-play-services-ads"}
-google-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "google-maps-utils"}
-google-maps-utils-ktx = { module = "com.google.maps.android:maps-utils-ktx", version.ref = "google-maps-utils"}
+google-gms-play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "google-gms-play-services-location" }
+google-gms-play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "google-gms-play-services-auth" }
+google-gms-play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "google-gms-play-services-ads" }
+google-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "google-maps-utils" }
+google-maps-utils-ktx = { module = "com.google.maps.android:maps-utils-ktx", version.ref = "google-maps-utils" }
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
@@ -132,7 +132,7 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 compose-destinations-animations-core = { module = "io.github.raamcosta.compose-destinations:animations-core", version.ref = "compose-destinations" }
 compose-destinations-ksp = { module = "io.github.raamcosta.compose-destinations:ksp", version.ref = "compose-destinations" }
 
-coil = { module = "io.coil-kt:coil-compose", version.ref = "coil-compose"}
+coil = { module = "io.coil-kt:coil-compose", version.ref = "coil-compose" }
 
 zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstd-jni" }
 
