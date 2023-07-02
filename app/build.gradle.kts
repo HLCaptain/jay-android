@@ -15,31 +15,30 @@
  * You should have received a copy of the GNU General Public License along with Jay.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.serialization")
-    id("kotlin-kapt")
-    id("kotlin-android")
-    id("kotlin-parcelize")
-    id("com.google.firebase.crashlytics")
-    id("com.google.gms.google-services")
-    id("com.google.dagger.hilt.android")
-    id("com.google.devtools.ksp")
-    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
-    id("de.mannodermaus.android-junit5")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.jetbrains.kotlin.kapt)
+    alias(libs.plugins.jetbrains.kotlin.parcelize)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
+    alias(libs.plugins.google.gms.services)
+    alias(libs.plugins.google.secrets)
+    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.junit5)
+    alias(libs.plugins.ksp)
 }
 
 android {
-    compileSdk = 33
+    compileSdk = 34
 
     namespace = "illyan.jay"
 
     defaultConfig {
         applicationId = "illyan.jay"
         minSdk = 21
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 15
         versionName = "0.3.4-alpha"
 

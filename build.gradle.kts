@@ -22,17 +22,19 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.android.test) apply false
+    alias(libs.plugins.androidx.navigation.safeargs) apply false
+    alias(libs.plugins.hilt) apply false
     alias(libs.plugins.google.gms.services) apply false
     alias(libs.plugins.google.secrets) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
     alias(libs.plugins.firebase.perf) apply false
-    alias(libs.plugins.hilt) apply false
-    alias(libs.plugins.junit5) apply false
     alias(libs.plugins.jetbrains.kotlin.android) apply false
     alias(libs.plugins.jetbrains.kotlin.serialization) apply false
-    alias(libs.plugins.androidx.navigation.safeargs) apply false
-    alias(libs.plugins.sonarqube)
+    alias(libs.plugins.jetbrains.kotlin.kapt) apply false
+    alias(libs.plugins.jetbrains.kotlin.parcelize) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.junit5) apply false
+    alias(libs.plugins.sonarqube)
 }
 
 sonarqube {
