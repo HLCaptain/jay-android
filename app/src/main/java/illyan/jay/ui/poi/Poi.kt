@@ -71,6 +71,7 @@ import illyan.jay.ui.poi.model.PlaceMetadata
 import illyan.jay.ui.sheet.SheetNavGraph
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapMarkers
+import illyan.jay.ui.theme.statefulColorScheme
 import illyan.jay.util.largeTextPlaceholder
 import illyan.jay.util.plus
 import illyan.jay.util.textPlaceholder
@@ -212,7 +213,7 @@ fun PoiScreen(
                 .largeTextPlaceholder(place == null),
             text = place?.name ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.statefulColorScheme.onSurface,
         )
         AnimatedVisibility(
             modifier = Modifier
@@ -222,7 +223,7 @@ fun PoiScreen(
         ) {
             Text(
                 text = placeMetadata?.address ?: stringResource(R.string.unknown),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.statefulColorScheme.onSurface,
             )
         }
         AnimatedVisibility(visible = !placeMetadata?.categories.isNullOrEmpty()) {
@@ -235,7 +236,7 @@ fun PoiScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .background(MaterialTheme.statefulColorScheme.primaryContainer)
                     ) {
                         Text(
                             modifier = Modifier.padding(
@@ -246,7 +247,7 @@ fun PoiScreen(
                             ),
                             text = it.replaceFirstChar { it.uppercase() },
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = MaterialTheme.statefulColorScheme.onPrimaryContainer,
                         )
                     }
                 }
@@ -268,7 +269,7 @@ fun PoiScreen(
                             .toString()
             } ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.statefulColorScheme.onSurface,
         )
     }
 }

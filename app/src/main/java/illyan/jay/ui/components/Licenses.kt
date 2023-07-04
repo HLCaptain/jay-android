@@ -28,7 +28,6 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.LicenseType
+import illyan.jay.ui.theme.statefulColorScheme
+import illyan.jay.ui.theme.surfaceColorAtElevation
 import illyan.jay.util.findUrlIntervals
 import kotlin.math.hypot
 
@@ -68,7 +69,7 @@ fun JayTextCard(
         modifier = modifier
             .drawVerticalScrollbar(lazyListState)
             .clip(RoundedCornerShape(cornerRadius))
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)),
+            .background(MaterialTheme.statefulColorScheme.surfaceColorAtElevation(2.dp)),
         state = lazyListState,
         contentPadding = contentPadding,
     ) {
@@ -207,7 +208,7 @@ fun ApacheV2License(
     }
 
     ClickableText(
-        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
         onClick = { offset ->
             val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
             urlAnnotations.firstOrNull()?.let {
@@ -232,26 +233,7 @@ fun FreeBSDLicense(
 
     val title = beforeTitle + "Copyright (c) $copyrightYearString ${authors.joinToString(",")}"
         .replace("\\s+".toRegex(), " ") + afterTitle
-    val paragraph = "\n" +
-            "\n" +
-            "Redistribution and use in source and binary forms, with or without modification," +
-            " are permitted provided that the following conditions are met:\n" +
-            "\n" +
-            "Redistributions of source code must retain the above copyright notice," +
-            " this list of conditions and the following disclaimer.\n" +
-            "Redistributions in binary form must reproduce the above copyright notice," +
-            " this list of conditions and the following disclaimer in the documentation" +
-            " and/or other materials provided with the distribution.\n" +
-            "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS" +
-            " \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO," +
-            " THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE" +
-            " ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE" +
-            " FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL" +
-            " DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR" +
-            " SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER" +
-            " CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY," +
-            " OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE" +
-            " OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+    val paragraph = LicenseType.FreeBSD.description
 
     val annotatedString = buildAnnotatedString {
         // Title
@@ -269,7 +251,7 @@ fun FreeBSDLicense(
     }
 
     Text(
-        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
         text = annotatedString
     )
 }
@@ -295,7 +277,7 @@ fun EclipsePublicLicense() {
     }
 
     Text(
-        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
         text = annotatedString
     )
 }
@@ -332,7 +314,7 @@ fun GPLV2License(
     }
 
     Text(
-        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
         text = annotatedString
     )
 }
@@ -390,7 +372,7 @@ fun GPLV3License(
     }
 
     ClickableText(
-        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
         onClick = { offset ->
             val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
             urlAnnotations.firstOrNull()?.let {
@@ -454,7 +436,7 @@ fun JayGPLV3License(
 
     Column {
         ClickableText(
-            style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+            style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
             onClick = { offset ->
                 val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
                 urlAnnotations.firstOrNull()?.let {

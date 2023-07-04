@@ -84,6 +84,7 @@ import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.statefulColorScheme
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -291,7 +292,7 @@ private fun SyncPreferencesLabel(
                 Icon(
                     imageVector = Icons.Rounded.Done,
                     contentDescription = "",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.statefulColorScheme.primary
                 )
                 Text(
                     text = stringResource(R.string.synced),
@@ -301,7 +302,7 @@ private fun SyncPreferencesLabel(
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = "",
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.statefulColorScheme.error
                 )
                 Text(
                     text = stringResource(R.string.not_synced),
@@ -348,7 +349,7 @@ private fun SyncPreferencesButton(
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            disabledContentColor = MaterialTheme.statefulColorScheme.onSurfaceVariant
         ),
         enabled = canSyncPreferences,
         onClick = { onShouldSyncChanged(!shouldSyncPreferences) }
@@ -563,7 +564,7 @@ fun BooleanSetting(
                 Text(
                     text = if (enabled) enabledText else disabledText,
                     style = textStyle,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.statefulColorScheme.onSurface
                 )
             }
             Switch(
@@ -640,7 +641,7 @@ fun SettingItem(
                 text = name,
                 style = textStyle,
                 fontWeight = fontWeight,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.statefulColorScheme.onSurface
             )
             content()
         }

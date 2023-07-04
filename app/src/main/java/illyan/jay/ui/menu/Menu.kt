@@ -28,7 +28,6 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -42,8 +41,11 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Route
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.TravelExplore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
@@ -52,7 +54,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -82,6 +83,11 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.LocalTheme
+import illyan.jay.ui.theme.LocalToggleTheme
+import illyan.jay.ui.theme.Theme
+import illyan.jay.ui.theme.statefulColorScheme
+import illyan.jay.ui.theme.surfaceColorAtElevation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -113,6 +119,7 @@ fun MenuScreen(
     viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val toggleTheme = LocalToggleTheme.current
     BackPressHandler {
         Timber.d("Intercepted back press!")
         (context as Activity).moveTaskToBack(false)
@@ -130,15 +137,18 @@ fun MenuScreen(
             viewModel.onClickSessionsButton()
             destinationsNavigator.navigate(SessionsDestination)
         },
+        onToggleTheme = {
+            toggleTheme()
+        }
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MenuContent(
     onNavigateToBme: () -> Unit = {},
     onFreeDrive: () -> Unit = {},
     onSessions: () -> Unit = {},
+    onToggleTheme: () -> Unit = {},
 ) {
     val gridState = rememberLazyStaggeredGridState()
     LazyVerticalStaggeredGrid(
@@ -177,6 +187,18 @@ fun MenuContent(
                 onClick = onSessions,
             )
         }
+        item {
+            val theme = LocalTheme.current
+            MenuItemCard(
+                title = stringResource(R.string.toggle_theme),
+                icon = when (theme) {
+                    Theme.Light -> Icons.Rounded.LightMode
+                    Theme.Dark -> Icons.Rounded.DarkMode
+                    Theme.System -> Icons.Rounded.Settings
+                },
+                onClick = onToggleTheme,
+            )
+        }
     }
 }
 
@@ -194,10 +216,12 @@ fun MenuItemCard(
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.menu_item_title),
     icon: ImageVector? = null,
-    cardColors: CardColors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ),
+    cardColors: CardColors = (@Composable {
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(1.dp),
+            contentColor = MaterialTheme.statefulColorScheme.onSurface
+        )
+    })(),
     onClick: () -> Unit = {},
 ) {
     Card(

@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import illyan.jay.R
+import illyan.jay.ui.theme.statefulColorScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -159,10 +160,10 @@ fun TooltipButton(
                     }
                 ),
             shape = ButtonDefaults.shape,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.statefulColorScheme.primary
         ) {
             CompositionLocalProvider(
-                LocalContentColor provides MaterialTheme.colorScheme.onPrimary,
+                LocalContentColor provides MaterialTheme.statefulColorScheme.onPrimary,
                 LocalTextStyle provides MaterialTheme.typography.labelLarge
             ) {
                 Row(
@@ -201,8 +202,8 @@ fun ContentWithTooltip(
     }
     PlainTooltipBox(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        containerColor = MaterialTheme.statefulColorScheme.surfaceVariant,
+        contentColor = MaterialTheme.statefulColorScheme.onSurfaceVariant,
         tooltip = currentTooltip,
         tooltipState = tooltipState,
     ) {
@@ -219,7 +220,7 @@ fun CopiedToKeyboardTooltip() {
         Icon(
             imageVector = Icons.Rounded.Done,
             contentDescription = "",
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.statefulColorScheme.primary
         )
         Text(text = stringResource(R.string.copied_to_clipboard))
     }
