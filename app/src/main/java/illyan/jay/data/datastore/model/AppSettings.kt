@@ -19,12 +19,14 @@
 package illyan.jay.data.datastore.model
 
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.ui.theme.Theme
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppSettings(
     val clientUUID: String? = null,
     val preferences: DomainPreferences = DomainPreferences.Default,
+    val theme: Theme = Theme.System,
 ) {
     companion object {
         val default = AppSettings()

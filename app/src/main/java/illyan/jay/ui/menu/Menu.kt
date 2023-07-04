@@ -195,6 +195,7 @@ fun MenuContent(
                     Theme.Light -> Icons.Rounded.LightMode
                     Theme.Dark -> Icons.Rounded.DarkMode
                     Theme.System -> Icons.Rounded.Settings
+                    null -> null
                 },
                 onClick = onToggleTheme,
             )

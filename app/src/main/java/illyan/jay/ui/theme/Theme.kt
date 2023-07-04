@@ -36,9 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
@@ -48,6 +46,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import illyan.jay.R
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -215,10 +215,9 @@ private lateinit var lightMapMarkers: MapMarkers
 private val _mapMarkers = MutableStateFlow<MapMarkers?>(null)
 val mapMarkers = _mapMarkers.asStateFlow()
 
-val targetColorScheme = StatefulColorScheme(LightColors)
-internal val LocalStatefulColorScheme = staticCompositionLocalOf { targetColorScheme }
+internal val LocalStatefulColorScheme = staticCompositionLocalOf<StatefulColorScheme?> { null }
 val LocalToggleTheme = compositionLocalOf { {} }
-val LocalTheme = compositionLocalOf { Theme.System }
+val LocalTheme = compositionLocalOf<Theme?> { null }
 
 enum class Theme {
     Light, Dark, System
@@ -226,25 +225,20 @@ enum class Theme {
 
 @Composable
 fun JayTheme(
-    isSystemInDarkTheme: Boolean = isSystemInDarkTheme(),
+    viewModel: ThemeViewModel = hiltViewModel(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    var theme by remember { mutableStateOf(Theme.System) }
-    val toggleTheme = {
-        theme = when (theme) {
-            Theme.Light -> Theme.Dark
-            Theme.Dark -> Theme.System
-            Theme.System -> Theme.Light
-        }
-    }
-    val darkIcons by remember {
+    val isSystemInDarkTheme: Boolean = isSystemInDarkTheme()
+    val theme by viewModel.theme.collectAsStateWithLifecycle()
+    val isDark by remember {
         derivedStateOf {
             when (theme) {
-                Theme.Light -> true
-                Theme.Dark -> false
-                Theme.System -> !isSystemInDarkTheme
+                Theme.Light -> false
+                Theme.Dark -> true
+                Theme.System -> isSystemInDarkTheme
+                null -> null
             }
         }
     }
@@ -261,6 +255,7 @@ fun JayTheme(
                         if (isSystemInDarkTheme) DarkColors else LightColors
                     }
                 }
+                null -> LightColors
             }
         }
     }
@@ -284,25 +279,27 @@ fun JayTheme(
         pathEndDrawableId = R.drawable.jay_finish_dark_marker_icon,
     )
     if (!view.isInEditMode) {
-        LaunchedEffect(theme) {
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkIcons
-            WindowCompat.setDecorFitsSystemWindows(window, false)
+        LaunchedEffect(isDark) {
+            isDark?.let { isDark ->
+                val window = (view.context as Activity).window
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = isDark
+                WindowCompat.setDecorFitsSystemWindows(window, false)
 
-            // Update all of the system bar colors to be transparent
-            // and use dark icons if we're in light theme
-            systemUiController.setSystemBarsColor(
-                color = Color.Transparent,
-                darkIcons = darkIcons
-            )
-            _mapStyleUrl.update { if (!darkIcons) darkMapStyleUrl else lightMapStyleUrl }
-            _mapMarkers.update { if (!darkIcons) darkMapMarkers else lightMapMarkers }
+                // Update all of the system bar colors to be transparent
+                // and use dark icons if we're in light theme
+                systemUiController.setSystemBarsColor(
+                    color = Color.Transparent,
+                    darkIcons = !isDark
+                )
+                _mapStyleUrl.update { if (isDark) darkMapStyleUrl else lightMapStyleUrl }
+                _mapMarkers.update { if (isDark) darkMapMarkers else lightMapMarkers }
+            }
         }
     }
 
     CompositionLocalProvider(
         LocalStatefulColorScheme provides colorSchemeState,
-        LocalToggleTheme provides toggleTheme,
+        LocalToggleTheme provides viewModel::toggleTheme,
         LocalTheme provides theme,
     ) {
         MaterialTheme(
@@ -321,7 +318,7 @@ val MaterialTheme.signaturePink: Color
 
 val MaterialTheme.statefulColorScheme: StatefulColorScheme
     @Composable
-    get() = LocalStatefulColorScheme.current
+    get() = LocalStatefulColorScheme.current ?: StatefulColorScheme(colorScheme = this.colorScheme)
 
 @Composable
 fun StatefulColorScheme.surfaceColorAtElevation(
