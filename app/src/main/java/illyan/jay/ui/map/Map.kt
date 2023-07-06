@@ -131,7 +131,7 @@ fun MapboxMap(
     MapboxMapContainer(
         modifier = modifier,
         map = map,
-        onMapFullyLoaded = onMapFullyLoaded,
+        onMapFullyLoaded = { onMapFullyLoaded(map); map.getMapboxMap().loadStyleUri(initialStyleUri) },
         onCameraChanged = {
             cameraCenter = it.center
             cameraBearing = it.bearing
