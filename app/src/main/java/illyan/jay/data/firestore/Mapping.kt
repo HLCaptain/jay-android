@@ -91,6 +91,8 @@ fun FirestoreUserPreferences.toDomainModel(
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
+    theme = theme,
+    dynamicColorEnabled = dynamicColorEnabled,
     lastUpdate = lastUpdate.toZonedDateTime(),
     lastUpdateToAnalytics = lastUpdateToAnalytics?.toZonedDateTime(),
     shouldSync = true,
@@ -100,6 +102,8 @@ fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
+    theme = theme,
+    dynamicColorEnabled = dynamicColorEnabled,
     lastUpdate = lastUpdate.toTimestamp(),
     lastUpdateToAnalytics = lastUpdateToAnalytics?.toTimestamp(),
 )

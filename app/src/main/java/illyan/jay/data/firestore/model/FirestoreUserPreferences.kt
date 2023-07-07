@@ -21,11 +21,14 @@ package illyan.jay.data.firestore.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.domain.model.Theme
 
 data class FirestoreUserPreferences(
     @PropertyName(FieldAnalyticsEnabled) val analyticsEnabled: Boolean = DomainPreferences.Default.analyticsEnabled,
     @PropertyName(FieldFreeDriveAutoStart) val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
     @PropertyName(FieldShowAds) val showAds: Boolean = DomainPreferences.Default.showAds,
+    @PropertyName(FieldTheme) val theme: Theme = DomainPreferences.Default.theme,
+    @PropertyName(FieldDynamicColorEnabled) val dynamicColorEnabled: Boolean = DomainPreferences.Default.dynamicColorEnabled,
     @PropertyName(FieldLastUpdate) val lastUpdate: Timestamp = Timestamp.now(),
     @PropertyName(FieldLastUpdateToAnalytics) val lastUpdateToAnalytics: Timestamp? = null,
 ) {
@@ -33,6 +36,8 @@ data class FirestoreUserPreferences(
         const val FieldAnalyticsEnabled = "analyticsEnabled"
         const val FieldFreeDriveAutoStart = "freeDriveAutoStart"
         const val FieldLastUpdate = "lastUpdate"
+        const val FieldTheme = "theme"
+        const val FieldDynamicColorEnabled = "dynamicColorEnabled"
         const val FieldShowAds = "showAds"
         const val FieldLastUpdateToAnalytics = "lastUpdateToAnalytics"
     }
