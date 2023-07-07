@@ -18,32 +18,25 @@
 
 package illyan.jay.ui.theme
 
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import illyan.jay.data.datastore.datasource.AppSettingsDataSource
+import illyan.jay.domain.interactor.SettingsInteractor
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ThemeViewModel @Inject constructor(
-    private val appSettingsDataSource: AppSettingsDataSource
+    private val settingsInteractor: SettingsInteractor
 ) : ViewModel() {
-    val theme = appSettingsDataSource.appSettings.map { it.theme }
+    val theme = settingsInteractor.userPreferences.map { it?.theme }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    fun toggleTheme() {
-        viewModelScope.launch {
-            appSettingsDataSource.updateAppSettings {
-                it.copy(theme = when (it.theme) {
-                    Theme.System -> Theme.Light
-                    Theme.Light -> Theme.Dark
-                    Theme.Dark -> Theme.System
-                })
-            }
-        }
-    }
+    val canUseDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val dynamicColorEnabled = settingsInteractor.userPreferences
+        .map { it?.dynamicColorEnabled == true && canUseDynamicColor }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 }

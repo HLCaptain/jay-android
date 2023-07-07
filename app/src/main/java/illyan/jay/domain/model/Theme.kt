@@ -16,17 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.datastore.model
+package illyan.jay.domain.model
 
-import illyan.jay.domain.model.DomainPreferences
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class AppSettings(
-    val clientUUID: String? = null,
-    val preferences: DomainPreferences = DomainPreferences.Default,
-) {
-    companion object {
-        val default = AppSettings()
-    }
+enum class Theme {
+    Light, Dark, System
 }

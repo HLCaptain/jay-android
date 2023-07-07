@@ -19,7 +19,6 @@
 package illyan.jay.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.spring
@@ -50,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import illyan.jay.R
+import illyan.jay.domain.model.Theme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -216,20 +216,14 @@ private val _mapMarkers = MutableStateFlow<MapMarkers?>(null)
 val mapMarkers = _mapMarkers.asStateFlow()
 
 internal val LocalStatefulColorScheme = staticCompositionLocalOf<StatefulColorScheme?> { null }
-val LocalToggleTheme = compositionLocalOf { {} }
 val LocalTheme = compositionLocalOf<Theme?> { null }
-
-enum class Theme {
-    Light, Dark, System
-}
 
 @Composable
 fun JayTheme(
     viewModel: ThemeViewModel = hiltViewModel(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
     val isSystemInDarkTheme: Boolean = isSystemInDarkTheme()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
     val isDark by remember {
@@ -245,17 +239,20 @@ fun JayTheme(
     val context = LocalContext.current
     val colorScheme by remember {
         derivedStateOf {
-            when (theme) {
-                Theme.Dark -> DarkColors
-                Theme.Light -> LightColors
-                Theme.System -> {
-                    if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        if (isSystemInDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-                    } else {
-                        if (isSystemInDarkTheme) DarkColors else LightColors
-                    }
+            if (dynamicColorEnabled) {
+                when (theme) {
+                    Theme.Dark -> dynamicDarkColorScheme(context)
+                    Theme.Light -> dynamicLightColorScheme(context)
+                    Theme.System -> if (isSystemInDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                    null -> LightColors
                 }
-                null -> LightColors
+            } else {
+                when (theme) {
+                    Theme.Dark -> DarkColors
+                    Theme.Light -> LightColors
+                    Theme.System -> if (isSystemInDarkTheme) DarkColors else LightColors
+                    null -> LightColors
+                }
             }
         }
     }
@@ -299,7 +296,6 @@ fun JayTheme(
 
     CompositionLocalProvider(
         LocalStatefulColorScheme provides colorSchemeState,
-        LocalToggleTheme provides viewModel::toggleTheme,
         LocalTheme provides theme,
     ) {
         MaterialTheme(

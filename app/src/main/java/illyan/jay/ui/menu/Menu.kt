@@ -76,6 +76,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
 import illyan.jay.R
+import illyan.jay.domain.model.Theme
 import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.destinations.FreeDriveDestination
 import illyan.jay.ui.destinations.SessionsDestination
@@ -84,8 +85,6 @@ import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.LocalTheme
-import illyan.jay.ui.theme.LocalToggleTheme
-import illyan.jay.ui.theme.Theme
 import illyan.jay.ui.theme.statefulColorScheme
 import illyan.jay.ui.theme.surfaceColorAtElevation
 import kotlinx.coroutines.CoroutineScope
@@ -119,7 +118,6 @@ fun MenuScreen(
     viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    val toggleTheme = LocalToggleTheme.current
     BackPressHandler {
         Timber.d("Intercepted back press!")
         (context as Activity).moveTaskToBack(false)
@@ -137,9 +135,7 @@ fun MenuScreen(
             viewModel.onClickSessionsButton()
             destinationsNavigator.navigate(SessionsDestination)
         },
-        onToggleTheme = {
-            toggleTheme()
-        }
+        onToggleTheme = viewModel::toggleTheme,
     )
 }
 

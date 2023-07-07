@@ -23,6 +23,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
+import illyan.jay.domain.model.Theme
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.settings.user.model.toUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,6 +88,14 @@ class UserSettingsViewModel @Inject constructor(
 
     fun setAdVisibility(visible: Boolean) {
         settingsInteractor.showAds = visible
+    }
+
+    fun setTheme(theme: Theme) {
+        settingsInteractor.theme = theme
+    }
+
+    fun setDynamicColorEnabled(enabled: Boolean) {
+        settingsInteractor.dynamicColorEnabled = enabled
     }
 
     companion object {

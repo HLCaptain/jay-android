@@ -76,7 +76,7 @@ import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
 import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.settings.user.ShowAdsSetting
+import illyan.jay.ui.settings.user.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
 import illyan.jay.ui.theme.statefulColorScheme
@@ -268,9 +268,10 @@ fun AboutAdSetting(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        ShowAdsSetting(
-            showAds = isShowingAd,
-            setAdVisibility = setAdVisibility
+        BooleanSetting(
+            settingName = stringResource(R.string.show_ads),
+            setValue = setAdVisibility,
+            value = isShowingAd
         )
         AnimatedVisibility(visible = !isShowingAd) {
             Card(

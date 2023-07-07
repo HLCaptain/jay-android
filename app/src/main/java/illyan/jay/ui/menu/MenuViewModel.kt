@@ -19,16 +19,22 @@
 package illyan.jay.ui.menu
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.logEvent
 import com.mapbox.search.result.SearchResultType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import illyan.jay.domain.interactor.SettingsInteractor
+import illyan.jay.domain.model.Theme
 import illyan.jay.ui.home.sendBroadcast
 import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.sheet.SheetViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -36,6 +42,7 @@ import javax.inject.Inject
 class MenuViewModel @Inject constructor(
     private val analytics: FirebaseAnalytics,
     private val localBroadcastManager: LocalBroadcastManager,
+    private val settingsInteractor: SettingsInteractor,
 ) : ViewModel() {
     private fun onClickButton(buttonName: String) {
         Timber.i("Clicked \"$buttonName\" button")
@@ -49,6 +56,18 @@ class MenuViewModel @Inject constructor(
 
     fun onClickSessionsButton() {
         onClickButton("Sessions")
+    }
+
+    fun toggleTheme() {
+        viewModelScope.launch {
+            settingsInteractor.userPreferences.map { it?.theme }.first()?.let {
+                settingsInteractor.theme = when (it) {
+                    Theme.System -> Theme.Light
+                    Theme.Light -> Theme.Dark
+                    Theme.Dark -> Theme.System
+                }
+            }
+        }
     }
 
     fun onClickNavigateToBmeButton(localizedNameOfBme: String) {

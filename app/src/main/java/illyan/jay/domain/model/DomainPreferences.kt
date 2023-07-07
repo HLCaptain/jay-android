@@ -30,6 +30,8 @@ data class DomainPreferences(
     val analyticsEnabled: Boolean = false,
     val freeDriveAutoStart: Boolean = false,
     val showAds: Boolean = false,
+    val theme: Theme = Theme.System,
+    val dynamicColorEnabled: Boolean = true,
     @Serializable(with = ZonedDateTimeSerializer::class)
     val lastUpdate: ZonedDateTime = ZonedDateTime.now(),
     @Serializable(with = ZonedDateTimeNullableSerializer::class)

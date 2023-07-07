@@ -22,6 +22,7 @@ import illyan.jay.data.room.dao.PreferencesDao
 import illyan.jay.data.room.toDomainModel
 import illyan.jay.data.room.toRoomModel
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.domain.model.Theme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
@@ -89,6 +90,16 @@ class PreferencesRoomDataSource @Inject constructor(
     fun setShowAds(userUUID: String, showAds: Boolean) {
         logSet("showAds", showAds, userUUID)
         preferencesDao.setShowAds(userUUID, showAds)
+    }
+
+    fun setTheme(userUUID: String, theme: Theme) {
+        logSet("theme", theme, userUUID)
+        preferencesDao.setTheme(userUUID, theme)
+    }
+
+    fun setDynamicColorEnabled(userUUID: String, dynamicColorEnabled: Boolean) {
+        logSet("dynamicColorEnabled", dynamicColorEnabled, userUUID)
+        preferencesDao.setDynamicColorEnabled(userUUID, dynamicColorEnabled)
     }
 
     private fun logSet(name: String, value: Any, userUUID: String) {

@@ -24,6 +24,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import illyan.jay.data.room.model.RoomPreferences
+import illyan.jay.domain.model.Theme
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
@@ -49,6 +50,12 @@ interface PreferencesDao {
 
     @Query("UPDATE preferences SET showAds = :showAds, lastUpdate = :lastUpdate WHERE userUUID IS :userUUID")
     fun setShowAds(userUUID: String, showAds: Boolean, lastUpdate: Long = Instant.now().toEpochMilli())
+
+    @Query("UPDATE preferences SET theme = :theme, lastUpdate = :lastUpdate WHERE userUUID IS :userUUID")
+    fun setTheme(userUUID: String, theme: Theme, lastUpdate: Long = Instant.now().toEpochMilli())
+
+    @Query("UPDATE preferences SET dynamicColorEnabled = :dynamicColorEnabled, lastUpdate = :lastUpdate WHERE userUUID IS :userUUID")
+    fun setDynamicColorEnabled(userUUID: String, dynamicColorEnabled: Boolean, lastUpdate: Long = Instant.now().toEpochMilli())
 
     @Query("UPDATE preferences SET shouldSync = :shouldSync WHERE userUUID IS :userUUID")
     fun setShouldSync(userUUID: String, shouldSync: Boolean)
