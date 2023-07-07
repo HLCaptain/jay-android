@@ -196,7 +196,8 @@ fun LibraryItem(
                             color = AlertDialogDefaults.titleContentColor,
                         )
                         Crossfade(
-                            targetState = library.repositoryUrl to library.moreInfoUrl
+                            targetState = library.repositoryUrl to library.moreInfoUrl,
+                            label = "Library URLs"
                         ) { repositoryAndMoreInfoUrls ->
                             val shownText = repositoryAndMoreInfoUrls.run {
                                 // Show Repo URL, then More Info URL, then null

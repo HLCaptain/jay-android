@@ -203,9 +203,9 @@ fun animateColorScheme(
     return rememberedStatefulColorScheme
 }
 
-private const val lightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
-private const val darkMapStyleUrl = "mapbox://styles/illyan/cl3kg2wpq001414muhgrpj15u"
-private val _mapStyleUrl = MutableStateFlow(lightMapStyleUrl)
+private const val LightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
+private const val DarkMapStyleUrl = "mapbox://styles/illyan/cl3kg2wpq001414muhgrpj15u"
+private val _mapStyleUrl = MutableStateFlow(LightMapStyleUrl)
 val mapStyleUrl = _mapStyleUrl.asStateFlow()
 
 private lateinit var darkMapMarkers: MapMarkers
@@ -288,7 +288,7 @@ fun JayTheme(
                     color = Color.Transparent,
                     darkIcons = !isDark
                 )
-                _mapStyleUrl.update { if (isDark) darkMapStyleUrl else lightMapStyleUrl }
+                _mapStyleUrl.update { if (isDark) DarkMapStyleUrl else LightMapStyleUrl }
                 _mapMarkers.update { if (isDark) darkMapMarkers else lightMapMarkers }
             }
         }

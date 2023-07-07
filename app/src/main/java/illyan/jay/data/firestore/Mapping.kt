@@ -108,7 +108,6 @@ fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
     lastUpdateToAnalytics = lastUpdateToAnalytics?.toTimestamp(),
 )
 
-@OptIn(ExperimentalSerializationApi::class)
 fun List<DomainLocation>.toPath(
     sessionUUID: String,
     ownerUUID: String
@@ -143,7 +142,6 @@ fun List<DomainLocation>.toPath(
     return path
 }
 
-@OptIn(ExperimentalSerializationApi::class)
 private fun testCompressions(domainLocations: List<DomainLocation>) {
     // Size comparison between raw location data path and compressed data structures.
 

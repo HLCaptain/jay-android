@@ -231,7 +231,10 @@ fun MenuItemCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Crossfade(targetState = icon) {
+            Crossfade(
+                targetState = icon,
+                label = "Menu item icon",
+            ) {
                 if (it != null) {
                     Icon(
                         modifier = Modifier.padding(

@@ -546,7 +546,10 @@ fun UserInfo(
             text = infoName,
             style = nameStyle
         )
-        Crossfade(targetState = show) {
+        Crossfade(
+            targetState = show,
+            label = "User info"
+        ) {
             Text(
                 text = if (it) info else stringResource(R.string.hidden_field_string),
                 style = style

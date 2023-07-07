@@ -266,7 +266,10 @@ fun LazyListScope.suggestionItems(
         list = items,
         emptyListPlaceholder = {
             AnimatedVisibility(visible = isLoadingSuggestions || items.isNotEmpty()) {
-                Crossfade(targetState = isLoadingSuggestions) {
+                Crossfade(
+                    targetState = isLoadingSuggestions,
+                    label = "Suggestion initial loading animation",
+                ) {
                     if (it) {
                         SearchCard(
                             shape = RoundedCornerShape(SearchItemsCornerRadius),
@@ -387,7 +390,10 @@ fun FavoriteButton(
         modifier = modifier.padding(horizontal = 4.dp),
         onClick = onToggleFavorite
     ) {
-        Crossfade(targetState = isFavorite) {
+        Crossfade(
+            targetState = isFavorite,
+            label = "Favorite button animation",
+        ) {
             Icon(
                 modifier = Modifier.size(32.dp),
                 imageVector = if (it) {

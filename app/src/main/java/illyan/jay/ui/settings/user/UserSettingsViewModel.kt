@@ -39,7 +39,7 @@ import javax.inject.Inject
 @HiltViewModel
 class UserSettingsViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
-    private val authInteractor: AuthInteractor
+    authInteractor: AuthInteractor
 ) : ViewModel() {
 
     private val _showAnalyticsRequestDialog = MutableStateFlow(false)

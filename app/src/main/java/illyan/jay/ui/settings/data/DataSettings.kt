@@ -180,7 +180,10 @@ fun DataSettingsButtons(
         verticalAlignment = Alignment.Bottom
     ) {
         val byteString = stringResource(R.string.bytes)
-        Crossfade(targetState = cachedDataSizeInBytes) {
+        Crossfade(
+            targetState = cachedDataSizeInBytes,
+            label = "Cached data size"
+        ) {
             when (it != null) {
                 true -> {
                     Row(

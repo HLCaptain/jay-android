@@ -155,7 +155,8 @@ fun UserSettingsDialogContent(
 ) {
     Crossfade(
         modifier = modifier.animateContentSize(),
-        targetState = showAnalyticsRequestDialog
+        targetState = showAnalyticsRequestDialog,
+        label = "User Settings Dialog Content",
     ) {
         if (it) {
             AnalyticsRequestDialogContent(
@@ -284,7 +285,10 @@ fun UserSettingsTitle(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.Top
         ) {
-            Crossfade(targetState = preferences != null) {
+            Crossfade(
+                targetState = preferences != null,
+                label = "User Settings Title",
+            ) {
                 if (it && preferences != null) {
                     Column(
                         horizontalAlignment = Alignment.End
@@ -304,7 +308,10 @@ fun UserSettingsTitle(
 private fun SyncPreferencesLabel(
     arePreferencesSynced: Boolean,
 ) {
-    Crossfade(targetState = arePreferencesSynced) {
+    Crossfade(
+        targetState = arePreferencesSynced,
+        label = "Sync Preferences Label",
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
@@ -484,7 +491,8 @@ fun SettingLabel(
         settingIndicator = {
             Crossfade(
                 modifier = Modifier.animateContentSize(),
-                targetState = settingText
+                targetState = settingText,
+                label = "Setting label text loading indicator",
             ) {
                 if (it != null) {
                     Text(
@@ -534,7 +542,8 @@ fun UserSettingsScreen(
 ) {
     Crossfade(
         modifier = modifier,
-        targetState = preferences != null
+        targetState = preferences != null,
+        label = "User Settings Screen"
     ) {
         if (it && preferences != null) {
             LazyColumn {
@@ -565,15 +574,15 @@ fun UserSettingsScreen(
                         selectValue = onThemeChange,
                         selectedValue = preferences.theme,
                         values = Theme.values().toList(),
-                        getValueName = {
-                            when (it) {
+                        getValueName = { theme ->
+                            when (theme) {
                                 Theme.System -> stringResource(R.string.system)
                                 Theme.Light -> stringResource(R.string.light)
                                 Theme.Dark -> stringResource(R.string.dark)
                             }
                         },
-                        getValueLeadingIcon = {
-                            when (it) {
+                        getValueLeadingIcon = { theme ->
+                            when (theme) {
                                 Theme.System -> Icons.Rounded.Settings
                                 Theme.Light -> Icons.Rounded.LightMode
                                 Theme.Dark -> Icons.Rounded.DarkMode
@@ -623,7 +632,8 @@ fun BooleanSetting(
         ) {
             Crossfade(
                 modifier = Modifier.animateContentSize(),
-                targetState = value
+                targetState = value,
+                label = "Boolean setting text"
             ) { enabled ->
                 Text(
                     text = if (enabled) enabledText else disabledText,
@@ -667,7 +677,8 @@ fun <T : Any> DropdownSetting(
         ) {
             Crossfade(
                 modifier = Modifier.animateContentSize(),
-                targetState = selectedValue
+                targetState = selectedValue,
+                label = "Dropdown setting text",
             ) { state ->
                 state?.let {
                     Text(

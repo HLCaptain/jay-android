@@ -16,8 +16,6 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */ // ktlint-disable filename
 
-@file:OptIn(ExperimentalMaterialApi::class)
-
 package illyan.jay.util
 
 import android.os.SystemClock
@@ -25,7 +23,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed

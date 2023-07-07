@@ -31,4 +31,4 @@ data class Place(
     val latitude: Double
 ) : Parcelable
 
-fun Place.toPoint() = Point.fromLngLat(longitude, latitude)
+fun Place.toPoint(): Point = Point.fromLngLat(longitude, latitude)

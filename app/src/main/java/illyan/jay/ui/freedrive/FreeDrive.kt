@@ -69,7 +69,7 @@ import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.statefulColorScheme
 import illyan.jay.util.plus
 
-private const val paddingRatio = 0.25f
+private const val PaddingRatio = 0.25f
 
 val DefaultScreenOnSheetPadding = PaddingValues(
     start = MenuItemPadding * 2,
@@ -82,7 +82,7 @@ fun calculatePaddingOffset(): PaddingValues {
     val layoutHeight = absoluteBottom.value - absoluteTop.value
     val freeSpace = layoutHeight - cameraPadding.value.calculateBottomPadding()
     return PaddingValues(
-        bottom = freeSpace * paddingRatio
+        bottom = freeSpace * PaddingRatio
     )
 }
 
@@ -174,7 +174,8 @@ fun FreeDriveScreenWithPermission(
         ) {
             Crossfade(
                 modifier = Modifier.animateContentSize(),
-                targetState = isServiceRunning
+                targetState = isServiceRunning,
+                label = "Free drive button"
             ) {
                 Text(
                     modifier = Modifier.animateContentSize(),
