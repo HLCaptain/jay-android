@@ -30,8 +30,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DataSettingsViewModel @Inject constructor(
-    private val authInteractor: AuthInteractor,
     private val userInteractor: UserInteractor,
+    authInteractor: AuthInteractor,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
 

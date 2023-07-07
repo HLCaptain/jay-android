@@ -1010,7 +1010,8 @@ private fun SheetNavHost(
         animationSpec = SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMedium
-        )
+        ),
+        label = "Sheet fade in/out"
     )
     val density = LocalDensity.current.density
     DestinationsNavHost(
@@ -1072,14 +1073,16 @@ private fun SearchNavHost(
         animationSpec = SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessVeryLow
-        )
+        ),
+        label = "Search screen fade in/out"
     )
     val searchFraction by animateFloatAsState(
         targetValue = if (isSearching) {
             fullScreenFraction
         } else {
             0f
-        }
+        },
+        label = "Search screen expand/collapse"
     )
     DestinationsNavHost(
         navGraph = NavGraphs.search,

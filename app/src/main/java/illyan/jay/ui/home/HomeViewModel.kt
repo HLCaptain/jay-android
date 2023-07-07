@@ -45,9 +45,9 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val mapboxInteractor: MapboxInteractor,
-    private val authInteractor: AuthInteractor,
     private val sessionInteractor: SessionInteractor,
-    private val performance: FirebasePerformance,
+    authInteractor: AuthInteractor,
+    performance: FirebasePerformance,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
 

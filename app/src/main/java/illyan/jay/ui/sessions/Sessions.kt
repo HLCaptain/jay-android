@@ -677,7 +677,8 @@ fun SessionCard(
                                     ) {
                                         Crossfade(
                                             modifier = Modifier.animateContentSize(),
-                                            targetState = session?.startLocationName
+                                            targetState = session?.startLocationName,
+                                            label = "Start location name",
                                         ) {
                                             Text(
                                                 text = it ?: stringResource(R.string.unknown),
@@ -691,7 +692,8 @@ fun SessionCard(
                                         )
                                         Crossfade(
                                             modifier = Modifier.animateContentSize(),
-                                            targetState = (session?.endDateTime == null) to session?.endLocationName
+                                            targetState = (session?.endDateTime == null) to session?.endLocationName,
+                                            label = "End location name",
                                         ) {
                                             if (it.first) {
                                                 Icon(

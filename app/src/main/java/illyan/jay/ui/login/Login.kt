@@ -80,7 +80,8 @@ fun LoginDialogContent(
 ) {
     Crossfade(
         modifier = modifier,
-        targetState = isUserSigningIn
+        targetState = isUserSigningIn,
+        label = "Login Dialog Content"
     ) {
         if (it) {
             JayDialogContent(

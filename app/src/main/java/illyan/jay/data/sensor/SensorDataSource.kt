@@ -107,5 +107,5 @@ class SensorDataSource @Inject constructor(
     fun removeLocationUpdates(callback: LocationCallback) =
         fusedLocationProviderClient.removeLocationUpdates(callback)
 
-    fun getSensors(type: Int = Sensor.TYPE_ALL) = sensorManager.getSensorList(type)
+    fun getSensors(type: Int = Sensor.TYPE_ALL): List<Sensor> = sensorManager.getSensorList(type)
 }

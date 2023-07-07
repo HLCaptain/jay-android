@@ -45,6 +45,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -224,8 +225,8 @@ fun SessionScreen(
         viewModel.load(sessionUUID)
     }
     val gradientFilter by viewModel.gradientFilter.collectAsStateWithLifecycle()
-    var previousOffset by rememberSaveable { mutableStateOf<Float?>(null) }
-    var currentOffset by rememberSaveable { mutableStateOf(sheetState.requireOffset()) }
+    var previousOffset by rememberSaveable { mutableFloatStateOf(0f) }
+    var currentOffset by rememberSaveable { mutableFloatStateOf(sheetState.requireOffset()) }
     var noMoreOffsetChanges by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(sheetState.requireOffset()) {
         previousOffset = currentOffset
@@ -236,7 +237,7 @@ fun SessionScreen(
     val sheetHeightNotSet by remember {
         derivedStateOf {
             val isAnimationRunning = sheetState.progress != 1f
-            val almostReachedTargetHeight = abs(currentOffset - (previousOffset ?: 0f)) < 2f
+            val almostReachedTargetHeight = abs(currentOffset - previousOffset) < 2f
             isAnimationRunning || !almostReachedTargetHeight || !noMoreOffsetChanges
         }
     }
@@ -384,7 +385,8 @@ fun SessionDetailsScreen(
             ) {
                 Crossfade(
                     modifier = Modifier.animateContentSize(),
-                    targetState = session?.startLocationName
+                    targetState = session?.startLocationName,
+                    label = "Start location appear animation",
                 ) {
                     Text(
                         text = it ?: stringResource(R.string.unknown),
@@ -398,7 +400,8 @@ fun SessionDetailsScreen(
                 )
                 Crossfade(
                     modifier = Modifier.animateContentSize(),
-                    targetState = (session?.endDateTime == null) to session?.endLocationName
+                    targetState = (session?.endDateTime == null) to session?.endLocationName,
+                    label = "End location appear animation",
                 ) {
                     if (it.first) {
                         Icon(
@@ -503,7 +506,7 @@ fun SessionDetailsScreen(
             divider = {},
             selectedTabIndex = selectedTabIndex,
             indicator = {
-                TabRowDefaults.Indicator(
+                TabRowDefaults.SecondaryIndicator(
                     Modifier
                         .tabIndicatorOffset(it[selectedTabIndex])
                         .padding(horizontal = MenuItemPadding)
@@ -579,4 +582,4 @@ private fun SessionDetailsScreenPreview(
     }
 }
 
-fun LatLng.toMapboxPoint() = Point.fromLngLat(longitude, latitude)
+fun LatLng.toMapboxPoint(): Point = Point.fromLngLat(longitude, latitude)

@@ -54,8 +54,8 @@ import kotlin.coroutines.cancellation.CancellationException
 class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
-    private val authInteractor: AuthInteractor,
-    private val appSettingsDataSource: AppSettingsDataSource,
+    authInteractor: AuthInteractor,
+    appSettingsDataSource: AppSettingsDataSource,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
     private val sessionStateFlows = mutableMapOf<String, MutableStateFlow<UiSession?>>()

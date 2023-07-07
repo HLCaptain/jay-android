@@ -311,7 +311,8 @@ fun AboutAdScreen(
             targetValue = if (isAdLoaded) 1f else 0f,
             animationSpec = spring(
                 stiffness = Spring.StiffnessLow
-            )
+            ),
+            label = "Ad Fade In"
         )
         AndroidView(
             modifier = Modifier

@@ -34,7 +34,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AboutViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
-    private val remoteConfig: FirebaseRemoteConfig,
+    remoteConfig: FirebaseRemoteConfig,
 ) : ViewModel() {
 
     val showAds = settingsInteractor.userPreferences.map {

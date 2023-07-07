@@ -30,7 +30,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ThemeViewModel @Inject constructor(
-    private val settingsInteractor: SettingsInteractor
+    settingsInteractor: SettingsInteractor
 ) : ViewModel() {
     val theme = settingsInteractor.userPreferences.map { it?.theme }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)

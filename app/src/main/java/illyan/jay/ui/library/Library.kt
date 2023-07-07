@@ -160,7 +160,8 @@ fun LibraryScreen(
         }
         Crossfade(
             modifier = Modifier.animateContentSize(),
-            targetState = library.license?.url
+            targetState = library.license?.url,
+            label = "License"
         ) {
             if (it != null) {
                 MenuButton(
