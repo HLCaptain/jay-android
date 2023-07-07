@@ -698,16 +698,11 @@ fun <T : Any> DropdownSetting(
             values.forEach { value ->
                 val leadingIcon = remember { getValueLeadingIcon(value) }
                 val leadingComposable = @Composable {
-                    IconToggleButton(
-                        checked = selectedValue == value,
-                        onCheckedChange = { selectValue(value) }
-                    ) {
-                        leadingIcon?.let {
-                            Icon(
-                                imageVector = it,
-                                contentDescription = ""
-                            )
-                        }
+                    leadingIcon?.let {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = ""
+                        )
                     }
                 }
                 val trailingIcon = remember {
@@ -715,33 +710,22 @@ fun <T : Any> DropdownSetting(
                     if (value == selectedValue) Icons.Rounded.Check else icon
                 }
                 val trailingComposable = @Composable {
-                    IconToggleButton(
-                        checked = selectedValue == value,
-                        onCheckedChange = { selectValue(value); isDropdownOpen = false }
-                    ) {
-                        trailingIcon?.let {
-                            Icon(
-                                imageVector = it,
-                                contentDescription = ""
-                            )
-                        }
+                    trailingIcon?.let {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = ""
+                        )
                     }
                 }
                 DropdownMenuItem(
                     modifier = if (value == selectedValue) {
-                        Modifier.background(MaterialTheme.statefulColorScheme.surfaceColorAtElevation(elevation = 2.dp))
+                        Modifier.background(MaterialTheme.statefulColorScheme.surfaceColorAtElevation(elevation = 1.dp))
                     } else {
                         Modifier
                     },
-                    text = {
-                        Text(
-                            text = getValueName(value),
-                            style = textStyle,
-                            color = MaterialTheme.statefulColorScheme.onSurface
-                        )
-                    },
-                    leadingIcon = if (leadingIcon != null) leadingComposable else null,
-                    trailingIcon = if (trailingIcon != null) trailingComposable else null,
+                    text = { Text(text = getValueName(value)) },
+                    leadingIcon = (if (leadingIcon != null) leadingComposable else null) as? @Composable (() -> Unit),
+                    trailingIcon = (if (trailingIcon != null) trailingComposable else null) as? @Composable (() -> Unit),
                     onClick = { selectValue(value); isDropdownOpen = false },
                     colors = if (value == selectedValue) {
                         MenuDefaults.itemColors(
