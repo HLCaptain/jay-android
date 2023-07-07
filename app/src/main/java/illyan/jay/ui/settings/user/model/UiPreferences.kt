@@ -18,7 +18,9 @@
 
 package illyan.jay.ui.settings.user.model
 
+import android.os.Build
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.domain.model.Theme
 import java.time.ZonedDateTime
 
 data class UiPreferences(
@@ -26,6 +28,9 @@ data class UiPreferences(
     val analyticsEnabled: Boolean = DomainPreferences.Default.analyticsEnabled,
     val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
     val showAds: Boolean = DomainPreferences.Default.showAds,
+    val theme: Theme = DomainPreferences.Default.theme,
+    val dynamicColorEnabled: Boolean = DomainPreferences.Default.dynamicColorEnabled,
+    val canUseDynamicColor: Boolean = false,
     val lastUpdate: ZonedDateTime = DomainPreferences.Default.lastUpdate,
     val lastUpdateToAnalytics: ZonedDateTime? = null,
     val clientUUID: String? = null,
@@ -38,6 +43,9 @@ fun DomainPreferences.toUiModel(
     analyticsEnabled = analyticsEnabled,
     freeDriveAutoStart = freeDriveAutoStart,
     showAds = showAds,
+    theme = theme,
+    dynamicColorEnabled = dynamicColorEnabled,
+    canUseDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
     lastUpdate = lastUpdate,
     lastUpdateToAnalytics = lastUpdateToAnalytics,
     clientUUID = clientUUID,

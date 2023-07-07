@@ -87,7 +87,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -167,6 +166,8 @@ import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapStyleUrl
+import illyan.jay.ui.theme.statefulColorScheme
+import illyan.jay.ui.theme.surfaceColorAtElevation
 import illyan.jay.util.extraOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -597,7 +598,7 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(MaterialTheme.statefulColorScheme.background)
                     .padding(bottom = SearchBarHeight - RoundedCornerRadius / 4f)
             ) {
                 val initialLocationLoaded by viewModel.initialLocationLoaded.collectAsStateWithLifecycle()
@@ -681,7 +682,7 @@ fun HomeScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.background)
+                                    .background(MaterialTheme.statefulColorScheme.background)
                             )
                         }
                         val styleUrl by mapStyleUrl.collectAsStateWithLifecycle()
@@ -725,7 +726,7 @@ fun HomeScreen(
                                     }
                                 }
                             },
-                            styleUri = { styleUrl },
+                            initialStyleUri = styleUrl,
                         )
                     }
                 }
@@ -788,8 +789,8 @@ fun BottomSearchBar(
         pressedElevation = elevation
     )
     val cardColors = CardDefaults.elevatedCardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface
+        containerColor = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(2.dp),
+        contentColor = MaterialTheme.statefulColorScheme.onSurface
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -935,7 +936,7 @@ fun BottomSheetScreen(
 ) {
     ConstraintLayout(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp))
+            .background(MaterialTheme.statefulColorScheme.surfaceColorAtElevation(0.dp))
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
                 _sheetContentHeight.update { (placeable.height / density).dp }
@@ -960,7 +961,7 @@ fun BottomSheetScreen(
                         modifier = Modifier
                             .width(24.dp)
                             .height(4.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = MaterialTheme.statefulColorScheme.surfaceVariant,
                         shape = RoundedCornerShape(4.dp)
                     ) {}
                 }

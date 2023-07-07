@@ -42,7 +42,7 @@ import illyan.jay.data.room.model.RoomSession
         RoomSensorEvent::class,
         RoomPreferences::class,
     ],
-    version = 33,
+    version = 35,
     exportSchema = false
 )
 abstract class JayDatabase : RoomDatabase() {

@@ -21,6 +21,7 @@ package illyan.jay.data.room.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.domain.model.Theme
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -33,6 +34,8 @@ data class RoomPreferences(
     val freeDriveAutoStart: Boolean = DomainPreferences.Default.freeDriveAutoStart,
     val analyticsEnabled: Boolean = DomainPreferences.Default.analyticsEnabled,
     val showAds: Boolean = DomainPreferences.Default.showAds,
+    val theme: Theme = DomainPreferences.Default.theme,
+    val dynamicColorEnabled: Boolean = DomainPreferences.Default.dynamicColorEnabled,
     val lastUpdate: Long = ZonedDateTime.now().toInstant().toEpochMilli(),
     val lastUpdateToAnalytics: Long? = null,
     val shouldSync: Boolean = DomainPreferences.Default.shouldSync,

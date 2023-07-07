@@ -101,6 +101,7 @@ import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.mapMarkers
 import illyan.jay.ui.theme.signatureBlue
 import illyan.jay.ui.theme.signaturePink
+import illyan.jay.ui.theme.statefulColorScheme
 import illyan.jay.util.format
 import kotlinx.coroutines.delay
 import timber.log.Timber
@@ -388,12 +389,12 @@ fun SessionDetailsScreen(
                     Text(
                         text = it ?: stringResource(R.string.unknown),
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.statefulColorScheme.onSurface,
                     )
                 }
                 Icon(
                     imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.statefulColorScheme.onSurface,
                 )
                 Crossfade(
                     modifier = Modifier.animateContentSize(),
@@ -402,13 +403,13 @@ fun SessionDetailsScreen(
                     if (it.first) {
                         Icon(
                             imageVector = Icons.Rounded.MoreHoriz, contentDescription = "",
-                            tint = MaterialTheme.colorScheme.onSurface,
+                            tint = MaterialTheme.statefulColorScheme.onSurface,
                         )
                     } else {
                         Text(
                             text = it.second ?: stringResource(R.string.unknown),
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MaterialTheme.statefulColorScheme.onSurface,
                         )
                     }
                 }
@@ -550,12 +551,12 @@ fun SessionDetailsList(
                     ) {
                         Text(
                             text = it.first,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MaterialTheme.statefulColorScheme.onSurface,
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
                             text = it.second ?: stringResource(R.string.unknown),
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MaterialTheme.statefulColorScheme.onSurface,
                         )
                     }
                 }

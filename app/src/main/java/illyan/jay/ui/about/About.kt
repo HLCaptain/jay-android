@@ -76,9 +76,10 @@ import illyan.jay.ui.components.PreviewThemesScreensFonts
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
 import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
-import illyan.jay.ui.settings.user.ShowAdsSetting
+import illyan.jay.ui.settings.user.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
+import illyan.jay.ui.theme.statefulColorScheme
 import illyan.jay.util.TestAdUnitIds
 
 @ProfileNavGraph
@@ -239,7 +240,7 @@ fun AboutButtons() {
             Text(
                 text = "${BuildConfig.VERSION_NAME} v${BuildConfig.VERSION_CODE}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.statefulColorScheme.onSurface,
             )
         }
         Button(
@@ -267,15 +268,16 @@ fun AboutAdSetting(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        ShowAdsSetting(
-            showAds = isShowingAd,
-            setAdVisibility = setAdVisibility
+        BooleanSetting(
+            settingName = stringResource(R.string.show_ads),
+            setValue = setAdVisibility,
+            value = isShowingAd
         )
         AnimatedVisibility(visible = !isShowingAd) {
             Card(
                 modifier = Modifier.padding(bottom = 8.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    containerColor = MaterialTheme.statefulColorScheme.tertiaryContainer
                 )
             ) {
                 Row(

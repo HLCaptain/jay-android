@@ -21,29 +21,41 @@ package illyan.jay.ui.settings.user
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,6 +70,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -71,6 +84,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
+import illyan.jay.domain.model.Theme
 import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
@@ -84,6 +98,8 @@ import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.theme.statefulColorScheme
+import illyan.jay.ui.theme.surfaceColorAtElevation
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -112,9 +128,11 @@ fun UserSettingsDialogScreen(
         shouldSyncPreferences = shouldSyncPreferences,
         showAnalyticsRequestDialog = showAnalyticsRequestDialog,
         onShouldSyncChanged = viewModel::setPreferencesSync,
+        onThemeChange = viewModel::setTheme,
         setAnalytics = viewModel::setAnalytics,
         setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
         setAdVisibility = viewModel::setAdVisibility,
+        setDynamicColorEnabled = viewModel::setDynamicColorEnabled,
         onDeleteUserData = { destinationsNavigator.navigate(DataSettingsDialogScreenDestination) },
     )
 }
@@ -131,7 +149,9 @@ fun UserSettingsDialogContent(
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
     setAdVisibility: (Boolean) -> Unit = {},
-    onDeleteUserData: () -> Unit = {}
+    setDynamicColorEnabled: (Boolean) -> Unit = {},
+    onDeleteUserData: () -> Unit = {},
+    onThemeChange: (Theme) -> Unit = {},
 ) {
     Crossfade(
         modifier = modifier.animateContentSize(),
@@ -155,7 +175,9 @@ fun UserSettingsDialogContent(
                         preferences = preferences,
                         setAnalytics = setAnalytics,
                         setFreeDriveAutoStart = setFreeDriveAutoStart,
-                        setAdVisibility = setAdVisibility
+                        setAdVisibility = setAdVisibility,
+                        setDynamicColorEnabled = setDynamicColorEnabled,
+                        onThemeChange = onThemeChange,
                     )
                 },
                 buttons = {
@@ -291,7 +313,7 @@ private fun SyncPreferencesLabel(
                 Icon(
                     imageVector = Icons.Rounded.Done,
                     contentDescription = "",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.statefulColorScheme.primary
                 )
                 Text(
                     text = stringResource(R.string.synced),
@@ -301,7 +323,7 @@ private fun SyncPreferencesLabel(
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = "",
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.statefulColorScheme.error
                 )
                 Text(
                     text = stringResource(R.string.not_synced),
@@ -348,7 +370,7 @@ private fun SyncPreferencesButton(
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            disabledContentColor = MaterialTheme.statefulColorScheme.onSurfaceVariant
         ),
         enabled = canSyncPreferences,
         onClick = { onShouldSyncChanged(!shouldSyncPreferences) }
@@ -507,6 +529,8 @@ fun UserSettingsScreen(
     setAnalytics: (Boolean) -> Unit = {},
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
     setAdVisibility: (Boolean) -> Unit = {},
+    setDynamicColorEnabled: (Boolean) -> Unit = {},
+    onThemeChange: (Theme) -> Unit = {},
 ) {
     Crossfade(
         modifier = modifier,
@@ -515,17 +539,56 @@ fun UserSettingsScreen(
         if (it && preferences != null) {
             LazyColumn {
                 item {
-                    AnalyticsSetting(
-                        analyticsEnabled = preferences.analyticsEnabled,
-                        setAnalytics = setAnalytics,
+                    BooleanSetting(
+                        settingName = stringResource(R.string.analytics),
+                        setValue = setAnalytics,
+                        value = preferences.analyticsEnabled
                     )
-                    FreeDriveAutoStartSetting(
-                        freeDriveAutoStart = preferences.freeDriveAutoStart,
-                        setFreeDriveAutoStart = setFreeDriveAutoStart,
+                }
+                item {
+                    BooleanSetting(
+                        settingName = stringResource(R.string.free_drive_auto_start),
+                        setValue = setFreeDriveAutoStart,
+                        value = preferences.freeDriveAutoStart
                     )
-                    ShowAdsSetting(
-                        showAds = preferences.showAds,
-                        setAdVisibility = setAdVisibility,
+                }
+                item {
+                    BooleanSetting(
+                        settingName = stringResource(R.string.show_ads),
+                        setValue = setAdVisibility,
+                        value = preferences.showAds
+                    )
+                }
+                item {
+                    DropdownSetting(
+                        settingName = stringResource(R.string.theme),
+                        selectValue = onThemeChange,
+                        selectedValue = preferences.theme,
+                        values = Theme.values().toList(),
+                        getValueName = {
+                            when (it) {
+                                Theme.System -> stringResource(R.string.system)
+                                Theme.Light -> stringResource(R.string.light)
+                                Theme.Dark -> stringResource(R.string.dark)
+                            }
+                        },
+                        getValueLeadingIcon = {
+                            when (it) {
+                                Theme.System -> Icons.Rounded.Settings
+                                Theme.Light -> Icons.Rounded.LightMode
+                                Theme.Dark -> Icons.Rounded.DarkMode
+                            }
+                        }
+                    )
+                }
+                item {
+                    BooleanSetting(
+                        value = preferences.dynamicColorEnabled,
+                        setValue = setDynamicColorEnabled,
+                        settingName = stringResource(R.string.dynamic_color),
+                        enabledText = stringResource(R.string.enabled),
+                        disabledText = stringResource(R.string.disabled),
+                        enabled = preferences.canUseDynamicColor,
                     )
                 }
             }
@@ -544,6 +607,7 @@ fun BooleanSetting(
     fontWeight: FontWeight = FontWeight.Normal,
     enabledText: String = stringResource(R.string.on),
     disabledText: String = stringResource(R.string.off),
+    enabled: Boolean = true,
 ) {
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
@@ -551,6 +615,7 @@ fun BooleanSetting(
         onClick = { setValue(!value) },
         textStyle = textStyle,
         fontWeight = fontWeight,
+        enabled = enabled,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -563,53 +628,119 @@ fun BooleanSetting(
                 Text(
                     text = if (enabled) enabledText else disabledText,
                     style = textStyle,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.statefulColorScheme.onSurface
                 )
             }
             Switch(
                 checked = value,
                 onCheckedChange = setValue,
+                enabled = enabled
             )
         }
     }
 }
 
 @Composable
-fun AnalyticsSetting(
-    analyticsEnabled: Boolean,
-    setAnalytics: (Boolean) -> Unit = {},
+fun <T : Any> DropdownSetting(
+    selectedValue: T? = null,
+    values: Iterable<T>,
+    getValueName: @Composable (T) -> String = { it.toString() },
+    getValueLeadingIcon: (T) -> ImageVector? = { null },
+    getValueTrailingIcon: (T) -> ImageVector? = { null },
+    selectValue: (T) -> Unit,
+    settingName: String,
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    fontWeight: FontWeight = FontWeight.Normal,
 ) {
-    BooleanSetting(
-        settingName = stringResource(R.string.analytics),
-        setValue = setAnalytics,
-        value = analyticsEnabled
-    )
+    var isDropdownOpen by remember { mutableStateOf(false) }
+    SettingItem(
+        modifier = Modifier.fillMaxWidth(),
+        name = settingName,
+        onClick = { isDropdownOpen = !isDropdownOpen },
+        textStyle = textStyle,
+        fontWeight = fontWeight,
+    ) {
+        Row(
+            modifier = Modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Crossfade(
+                modifier = Modifier.animateContentSize(),
+                targetState = selectedValue
+            ) { state ->
+                state?.let {
+                    Text(
+                        text = getValueName(it),
+                        style = textStyle,
+                        color = MaterialTheme.statefulColorScheme.onSurface
+                    )
+                }
+            }
+            IconToggleButton(
+                checked = isDropdownOpen,
+                onCheckedChange = { isDropdownOpen = it }
+            ) {
+                Icon(
+                    imageVector = if (isDropdownOpen) {
+                        Icons.Rounded.ExpandLess
+                    } else {
+                        Icons.Rounded.ExpandMore
+                    },
+                    contentDescription = ""
+                )
+            }
+        }
+        DropdownMenu(
+            expanded = isDropdownOpen,
+            onDismissRequest = { isDropdownOpen = false },
+        ) {
+            values.forEach { value ->
+                val leadingIcon = remember { getValueLeadingIcon(value) }
+                val leadingComposable = @Composable {
+                    leadingIcon?.let {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = ""
+                        )
+                    }
+                }
+                val trailingIcon = remember {
+                    val icon = getValueTrailingIcon(value)
+                    if (value == selectedValue) Icons.Rounded.Check else icon
+                }
+                val trailingComposable = @Composable {
+                    trailingIcon?.let {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = ""
+                        )
+                    }
+                }
+                DropdownMenuItem(
+                    modifier = if (value == selectedValue) {
+                        Modifier.background(MaterialTheme.statefulColorScheme.surfaceColorAtElevation(elevation = 1.dp))
+                    } else {
+                        Modifier
+                    },
+                    text = { Text(text = getValueName(value)) },
+                    leadingIcon = (if (leadingIcon != null) leadingComposable else null) as? @Composable (() -> Unit),
+                    trailingIcon = (if (trailingIcon != null) trailingComposable else null) as? @Composable (() -> Unit),
+                    onClick = { selectValue(value); isDropdownOpen = false },
+                    colors = if (value == selectedValue) {
+                        MenuDefaults.itemColors(
+                            textColor = MaterialTheme.statefulColorScheme.primary,
+                            leadingIconColor = MaterialTheme.statefulColorScheme.primary,
+                            trailingIconColor = MaterialTheme.statefulColorScheme.primary,
+                        )
+                    } else {
+                        MenuDefaults.itemColors()
+                    }
+                )
+            }
+        }
+    }
 }
-
-@Composable
-fun FreeDriveAutoStartSetting(
-    freeDriveAutoStart: Boolean,
-    setFreeDriveAutoStart: (Boolean) -> Unit = {},
-) {
-    BooleanSetting(
-        settingName = stringResource(R.string.free_drive_auto_start),
-        setValue = setFreeDriveAutoStart,
-        value = freeDriveAutoStart
-    )
-}
-
-@Composable
-fun ShowAdsSetting(
-    showAds: Boolean,
-    setAdVisibility: (Boolean) -> Unit = {},
-) {
-    BooleanSetting(
-        settingName = stringResource(R.string.show_ads),
-        setValue = setAdVisibility,
-        value = showAds
-    )
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -619,14 +750,16 @@ fun SettingItem(
     textStyle: TextStyle = MaterialTheme.typography.labelLarge,
     fontWeight: FontWeight = FontWeight.Normal,
     onClick: () -> Unit = {},
-    content: @Composable () -> Unit = {},
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit = {},
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.animateContentSize(),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
         ),
-        onClick = onClick
+        onClick = onClick,
+        enabled = enabled,
     ) {
         Row(
             modifier = Modifier
@@ -640,9 +773,9 @@ fun SettingItem(
                 text = name,
                 style = textStyle,
                 fontWeight = fontWeight,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.statefulColorScheme.onSurface
             )
-            content()
+            Row { content() }
         }
     }
 }

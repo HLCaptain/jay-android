@@ -23,6 +23,7 @@ import illyan.jay.data.resolver.PreferencesResolver
 import illyan.jay.data.room.datasource.PreferencesRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.domain.model.Theme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -88,6 +89,40 @@ class SettingsInteractor @Inject constructor(
                     } else {
                         appSettingsDataSource.updateAppPreferences {
                             it.copy(showAds = value)
+                        }
+                    }
+                }
+            }
+        }
+
+    var theme: Theme?
+        get() = userPreferences.value?.theme
+        set(value) {
+            Timber.v("Theme preference change requested to $value")
+            if (value != null && preferencesResolver.isLoading.value == false) {
+                coroutineScopeIO.launch {
+                    if (authInteractor.isUserSignedIn) {
+                        preferencesRoomDataSource.setTheme(authInteractor.userUUID!!, value)
+                    } else {
+                        appSettingsDataSource.updateAppPreferences {
+                            it.copy(theme = value)
+                        }
+                    }
+                }
+            }
+        }
+
+    var dynamicColorEnabled: Boolean?
+        get() = userPreferences.value?.dynamicColorEnabled
+        set(value) {
+            Timber.v("DynamicColorEnabled preference change requested to $value")
+            if (value != null && preferencesResolver.isLoading.value == false) {
+                coroutineScopeIO.launch {
+                    if (authInteractor.isUserSignedIn) {
+                        preferencesRoomDataSource.setDynamicColorEnabled(authInteractor.userUUID!!, value)
+                    } else {
+                        appSettingsDataSource.updateAppPreferences {
+                            it.copy(dynamicColorEnabled = value)
                         }
                     }
                 }

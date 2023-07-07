@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,7 +80,7 @@ val puckScaleExpression = interpolate {
 fun MapboxMap(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    styleUri: () -> String = { Style.OUTDOORS },
+    initialStyleUri: String = Style.OUTDOORS,
     onMapFullyLoaded: (MapView) -> Unit = {},
     onMapInitialized: (MapView) -> Unit = {},
     resourceOptions: ResourceOptions = MapInitOptions.getDefaultResourceOptions(context),
@@ -103,7 +104,7 @@ fun MapboxMap(
     val options = MapInitOptions(
         context = context,
         resourceOptions = resourceOptions,
-        styleUri = styleUri(),
+        styleUri = initialStyleUri,
         mapOptions = mapOptions,
         cameraOptions = CameraOptions.Builder()
             .center(cameraCenter)
@@ -112,7 +113,6 @@ fun MapboxMap(
             .pitch(cameraPitch)
             .padding(cameraPadding)
             .build(),
-
     )
 
     val map = remember {
@@ -122,6 +122,10 @@ fun MapboxMap(
         )
         onMapInitialized(initializedMap)
         initializedMap
+    }
+
+    LaunchedEffect(initialStyleUri) {
+        map.getMapboxMap().loadStyleUri(initialStyleUri)
     }
 
     MapboxMapContainer(

@@ -140,4 +140,10 @@
     <string name="turn_on_analytics">Turn On Analytics</string>
     <string name="turn_on_analytics_description">Analytics help the development of Jay to provide a more stable and better experience. By turning on analytics, you anonymously send event data to us with Firebase Analytics, crash logs via Firebase Crashlytics and performance metrics via Firebase Performance monitoring. App restart may be required for the setting to be active.</string>
     <string name="turn_on">Turn On</string>
+    <string name="toggle_theme">Toggle Theme</string>
+    <string name="theme">Theme</string>
+    <string name="light">Light</string>
+    <string name="dark">Dark</string>
+    <string name="system">System</string>
+    <string name="dynamic_color">Dynamic Color</string>
 </resources>
