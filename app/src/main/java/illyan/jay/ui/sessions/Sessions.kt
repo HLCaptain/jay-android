@@ -60,6 +60,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -99,8 +100,6 @@ import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signatureBlue
-import illyan.jay.ui.theme.statefulColorScheme
-import illyan.jay.ui.theme.surfaceColorAtElevation
 import illyan.jay.util.cardPlaceholder
 import illyan.jay.util.format
 import illyan.jay.util.plus
@@ -532,11 +531,11 @@ fun NoSessionPrompt(
         Icon(
             imageVector = Icons.Rounded.Info,
             contentDescription = "",
-            tint = MaterialTheme.statefulColorScheme.onSurface
+            tint = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = stringResource(R.string.no_sessions_to_show),
-            color = MaterialTheme.statefulColorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -581,7 +580,7 @@ fun SessionLoadingIndicator(
             SmallCircularProgressIndicator()
             Text(
                 text = text,
-                color = MaterialTheme.statefulColorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -610,14 +609,14 @@ fun SessionCard(
     val deleteFromCloudAction = sessionSwipeAction(
         icon = Icons.Rounded.CloudOff,
         enabled = isDeleteFromCloudEnabled,
-        enabledBackgroundColor = MaterialTheme.statefulColorScheme.tertiary,
+        enabledBackgroundColor = MaterialTheme.colorScheme.tertiary,
         onSwipe = onDeleteFromCloud
     )
     val isDeleteEnabled = session?.canDelete == true && session.isNotOngoing
     val deleteAction = sessionSwipeAction(
         icon = Icons.Rounded.Delete,
         enabled = isDeleteEnabled,
-        enabledBackgroundColor = MaterialTheme.statefulColorScheme.error,
+        enabledBackgroundColor = MaterialTheme.colorScheme.error,
         onSwipe = onDelete
     )
     val isSyncEnabled = session?.isSynced == false && session.isNotOngoing
@@ -627,10 +626,10 @@ fun SessionCard(
         enabledBackgroundColor = MaterialTheme.signatureBlue,
         onSwipe = onSync
     )
-    val containerColor = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(1.dp)
+    val containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
     val cardColors = CardDefaults.cardColors(
         containerColor = containerColor,
-        contentColor = MaterialTheme.statefulColorScheme.onSurface
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
     Card(
         modifier = modifier,
@@ -683,12 +682,12 @@ fun SessionCard(
                                             Text(
                                                 text = it ?: stringResource(R.string.unknown),
                                                 style = MaterialTheme.typography.titleLarge,
-                                                color = MaterialTheme.statefulColorScheme.onSurface,
+                                                color = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
                                         Icon(
                                             imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
-                                            tint = MaterialTheme.statefulColorScheme.onSurface,
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                         Crossfade(
                                             modifier = Modifier.animateContentSize(),
@@ -699,13 +698,13 @@ fun SessionCard(
                                                 Icon(
                                                     imageVector = Icons.Rounded.MoreHoriz,
                                                     contentDescription = "",
-                                                    tint = MaterialTheme.statefulColorScheme.onSurface,
+                                                    tint = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             } else {
                                                 Text(
                                                     text = it.second ?: stringResource(R.string.unknown),
                                                     style = MaterialTheme.typography.titleLarge,
-                                                    color = MaterialTheme.statefulColorScheme.onSurface,
+                                                    color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             }
                                         }
@@ -782,11 +781,11 @@ fun SessionCard(
 fun sessionSwipeAction(
     modifier: Modifier = Modifier,
     icon: ImageVector,
-    tint: Color = MaterialTheme.statefulColorScheme.onSurface,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
     enabled: Boolean = true,
     onSwipe: () -> Unit = {},
     enabledBackgroundColor: Color = Color.Transparent,
-    disabledBackgroundColor: Color = MaterialTheme.statefulColorScheme.surface
+    disabledBackgroundColor: Color = MaterialTheme.colorScheme.surface
 ): SwipeAction {
     return SwipeAction(
         icon = {
@@ -815,12 +814,12 @@ fun SessionDetailsList(
             ) {
                 Text(
                     text = it.first,
-                    color = MaterialTheme.statefulColorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
                     text = it.second,
-                    color = MaterialTheme.statefulColorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }

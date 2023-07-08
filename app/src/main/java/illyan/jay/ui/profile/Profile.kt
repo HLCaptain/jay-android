@@ -102,7 +102,6 @@ import illyan.jay.ui.destinations.LoginDialogScreenDestination
 import illyan.jay.ui.destinations.UserSettingsDialogScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.ui.theme.statefulColorScheme
 import java.util.UUID
 
 @RootNavGraph
@@ -377,7 +376,7 @@ fun ProfileTitleScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.Lock,
                                     contentDescription = "",
-                                    tint = MaterialTheme.statefulColorScheme.error
+                                    tint = MaterialTheme.colorScheme.error
                                 )
                                 Text(
                                     text = stringResource(R.string.locked),

@@ -42,6 +42,7 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,8 +70,6 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.ui.theme.statefulColorScheme
-import illyan.jay.ui.theme.surfaceColorAtElevation
 
 @ProfileNavGraph
 @Destination
@@ -192,12 +191,12 @@ fun DataSettingsButtons(
                         Text(
                             text = it.toString(),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.statefulColorScheme.onSurface,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = byteString,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.statefulColorScheme.onSurface,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -306,8 +305,8 @@ fun DescriptionCard(
     style: TextStyle = MaterialTheme.typography.labelLarge,
     fontWeight: FontWeight = FontWeight.Normal,
     showDescription: Boolean = false,
-    textColor: Color = MaterialTheme.statefulColorScheme.onSurface,
-    color: Color = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(1.dp),
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    color: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
     content: @Composable () -> Unit = {},
 ) {
     Card(

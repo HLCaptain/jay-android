@@ -59,6 +59,7 @@ import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
@@ -98,8 +99,6 @@ import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.ui.theme.statefulColorScheme
-import illyan.jay.ui.theme.surfaceColorAtElevation
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -320,7 +319,7 @@ private fun SyncPreferencesLabel(
                 Icon(
                     imageVector = Icons.Rounded.Done,
                     contentDescription = "",
-                    tint = MaterialTheme.statefulColorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = stringResource(R.string.synced),
@@ -330,7 +329,7 @@ private fun SyncPreferencesLabel(
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = "",
-                    tint = MaterialTheme.statefulColorScheme.error
+                    tint = MaterialTheme.colorScheme.error
                 )
                 Text(
                     text = stringResource(R.string.not_synced),
@@ -377,7 +376,7 @@ private fun SyncPreferencesButton(
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent,
-            disabledContentColor = MaterialTheme.statefulColorScheme.onSurfaceVariant
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
         enabled = canSyncPreferences,
         onClick = { onShouldSyncChanged(!shouldSyncPreferences) }
@@ -638,7 +637,7 @@ fun BooleanSetting(
                 Text(
                     text = if (enabled) enabledText else disabledText,
                     style = textStyle,
-                    color = MaterialTheme.statefulColorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Switch(
@@ -684,7 +683,7 @@ fun <T : Any> DropdownSetting(
                     Text(
                         text = getValueName(it),
                         style = textStyle,
-                        color = MaterialTheme.statefulColorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -730,7 +729,7 @@ fun <T : Any> DropdownSetting(
                 }
                 DropdownMenuItem(
                     modifier = if (value == selectedValue) {
-                        Modifier.background(MaterialTheme.statefulColorScheme.surfaceColorAtElevation(elevation = 1.dp))
+                        Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(elevation = 1.dp))
                     } else {
                         Modifier
                     },
@@ -740,9 +739,9 @@ fun <T : Any> DropdownSetting(
                     onClick = { selectValue(value); isDropdownOpen = false },
                     colors = if (value == selectedValue) {
                         MenuDefaults.itemColors(
-                            textColor = MaterialTheme.statefulColorScheme.primary,
-                            leadingIconColor = MaterialTheme.statefulColorScheme.primary,
-                            trailingIconColor = MaterialTheme.statefulColorScheme.primary,
+                            textColor = MaterialTheme.colorScheme.primary,
+                            leadingIconColor = MaterialTheme.colorScheme.primary,
+                            trailingIconColor = MaterialTheme.colorScheme.primary,
                         )
                     } else {
                         MenuDefaults.itemColors()
@@ -784,7 +783,7 @@ fun SettingItem(
                 text = name,
                 style = textStyle,
                 fontWeight = fontWeight,
-                color = MaterialTheme.statefulColorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface
             )
             Row { content() }
         }

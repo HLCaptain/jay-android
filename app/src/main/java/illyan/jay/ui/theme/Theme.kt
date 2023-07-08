@@ -21,6 +21,7 @@ package illyan.jay.ui.theme
 import android.app.Activity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
@@ -36,13 +37,10 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,7 +51,6 @@ import illyan.jay.domain.model.Theme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlin.math.ln
 import kotlin.math.roundToInt
 
 private val LightColors = lightColorScheme(
@@ -215,7 +212,6 @@ private lateinit var lightMapMarkers: MapMarkers
 private val _mapMarkers = MutableStateFlow<MapMarkers?>(null)
 val mapMarkers = _mapMarkers.asStateFlow()
 
-internal val LocalStatefulColorScheme = staticCompositionLocalOf<StatefulColorScheme?> { null }
 val LocalTheme = compositionLocalOf<Theme?> { null }
 
 @Composable
@@ -257,7 +253,7 @@ fun JayTheme(
         }
     }
     val systemUiController = rememberSystemUiController()
-    val colorSchemeState = animateColorScheme(colorScheme, spring())
+    val colorSchemeState = animateColorScheme(colorScheme, spring(stiffness = Spring.StiffnessLow))
     val view = LocalView.current
     val density = LocalDensity.current.density
     val markerHeight = (36.dp * density).value.roundToInt()
@@ -295,11 +291,10 @@ fun JayTheme(
     }
 
     CompositionLocalProvider(
-        LocalStatefulColorScheme provides colorSchemeState,
         LocalTheme provides theme,
     ) {
         MaterialTheme(
-            colorScheme = colorScheme,
+            colorScheme = colorSchemeState.toColorScheme(),
             typography = Typography,
             content = content
         )
@@ -311,24 +306,3 @@ val MaterialTheme.signatureBlue: Color
 
 val MaterialTheme.signaturePink: Color
     get() = Color(0xFFFF63A0)
-
-val MaterialTheme.statefulColorScheme: StatefulColorScheme
-    @Composable
-    get() = LocalStatefulColorScheme.current ?: StatefulColorScheme(colorScheme = this.colorScheme)
-
-@Composable
-fun StatefulColorScheme.surfaceColorAtElevation(
-    elevation: Dp,
-): Color {
-    val color by remember {
-        derivedStateOf {
-            if (elevation == 0.dp) {
-                surface
-            } else {
-                val alpha = ((4.5f * ln(elevation.value + 1)) + 2f) / 100f
-                surfaceTint.copy(alpha = alpha).compositeOver(surface)
-            }
-        }
-    }
-    return color
-}

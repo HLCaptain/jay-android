@@ -39,6 +39,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -63,8 +64,6 @@ import illyan.jay.ui.destinations.LibraryDialogScreenDestination
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.ui.theme.statefulColorScheme
-import illyan.jay.ui.theme.surfaceColorAtElevation
 
 @ProfileNavGraph
 @Destination
@@ -126,7 +125,7 @@ fun LibrariesScreen(
         itemsIndexed(libraries) { index, item ->
             val cardColors = if (index.mod(2) == 0) {
                 CardDefaults.cardColors(
-                    containerColor = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(3.dp)
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 )
             } else {
                 CardDefaults.cardColors(

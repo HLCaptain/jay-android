@@ -54,6 +54,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -85,8 +86,6 @@ import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.LocalTheme
-import illyan.jay.ui.theme.statefulColorScheme
-import illyan.jay.ui.theme.surfaceColorAtElevation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -215,8 +214,8 @@ fun MenuItemCard(
     icon: ImageVector? = null,
     cardColors: CardColors = (@Composable {
         CardDefaults.cardColors(
-            containerColor = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(1.dp),
-            contentColor = MaterialTheme.statefulColorScheme.onSurface
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
     })(),
     onClick: () -> Unit = {},

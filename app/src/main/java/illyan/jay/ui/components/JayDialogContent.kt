@@ -40,7 +40,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import illyan.jay.ui.theme.statefulColorScheme
 
 /**
  * Custom dialog content styling used (based on Material 3 AlertDialogContent)
@@ -63,7 +62,7 @@ fun JayDialogContent(
     titleContentColor: Color = AlertDialogDefaults.titleContentColor,
     textContentColor: Color = AlertDialogDefaults.textContentColor,
     tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
-    buttonContentColor: Color = MaterialTheme.statefulColorScheme.primary,
+    buttonContentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     JayDialogContent(
         modifier = modifier,

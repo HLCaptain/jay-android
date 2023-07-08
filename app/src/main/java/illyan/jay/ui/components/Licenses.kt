@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,8 +47,6 @@ import androidx.compose.ui.unit.dp
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.domain.model.libraries.LicenseType
-import illyan.jay.ui.theme.statefulColorScheme
-import illyan.jay.ui.theme.surfaceColorAtElevation
 import illyan.jay.util.findUrlIntervals
 import kotlin.math.hypot
 
@@ -69,7 +68,7 @@ fun JayTextCard(
         modifier = modifier
             .drawVerticalScrollbar(lazyListState)
             .clip(RoundedCornerShape(cornerRadius))
-            .background(MaterialTheme.statefulColorScheme.surfaceColorAtElevation(2.dp)),
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)),
         state = lazyListState,
         contentPadding = contentPadding,
     ) {
@@ -208,7 +207,7 @@ fun ApacheV2License(
     }
 
     ClickableText(
-        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
         onClick = { offset ->
             val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
             urlAnnotations.firstOrNull()?.let {
@@ -251,7 +250,7 @@ fun FreeBSDLicense(
     }
 
     Text(
-        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
         text = annotatedString
     )
 }
@@ -277,7 +276,7 @@ fun EclipsePublicLicense() {
     }
 
     Text(
-        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
         text = annotatedString
     )
 }
@@ -314,7 +313,7 @@ fun GPLV2License(
     }
 
     Text(
-        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
         text = annotatedString
     )
 }
@@ -372,7 +371,7 @@ fun GPLV3License(
     }
 
     ClickableText(
-        style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
+        style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
         onClick = { offset ->
             val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
             urlAnnotations.firstOrNull()?.let {
@@ -436,7 +435,7 @@ fun JayGPLV3License(
 
     Column {
         ClickableText(
-            style = TextStyle(color = MaterialTheme.statefulColorScheme.onSurface),
+            style = TextStyle(color = MaterialTheme.colorScheme.onSurface),
             onClick = { offset ->
                 val urlAnnotations = annotatedString.getUrlAnnotations(offset, offset)
                 urlAnnotations.firstOrNull()?.let {

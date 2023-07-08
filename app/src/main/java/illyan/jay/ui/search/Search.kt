@@ -50,6 +50,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -75,8 +76,6 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.search.model.UiRecord
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
-import illyan.jay.ui.theme.statefulColorScheme
-import illyan.jay.ui.theme.surfaceColorAtElevation
 import java.util.UUID
 
 @RootNavGraph
@@ -159,7 +158,7 @@ fun SearchList(
                     modifier = Modifier.padding(SearchPadding),
                     text = stringResource(R.string.suggestions),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.statefulColorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -174,7 +173,7 @@ fun SearchList(
                 modifier = Modifier.padding(SearchPadding),
                 text = stringResource(R.string.favorites),
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.statefulColorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         favoriteItems(
@@ -187,7 +186,7 @@ fun SearchList(
                 modifier = Modifier.padding(SearchPadding),
                 text = stringResource(R.string.history),
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.statefulColorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         historyItems(
@@ -336,7 +335,7 @@ fun <Item> LazyListScope.searchItems(
     itemsIndexed(list) { index, item ->
         if (index > 0) {
             Surface(
-                color = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(1.dp)
+                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
             ) {
                 Divider(
                     modifier = Modifier
@@ -348,7 +347,7 @@ fun <Item> LazyListScope.searchItems(
                             )
                         ),
                     thickness = DividerThickness,
-                    color = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(0.dp)
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp)
                 )
             }
         }
@@ -404,7 +403,7 @@ fun FavoriteButton(
                 tint = if (it) {
                     MaterialTheme.signaturePink
                 } else {
-                    MaterialTheme.statefulColorScheme.onSurface
+                    MaterialTheme.colorScheme.onSurface
                 },
                 contentDescription = "Favorite icon"
             )
@@ -503,8 +502,8 @@ fun SearchCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
     cardColors: CardColors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.statefulColorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.statefulColorScheme.onSurface,
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ),
     prefixContent: @Composable () -> Unit = {
         IconButton(
@@ -514,7 +513,7 @@ fun SearchCard(
             Icon(
                 modifier = Modifier.size(32.dp),
                 imageVector = Icons.Rounded.Search,
-                tint = MaterialTheme.statefulColorScheme.onSurface,
+                tint = MaterialTheme.colorScheme.onSurface,
                 contentDescription = "Search Item Icon"
             )
         }
@@ -555,7 +554,7 @@ fun SearchCard(
     title: String = "Title",
     description: String = "Description",
     icon: ImageVector = Icons.Rounded.Search,
-    tint: Color = MaterialTheme.statefulColorScheme.onSurface,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
     shape: Shape = CardDefaults.shape,
     onClick: () -> Unit = {},
     prefixContent: @Composable () -> Unit = {

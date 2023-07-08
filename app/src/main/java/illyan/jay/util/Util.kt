@@ -49,7 +49,6 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import illyan.jay.domain.model.DomainLocation
-import illyan.jay.ui.theme.statefulColorScheme
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
@@ -168,7 +167,7 @@ fun Modifier.textPlaceholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
         shape = shape,
-        color = MaterialTheme.statefulColorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }
 
@@ -181,7 +180,7 @@ fun Modifier.largeTextPlaceholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
         shape = shape,
-        color = MaterialTheme.statefulColorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }
 
@@ -194,7 +193,7 @@ fun Modifier.cardPlaceholder(
         visible = visible,
         highlight = placeholderHighlight ?: PlaceholderHighlight.shimmer(),
         shape = shape,
-        color = MaterialTheme.statefulColorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     )
 }
 

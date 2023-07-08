@@ -66,7 +66,6 @@ import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
 import illyan.jay.ui.settings.user.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.ui.theme.statefulColorScheme
 import illyan.jay.util.plus
 
 private const val PaddingRatio = 0.25f
@@ -209,12 +208,12 @@ fun FreeDriveScreenWithoutPermission(
         Text(
             text = stringResource(R.string.location_permission_denied_title),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.statefulColorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = stringResource(R.string.location_permission_denied_description),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.statefulColorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Column(
             modifier = Modifier.fillMaxWidth(),
