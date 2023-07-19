@@ -120,84 +120,84 @@ private val DarkColors = darkColorScheme(
 fun animateColorScheme(
     targetColorScheme: ColorScheme,
     animationSpec: AnimationSpec<Color> = spring(),
-): StatefulColorScheme {
-    val primary = animateColorAsState(targetValue = targetColorScheme.primary, animationSpec = animationSpec)
-    val onPrimary = animateColorAsState(targetValue = targetColorScheme.onPrimary, animationSpec = animationSpec)
-    val primaryContainer = animateColorAsState(targetValue = targetColorScheme.primaryContainer, animationSpec = animationSpec)
-    val onPrimaryContainer = animateColorAsState(targetValue = targetColorScheme.onPrimaryContainer, animationSpec = animationSpec)
-    val inversePrimary = animateColorAsState(targetValue = targetColorScheme.inversePrimary, animationSpec = animationSpec)
-    val secondary = animateColorAsState(targetValue = targetColorScheme.secondary, animationSpec = animationSpec)
-    val onSecondary = animateColorAsState(targetValue = targetColorScheme.onSecondary, animationSpec = animationSpec)
-    val secondaryContainer = animateColorAsState(targetValue = targetColorScheme.secondaryContainer, animationSpec = animationSpec)
-    val onSecondaryContainer = animateColorAsState(targetValue = targetColorScheme.onSecondaryContainer, animationSpec = animationSpec)
-    val tertiary = animateColorAsState(targetValue = targetColorScheme.tertiary, animationSpec = animationSpec)
-    val onTertiary = animateColorAsState(targetValue = targetColorScheme.onTertiary, animationSpec = animationSpec)
-    val tertiaryContainer = animateColorAsState(targetValue = targetColorScheme.tertiaryContainer, animationSpec = animationSpec)
-    val onTertiaryContainer = animateColorAsState(targetValue = targetColorScheme.onTertiaryContainer, animationSpec = animationSpec)
-    val background = animateColorAsState(targetValue = targetColorScheme.background, animationSpec = animationSpec)
-    val onBackground = animateColorAsState(targetValue = targetColorScheme.onBackground, animationSpec = animationSpec)
-    val surface = animateColorAsState(targetValue = targetColorScheme.surface, animationSpec = animationSpec)
-    val onSurface = animateColorAsState(targetValue = targetColorScheme.onSurface, animationSpec = animationSpec)
-    val surfaceVariant = animateColorAsState(targetValue = targetColorScheme.surfaceVariant, animationSpec = animationSpec)
-    val onSurfaceVariant = animateColorAsState(targetValue = targetColorScheme.onSurfaceVariant, animationSpec = animationSpec)
-    val surfaceTint = animateColorAsState(targetValue = targetColorScheme.surfaceTint, animationSpec = animationSpec)
-    val inverseSurface = animateColorAsState(targetValue = targetColorScheme.inverseSurface, animationSpec = animationSpec)
-    val inverseOnSurface = animateColorAsState(targetValue = targetColorScheme.inverseOnSurface, animationSpec = animationSpec)
-    val error = animateColorAsState(targetValue = targetColorScheme.error, animationSpec = animationSpec)
-    val onError = animateColorAsState(targetValue = targetColorScheme.onError, animationSpec = animationSpec)
-    val errorContainer = animateColorAsState(targetValue = targetColorScheme.errorContainer, animationSpec = animationSpec)
-    val onErrorContainer = animateColorAsState(targetValue = targetColorScheme.onErrorContainer, animationSpec = animationSpec)
-    val outline = animateColorAsState(targetValue = targetColorScheme.outline, animationSpec = animationSpec)
-    val outlineVariant = animateColorAsState(targetValue = targetColorScheme.outlineVariant, animationSpec = animationSpec)
-    val scrim = animateColorAsState(targetValue = targetColorScheme.scrim, animationSpec = animationSpec)
-    val surfaceBright = animateColorAsState(targetValue = targetColorScheme.surfaceBright, animationSpec = animationSpec)
-    val surfaceDim = animateColorAsState(targetValue = targetColorScheme.surfaceDim, animationSpec = animationSpec)
-    val surfaceContainer = animateColorAsState(targetValue = targetColorScheme.surfaceContainer, animationSpec = animationSpec)
-    val surfaceContainerHigh = animateColorAsState(targetValue = targetColorScheme.surfaceContainerHigh, animationSpec = animationSpec)
-    val surfaceContainerHighest = animateColorAsState(targetValue = targetColorScheme.surfaceContainerHighest, animationSpec = animationSpec)
-    val surfaceContainerLow = animateColorAsState(targetValue = targetColorScheme.surfaceContainerLow, animationSpec = animationSpec)
-    val surfaceContainerLowest = animateColorAsState(targetValue = targetColorScheme.surfaceContainerLowest, animationSpec = animationSpec)
-    val rememberedStatefulColorScheme = remember {
-        StatefulColorScheme(
-            primaryState = primary,
-            onPrimaryState = onPrimary,
-            primaryContainerState = primaryContainer,
-            onPrimaryContainerState = onPrimaryContainer,
-            inversePrimaryState = inversePrimary,
-            secondaryState = secondary,
-            onSecondaryState = onSecondary,
-            secondaryContainerState = secondaryContainer,
-            onSecondaryContainerState = onSecondaryContainer,
-            tertiaryState = tertiary,
-            onTertiaryState = onTertiary,
-            tertiaryContainerState = tertiaryContainer,
-            onTertiaryContainerState = onTertiaryContainer,
-            backgroundState = background,
-            onBackgroundState = onBackground,
-            surfaceState = surface,
-            onSurfaceState = onSurface,
-            surfaceVariantState = surfaceVariant,
-            onSurfaceVariantState = onSurfaceVariant,
-            surfaceTintState = surfaceTint,
-            inverseSurfaceState = inverseSurface,
-            inverseOnSurfaceState = inverseOnSurface,
-            errorState = error,
-            onErrorState = onError,
-            errorContainerState = errorContainer,
-            onErrorContainerState = onErrorContainer,
-            outlineState = outline,
-            outlineVariantState = outlineVariant,
-            scrimState = scrim,
-            surfaceBrightState = surfaceBright,
-            surfaceDimState = surfaceDim,
-            surfaceContainerState = surfaceContainer,
-            surfaceContainerHighState = surfaceContainerHigh,
-            surfaceContainerHighestState = surfaceContainerHighest,
-            surfaceContainerLowState = surfaceContainerLow,
-            surfaceContainerLowestState = surfaceContainerLowest,
+): ColorScheme {
+    val primary by animateColorAsState(targetValue = targetColorScheme.primary, animationSpec = animationSpec)
+    val onPrimary by animateColorAsState(targetValue = targetColorScheme.onPrimary, animationSpec = animationSpec)
+    val primaryContainer by animateColorAsState(targetValue = targetColorScheme.primaryContainer, animationSpec = animationSpec)
+    val onPrimaryContainer by animateColorAsState(targetValue = targetColorScheme.onPrimaryContainer, animationSpec = animationSpec)
+    val inversePrimary by animateColorAsState(targetValue = targetColorScheme.inversePrimary, animationSpec = animationSpec)
+    val secondary by animateColorAsState(targetValue = targetColorScheme.secondary, animationSpec = animationSpec)
+    val onSecondary by animateColorAsState(targetValue = targetColorScheme.onSecondary, animationSpec = animationSpec)
+    val secondaryContainer by animateColorAsState(targetValue = targetColorScheme.secondaryContainer, animationSpec = animationSpec)
+    val onSecondaryContainer by animateColorAsState(targetValue = targetColorScheme.onSecondaryContainer, animationSpec = animationSpec)
+    val tertiary by animateColorAsState(targetValue = targetColorScheme.tertiary, animationSpec = animationSpec)
+    val onTertiary by animateColorAsState(targetValue = targetColorScheme.onTertiary, animationSpec = animationSpec)
+    val tertiaryContainer by animateColorAsState(targetValue = targetColorScheme.tertiaryContainer, animationSpec = animationSpec)
+    val onTertiaryContainer by animateColorAsState(targetValue = targetColorScheme.onTertiaryContainer, animationSpec = animationSpec)
+    val background by animateColorAsState(targetValue = targetColorScheme.background, animationSpec = animationSpec)
+    val onBackground by animateColorAsState(targetValue = targetColorScheme.onBackground, animationSpec = animationSpec)
+    val surface by animateColorAsState(targetValue = targetColorScheme.surface, animationSpec = animationSpec)
+    val onSurface by animateColorAsState(targetValue = targetColorScheme.onSurface, animationSpec = animationSpec)
+    val surfaceVariant by animateColorAsState(targetValue = targetColorScheme.surfaceVariant, animationSpec = animationSpec)
+    val onSurfaceVariant by animateColorAsState(targetValue = targetColorScheme.onSurfaceVariant, animationSpec = animationSpec)
+    val surfaceTint by animateColorAsState(targetValue = targetColorScheme.surfaceTint, animationSpec = animationSpec)
+    val inverseSurface by animateColorAsState(targetValue = targetColorScheme.inverseSurface, animationSpec = animationSpec)
+    val inverseOnSurface by animateColorAsState(targetValue = targetColorScheme.inverseOnSurface, animationSpec = animationSpec)
+    val error by animateColorAsState(targetValue = targetColorScheme.error, animationSpec = animationSpec)
+    val onError by animateColorAsState(targetValue = targetColorScheme.onError, animationSpec = animationSpec)
+    val errorContainer by animateColorAsState(targetValue = targetColorScheme.errorContainer, animationSpec = animationSpec)
+    val onErrorContainer by animateColorAsState(targetValue = targetColorScheme.onErrorContainer, animationSpec = animationSpec)
+    val outline by animateColorAsState(targetValue = targetColorScheme.outline, animationSpec = animationSpec)
+    val outlineVariant by animateColorAsState(targetValue = targetColorScheme.outlineVariant, animationSpec = animationSpec)
+    val scrim by animateColorAsState(targetValue = targetColorScheme.scrim, animationSpec = animationSpec)
+    val surfaceBright by animateColorAsState(targetValue = targetColorScheme.surfaceBright, animationSpec = animationSpec)
+    val surfaceDim by animateColorAsState(targetValue = targetColorScheme.surfaceDim, animationSpec = animationSpec)
+    val surfaceContainer by animateColorAsState(targetValue = targetColorScheme.surfaceContainer, animationSpec = animationSpec)
+    val surfaceContainerHigh by animateColorAsState(targetValue = targetColorScheme.surfaceContainerHigh, animationSpec = animationSpec)
+    val surfaceContainerHighest by animateColorAsState(targetValue = targetColorScheme.surfaceContainerHighest, animationSpec = animationSpec)
+    val surfaceContainerLow by animateColorAsState(targetValue = targetColorScheme.surfaceContainerLow, animationSpec = animationSpec)
+    val surfaceContainerLowest by animateColorAsState(targetValue = targetColorScheme.surfaceContainerLowest, animationSpec = animationSpec)
+    val rememberedColorScheme = remember {
+        ColorScheme(
+            primary = primary,
+            onPrimary = onPrimary,
+            primaryContainer = primaryContainer,
+            onPrimaryContainer = onPrimaryContainer,
+            inversePrimary = inversePrimary,
+            secondary = secondary,
+            onSecondary = onSecondary,
+            secondaryContainer = secondaryContainer,
+            onSecondaryContainer = onSecondaryContainer,
+            tertiary = tertiary,
+            onTertiary = onTertiary,
+            tertiaryContainer = tertiaryContainer,
+            onTertiaryContainer = onTertiaryContainer,
+            background = background,
+            onBackground = onBackground,
+            surface = surface,
+            onSurface = onSurface,
+            surfaceVariant = surfaceVariant,
+            onSurfaceVariant = onSurfaceVariant,
+            surfaceTint = surfaceTint,
+            inverseSurface = inverseSurface,
+            inverseOnSurface = inverseOnSurface,
+            error = error,
+            onError = onError,
+            errorContainer = errorContainer,
+            onErrorContainer = onErrorContainer,
+            outline = outline,
+            outlineVariant = outlineVariant,
+            scrim = scrim,
+            surfaceBright = surfaceBright,
+            surfaceDim = surfaceDim,
+            surfaceContainer = surfaceContainer,
+            surfaceContainerHigh = surfaceContainerHigh,
+            surfaceContainerHighest = surfaceContainerHighest,
+            surfaceContainerLow = surfaceContainerLow,
+            surfaceContainerLowest = surfaceContainerLowest,
         )
     }
-    return rememberedStatefulColorScheme
+    return rememberedColorScheme
 }
 
 private const val LightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
@@ -233,7 +233,7 @@ fun JayTheme(
         }
     }
     val context = LocalContext.current
-    val colorScheme by remember {
+    val targetColorScheme by remember {
         derivedStateOf {
             if (dynamicColorEnabled) {
                 when (theme) {
@@ -253,7 +253,7 @@ fun JayTheme(
         }
     }
     val systemUiController = rememberSystemUiController()
-    val colorSchemeState = animateColorScheme(colorScheme, spring(stiffness = Spring.StiffnessLow))
+    val colorScheme = animateColorScheme(targetColorScheme, spring(stiffness = Spring.StiffnessLow))
     val view = LocalView.current
     val density = LocalDensity.current.density
     val markerHeight = (36.dp * density).value.roundToInt()
@@ -294,7 +294,7 @@ fun JayTheme(
         LocalTheme provides theme,
     ) {
         MaterialTheme(
-            colorScheme = colorSchemeState.toColorScheme(),
+            colorScheme = colorScheme,
             typography = Typography,
             content = content
         )
