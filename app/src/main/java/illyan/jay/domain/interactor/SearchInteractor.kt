@@ -190,8 +190,8 @@ class SearchInteractor @Inject constructor(
     fun navigateTo(searchSuggestion: SearchSuggestion) {
         select(
             searchSuggestion,
-            onResult = { _, result, _ ->
-                navigateTo(result)
+            onResults = { _, results, _ ->
+                results.firstOrNull()?.let { navigateTo(it) }
             }
         )
     }
@@ -237,20 +237,11 @@ class SearchInteractor @Inject constructor(
 
     fun select(
         selectedSuggestion: SearchSuggestion,
-        onResult: (
-            suggestion: SearchSuggestion,
-            result: SearchResult,
-            responseInfo: ResponseInfo,
-        ) -> Unit,
-        onCategoryResult: (
+        onResults: (
             suggestion: SearchSuggestion,
             results: List<SearchResult>,
             responseInfo: ResponseInfo,
-        ) -> Unit = { suggestion, results, responseInfo ->
-            results.firstOrNull()?.let {
-                onResult(suggestion, it, responseInfo)
-            }
-        },
+        ) -> Unit,
         onError: (Exception) -> Unit = {
             Timber.e(it, "Error selecting suggestion \"${selectedSuggestion.name}\": ${it.message}")
         },
@@ -262,18 +253,19 @@ class SearchInteractor @Inject constructor(
         searchEngine.select(
             selectedSuggestion,
             object : SearchSelectionCallback {
-                override fun onCategoryResult(
-                    suggestion: SearchSuggestion,
-                    results: List<SearchResult>,
-                    responseInfo: ResponseInfo,
-                ) = onCategoryResult(suggestion, results, responseInfo)
-
                 override fun onError(e: Exception) = onError(e)
+
                 override fun onResult(
                     suggestion: SearchSuggestion,
                     result: SearchResult,
                     responseInfo: ResponseInfo,
-                ) = onResult(suggestion, result, responseInfo)
+                ) = onResults(suggestion, listOf(result), responseInfo)
+
+                override fun onResults(
+                    suggestion: SearchSuggestion,
+                    results: List<SearchResult>,
+                    responseInfo: ResponseInfo,
+                ) = onResults(suggestion, results, responseInfo)
 
                 override fun onSuggestions(
                     suggestions: List<SearchSuggestion>,

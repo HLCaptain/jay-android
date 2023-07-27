@@ -3,14 +3,14 @@
 compose = "1.6.0-alpha02"
 compose-compiler = "1.5.1"
 kotlin = "1.9.0"
-ksp = "1.9.0-1.0.11"
+ksp = "1.9.0-1.0.12"
 agp = "8.2.0-alpha14"
 accompanist = "0.31.5-beta"
 room = "2.5.2"
 
 jetbrains-kotlinx-serialization = "1.5.1"
 jetbrains-kotlinx-collections-immutable = "0.3.5"
-jetbrains-kotlinx-coroutines = "1.7.2"
+jetbrains-kotlinx-coroutines = "1.7.3"
 
 androidx-core = "1.10.1"
 androidx-collection = "1.2.0"
@@ -24,20 +24,20 @@ androidx-navigation-safeargs = "2.6.0"
 androidx-test-junit = "1.1.5"
 androidx-lifecycle = "2.6.1"
 
-hilt = "2.46.1"
+hilt = "2.47"
 hilt-navigation-compose = "1.0.0"
 
-zstd-jni = "1.5.5-2"
+zstd-jni = "1.5.5-5"
 
 hlcaptain-compose-scrollbar = "0.0.3-alpha"
 saket-swipe = "1.2.0"
 timber = "5.0.1"
-compose-destinations = "1.9.42-beta"
+compose-destinations = "1.9.50"
 coil-compose = "2.4.0"
 
-mapbox-maps = "10.13.0-beta.1"
-mapbox-search = "1.0.0-rc.3"
-mapbox-navigation = "2.13.0-beta.1"
+mapbox-maps = "10.15.0"
+mapbox-search = "1.0.0-rc.7"
+mapbox-navigation = "2.15.0"
 
 google-secrets = "2.0.1"
 google-gms-services = "4.3.15"
@@ -52,7 +52,7 @@ firebase-perf = "1.4.2"
 firebase-bom = "32.2.0"
 
 junit5 = "1.9.3.0"
-junit = "5.9.3"
+junit = "5.10.0"
 junit4 = "4.13.2"
 mockk = "1.13.5"
 

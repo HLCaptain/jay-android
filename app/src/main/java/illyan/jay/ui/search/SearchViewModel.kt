@@ -137,8 +137,10 @@ class SearchViewModel @Inject constructor(
                         val suggestion = _searchSuggestions.value.first()
                         searchInteractor.select(
                             selectedSuggestion = suggestion,
-                            onResult = { _, result, _ ->
-                                searchInteractor.addRecordToFavorites(result.toFavoriteRecord())
+                            onResults = { _, results, _ ->
+                                results.forEach {
+                                    searchInteractor.addRecordToFavorites(it.toFavoriteRecord())
+                                }
                             }
                         )
                     }

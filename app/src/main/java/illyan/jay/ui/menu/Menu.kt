@@ -20,11 +20,11 @@ package illyan.jay.ui.menu
 
 import android.app.Activity
 import android.content.Context
+import android.os.Build
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.Crossfade
@@ -266,13 +266,20 @@ fun MenuItemCard(
 
 @Composable
 fun BackPressHandler(
-    backPressedDispatcher: OnBackPressedDispatcher? =
-        LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher,
     customDisposableEffectKey: Any? = null,
     isEnabled: () -> Boolean = { true },
     onBackPressed: () -> Unit,
 ) {
     val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
+    val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val backInvokedCallback = remember {
+        OnBackInvokedCallback {
+            Timber.d("Intercepted back press >= API 33!")
+            currentOnBackPressed()
+        }
+    }
 
     val backCallback = remember {
         object : OnBackPressedCallback(true) {
@@ -283,14 +290,27 @@ fun BackPressHandler(
         }
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(backPressedDispatcher, customDisposableEffectKey) {
-        if (isEnabled()) {
-            backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
-        }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val activity = LocalContext.current as? Activity
+        val backInvokedDispatcher = activity?.onBackInvokedDispatcher
+        DisposableEffect(backInvokedDispatcher, customDisposableEffectKey) {
+            if (isEnabled()) {
+                backInvokedDispatcher?.registerOnBackInvokedCallback(PRIORITY_DEFAULT, backInvokedCallback)
+            }
 
-        onDispose {
-            backCallback.remove()
+            onDispose {
+                backInvokedDispatcher?.unregisterOnBackInvokedCallback(backInvokedCallback)
+            }
+        }
+    } else {
+        DisposableEffect(backPressedDispatcher, customDisposableEffectKey) {
+            if (isEnabled()) {
+                backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
+            }
+
+            onDispose {
+                backCallback.remove()
+            }
         }
     }
 }
@@ -298,8 +318,6 @@ fun BackPressHandler(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SheetScreenBackPressHandler(
-    backPressedDispatcher: OnBackPressedDispatcher? =
-        LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher,
     customDisposableEffectKey: Any? = null,
     isEnabled: () -> Boolean = { true },
     context: Context = LocalContext.current,
@@ -308,7 +326,6 @@ fun SheetScreenBackPressHandler(
     onBackPressed: () -> Unit = {},
 ) {
     BackPressHandler(
-        backPressedDispatcher = backPressedDispatcher,
         customDisposableEffectKey = customDisposableEffectKey,
         isEnabled = isEnabled,
     ) {
