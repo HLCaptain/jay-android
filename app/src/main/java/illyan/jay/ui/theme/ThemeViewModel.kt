@@ -18,7 +18,6 @@
 
 package illyan.jay.ui.theme
 
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,8 +34,7 @@ class ThemeViewModel @Inject constructor(
     val theme = settingsInteractor.userPreferences.map { it?.theme }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val canUseDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val dynamicColorEnabled = settingsInteractor.userPreferences
-        .map { it?.dynamicColorEnabled == true && canUseDynamicColor }
+        .map { it?.dynamicColorEnabled == true }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 }

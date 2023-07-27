@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License along with Jay.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-@Suppress("DSL_SCOPE_VIOLATION")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -39,8 +39,8 @@ android {
         applicationId = "illyan.jay"
         minSdk = 21
         targetSdk = 34
-        versionCode = 16
-        versionName = "0.3.5-alpha"
+        versionCode = 17
+        versionName = "0.3.6-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -87,6 +87,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

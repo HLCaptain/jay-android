@@ -16,8 +16,6 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-// TODO: remove @Suppress after updating AGP to 8.1+
-@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false

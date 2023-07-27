@@ -19,6 +19,7 @@
 package illyan.jay.ui.theme
 
 import android.app.Activity
+import android.os.Build
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
@@ -33,6 +34,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -120,7 +122,7 @@ private val DarkColors = darkColorScheme(
 fun animateColorScheme(
     targetColorScheme: ColorScheme,
     animationSpec: AnimationSpec<Color> = spring(),
-): ColorScheme {
+): State<ColorScheme> {
     val primary by animateColorAsState(targetValue = targetColorScheme.primary, animationSpec = animationSpec)
     val onPrimary by animateColorAsState(targetValue = targetColorScheme.onPrimary, animationSpec = animationSpec)
     val primaryContainer by animateColorAsState(targetValue = targetColorScheme.primaryContainer, animationSpec = animationSpec)
@@ -157,7 +159,7 @@ fun animateColorScheme(
     val surfaceContainerHighest by animateColorAsState(targetValue = targetColorScheme.surfaceContainerHighest, animationSpec = animationSpec)
     val surfaceContainerLow by animateColorAsState(targetValue = targetColorScheme.surfaceContainerLow, animationSpec = animationSpec)
     val surfaceContainerLowest by animateColorAsState(targetValue = targetColorScheme.surfaceContainerLowest, animationSpec = animationSpec)
-    val rememberedColorScheme = remember {
+    val getCurrentColorScheme = {
         ColorScheme(
             primary = primary,
             onPrimary = onPrimary,
@@ -197,7 +199,7 @@ fun animateColorScheme(
             surfaceContainerLowest = surfaceContainerLowest,
         )
     }
-    return rememberedColorScheme
+    return remember { derivedStateOf { getCurrentColorScheme() } }
 }
 
 private const val LightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
@@ -235,7 +237,8 @@ fun JayTheme(
     val context = LocalContext.current
     val targetColorScheme by remember {
         derivedStateOf {
-            if (dynamicColorEnabled) {
+            val canUseDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            if (dynamicColorEnabled && canUseDynamicColor) {
                 when (theme) {
                     Theme.Dark -> dynamicDarkColorScheme(context)
                     Theme.Light -> dynamicLightColorScheme(context)
@@ -253,7 +256,7 @@ fun JayTheme(
         }
     }
     val systemUiController = rememberSystemUiController()
-    val colorScheme = animateColorScheme(targetColorScheme, spring(stiffness = Spring.StiffnessLow))
+    val colorScheme by animateColorScheme(targetColorScheme, spring(stiffness = Spring.StiffnessLow))
     val view = LocalView.current
     val density = LocalDensity.current.density
     val markerHeight = (36.dp * density).value.roundToInt()
