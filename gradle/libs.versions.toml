@@ -5,7 +5,7 @@ compose-compiler = "1.5.1"
 kotlin = "1.9.0"
 ksp = "1.9.0-1.0.12"
 agp = "8.2.0-alpha14"
-accompanist = "0.31.5-beta"
+accompanist = "0.31.6-rc"
 room = "2.5.2"
 
 jetbrains-kotlinx-serialization = "1.5.1"
@@ -37,7 +37,7 @@ coil-compose = "2.4.0"
 
 mapbox-maps = "10.15.0"
 mapbox-search = "1.0.0-rc.7"
-mapbox-navigation = "2.15.0"
+mapbox-navigation = "2.15.0-rc.1"
 
 google-secrets = "2.0.1"
 google-gms-services = "4.3.15"
