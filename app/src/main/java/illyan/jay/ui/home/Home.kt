@@ -528,7 +528,7 @@ fun HomeScreen(
                     bottom.linkTo(scaffold.bottom)
                     centerHorizontallyTo(parent)
                 }
-                .widthIn(max = 420.dp)
+                .widthIn(max = HomeBarMaxWidth)
                 .imePadding()
                 .navigationBarsPadding(),
             isUserSignedIn = isUserSignedIn,
@@ -592,7 +592,6 @@ fun HomeScreen(
                 topStart = roundDp,
                 topEnd = roundDp
             )
-
         ) {
             Column(
                 modifier = Modifier
@@ -923,9 +922,11 @@ fun BottomSearchBar(
 @Composable
 fun BottomSearchBarPreview() {
     JayTheme {
-        BottomSearchBar(modifier = Modifier.widthIn(max = 420.dp))
+        BottomSearchBar(modifier = Modifier.widthIn(max = HomeBarMaxWidth))
     }
 }
+
+val HomeBarMaxWidth = 420.dp
 
 @Composable
 fun BottomSheetScreen(
