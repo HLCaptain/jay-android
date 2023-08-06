@@ -217,13 +217,26 @@ val mapMarkers = _mapMarkers.asStateFlow()
 val LocalTheme = compositionLocalOf<Theme?> { null }
 
 @Composable
-fun JayTheme(
+fun JayThemeWithViewModel(
     viewModel: ThemeViewModel = hiltViewModel(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
-    val isSystemInDarkTheme: Boolean = isSystemInDarkTheme()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
+    JayTheme(
+        theme = theme,
+        dynamicColorEnabled = dynamicColorEnabled,
+        content = content
+    )
+}
+
+@Composable
+fun JayTheme(
+    theme: Theme? = Theme.System,
+    dynamicColorEnabled: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val isSystemInDarkTheme: Boolean = isSystemInDarkTheme()
     val isDark by remember {
         derivedStateOf {
             when (theme) {
