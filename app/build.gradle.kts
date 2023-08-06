@@ -216,6 +216,10 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.perf.ktx)
 
+    // Firebase ML
+    implementation(libs.firebase.ml.modeldownloader)
+    implementation(libs.tensorflow.lite)
+
     // JUnit5 testing tools
     // (Required) Writing and executing Unit Tests on the JUnit Platform
     testImplementation(libs.junit.jupiter.api)

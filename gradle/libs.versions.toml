@@ -50,6 +50,7 @@ google-material = "1.9.0"
 firebase-crashlytics = "2.9.8"
 firebase-perf = "1.4.2"
 firebase-bom = "32.2.2"
+tensorflow-lite = "2.3.0"
 
 junit5 = "1.9.3.0"
 junit = "5.10.0"
@@ -111,6 +112,8 @@ firebase-analytics-ktx = { module = "com.google.firebase:firebase-analytics-ktx"
 firebase-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics-ktx" }
 firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
 firebase-perf-ktx = { module = "com.google.firebase:firebase-perf-ktx" }
+firebase-ml-modeldownloader = { module = "com.google.firebase:firebase-ml-modeldownloader-ktx" }
+tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflow-lite" }
 
 hlcaptain-compose-scrollbar = { module = "com.github.HLCaptain:compose-scrollbar", version.ref = "hlcaptain-compose-scrollbar" }
 saket-swipe = { module = "me.saket.swipe:swipe", version.ref = "saket-swipe" }
