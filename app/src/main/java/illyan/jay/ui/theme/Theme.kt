@@ -38,6 +38,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -221,21 +222,21 @@ fun JayThemeWithViewModel(
     viewModel: ThemeViewModel = hiltViewModel(),
     content: @Composable () -> Unit,
 ) {
-    val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
-    val theme by viewModel.theme.collectAsStateWithLifecycle()
     JayTheme(
-        theme = theme,
-        dynamicColorEnabled = dynamicColorEnabled,
+        themeState = viewModel.theme.collectAsStateWithLifecycle(),
+        dynamicColorEnabledState = viewModel.dynamicColorEnabled.collectAsStateWithLifecycle(),
         content = content
     )
 }
 
 @Composable
 fun JayTheme(
-    theme: Theme? = Theme.System,
-    dynamicColorEnabled: Boolean = true,
+    themeState: State<Theme?> = mutableStateOf(Theme.System),
+    dynamicColorEnabledState: State<Boolean> = mutableStateOf(true),
     content: @Composable () -> Unit,
 ) {
+    val theme by themeState
+    val dynamicColorEnabled by dynamicColorEnabledState
     val isSystemInDarkTheme: Boolean = isSystemInDarkTheme()
     val isDark by remember {
         derivedStateOf {

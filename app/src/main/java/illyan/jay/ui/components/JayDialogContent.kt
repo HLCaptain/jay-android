@@ -167,8 +167,11 @@ fun JayDialogSurface(
     tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
     content: @Composable () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val screenWidthDp by remember { derivedStateOf { configuration.screenWidthDp.dp } }
+    // Increase width to edge of the screen until reaching DialogMaxWidth
     Surface(
-        modifier = modifier,
+        modifier = modifier.dialogWidth(screenWidthDp),
         shape = shape,
         color = color,
         tonalElevation = tonalElevation,
@@ -180,11 +183,8 @@ fun JayDialogSurface(
 fun JayDialogContent(
     modifier: Modifier = Modifier,
     surface: @Composable (@Composable () -> Unit) -> Unit = {
-        val configuration = LocalConfiguration.current
-        val screenWidthDp by remember { derivedStateOf { configuration.screenWidthDp.dp } }
-        // Increase width to edge of the screen until reaching DialogMaxWidth
         JayDialogSurface(
-            modifier = modifier.dialogWidth(screenWidthDp),
+            modifier = modifier,
             content = it
         )
     },
