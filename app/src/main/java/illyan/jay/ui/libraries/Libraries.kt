@@ -59,7 +59,7 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.destinations.LibraryDialogScreenDestination
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.profile.ProfileNavGraph
@@ -217,7 +217,7 @@ fun LibraryItem(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun LibrariesDialogContentPreview() {
     val libraries = LibrariesViewModel.Libraries

@@ -72,9 +72,9 @@ import illyan.jay.R
 import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogContentPadding
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.MenuButton
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
-import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
@@ -334,7 +334,7 @@ fun AboutAdScreen(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun AboutDialogScreenPreview() {
     JayTheme {

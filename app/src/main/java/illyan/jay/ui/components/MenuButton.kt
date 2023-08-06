@@ -18,19 +18,27 @@
 
 package illyan.jay.ui.components
 
-import androidx.compose.ui.tooling.preview.PreviewDynamicColors
-import androidx.compose.ui.tooling.preview.PreviewFontScale
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 
-@PreviewFontScale
-@PreviewScreenSizes
-annotation class PreviewAccessibility
-
-@PreviewLightDark
-@PreviewDynamicColors
-annotation class PreviewVanity
-
-@PreviewAccessibility
-@PreviewVanity
-annotation class PreviewAll
+@Composable
+fun MenuButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    text: String,
+) {
+    TextButton(
+        modifier = modifier,
+        onClick = onClick,
+    ) {
+        Text(text = text)
+        Icon(
+            imageVector = Icons.Rounded.ChevronRight, contentDescription = "",
+        )
+    }
+}

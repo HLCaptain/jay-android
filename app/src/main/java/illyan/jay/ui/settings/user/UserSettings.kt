@@ -91,11 +91,11 @@ import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.LoadingIndicator
 import illyan.jay.ui.components.MediumCircularProgressIndicator
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.MenuButton
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.destinations.DataSettingsDialogScreenDestination
-import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
@@ -801,7 +801,7 @@ private fun generateRandomUserPreferences(): UiPreferences {
     )
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 fun UserSettingsDialogScreenPreview() {
     JayTheme {
@@ -820,7 +820,7 @@ fun UserSettingsDialogScreenPreview() {
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 fun AnalyticsRequestDialogContentPreview() {
     JayTheme {

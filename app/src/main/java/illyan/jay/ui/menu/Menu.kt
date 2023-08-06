@@ -78,7 +78,7 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.domain.model.Theme
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.destinations.FreeDriveDestination
 import illyan.jay.ui.destinations.SessionsDestination
 import illyan.jay.ui.home.RoundedCornerRadius
@@ -198,7 +198,7 @@ fun MenuContent(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun MenuContentPreview() {
     JayTheme {

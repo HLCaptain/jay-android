@@ -89,7 +89,7 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.ui.components.MediumCircularProgressIndicator
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipButton
 import illyan.jay.ui.destinations.SessionScreenDestination
@@ -271,7 +271,7 @@ fun SessionsScreen(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun SessionsScreenPreview() {
     val sessions = generateUiSessions(10)
@@ -586,7 +586,7 @@ fun SessionLoadingIndicator(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun SessionLoadingIndicatorPreview() {
     JayTheme {
@@ -826,7 +826,7 @@ fun SessionDetailsList(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun SessionCardPreview() {
     JayTheme {

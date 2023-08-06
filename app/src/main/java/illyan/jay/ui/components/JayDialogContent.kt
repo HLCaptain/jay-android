@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,9 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -176,16 +180,25 @@ fun JayDialogSurface(
 fun JayDialogContent(
     modifier: Modifier = Modifier,
     surface: @Composable (@Composable () -> Unit) -> Unit = {
+        val configuration = LocalConfiguration.current
+        val screenWidthDp by remember { derivedStateOf { configuration.screenWidthDp.dp } }
+        // Increase width to edge of the screen until reaching DialogMaxWidth
         JayDialogSurface(
-            modifier = modifier,
+            modifier = modifier.dialogWidth(screenWidthDp),
             content = it
         )
     },
     content: @Composable () -> Unit = {},
 ) = surface(content)
 
-internal val DialogMinWidth = 280.dp
-internal val DialogMaxWidth = 560.dp
+val DialogMinWidth = 280.dp
+val DialogMaxWidth = 420.dp
+val DialogMargin = 64.dp
+
+fun Modifier.dialogWidth(screenWidthDp: Dp = 400.dp) = widthIn(
+    min = DialogMinWidth,
+    max = minOf(maxOf(DialogMinWidth, screenWidthDp - DialogMargin), DialogMaxWidth),
+)
 
 // Paddings for each of the dialog's parts.
 val JayDialogContentPadding = PaddingValues(all = 24.dp)

@@ -52,10 +52,10 @@ import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayTextCard
 import illyan.jay.ui.components.LicenseOfType
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.MenuButton
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.libraries.model.toUiModel
-import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -210,7 +210,7 @@ fun LibraryButtons(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun LibraryDialogContentPreview() {
     val library = Library.Jay.toUiModel()

@@ -46,7 +46,7 @@ import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.LoadingIndicator
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.profile.LocalDialogActivityProvider
 import illyan.jay.ui.profile.LocalDialogDismissRequest
 import illyan.jay.ui.profile.ProfileNavGraph
@@ -180,7 +180,7 @@ fun LoginButtons(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun PreviewLoginDialog() {
     JayTheme {
