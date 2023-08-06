@@ -21,7 +21,6 @@ package illyan.jay.ui.settings.data
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -280,7 +279,6 @@ fun MenuButtonWithDescription(
                 val (button, toggle) = createRefs()
                 Row(
                     modifier = Modifier
-                        .clickable { showDescription = !showDescription }
                         .constrainAs(button) {
                             end.linkTo(toggle.start)
                             start.linkTo(parent.start)
