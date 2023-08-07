@@ -152,6 +152,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
 
+    // Day-Night Cycle in Theming
+    implementation(libs.solarized)
+
     // Item Swipe
     implementation(libs.saket.swipe)
 

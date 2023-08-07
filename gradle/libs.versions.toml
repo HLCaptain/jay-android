@@ -28,6 +28,7 @@ hilt = "2.47"
 hilt-navigation-compose = "1.0.0"
 
 zstd-jni = "1.5.5-5"
+solarized = "1.0.8"
 
 hlcaptain-compose-scrollbar = "0.0.3-alpha"
 saket-swipe = "1.2.0"
@@ -138,6 +139,7 @@ compose-destinations-ksp = { module = "io.github.raamcosta.compose-destinations:
 coil = { module = "io.coil-kt:coil-compose", version.ref = "coil-compose" }
 
 zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstd-jni" }
+solarized = { module = "com.github.phototime:solarized-android", version.ref = "solarized" }
 
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }

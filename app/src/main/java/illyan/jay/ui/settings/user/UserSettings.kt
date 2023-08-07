@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -578,6 +579,7 @@ fun UserSettingsScreen(
                                 Theme.System -> stringResource(R.string.system)
                                 Theme.Light -> stringResource(R.string.light)
                                 Theme.Dark -> stringResource(R.string.dark)
+                                Theme.DayNightCycle -> stringResource(R.string.day_night_cycle)
                             }
                         },
                         getValueLeadingIcon = { theme ->
@@ -585,6 +587,7 @@ fun UserSettingsScreen(
                                 Theme.System -> Icons.Rounded.Settings
                                 Theme.Light -> Icons.Rounded.LightMode
                                 Theme.Dark -> Icons.Rounded.DarkMode
+                                Theme.DayNightCycle -> Icons.Rounded.Schedule
                             }
                         }
                     )

@@ -45,6 +45,7 @@ import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Route
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.TravelExplore
 import androidx.compose.material3.Card
@@ -190,6 +191,7 @@ fun MenuContent(
                     Theme.Light -> Icons.Rounded.LightMode
                     Theme.Dark -> Icons.Rounded.DarkMode
                     Theme.System -> Icons.Rounded.Settings
+                    Theme.DayNightCycle -> Icons.Rounded.Schedule
                     null -> null
                 },
                 onClick = onToggleTheme,
