@@ -552,7 +552,7 @@ fun HomeScreen(
                     }
                 }
             },
-            onSearchQueryChanged = {searchQuery = it },
+            onSearchQueryChanged = { searchQuery = it },
             onSearchQueried = {
                 LocalBroadcastManager.getInstance(context)
                     .sendBroadcast(
