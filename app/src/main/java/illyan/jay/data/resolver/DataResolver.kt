@@ -19,6 +19,7 @@
 package illyan.jay.data.resolver
 
 import illyan.jay.data.DataStatus
+import illyan.jay.di.CoroutineScopeIO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,7 +30,7 @@ import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
 
 abstract class DataResolver<DataType>(
-    private val coroutineScopeIO: CoroutineScope
+    @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
     abstract fun uploadDataToCloud(data: DataType)
     abstract fun upsertDataToLocal(data: DataType)

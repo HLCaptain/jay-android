@@ -20,6 +20,8 @@ package illyan.jay.di
 
 import android.content.Context
 import android.hardware.SensorManager
+import android.net.ConnectivityManager
+import androidx.core.content.getSystemService
 import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -102,4 +104,10 @@ object AppModule {
     @Provides
     @Singleton
     fun providePerformance() = Firebase.performance
+
+    @Provides
+    @Singleton
+    fun provideConnectivityManager(@ApplicationContext  context: Context): ConnectivityManager {
+        return context.getSystemService<ConnectivityManager>()!!
+    }
 }

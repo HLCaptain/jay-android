@@ -27,14 +27,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.zotov.phototime.solarized.Solarized
 import illyan.jay.domain.interactor.SensorInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.LocalDateTime
 import java.util.TimeZone
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class ThemeViewModel @Inject constructor(
@@ -50,7 +54,12 @@ class ThemeViewModel @Inject constructor(
 
     private val currentLocation = MutableStateFlow<Location?>(null)
 
-    val isNight = currentLocation.map { location ->
+    val isNight = flow {
+        while (true) {
+            emit(Unit)
+            delay(1.seconds) // refreshing every second
+        }
+    }.combine(currentLocation) { _, location ->
         location?.let {
             val solarized = Solarized(
                 it.latitude,
