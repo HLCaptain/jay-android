@@ -121,8 +121,9 @@ abstract class DataResolver<DataType>(
     }
 
     val shouldSyncData by lazy {
-        localData.map { shouldSyncData(it) }
-            .stateIn(coroutineScopeIO, SharingStarted.Eagerly, shouldSyncData(null))
+        combine(canSyncData, localData) { canSyncData, localData ->
+            canSyncData && shouldSyncData(localData)
+        }.stateIn(coroutineScopeIO, SharingStarted.Eagerly, canSyncData.value && shouldSyncData(null))
     }
 
     /**
