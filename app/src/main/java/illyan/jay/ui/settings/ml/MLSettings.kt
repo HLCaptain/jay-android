@@ -23,6 +23,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -30,16 +31,23 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
@@ -80,6 +88,30 @@ fun MLSettingsDialogContent(
     onDeleteAllModels: () -> Unit = {},
     onDownloadModel: (String) -> Unit = {},
 ) {
+    var startup by rememberSaveable { mutableStateOf(true) }
+    Crossfade(targetState = startup, label = "ML Settings Dialog Content") {
+        if (it) {
+            MLWarningScreen(onAccept = { startup = false })
+        } else {
+            MLSettingsScreen(
+                modifier = modifier,
+                uiModels = uiModels,
+                onDownloadModel = onDownloadModel,
+                onRefreshModelList = onRefreshModelList,
+                onDeleteAllModels = onDeleteAllModels,
+            )
+        }
+    }
+}
+
+@Composable
+fun MLSettingsScreen(
+    modifier: Modifier = Modifier,
+    uiModels: List<UiModel> = emptyList(),
+    onDownloadModel: (String) -> Unit = {},
+    onRefreshModelList: () -> Unit = {},
+    onDeleteAllModels: () -> Unit = {},
+) {
     JayDialogContent(
         modifier = modifier,
         title = {
@@ -98,6 +130,49 @@ fun MLSettingsDialogContent(
                 onRefreshModelList = onRefreshModelList,
                 onDeleteAllModels = onDeleteAllModels,
             )
+        }
+    )
+}
+
+@Composable
+fun MLWarningScreen(
+    modifier: Modifier = Modifier,
+    onAccept: () -> Unit = {},
+) {
+    JayDialogContent(
+        modifier = modifier,
+        icon = {
+            Icon(
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.TopCenter),
+                imageVector = Icons.Rounded.RestartAlt,
+                contentDescription = ""
+            )
+        },
+        title = {
+            Text(
+                modifier = Modifier.align(Alignment.TopCenter),
+                text = stringResource(R.string.restart_required),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            LazyColumn {
+                item {
+                    Text(text = stringResource(R.string.restart_required_description))
+                }
+            }
+        },
+        buttons = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(onClick = onAccept) {
+                    Text(text = stringResource(R.string.ok))
+                }
+            }
         }
     )
 }
@@ -137,11 +212,9 @@ fun MLSettingsScreen(
                                         Icon(imageVector = Icons.Rounded.Download, contentDescription = "")
                                     }
                                     ModelState.Downloading -> TextButton(onClick = {}) {
-//                                Text(text = stringResource(R.string.downloading))
                                         MediumCircularProgressIndicator()
                                     }
                                     ModelState.Downloaded -> TextButton(onClick = {}) {
-//                                Text(text = stringResource(R.string.downloaded))
                                         Icon(imageVector = Icons.Rounded.Done, contentDescription = "")
                                     }
                                 }

@@ -155,4 +155,7 @@
     <string name="refresh">Refresh</string>
     <string name="no_available_models_found">No Available Models Found</string>
     <string name="delete_all">Delete All</string>
+    <string name="restart_required">Restart Required</string>
+    <string name="restart_required_description">Machine Learning functionality is in Beta. Restart is required after each action to take effect.</string>
+    <string name="ok">OK</string>
 </resources>
