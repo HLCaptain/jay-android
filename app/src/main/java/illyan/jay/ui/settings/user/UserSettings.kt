@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.CloudOff
@@ -97,6 +98,7 @@ import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.destinations.DataSettingsDialogScreenDestination
+import illyan.jay.ui.destinations.MLSettingsDialogScreenDestination
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
@@ -133,7 +135,8 @@ fun UserSettingsDialogScreen(
         setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
         setAdVisibility = viewModel::setAdVisibility,
         setDynamicColorEnabled = viewModel::setDynamicColorEnabled,
-        onDeleteUserData = { destinationsNavigator.navigate(DataSettingsDialogScreenDestination) },
+        navigateToDataSettings = { destinationsNavigator.navigate(DataSettingsDialogScreenDestination) },
+        navigateToMLSettings = { destinationsNavigator.navigate(MLSettingsDialogScreenDestination) },
     )
 }
 
@@ -150,8 +153,9 @@ fun UserSettingsDialogContent(
     setFreeDriveAutoStart: (Boolean) -> Unit = {},
     setAdVisibility: (Boolean) -> Unit = {},
     setDynamicColorEnabled: (Boolean) -> Unit = {},
-    onDeleteUserData: () -> Unit = {},
+    navigateToDataSettings: () -> Unit = {},
     onThemeChange: (Theme) -> Unit = {},
+    navigateToMLSettings: () -> Unit = {},
 ) {
     Crossfade(
         modifier = modifier.animateContentSize(),
@@ -179,6 +183,7 @@ fun UserSettingsDialogContent(
                         setAdVisibility = setAdVisibility,
                         setDynamicColorEnabled = setDynamicColorEnabled,
                         onThemeChange = onThemeChange,
+                        navigateToMLSettings = navigateToMLSettings
                     )
                 },
                 buttons = {
@@ -186,7 +191,7 @@ fun UserSettingsDialogContent(
                         canSyncPreferences = canSyncPreferences,
                         shouldSyncPreferences = shouldSyncPreferences,
                         onShouldSyncChanged = onShouldSyncChanged,
-                        onDeleteUserData = onDeleteUserData,
+                        navigateToDataSettings = navigateToDataSettings,
                     )
                 },
                 containerColor = Color.Transparent,
@@ -347,7 +352,7 @@ fun UserSettingsButtons(
     canSyncPreferences: Boolean = false,
     shouldSyncPreferences: Boolean = false,
     onShouldSyncChanged: (Boolean) -> Unit = {},
-    onDeleteUserData: () -> Unit = {}
+    navigateToDataSettings: () -> Unit = {}
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -356,7 +361,7 @@ fun UserSettingsButtons(
     ) {
         MenuButton(
             text = stringResource(R.string.data_settings),
-            onClick = onDeleteUserData
+            onClick = navigateToDataSettings
         )
         SyncPreferencesButton(
             canSyncPreferences = canSyncPreferences,
@@ -539,6 +544,7 @@ fun UserSettingsScreen(
     setAdVisibility: (Boolean) -> Unit = {},
     setDynamicColorEnabled: (Boolean) -> Unit = {},
     onThemeChange: (Theme) -> Unit = {},
+    navigateToMLSettings: () -> Unit = {},
 ) {
     Crossfade(
         modifier = modifier,
@@ -602,6 +608,13 @@ fun UserSettingsScreen(
                         enabled = preferences.canUseDynamicColor,
                     )
                 }
+                item {
+                    BasicSetting(
+                        screenName = stringResource(R.string.ml_models),
+                        label = "${preferences.downloadedModels} ${stringResource(R.string.downloaded)}",
+                        onClick = navigateToMLSettings
+                    )
+                }
             }
         } else {
             LoadingIndicator()
@@ -622,10 +635,10 @@ fun BooleanSetting(
 ) {
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
-        name = settingName,
+        settingName = settingName,
         onClick = { setValue(!value) },
-        textStyle = textStyle,
-        fontWeight = fontWeight,
+        titleStyle = textStyle,
+        titleWeight = fontWeight,
         enabled = enabled,
     ) {
         Row(
@@ -667,10 +680,10 @@ fun <T : Any> DropdownSetting(
     var isDropdownOpen by remember { mutableStateOf(false) }
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
-        name = settingName,
+        settingName = settingName,
         onClick = { isDropdownOpen = !isDropdownOpen },
-        textStyle = textStyle,
-        fontWeight = fontWeight,
+        titleStyle = textStyle,
+        titleWeight = fontWeight,
     ) {
         Row(
             modifier = Modifier,
@@ -755,15 +768,100 @@ fun <T : Any> DropdownSetting(
     }
 }
 
+@Composable
+fun BasicSetting(
+    modifier: Modifier = Modifier,
+    screenName: String,
+    label: String,
+    onClick: () -> Unit = {}
+) = BasicSetting(
+    modifier = modifier,
+    title = screenName,
+    label = {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Icon(imageVector = Icons.Rounded.ChevronRight, contentDescription = "")
+        }
+    },
+    onClick = onClick
+)
+
+@Composable
+fun BasicSetting(
+    modifier: Modifier = Modifier,
+    title: String,
+    titleStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    titleWeight: FontWeight = FontWeight.Normal,
+    label: @Composable RowScope.() -> Unit = {},
+    onClick: () -> Unit = {}
+) {
+    SettingItem(
+        modifier = modifier,
+        onClick = onClick,
+        title = {
+            Text(
+                modifier = Modifier.animateContentSize(),
+                text = title,
+                style = titleStyle,
+                fontWeight = titleWeight,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        content = label,
+    )
+}
+
+@Composable
+fun BasicSetting(
+    modifier: Modifier = Modifier,
+    title: @Composable RowScope.() -> Unit = {},
+    label: @Composable RowScope.() -> Unit = {},
+    onClick: () -> Unit = {}
+) {
+    SettingItem(
+        modifier = modifier,
+        onClick = onClick,
+        title = title,
+        content = label,
+    )
+}
+
+@Composable
+fun SettingItem(
+    modifier: Modifier = Modifier,
+    settingName: String,
+    titleStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    titleWeight: FontWeight = FontWeight.Normal,
+    onClick: () -> Unit = {},
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit = {},
+) = SettingItem(
+    modifier = modifier,
+    onClick = onClick,
+    enabled = enabled,
+    title = {
+        Text(
+            modifier = Modifier.animateContentSize(),
+            text = settingName,
+            style = titleStyle,
+            fontWeight = titleWeight,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    },
+    content = content
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingItem(
     modifier: Modifier = Modifier,
-    name: String,
-    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
-    fontWeight: FontWeight = FontWeight.Normal,
     onClick: () -> Unit = {},
     enabled: Boolean = true,
+    title: @Composable RowScope.() -> Unit = {},
     content: @Composable RowScope.() -> Unit = {},
 ) {
     Card(
@@ -781,14 +879,8 @@ fun SettingItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                modifier = Modifier.weight(1f, fill = false),
-                text = name,
-                style = textStyle,
-                fontWeight = fontWeight,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row { content() }
+            title()
+            content()
         }
     }
 }

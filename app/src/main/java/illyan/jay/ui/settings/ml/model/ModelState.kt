@@ -16,9 +16,10 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.util
+package illyan.jay.ui.settings.ml.model
 
-object FirebaseRemoteConfigKeys {
-    const val BannerOnAboutScreenAdUnitIdKey = "banner_on_about_screen"
-    const val MLAvailableModels = "ml_available_models"
+enum class ModelState {
+    Available,
+    Downloading,
+    Downloaded,
 }

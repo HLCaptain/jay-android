@@ -147,4 +147,12 @@
     <string name="system">System</string>
     <string name="dynamic_color">Dynamic Color</string>
     <string name="day_night_cycle">Day-Night Cycle</string>
+    <string name="ml_models">ML Models</string>
+    <string name="downloaded">Downloaded</string>
+    <string name="machine_learning">Machine Learning</string>
+    <string name="downloading">Downloading</string>
+    <string name="download">Download</string>
+    <string name="refresh">Refresh</string>
+    <string name="no_available_models_found">No Available Models Found</string>
+    <string name="delete_all">Delete All</string>
 </resources>

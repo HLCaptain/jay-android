@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.AuthInteractor
+import illyan.jay.domain.interactor.ModelInteractor
 import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.domain.model.Theme
 import illyan.jay.ui.settings.user.model.UiPreferences
@@ -39,6 +40,7 @@ import javax.inject.Inject
 @HiltViewModel
 class UserSettingsViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
+    private val modelInteractor: ModelInteractor,
     authInteractor: AuthInteractor
 ) : ViewModel() {
 
@@ -47,9 +49,13 @@ class UserSettingsViewModel @Inject constructor(
 
     val preferences = combine(
         settingsInteractor.userPreferences,
-        settingsInteractor.appSettings
-    ) { preferences, appSettings ->
-        val uiPreferences = preferences?.toUiModel(clientUUID = appSettings.clientUUID)
+        settingsInteractor.appSettings,
+        modelInteractor.getDownloadedModels()
+    ) { preferences, appSettings, models ->
+        val uiPreferences = preferences?.toUiModel(
+            clientUUID = appSettings.clientUUID,
+            downloadedModels = models.size,
+        )
         updateAnalyticsRequestDialogVisibility(uiPreferences)
         uiPreferences
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)

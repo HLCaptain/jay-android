@@ -34,10 +34,12 @@ data class UiPreferences(
     val lastUpdate: ZonedDateTime = DomainPreferences.Default.lastUpdate,
     val lastUpdateToAnalytics: ZonedDateTime? = null,
     val clientUUID: String? = null,
+    val downloadedModels: Int = 0,
 )
 
 fun DomainPreferences.toUiModel(
-    clientUUID: String? = null
+    clientUUID: String? = null,
+    downloadedModels: Int = 0,
 ) = UiPreferences(
     userUUID = userUUID,
     analyticsEnabled = analyticsEnabled,
@@ -49,4 +51,5 @@ fun DomainPreferences.toUiModel(
     lastUpdate = lastUpdate,
     lastUpdateToAnalytics = lastUpdateToAnalytics,
     clientUUID = clientUUID,
+    downloadedModels = downloadedModels,
 )
