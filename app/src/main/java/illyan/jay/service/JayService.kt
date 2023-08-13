@@ -142,8 +142,8 @@ class JayService @Inject constructor() : BaseService() {
 
         // Start location requests
         sensorInteractor.requestLocationUpdates(
-            locationEventListener.locationRequest,
-            locationEventListener.locationCallback
+            locationEventListener.locationCallback,
+            locationEventListener.locationRequest
         )
     }
 

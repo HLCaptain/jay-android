@@ -34,8 +34,8 @@ import com.ramcosta.composedestinations.DestinationsNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.ui.NavGraphs
-import illyan.jay.ui.components.PreviewThemesScreensFonts
-import illyan.jay.ui.theme.JayTheme
+import illyan.jay.ui.components.PreviewAccessibility
+import illyan.jay.ui.theme.JayThemeWithViewModel
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            JayTheme {
+            JayThemeWithViewModel {
                 MainScreen(
                     modifier = Modifier.fillMaxSize()
                 )
@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier

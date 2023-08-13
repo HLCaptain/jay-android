@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -91,11 +92,11 @@ import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.LoadingIndicator
 import illyan.jay.ui.components.MediumCircularProgressIndicator
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.MenuButton
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.destinations.DataSettingsDialogScreenDestination
-import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
@@ -578,6 +579,7 @@ fun UserSettingsScreen(
                                 Theme.System -> stringResource(R.string.system)
                                 Theme.Light -> stringResource(R.string.light)
                                 Theme.Dark -> stringResource(R.string.dark)
+                                Theme.DayNightCycle -> stringResource(R.string.day_night_cycle)
                             }
                         },
                         getValueLeadingIcon = { theme ->
@@ -585,6 +587,7 @@ fun UserSettingsScreen(
                                 Theme.System -> Icons.Rounded.Settings
                                 Theme.Light -> Icons.Rounded.LightMode
                                 Theme.Dark -> Icons.Rounded.DarkMode
+                                Theme.DayNightCycle -> Icons.Rounded.Schedule
                             }
                         }
                     )
@@ -801,7 +804,7 @@ private fun generateRandomUserPreferences(): UiPreferences {
     )
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 fun UserSettingsDialogScreenPreview() {
     JayTheme {
@@ -820,7 +823,7 @@ fun UserSettingsDialogScreenPreview() {
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 fun AnalyticsRequestDialogContentPreview() {
     JayTheme {

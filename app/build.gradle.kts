@@ -152,6 +152,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
 
+    // Day-Night Cycle in Theming
+    implementation(libs.solarized)
+
     // Item Swipe
     implementation(libs.saket.swipe)
 
@@ -215,6 +218,10 @@ dependencies {
     implementation(libs.firebase.crashlytics.ktx)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.perf.ktx)
+
+    // Firebase ML
+    implementation(libs.firebase.ml.modeldownloader)
+    implementation(libs.tensorflow.lite)
 
     // JUnit5 testing tools
     // (Required) Writing and executing Unit Tests on the JUnit Platform

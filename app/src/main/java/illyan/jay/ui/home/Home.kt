@@ -18,7 +18,6 @@
 
 @file:OptIn(
     ExperimentalMaterialApi::class,
-    ExperimentalComposeUiApi::class,
     ExperimentalMaterial3Api::class,
     ExperimentalPermissionsApi::class
 )
@@ -65,6 +64,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -99,7 +99,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -154,7 +153,7 @@ import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.map.MapboxMap
 import illyan.jay.ui.map.padding
@@ -527,8 +526,9 @@ fun HomeScreen(
                 .zIndex(1f) // Search bar is in front of everything else
                 .constrainAs(searchBar) {
                     bottom.linkTo(scaffold.bottom)
+                    centerHorizontallyTo(parent)
                 }
-                .fillMaxWidth()
+                .widthIn(max = HomeBarMaxWidth)
                 .imePadding()
                 .navigationBarsPadding(),
             isUserSignedIn = isUserSignedIn,
@@ -552,7 +552,7 @@ fun HomeScreen(
                     }
                 }
             },
-            onSearchQueryChanged = {searchQuery = it },
+            onSearchQueryChanged = { searchQuery = it },
             onSearchQueried = {
                 LocalBroadcastManager.getInstance(context)
                     .sendBroadcast(
@@ -592,7 +592,6 @@ fun HomeScreen(
                 topStart = roundDp,
                 topEnd = roundDp
             )
-
         ) {
             Column(
                 modifier = Modifier
@@ -919,13 +918,15 @@ fun BottomSearchBar(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 fun BottomSearchBarPreview() {
     JayTheme {
-        BottomSearchBar()
+        BottomSearchBar(modifier = Modifier.widthIn(max = HomeBarMaxWidth))
     }
 }
+
+val HomeBarMaxWidth = 420.dp
 
 @Composable
 fun BottomSheetScreen(

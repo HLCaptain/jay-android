@@ -18,75 +18,19 @@
 
 package illyan.jay.ui.components
 
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewDynamicColors
+import androidx.compose.ui.tooling.preview.PreviewFontScale
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 
-@Preview(
-    name = "Dark theme",
-    group = "themes",
-    uiMode = UI_MODE_NIGHT_YES,
-    showBackground = true,
-)
-@Preview(
-    name = "Light theme",
-    group = "themes",
-    showBackground = true,
-)
-annotation class PreviewLightDarkTheme
+@PreviewFontScale
+@PreviewScreenSizes
+annotation class PreviewAccessibility
 
-// Jay is not intended to use with foldable phones or desktops (yet)
-//@Preview(
-//    name = "Foldable screen",
-//    device = Devices.FOLDABLE,
-//    showBackground = true
-//)
-//@Preview(
-//    name = "Desktop screen",
-//    device = Devices.DESKTOP,
-//    showBackground = true
-//)
-@Preview(
-    name = "Phone screen",
-    group = "screens",
-    device = Devices.PHONE,
-    showBackground = true
-)
-@Preview(
-    name = "Nexus 5 screen",
-    group = "screens",
-    device = Devices.NEXUS_5,
-    showBackground = true
-)
-@Preview(
-    name = "Pixel 1 screen",
-    group = "screens",
-    device = Devices.PIXEL,
-    showBackground = true
-)
-@Preview(
-    name = "Pixel 4 XL screen",
-    group = "screens",
-    device = Devices.PIXEL_4_XL,
-    showBackground = true
-)
-annotation class PreviewDeviceScreens
+@PreviewLightDark
+@PreviewDynamicColors
+annotation class PreviewVanity
 
-@Preview(
-    name = "Large font scale",
-    group = "font_scales",
-    fontScale = 1.5f,
-    showBackground = true
-)
-@Preview(
-    name = "Extra large font scale",
-    group = "font_scales",
-    fontScale = 2.0f,
-    showBackground = true
-)
-annotation class PreviewFontScales
-
-@PreviewLightDarkTheme
-@PreviewDeviceScreens
-@PreviewFontScales
-annotation class PreviewThemesScreensFonts
+@PreviewAccessibility
+@PreviewVanity
+annotation class PreviewAll

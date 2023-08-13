@@ -33,14 +33,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material3.AlertDialog
@@ -64,7 +61,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -95,8 +91,10 @@ import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.MenuButton
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.TooltipElevatedCard
+import illyan.jay.ui.components.dialogWidth
 import illyan.jay.ui.destinations.AboutDialogScreenDestination
 import illyan.jay.ui.destinations.LoginDialogScreenDestination
 import illyan.jay.ui.destinations.UserSettingsDialogScreenDestination
@@ -123,7 +121,6 @@ fun ProfileDialog(
 ) {
     if (isDialogOpen) {
         val context = LocalContext.current
-        val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
         // Don't use exit animations because
         // it looks choppy while Dialog resizes due to content change.
         val engine = rememberAnimatedNavHostEngine(
@@ -146,7 +143,6 @@ fun ProfileDialog(
             }
         }
         AlertDialog(
-            modifier = Modifier.widthIn(max = screenWidthDp - 64.dp),
             properties = DialogProperties(
                 usePlatformDefaultWidth = false
             ),
@@ -323,7 +319,7 @@ fun ProfileScreen(
     )
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun PreviewProfileDialogScreen(
     name: String = "Illyan",
@@ -334,7 +330,7 @@ private fun PreviewProfileDialogScreen(
         Column {
             JayDialogSurface {
                 ProfileDialogContent(
-                    modifier = Modifier.width(300.dp),
+                    modifier = Modifier.dialogWidth(),
                     userUUID = UUID.randomUUID().toString(),
                     userPhotoUrl = null,
                     confidentialInfo = listOf(
@@ -575,27 +571,6 @@ fun ProfileMenu(
             onClick = onShowSettingsScreen,
             text = stringResource(R.string.settings)
         )
-    }
-}
-
-@Composable
-fun MenuButton(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
-    text: String,
-) {
-    TextButton(
-        modifier = modifier,
-        onClick = onClick,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = text)
-            Icon(
-                imageVector = Icons.Rounded.ChevronRight, contentDescription = "",
-            )
-        }
     }
 }
 
