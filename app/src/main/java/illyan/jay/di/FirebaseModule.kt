@@ -27,6 +27,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.PersistentCacheSettings
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
@@ -95,4 +96,8 @@ object FirebaseModule {
         }
         return remoteConfig
     }
+
+    @Singleton
+    @Provides
+    fun provideFirebaseModelDownloader() = FirebaseModelDownloader.getInstance()
 }
