@@ -28,6 +28,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Parcelable
 import androidx.compose.animation.AnimatedVisibility
@@ -435,9 +436,14 @@ fun HomeScreen(
         onDispose { viewModel.dispose() }
     }
     val density = LocalDensity.current.density
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+    val configuration = LocalConfiguration.current
+    val maxHeight = when (configuration.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+        else -> configuration.screenHeightDp
+    }.dp
     LaunchedEffect(density) { _density.update { density } }
-    LaunchedEffect(screenHeightDp) { _screenHeight.update { screenHeightDp } }
+    LaunchedEffect(maxHeight) { _screenHeight.update { maxHeight } }
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()

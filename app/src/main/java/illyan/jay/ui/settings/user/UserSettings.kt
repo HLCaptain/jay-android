@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.settings.user
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -75,6 +77,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -552,7 +555,15 @@ fun UserSettingsScreen(
         label = "User Settings Screen"
     ) {
         if (it && preferences != null) {
-            LazyColumn {
+            val configuration = LocalConfiguration.current
+            val maxHeight = when (configuration.orientation) {
+                Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+                Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+                else -> configuration.screenHeightDp
+            }
+            LazyColumn(
+                modifier = Modifier.heightIn(max = (maxHeight * 0.55f).dp)
+            ) {
                 item {
                     BooleanSetting(
                         settingName = stringResource(R.string.analytics),
@@ -778,13 +789,17 @@ fun BasicSetting(
     modifier = modifier,
     title = screenName,
     label = {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onClick) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Icon(imageVector = Icons.Rounded.ChevronRight, contentDescription = "")
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                tint = MaterialTheme.colorScheme.onSurface,
+                contentDescription = ""
+            )
         }
     },
     onClick = onClick

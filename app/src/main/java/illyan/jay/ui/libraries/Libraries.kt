@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.libraries
 
+import android.content.res.Configuration
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -87,10 +88,15 @@ fun LibrariesDialogContent(
     libraries: List<UiLibrary> = emptyList(),
     onSelectLibrary: (UiLibrary) -> Unit = {},
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val configuration = LocalConfiguration.current
+    val maxHeight = when (configuration.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+        else -> configuration.screenHeightDp
+    }
     JayDialogContent(
         modifier = modifier,
-        textModifier = Modifier.heightIn(max = (screenHeightDp * 0.55f).dp),
+        textModifier = Modifier.heightIn(max = (maxHeight * 0.55f).dp),
         title = { LibrariesTitle() },
         text = {
             LibrariesScreen(
