@@ -119,7 +119,7 @@ class FirebaseMLDataSource @Inject constructor(
     fun getModelId(
         modelName: String,
         conditions: CustomModelDownloadConditions = CustomModelDownloadConditions.Builder().build(),
-        downloadType: DownloadType = DownloadType.LOCAL_MODEL_UPDATE_IN_BACKGROUND,
+        downloadType: DownloadType = DownloadType.LATEST_MODEL,
     ): SharedFlow<Long?> {
         val flow = MutableSharedFlow<Long?>(extraBufferCapacity = 1)
         modelDownloader
@@ -180,7 +180,7 @@ class FirebaseMLDataSource @Inject constructor(
     suspend fun deleteAllModels() {
         Timber.v("Deleting all downloaded models.")
         downloadedModels.first { models ->
-            models.forEach { modelDownloader.deleteDownloadedModel(it.name) }
+            models.forEach { deleteModel(it.name) }
             true
         }
 //        modelDownloader
@@ -195,5 +195,13 @@ class FirebaseMLDataSource @Inject constructor(
 //                Timber.e(it, "Error deleting downloaded models: ${it.message}")
 //            }
 //            .addOnCanceledListener { Timber.v("Deleting downloaded models cancelled.") }
+    }
+
+    fun deleteModel(modelName: String) {
+        Timber.v("Deleting model: $modelName")
+        modelDownloader.deleteDownloadedModel(modelName)
+            .addOnSuccessListener { refreshDownloadedModelList() }
+            .addOnFailureListener { Timber.e(it, "Error deleting downloaded model: ${it.message}") }
+            .addOnCanceledListener { Timber.v("Deleting downloaded model cancelled.") }
     }
 }

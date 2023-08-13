@@ -20,6 +20,7 @@ package illyan.jay.domain.interactor
 
 import illyan.jay.data.room.datasource.SensorEventRoomDataSource
 import illyan.jay.domain.model.DomainSensorEvent
+import illyan.jay.domain.model.DomainSession
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,8 +33,11 @@ import javax.inject.Singleton
  */
 @Singleton
 class SensorEventInteractor @Inject constructor(
-    private val sensorEventRoomDataSource: SensorEventRoomDataSource
+    private val sensorEventRoomDataSource: SensorEventRoomDataSource,
+    private val authInteractor: AuthInteractor,
 ) {
+    fun getSensorEvents(session: DomainSession) = sensorEventRoomDataSource.getSensorEvents(session)
+    fun getSensorEvents(sessionUUID: String) = sensorEventRoomDataSource.getSensorEvents(sessionUUID)
     /**
      * Save an acceleration data instance.
      *

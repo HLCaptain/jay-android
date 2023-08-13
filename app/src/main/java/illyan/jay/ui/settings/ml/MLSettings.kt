@@ -20,12 +20,14 @@ package illyan.jay.ui.settings.ml
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Done
@@ -37,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +47,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -118,7 +122,7 @@ fun MLSettingsScreen(
             Text(text = stringResource(R.string.machine_learning))
         },
         text = {
-            MLSettingsScreen(
+            MLSettingsModelList(
                 uiModels = uiModels,
                 downloadModel = onDownloadModel,
             )
@@ -178,7 +182,7 @@ fun MLWarningScreen(
 }
 
 @Composable
-fun MLSettingsScreen(
+fun MLSettingsModelList(
     modifier: Modifier = Modifier,
     uiModels: List<UiModel> = emptyList(),
     downloadModel: (String) -> Unit = {},
@@ -196,7 +200,11 @@ fun MLSettingsScreen(
                 )
             }
         } else {
-            LazyColumn(modifier = modifier) {
+            LazyColumn(
+                modifier = modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
+            ) {
                 items(uiModels) {
                     BasicSetting(
                         title = it.name,
@@ -251,16 +259,26 @@ fun MLSettingsButtons(
 
 @PreviewAccessibility
 @Composable
-fun MLSettingsDialogContentPreview() {
+fun MLSettingsScreenPreview() {
     JayTheme {
         JayDialogSurface {
-            MLSettingsDialogContent(
+            MLSettingsScreen(
                 uiModels = listOf(
-                    UiModel("Model 1", ModelState.Available),
-                    UiModel("Model 2", ModelState.Downloading),
-                    UiModel("Model 3", ModelState.Downloaded),
+                    UiModel("Available Model", ModelState.Available),
+                    UiModel("Downloading Model", ModelState.Downloading),
+                    UiModel("Downloaded Model", ModelState.Downloaded),
                 )
             )
+        }
+    }
+}
+
+@PreviewAccessibility
+@Composable
+fun MLWarningScreenPreview() {
+    JayTheme {
+        JayDialogSurface {
+            MLWarningScreen()
         }
     }
 }

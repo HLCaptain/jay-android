@@ -158,6 +158,9 @@ dependencies {
     // Item Swipe
     implementation(libs.saket.swipe)
 
+    // Math for interpolation
+    implementation(libs.apache.commons.math3)
+
     // Mapbox
     implementation(libs.mapbox.maps)
     implementation(libs.mapbox.search)
