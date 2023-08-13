@@ -276,40 +276,39 @@ fun BackPressHandler(
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val backInvokedCallback = remember {
-        OnBackInvokedCallback {
-            Timber.d("Intercepted back press >= API 33!")
-            currentOnBackPressed()
-        }
-    }
-
-    val backCallback = remember {
-        object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Timber.d("Intercepted back press!")
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val backInvokedCallback = remember {
+            OnBackInvokedCallback {
+                Timber.d("Intercepted back press >= API 33!")
                 currentOnBackPressed()
             }
         }
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val activity = LocalContext.current as? Activity
         val backInvokedDispatcher = activity?.onBackInvokedDispatcher
         DisposableEffect(backInvokedDispatcher, customDisposableEffectKey) {
             if (isEnabled()) {
-                backInvokedDispatcher?.registerOnBackInvokedCallback(PRIORITY_DEFAULT, backInvokedCallback)
+                backInvokedDispatcher?.registerOnBackInvokedCallback(
+                    PRIORITY_DEFAULT,
+                    backInvokedCallback
+                )
             }
-
             onDispose {
                 backInvokedDispatcher?.unregisterOnBackInvokedCallback(backInvokedCallback)
             }
         }
     } else {
+        val backCallback = remember {
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    Timber.d("Intercepted back press!")
+                    currentOnBackPressed()
+                }
+            }
+        }
         DisposableEffect(backPressedDispatcher, customDisposableEffectKey) {
             if (isEnabled()) {
                 backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
             }
-
             onDispose {
                 backCallback.remove()
             }
