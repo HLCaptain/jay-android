@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -74,6 +75,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -561,8 +563,13 @@ fun UserSettingsScreen(
                 Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
                 else -> configuration.screenHeightDp
             }
+            // TODO: extract 0.5f to a constant per dialog parts
             LazyColumn(
-                modifier = Modifier.heightIn(max = (maxHeight * 0.55f).dp)
+                modifier = Modifier
+                    .heightIn(max = (maxHeight * 0.55f).dp)
+                    .clip(RoundedCornerShape(12.dp))
+            // TODO: disabled buttons blend in too much, find a way to make list pleasing to the eye
+//                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
             ) {
                 item {
                     BooleanSetting(
@@ -586,8 +593,11 @@ fun UserSettingsScreen(
                     )
                 }
                 item {
+                    var isDropdownOpen by rememberSaveable { mutableStateOf(false) }
                     DropdownSetting(
                         settingName = stringResource(R.string.theme),
+                        isDropdownOpen = isDropdownOpen,
+                        toggleDropdown = { isDropdownOpen = !isDropdownOpen },
                         selectValue = onThemeChange,
                         selectedValue = preferences.theme,
                         values = Theme.values().toList(),
@@ -676,10 +686,14 @@ fun BooleanSetting(
     }
 }
 
+// DropdownSetting when opened likes to shift to the start unintentionally.
+// Wrap it inside a Row or layour to prevent this.
 @Composable
 fun <T : Any> DropdownSetting(
     selectedValue: T? = null,
-    values: Iterable<T>,
+    isDropdownOpen: Boolean = false,
+    toggleDropdown: () -> Unit = {},
+    values: Iterable<T> = emptyList(),
     getValueName: @Composable (T) -> String = { it.toString() },
     getValueLeadingIcon: (T) -> ImageVector? = { null },
     getValueTrailingIcon: (T) -> ImageVector? = { null },
@@ -688,11 +702,10 @@ fun <T : Any> DropdownSetting(
     textStyle: TextStyle = MaterialTheme.typography.labelLarge,
     fontWeight: FontWeight = FontWeight.Normal,
 ) {
-    var isDropdownOpen by remember { mutableStateOf(false) }
     SettingItem(
         modifier = Modifier.fillMaxWidth(),
         settingName = settingName,
-        onClick = { isDropdownOpen = !isDropdownOpen },
+        onClick = toggleDropdown,
         titleStyle = textStyle,
         titleWeight = fontWeight,
     ) {
@@ -716,7 +729,7 @@ fun <T : Any> DropdownSetting(
             }
             IconToggleButton(
                 checked = isDropdownOpen,
-                onCheckedChange = { isDropdownOpen = it }
+                onCheckedChange = { toggleDropdown() }
             ) {
                 Icon(
                     imageVector = if (isDropdownOpen) {
@@ -730,7 +743,7 @@ fun <T : Any> DropdownSetting(
         }
         DropdownMenu(
             expanded = isDropdownOpen,
-            onDismissRequest = { isDropdownOpen = false },
+            onDismissRequest = toggleDropdown,
         ) {
             values.forEach { value ->
                 val leadingIcon = remember { getValueLeadingIcon(value) }
@@ -763,7 +776,7 @@ fun <T : Any> DropdownSetting(
                     text = { Text(text = getValueName(value)) },
                     leadingIcon = (if (leadingIcon != null) leadingComposable else null) as? @Composable (() -> Unit),
                     trailingIcon = (if (trailingIcon != null) trailingComposable else null) as? @Composable (() -> Unit),
-                    onClick = { selectValue(value); isDropdownOpen = false },
+                    onClick = { selectValue(value); toggleDropdown() },
                     colors = if (value == selectedValue) {
                         MenuDefaults.itemColors(
                             textColor = MaterialTheme.colorScheme.primary,
@@ -895,7 +908,7 @@ fun SettingItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             title()
-            content()
+            Row { content() }
         }
     }
 }
@@ -938,6 +951,41 @@ fun AnalyticsRequestDialogContentPreview() {
             val preferences = generateRandomUserPreferences()
             AnalyticsRequestDialogContent(
                 analyticsEnabled = preferences.analyticsEnabled,
+            )
+        }
+    }
+}
+
+// DropdownSetting when opened likes to shift to the start unintentionally.
+// Wrap it inside a Row or layour to prevent this.
+@PreviewAccessibility
+@Composable
+fun DropdownSettingPreview() {
+    JayTheme {
+        JayDialogSurface {
+            val isDropdownOpen by remember { mutableStateOf(true) }
+            DropdownSetting(
+                settingName = stringResource(R.string.theme),
+                isDropdownOpen = isDropdownOpen,
+                selectValue = {},
+                selectedValue = Theme.entries.random(),
+                values = Theme.values().toList(),
+                getValueName = { theme ->
+                    when (theme) {
+                        Theme.System -> stringResource(R.string.system)
+                        Theme.Light -> stringResource(R.string.light)
+                        Theme.Dark -> stringResource(R.string.dark)
+                        Theme.DayNightCycle -> stringResource(R.string.day_night_cycle)
+                    }
+                },
+                getValueLeadingIcon = { theme ->
+                    when (theme) {
+                        Theme.System -> Icons.Rounded.Settings
+                        Theme.Light -> Icons.Rounded.LightMode
+                        Theme.Dark -> Icons.Rounded.DarkMode
+                        Theme.DayNightCycle -> Icons.Rounded.Schedule
+                    }
+                }
             )
         }
     }
