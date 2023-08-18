@@ -25,6 +25,7 @@ import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.LocationInteractor
+import illyan.jay.domain.interactor.SensorEventInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.ui.sessions.model.UiSession
@@ -54,6 +55,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
+    private val sensorEventInteractor: SensorEventInteractor,
     authInteractor: AuthInteractor,
     appSettingsDataSource: AppSettingsDataSource,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher
@@ -265,7 +267,8 @@ class SessionsViewModel @Inject constructor(
         viewModelScope.launch(dispatcherIO) {
             sessionInteractor.getSession(uuid).first()?.let { session ->
                 val locations = locationInteractor.getLocations(uuid).first()
-                sessionInteractor.uploadSession(session, locations)
+                val events = sensorEventInteractor.getSensorEvents(uuid).first()
+                sessionInteractor.uploadSession(session, locations, events)
             }
         }
     }

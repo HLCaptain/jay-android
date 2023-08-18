@@ -35,8 +35,8 @@ import androidx.compose.material.icons.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
@@ -210,6 +210,32 @@ fun gpsAccuracyGradient(
     }
 )
 
+fun aggressionGradient(
+    locations: List<UiLocation>,
+    leastAggressiveColor: Color = Color.Green,
+    mostAggressiveColor: Color = Color.Red,
+    aggressions: List<Float?> = emptyList(),
+    minAggression: Float = 0.2f,
+    maxAggression: Float = 1f,
+    loadAggressions: () -> Unit = {},
+): Expression {
+    if (aggressions.filterNotNull().isEmpty()) {
+        loadAggressions()
+        return defaultGradient()
+    }
+    val aggressionAtLocation = locations.zip(aggressions).toMap()
+    return createGradientFromLocations(
+        locations = locations,
+        start = leastAggressiveColor,
+        stop = mostAggressiveColor,
+        getColorFraction = { location ->
+            val aggression = aggressionAtLocation[location]?.coerceIn(minAggression, maxAggression)
+                ?: ((minAggression + maxAggression) / 2)
+            (aggression - minAggression) / (maxAggression - minAggression)
+        }
+    )
+}
+
 @OptIn(ExperimentalMaterialApi::class)
 @MenuNavGraph
 @Destination
@@ -315,6 +341,13 @@ fun SessionScreen(
                                 leastAccurateColor = Color.Red,
                                 mostAccurateColor = Color.Green
                             )
+                            GradientFilter.Aggression -> aggressionGradient(
+                                locations = path ?: emptyList(),
+                                leastAggressiveColor = Color.Green,
+                                mostAggressiveColor = Color.Red,
+                                aggressions = path?.map { it.aggression } ?: emptyList(),
+                                loadAggressions = { viewModel.loadAggression(sessionUUID) }
+                            )
                         }
                     )
                 },
@@ -350,12 +383,14 @@ fun SessionScreen(
         }
     }
     val session by viewModel.session.collectAsStateWithLifecycle()
+    val isModelAvailable by viewModel.isModelAvailable.collectAsStateWithLifecycle()
     SessionDetailsScreen(
         modifier = Modifier
             .fillMaxWidth()
             .padding(DefaultScreenOnSheetPadding),
         session = session,
         path = path,
+        isModelAvailable = isModelAvailable,
         gradientFilter = gradientFilter,
         setGradientFilter = viewModel::setGradientFilter,
     )
@@ -366,6 +401,7 @@ fun SessionDetailsScreen(
     modifier: Modifier = Modifier,
     session: UiSession? = null,
     path: List<UiLocation>? = null,
+    isModelAvailable: Boolean = false,
     gradientFilter: GradientFilter = GradientFilter.Default,
     setGradientFilter: (GradientFilter) -> Unit = {}
 ) {
@@ -499,9 +535,7 @@ fun SessionDetailsScreen(
             ),
         )
         val selectedTabIndex = gradientFilter.ordinal
-        TabRow(
-            modifier = Modifier
-                .padding(horizontal = MenuItemPadding),
+        ScrollableTabRow(
             divider = {},
             selectedTabIndex = selectedTabIndex,
             indicator = {
@@ -511,13 +545,17 @@ fun SessionDetailsScreen(
                         .padding(horizontal = MenuItemPadding)
                         .clip(RoundedCornerShape(percent = 100))
                 )
-            }
+            },
+            edgePadding = 8.dp
         ) {
             GradientFilter.values().forEach {
                 Tab(
-                    modifier = Modifier.clip(RoundedCornerShape(MenuItemPadding)),
+                    modifier = Modifier
+                        .padding(horizontal = MenuItemPadding)
+                        .clip(RoundedCornerShape(MenuItemPadding)),
                     selected = it == gradientFilter,
                     onClick = { setGradientFilter(it) },
+                    enabled = it != GradientFilter.Aggression || isModelAvailable,
                     text = {
                         Text(
                             text = stringResource(
@@ -526,6 +564,7 @@ fun SessionDetailsScreen(
                                     GradientFilter.Velocity -> R.string.gradient_filter_velocity
                                     GradientFilter.Elevation -> R.string.gradient_filter_elevation
                                     GradientFilter.GpsAccuracy -> R.string.gradient_filter_gps_accuracy
+                                    GradientFilter.Aggression -> R.string.gradient_filter_aggression
                                 }
                             )
                         )

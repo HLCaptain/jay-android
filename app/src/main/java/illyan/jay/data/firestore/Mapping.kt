@@ -27,12 +27,15 @@ import illyan.jay.BuildConfig
 import illyan.jay.data.DataStatus
 import illyan.jay.data.firestore.model.FirestoreLocation
 import illyan.jay.data.firestore.model.FirestorePath
+import illyan.jay.data.firestore.model.FirestoreSensorEvent
+import illyan.jay.data.firestore.model.FirestoreSensorEvents
 import illyan.jay.data.firestore.model.FirestoreSession
 import illyan.jay.data.firestore.model.FirestoreUser
 import illyan.jay.data.firestore.model.FirestoreUserPreferences
 import illyan.jay.data.firestore.serializers.TimestampSerializer
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.toGeoPoint
 import illyan.jay.util.toInstant
@@ -140,6 +143,31 @@ fun List<DomainLocation>.toPath(
     }
 
     return path
+}
+
+fun List<DomainSensorEvent>.toFirebaseSensorEvents(
+    sessionUUID: String,
+    ownerUUID: String
+): FirestoreSensorEvents {
+    val events = map {
+        FirestoreSensorEvent(
+            timestamp = it.zonedDateTime.toTimestamp(),
+            accuracy = it.accuracy.toInt(),
+            type = it.type.toInt(),
+            x = it.x,
+            y = it.y,
+            z = it.z
+        )
+    }
+
+    val eventsBlob = Blob.fromBytes(Zstd.compress(ProtoBuf.encodeToByteArray(events)))
+
+    return FirestoreSensorEvents(
+        uuid = UUID.nameUUIDFromBytes(eventsBlob.toBytes()).toString(),
+        sessionUUID = sessionUUID,
+        ownerUUID = ownerUUID,
+        events = eventsBlob
+    )
 }
 
 private fun testCompressions(domainLocations: List<DomainLocation>) {
@@ -354,6 +382,24 @@ fun List<DomainLocation>.toPaths(
     }
 }
 
+fun List<DomainSensorEvent>.toChunkedFirebaseSensorEvents(
+    sessionUUID: String,
+    ownerUUID: String,
+    thresholdInMinutes: Int = 30
+): List<FirestoreSensorEvents> {
+    if (isEmpty()) return emptyList()
+    val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
+    val groupedByTime = groupBy {
+        (it.zonedDateTime.toInstant().toEpochMilli() - startMilli) /
+                thresholdInMinutes.minutes.inWholeMilliseconds
+    }
+    return groupedByTime.map { groups ->
+        groups.value
+            .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+            .toFirebaseSensorEvents(sessionUUID, ownerUUID)
+    }
+}
+
 @OptIn(ExperimentalSerializationApi::class)
 fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
@@ -364,6 +410,17 @@ fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
     }
 
     return domainLocations.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+}
+
+fun List<FirestoreSensorEvents>.toDomainSensorEvents(): List<DomainSensorEvent> {
+    val domainSensorEvents = mutableListOf<DomainSensorEvent>()
+
+    forEach { events ->
+        val sensorEvents = ProtoBuf.decodeFromByteArray<List<FirestoreSensorEvent>>(Zstd.decompress(events.events.toBytes(), 1_000_000))
+        domainSensorEvents.addAll(sensorEvents.map { it.toDomainModel(events.sessionUUID) })
+    }
+
+    return domainSensorEvents.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
 }
 
 fun FirestoreLocation.toDomainModel(
@@ -380,6 +437,18 @@ fun FirestoreLocation.toDomainModel(
     altitude = altitude.toShort(),
     speedAccuracy = speedAccuracy,
     verticalAccuracy = verticalAccuracy.toShort()
+)
+
+fun FirestoreSensorEvent.toDomainModel(
+    sessionUUID: String
+) = DomainSensorEvent(
+    zonedDateTime = timestamp.toZonedDateTime(),
+    sessionUUID = sessionUUID,
+    accuracy = accuracy.toByte(),
+    type = type.toByte(),
+    x = x,
+    y = y,
+    z = z
 )
 
 fun DataStatus<FirestoreUser>.toDomainPreferencesStatus(): DataStatus<DomainPreferences> {

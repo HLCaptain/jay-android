@@ -16,18 +16,22 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.di
+package illyan.jay.data.firestore.model
 
-import javax.inject.Qualifier
+import android.os.Parcelable
+import com.google.firebase.Timestamp
+import illyan.jay.data.firestore.serializers.TimestampSerializer
+import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserPathsSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSensorEventsSnapshotHandler
+@Serializable
+@Parcelize
+data class FirestoreSensorEvent(
+    @Serializable(with = TimestampSerializer::class)
+    val timestamp: Timestamp,
+    val type: Int,
+    val accuracy: Int, // enum
+    val x: Float,
+    val y: Float,
+    val z: Float,
+) : Parcelable

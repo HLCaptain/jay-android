@@ -158,4 +158,5 @@
     <string name="restart_required">Restart Required</string>
     <string name="restart_required_description">Machine Learning functionality is in Beta. Restart is required after each action to take effect.</string>
     <string name="ok">OK</string>
+    <string name="gradient_filter_aggression">Aggression</string>
 </resources>

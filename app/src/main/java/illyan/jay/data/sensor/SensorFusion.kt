@@ -23,6 +23,7 @@ import illyan.jay.domain.model.DomainSensorEvent
 import org.apache.commons.math3.linear.DecompositionSolver
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.QRDecomposition
+import timber.log.Timber
 import kotlin.math.pow
 
 object SensorFusion {
@@ -35,32 +36,42 @@ object SensorFusion {
         angVel: List<DomainSensorEvent>,
         angAccel: List<DomainSensorEvent>,
     ): List<AdvancedImuSensorData> {
-
+        Timber.d("Fusing sensor data")
         // Merge all timestamps
         val allTimestamps = (accRaw + accSmooth + dirX + dirY + dirZ + angVel + angAccel)
             .map { it.zonedDateTime.toInstant().toEpochMilli() }
             .distinct()
             .sorted() // 400 is the chunk size for the ML model
 
-        return allTimestamps.map { timestamp ->
+        if (allTimestamps.isEmpty()) Timber.d("No sensor data to fuse")
+
+        val interpolatedDirX = interpolateValues(dirX, allTimestamps)
+        val interpolatedDirY = interpolateValues(dirY, allTimestamps)
+        val interpolatedDirZ = interpolateValues(dirZ, allTimestamps)
+        val interpolatedAccRaw = interpolateValues(accRaw, allTimestamps)
+        val interpolatedAccSmooth = interpolateValues(accSmooth, allTimestamps)
+        val interpolatedAngVel = interpolateValues(angVel, allTimestamps)
+        val interpolatedAngAccel = interpolateValues(angAccel, allTimestamps)
+
+        return allTimestamps.mapIndexed { index, timestamp ->
+            Timber.v("Fusing sensor data for timestamp $timestamp (${index + 1}/${allTimestamps.size})")
             // Interpolate values for each timestamp
             AdvancedImuSensorData(
-                dirX = interpolateValue(dirX, timestamp),
-                dirY = interpolateValue(dirY, timestamp),
-                dirZ = interpolateValue(dirZ, timestamp),
-                accRaw = interpolateValue(accRaw, timestamp),
-                accSmooth = interpolateValue(accSmooth, timestamp),
-                angVel = interpolateValue(angVel, timestamp),
-                angAccel = interpolateValue(angAccel, timestamp),
+                dirX = interpolatedDirX[index],
+                dirY = interpolatedDirY[index],
+                dirZ = interpolatedDirZ[index],
+                accRaw = interpolatedAccRaw[index],
+                accSmooth = interpolatedAccSmooth[index],
+                angVel = interpolatedAngVel[index],
+                angAccel = interpolatedAngAccel[index],
                 timestamp = timestamp
             )
         }
     }
 
-    fun interpolateValue(events: List<DomainSensorEvent>, timestamp: Long): Triple<Double, Double, Double> {
-        if (events.isEmpty()) return Triple(0.0, 0.0, 0.0)
-
-        val degree = events.size / 10 // Degree of polynomial regression
+    private fun interpolateValues(events: List<DomainSensorEvent>, timestamps: List<Long>): List<Triple<Double, Double, Double>> {
+        Timber.v("Interpolating values for ${timestamps.size} timestamp")
+        val degree = events.size // Degree of polynomial regression
         val xValues = events.map { it.zonedDateTime.toInstant().toEpochMilli().toDouble() }
 
         // Create design matrix
@@ -71,11 +82,15 @@ object SensorFusion {
         val yReg = polynomialRegression(designMatrix, events.map { it.y.toDouble() }, degree)
         val zReg = polynomialRegression(designMatrix, events.map { it.z.toDouble() }, degree)
 
-        return Triple(xReg(timestamp), yReg(timestamp), zReg(timestamp))
+        return timestamps.map { timestamp ->
+            Triple(xReg(timestamp), yReg(timestamp), zReg(timestamp))
+        }
     }
 
-    fun polynomialRegression(designMatrix: Array<DoubleArray>, yValues: List<Double>, degree: Int): (Long) -> Double {
+    private fun polynomialRegression(designMatrix: Array<DoubleArray>, yValues: List<Double>, degree: Int): (Long) -> Double {
+//        Timber.v("Calculating polynomial regression for degree $degree")
         val yVector = MatrixUtils.createRealVector(yValues.toDoubleArray())
+        if (designMatrix.isEmpty()) return { 0.0 }
         val xMatrix = MatrixUtils.createRealMatrix(designMatrix)
         val solver: DecompositionSolver = QRDecomposition(xMatrix).solver
         val coefficients = solver.solve(yVector)

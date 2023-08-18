@@ -61,4 +61,7 @@ interface SensorEventDao {
 
     @Query("SELECT * FROM sensor_events WHERE sessionUUID = :sessionUUID")
     fun getSensorEvents(sessionUUID: String): Flow<List<RoomSensorEvent>>
+
+    @Query("SELECT * FROM sensor_events WHERE sessionUUID IN(:sessionUUIDs)")
+    fun getSensorEvents(sessionUUIDs: List<String>): Flow<List<RoomSensorEvent>>
 }

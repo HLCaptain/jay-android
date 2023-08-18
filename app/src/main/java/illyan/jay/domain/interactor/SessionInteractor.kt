@@ -24,12 +24,14 @@ import com.mapbox.geojson.Point
 import com.mapbox.search.ReverseGeoOptions
 import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.data.firestore.datasource.PathFirestoreDataSource
+import illyan.jay.data.firestore.datasource.SensorEventsFirestoreDataSource
 import illyan.jay.data.firestore.datasource.SessionFirestoreDataSource
 import illyan.jay.data.room.datasource.LocationRoomDataSource
 import illyan.jay.data.room.datasource.SensorEventRoomDataSource
 import illyan.jay.data.room.datasource.SessionRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.model.DomainLocation
+import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.awaitOperations
 import illyan.jay.util.runBatch
@@ -67,6 +69,7 @@ class SessionInteractor @Inject constructor(
     private val appSettingsDataSource: AppSettingsDataSource,
     private val serviceInteractor: ServiceInteractor,
     private val pathFirestoreDataSource: PathFirestoreDataSource,
+    private val sensorEventsFirestoreDataSource: SensorEventsFirestoreDataSource,
     private val firestore: FirebaseFirestore,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
@@ -139,13 +142,13 @@ class SessionInteractor @Inject constructor(
                 }
             }
             Timber.i("${localOnlySessions.size} sessions are not synced with IDs: ${localOnlySessions.map { it.uuid.take(4) }}")
-            locationRoomDataSource.getLocations(localOnlySessions.map { it.uuid }).first { locations ->
-                uploadSessions(
-                    localOnlySessions,
-                    locations,
-                )
-                true
-            }
+            val locations = locationRoomDataSource.getLocations(localOnlySessions.map { it.uuid }).first()
+            val sensorEvents = sensorEventRoomDataSource.getSensorEvents(localOnlySessions.map { it.uuid }).first()
+            uploadSessions(
+                localOnlySessions,
+                locations,
+                sensorEvents
+            )
             true
         }
     }
@@ -153,14 +156,18 @@ class SessionInteractor @Inject constructor(
     suspend fun deleteSyncedSessions() {
         if (!authInteractor.isUserSignedIn) return
         Timber.d("Batch created to delete session data for user ${authInteractor.userUUID?.take(4)} from cloud")
-        firestore.runBatch(2) { batch, onOperationFinished ->
+        firestore.runBatch(3) { batch, onOperationFinished ->
             sessionFirestoreDataSource.deleteAllSessions(
                 batch = batch,
-                onWriteFinished = { onOperationFinished() }
+                onWriteFinished = onOperationFinished
             )
             pathFirestoreDataSource.deleteLocationsForUser(
                 batch = batch,
-                onWriteFinished = { onOperationFinished() }
+                onWriteFinished = onOperationFinished
+            )
+            sensorEventsFirestoreDataSource.deleteSensorEventsForUser(
+                batch = batch,
+                onWriteFinished = onOperationFinished
             )
         }
     }
@@ -180,12 +187,16 @@ class SessionInteractor @Inject constructor(
         batch: WriteBatch,
         onWriteFinished: () -> Unit = {}
     ) {
-        awaitOperations(2) { onOperationFinished ->
+        awaitOperations(3) { onOperationFinished ->
             sessionFirestoreDataSource.deleteAllSessions(
                 batch = batch,
                 onWriteFinished = onOperationFinished
             )
             pathFirestoreDataSource.deleteLocationsForUser(
+                batch = batch,
+                onWriteFinished = onOperationFinished
+            )
+            sensorEventsFirestoreDataSource.deleteSensorEventsForUser(
                 batch = batch,
                 onWriteFinished = onOperationFinished
             )
@@ -196,6 +207,7 @@ class SessionInteractor @Inject constructor(
     fun uploadSessions(
         sessions: List<DomainSession>,
         locations: List<DomainLocation>,
+        sensorEvents: List<DomainSensorEvent>,
         onSuccess: (List<DomainSession>) -> Unit = { Timber.i("Uploaded locations for ${sessions.size} sessions") },
     ) {
         if (!authInteractor.isUserSignedIn || sessions.isEmpty()) return
@@ -210,6 +222,11 @@ class SessionInteractor @Inject constructor(
                 domainSessions = sessions,
                 domainLocations = locations
             )
+            sensorEventsFirestoreDataSource.insertEvents(
+                batch = batch,
+                domainSessions = sessions,
+                domainSensorEvents = sensorEvents
+            )
         }.addOnSuccessListener {
             onSuccess(sessions)
         }
@@ -218,8 +235,9 @@ class SessionInteractor @Inject constructor(
     fun uploadSession(
         session: DomainSession,
         locations: List<DomainLocation>,
+        sensorEvents: List<DomainSensorEvent>,
         onSuccess: (List<DomainSession>) -> Unit = { Timber.i("Uploaded locations session ${session.uuid}") },
-    ) = uploadSessions(listOf(session), locations, onSuccess)
+    ) = uploadSessions(listOf(session), locations, sensorEvents, onSuccess)
 
     /**
      * Get all session as a Flow.
