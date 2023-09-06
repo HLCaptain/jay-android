@@ -28,8 +28,8 @@ plugins {
     alias(libs.plugins.firebase.perf) apply false
     alias(libs.plugins.jetbrains.kotlin.android) apply false
     alias(libs.plugins.jetbrains.kotlin.serialization) apply false
-    alias(libs.plugins.jetbrains.kotlin.kapt) apply false
     alias(libs.plugins.jetbrains.kotlin.parcelize) apply false
+    alias(libs.plugins.jetbrains.kotlin.jvm)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.junit5) apply false
     alias(libs.plugins.sonarqube)
@@ -41,8 +41,4 @@ sonarqube {
         property("sonar.organization", "hlcaptain")
         property("sonar.host.url", "https://sonarcloud.io")
     }
-}
-
-tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
 }

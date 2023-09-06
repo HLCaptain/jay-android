@@ -19,9 +19,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.jetbrains.kotlin.kapt)
     alias(libs.plugins.jetbrains.kotlin.parcelize)
     alias(libs.plugins.jetbrains.kotlin.serialization)
+//    alias(libs.plugins.jetbrains.kotlin.jvm)
     alias(libs.plugins.google.gms.services)
     alias(libs.plugins.google.secrets)
     alias(libs.plugins.firebase.crashlytics)
@@ -167,7 +167,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
     // Timber
@@ -238,10 +238,6 @@ dependencies {
 
     // Desugaring
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-}
-
-kapt {
-    correctErrorTypes = true
 }
 
 hilt {
