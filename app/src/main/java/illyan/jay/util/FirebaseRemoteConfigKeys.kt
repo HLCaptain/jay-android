@@ -20,4 +20,5 @@ package illyan.jay.util
 
 object FirebaseRemoteConfigKeys {
     const val BannerOnAboutScreenAdUnitIdKey = "banner_on_about_screen"
+    const val MLAvailableModels = "ml_available_models"
 }

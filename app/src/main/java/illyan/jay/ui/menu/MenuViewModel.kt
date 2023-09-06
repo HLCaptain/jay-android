@@ -64,7 +64,8 @@ class MenuViewModel @Inject constructor(
                 settingsInteractor.theme = when (it) {
                     Theme.System -> Theme.Light
                     Theme.Light -> Theme.Dark
-                    Theme.Dark -> Theme.System
+                    Theme.Dark -> Theme.DayNightCycle
+                    Theme.DayNightCycle -> Theme.System
                 }
             }
         }

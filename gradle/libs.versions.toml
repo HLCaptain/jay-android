@@ -28,12 +28,13 @@ hilt = "2.48"
 hilt-navigation-compose = "1.0.0"
 
 zstd-jni = "1.5.5-5"
-
+solarized = "1.0.8"
 hlcaptain-compose-scrollbar = "0.0.3-alpha"
 saket-swipe = "1.2.0"
 timber = "5.0.1"
 compose-destinations = "1.9.52"
 coil-compose = "2.4.0"
+apache-commons-math3 = "3.6.1"
 
 mapbox-maps = "10.15.0"
 mapbox-search = "1.0.0-rc.7"
@@ -50,7 +51,7 @@ google-material = "1.9.0"
 firebase-crashlytics = "2.9.9"
 firebase-perf = "1.4.2"
 firebase-bom = "32.2.3"
-tensorflow-lite = "2.3.0"
+tensorflow-lite = "2.13.0"
 
 junit5 = "1.9.3.0"
 junit = "5.10.0"
@@ -117,6 +118,11 @@ tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "te
 
 hlcaptain-compose-scrollbar = { module = "com.github.HLCaptain:compose-scrollbar", version.ref = "hlcaptain-compose-scrollbar" }
 saket-swipe = { module = "me.saket.swipe:swipe", version.ref = "saket-swipe" }
+coil = { module = "io.coil-kt:coil-compose", version.ref = "coil-compose" }
+zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstd-jni" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+solarized = { module = "com.github.phototime:solarized-android", version.ref = "solarized" }
+apache-commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "apache-commons-math3" }
 
 mapbox-maps = { module = "com.mapbox.maps:android", version.ref = "mapbox-maps" }
 mapbox-search = { module = "com.mapbox.search:mapbox-search-android-ui", version.ref = "mapbox-search" }
@@ -130,14 +136,8 @@ hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hilt-navigation-compose" }
 
-timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
-
 compose-destinations-animations-core = { module = "io.github.raamcosta.compose-destinations:animations-core", version.ref = "compose-destinations" }
 compose-destinations-ksp = { module = "io.github.raamcosta.compose-destinations:ksp", version.ref = "compose-destinations" }
-
-coil = { module = "io.coil-kt:coil-compose", version.ref = "coil-compose" }
-
-zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstd-jni" }
 
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }

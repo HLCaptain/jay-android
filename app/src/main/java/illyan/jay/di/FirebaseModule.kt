@@ -18,12 +18,16 @@
 
 package illyan.jay.di
 
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.PersistentCacheSettings
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
@@ -42,7 +46,7 @@ object FirebaseModule {
 
     @Singleton
     @Provides
-    fun provideFirestore(): FirebaseFirestore {
+    fun provideFirestore(connectivityManager: ConnectivityManager): FirebaseFirestore {
         Firebase.firestore.firestoreSettings = FirebaseFirestoreSettings.Builder()
             .setLocalCacheSettings(
                 PersistentCacheSettings.newBuilder()
@@ -50,6 +54,22 @@ object FirebaseModule {
                     .build()
             )
             .build()
+        connectivityManager.registerNetworkCallback(
+            NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build(),
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {
+                    Firebase.firestore.enableNetwork()
+                    Timber.d("Network available!")
+                }
+
+                override fun onLost(network: android.net.Network) {
+                    Firebase.firestore.disableNetwork()
+                    Timber.d("Network lost!")
+                }
+            }
+        )
         return Firebase.firestore
     }
 
@@ -76,4 +96,8 @@ object FirebaseModule {
         }
         return remoteConfig
     }
+
+    @Singleton
+    @Provides
+    fun provideFirebaseModelDownloader() = FirebaseModelDownloader.getInstance()
 }

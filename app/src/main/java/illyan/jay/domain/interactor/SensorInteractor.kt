@@ -21,6 +21,7 @@ package illyan.jay.domain.interactor
 import android.hardware.SensorEventListener
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.Priority
 import illyan.jay.data.sensor.SensorDataSource
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -68,8 +69,13 @@ class SensorInteractor @Inject constructor(
      * @param callback method to call when there is a new location update.
      */
     fun requestLocationUpdates(
-        request: LocationRequest,
-        callback: LocationCallback
+        callback: LocationCallback,
+        request: LocationRequest = LocationRequest.Builder(
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                LocationInteractor.LOCATION_REQUEST_INTERVAL_DEFAULT
+            )
+            .setMinUpdateDistanceMeters(LocationInteractor.LOCATION_REQUEST_DISPLACEMENT_DEFAULT)
+            .build()
     ) = sensorDataSource.requestLocationUpdates(request, callback)
 
     /**

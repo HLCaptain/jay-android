@@ -60,6 +60,10 @@ class SensorEventRoomDataSource @Inject constructor(
         sensorEventDao.getSensorEvents(sessionUUID)
             .map { it.map(RoomSensorEvent::toDomainModel) }
 
+    fun getSensorEvents(sessionUUIDs: List<String>) =
+        sensorEventDao.getSensorEvents(sessionUUIDs)
+            .map { it.map(RoomSensorEvent::toDomainModel) }
+
     /**
      * Save sensorEvent's data to Room database.
      * Should be linked to a session to be accessible later on.

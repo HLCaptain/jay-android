@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.settings.data
 
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -57,6 +58,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
@@ -65,9 +68,10 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.JayDialogContent
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.MenuButton
+import illyan.jay.ui.components.PreviewAccessibility
+import illyan.jay.ui.components.dialogWidth
 import illyan.jay.ui.home.RoundedCornerRadius
-import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -105,7 +109,12 @@ fun DataSettingsDialogContent(
     onDeleteAll: () -> Unit = {},
     onNavigateUp: () -> Unit = {},
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val configuration = LocalConfiguration.current
+    val maxHeight = when (configuration.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+        else -> configuration.screenHeightDp
+    }
     JayDialogContent(
         modifier = modifier,
         icon = {
@@ -123,7 +132,7 @@ fun DataSettingsDialogContent(
         textPaddingValues = PaddingValues(),
         text = {
             DataSettingsScreen(
-                modifier = Modifier.heightIn(max = (screenHeightDp * 0.4f).dp),
+                modifier = Modifier.heightIn(max = (maxHeight * 0.5f).dp),
                 onDeleteCached = onDeleteCached,
                 onDeletePublic = onDeletePublic,
                 onDeleteSynced = onDeleteSynced,
@@ -270,17 +279,31 @@ fun MenuButtonWithDescription(
             text = description,
             showDescription = showDescription,
         ) {
-            Row(
+            ConstraintLayout(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                MenuButton(
-                    onClick = onClick,
-                    text = text
-                )
+                val (button, toggle) = createRefs()
+                Row(
+                    modifier = Modifier
+                        .constrainAs(button) {
+                            end.linkTo(toggle.start)
+                            start.linkTo(parent.start)
+                            width = Dimension.fillToConstraints
+                        }
+                ) {
+                    MenuButton(
+                        onClick = onClick,
+                        text = text,
+                    )
+                }
+
                 IconToggleButton(
                     checked = showDescription,
-                    onCheckedChange = { showDescription = it }
+                    onCheckedChange = { showDescription = it },
+                    modifier = Modifier.constrainAs(toggle) {
+                        top.linkTo(parent.top)
+                        end.linkTo(parent.end)
+                    }
                 ) {
                     Icon(
                         imageVector = if (showDescription) {
@@ -332,10 +355,11 @@ fun DescriptionCard(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 fun PreviewDataSettingsDialogContent() {
     JayTheme {
-        DataSettingsDialogContent()
+        val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+        DataSettingsDialogContent(modifier = Modifier.dialogWidth(screenWidthDp))
     }
 }

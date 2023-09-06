@@ -58,6 +58,7 @@ class PathFirestoreDataSource @Inject constructor(
             .document(data.uuid)
     }
 
+    // FIXME: remove or use
     private val locationsByUser = lazy { userPathsDataFlowBuilder().data }
 
     fun getLocationsBySession(sessionUUID: String) =

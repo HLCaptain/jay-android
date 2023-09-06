@@ -21,29 +21,26 @@ package illyan.jay.data.firestore.datasource
 import androidx.lifecycle.Lifecycle
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-import illyan.jay.data.firestore.model.FirestorePath
-import illyan.jay.data.firestore.toDomainLocations
-import illyan.jay.di.CoroutineScopeIO
+import illyan.jay.data.firestore.model.FirestoreSensorEvents
+import illyan.jay.data.firestore.toDomainSensorEvents
 import illyan.jay.di.UserPathsSnapshotHandler
-import illyan.jay.domain.model.DomainLocation
+import illyan.jay.domain.model.DomainSensorEvent
 import kotlinx.coroutines.CoroutineScope
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class UserPathsFirestoreDataFlow @Inject constructor(
+class UserSensorEventsFirestoreDataFlow @Inject constructor(
     firestore: FirebaseFirestore,
     appLifecycle: Lifecycle,
-    @CoroutineScopeIO coroutineScopeIO: CoroutineScope,
-    @UserPathsSnapshotHandler snapshotHandler: FirestoreSnapshotHandler<List<FirestorePath>, QuerySnapshot>,
-) : FirestoreDataFlow<List<FirestorePath>, List<List<DomainLocation>>>(
+    coroutineScopeIO: CoroutineScope,
+    @UserPathsSnapshotHandler snapshotHandler: FirestoreSnapshotHandler<List<FirestoreSensorEvents>, QuerySnapshot>,
+) : FirestoreDataFlow<List<FirestoreSensorEvents>, List<List<DomainSensorEvent>>>(
     firestore = firestore,
     appLifecycle = appLifecycle,
     coroutineScopeIO = coroutineScopeIO,
-    toDomainModel = { paths ->
-        paths
+    toDomainModel = { events ->
+        events
             ?.groupBy { it.sessionUUID }
-            ?.map { it.value.toDomainLocations() }
+            ?.map { it.value.toDomainSensorEvents() }
     },
     snapshotHandler = snapshotHandler,
 )

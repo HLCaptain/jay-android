@@ -24,6 +24,7 @@ import com.google.maps.android.ktx.utils.sphericalPathLength
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.LocationInteractor
+import illyan.jay.domain.interactor.ModelInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.session.model.GradientFilter
 import illyan.jay.ui.session.model.UiLocation
@@ -36,10 +37,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -47,11 +50,19 @@ import kotlin.coroutines.cancellation.CancellationException
 class SessionViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
+    private val modelInteractor: ModelInteractor,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
 
+    private val _isModelAvailable = MutableStateFlow(false)
+    val isModelAvailable = _isModelAvailable.asStateFlow()
+    private val aggressions = MutableStateFlow<Map<ZonedDateTime, Double>>(emptyMap())
     private val _path = MutableStateFlow<List<UiLocation>?>(null)
-    val path = _path.asStateFlow()
+    val path = _path.combine(aggressions) { path, aggressions ->
+        path?.map { location ->
+            location.copy(aggression = aggressions[location.zonedDateTime]?.toFloat())
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, _path.value)
 
     private val _session = MutableStateFlow<UiSession?>(null)
     val session = combine(
@@ -67,6 +78,15 @@ class SessionViewModel @Inject constructor(
     val gradientFilter = _gradientFilter.asStateFlow()
 
     private val jobs = mutableListOf<Job>()
+
+    init {
+        viewModelScope.launch(dispatcherIO) {
+            modelInteractor.downloadedModels.collect { models ->
+                Timber.d("${models.size} models available")
+                _isModelAvailable.update { models.isNotEmpty() }
+            }
+        }
+    }
 
     fun load(sessionUUID: String) {
         jobs.forEach { it.cancel(CancellationException("Requested reload to data collection job, cancelling running jobs"))}
@@ -92,7 +112,27 @@ class SessionViewModel @Inject constructor(
         }
     }
 
+    fun loadAggression(sessionUUID: String) {
+        viewModelScope.launch(dispatcherIO) {
+            if (modelInteractor.downloadedModels.first().isEmpty()) {
+                Timber.d("No downloaded models found")
+                return@launch
+            }
+            Timber.d("Loading aggression for session with ID: ${sessionUUID.take(4)}")
+            modelInteractor.downloadedModels.first().firstOrNull()?.let { model ->
+                viewModelScope.launch(dispatcherIO) {
+                    val filteredAggressions = modelInteractor.getFilteredDriverAggression(
+                        model.name,
+                        sessionUUID
+                    ).first()
+                    aggressions.update { filteredAggressions }
+                }
+            }
+        }
+    }
+
     fun setGradientFilter(filter: GradientFilter) {
+        Timber.d("Setting gradient filter to: $filter")
         _gradientFilter.update { filter }
     }
 }

@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.library
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -52,10 +53,10 @@ import illyan.jay.domain.model.libraries.Library
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayTextCard
 import illyan.jay.ui.components.LicenseOfType
-import illyan.jay.ui.components.PreviewThemesScreensFonts
+import illyan.jay.ui.components.MenuButton
+import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.libraries.model.toUiModel
-import illyan.jay.ui.profile.MenuButton
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
@@ -73,10 +74,15 @@ fun LibraryDialogContent(
     modifier: Modifier = Modifier,
     library: UiLibrary,
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val configuration = LocalConfiguration.current
+    val maxHeight = when (configuration.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+        else -> configuration.screenHeightDp
+    }
     JayDialogContent(
         modifier = modifier,
-        textModifier = Modifier.heightIn(max = (screenHeightDp * 0.5f).dp),
+        textModifier = Modifier.heightIn(max = (maxHeight * 0.55f).dp),
         title = {
             LibraryTitle(
                 name = library.name,
@@ -210,7 +216,7 @@ fun LibraryButtons(
     }
 }
 
-@PreviewThemesScreensFonts
+@PreviewAccessibility
 @Composable
 private fun LibraryDialogContentPreview() {
     val library = Library.Jay.toUiModel()

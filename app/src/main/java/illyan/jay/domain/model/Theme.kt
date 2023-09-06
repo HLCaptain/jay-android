@@ -19,5 +19,5 @@
 package illyan.jay.domain.model
 
 enum class Theme {
-    Light, Dark, System
+    Light, Dark, System, DayNightCycle
 }

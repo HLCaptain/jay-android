@@ -16,18 +16,29 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.di
+package illyan.jay.ui.components
 
-import javax.inject.Qualifier
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserPathsSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSensorEventsSnapshotHandler
+@Composable
+fun MenuButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    text: String,
+) {
+    TextButton(
+        modifier = modifier,
+        onClick = onClick,
+    ) {
+        Text(text = text)
+        Icon(
+            imageVector = Icons.Rounded.ChevronRight, contentDescription = "",
+        )
+    }
+}

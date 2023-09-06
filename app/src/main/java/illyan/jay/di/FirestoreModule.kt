@@ -34,7 +34,9 @@ import illyan.jay.data.firestore.datasource.FirestoreDocumentSnapshotHandler
 import illyan.jay.data.firestore.datasource.FirestoreQuerySnapshotHandler
 import illyan.jay.data.firestore.datasource.FirestoreSnapshotHandler
 import illyan.jay.data.firestore.datasource.UserPathsFirestoreDataFlow
+import illyan.jay.data.firestore.datasource.UserSensorEventsFirestoreDataFlow
 import illyan.jay.data.firestore.model.FirestorePath
+import illyan.jay.data.firestore.model.FirestoreSensorEvents
 import illyan.jay.data.firestore.model.FirestoreUser
 import illyan.jay.domain.interactor.AuthInteractor
 import kotlinx.coroutines.CoroutineScope
@@ -92,6 +94,27 @@ object FirestoreModule {
     }
 
     @Provides
+    @UserSensorEventsSnapshotHandler
+    fun provideFirestoreSensorEventsSnapshotHandler(
+        firestore: FirebaseFirestore,
+        authInteractor: AuthInteractor,
+    ): FirestoreSnapshotHandler<List<FirestoreSensorEvents>, QuerySnapshot> {
+        return FirestoreQuerySnapshotHandler(
+            snapshotToObject = { it.toObjects() },
+            snapshotSourceFlow = authInteractor.userUUIDStateFlow.map { uuid ->
+                if (uuid != null) {
+                    firestore
+                        .collection(FirestoreSensorEvents.CollectionName)
+                        .whereEqualTo(FirestoreSensorEvents.FieldOwnerUUID, uuid)
+                        .snapshots(MetadataChanges.INCLUDE)
+                } else {
+                    null
+                }
+            }
+        )
+    }
+
+    @Provides
     fun provideUserPathsFirestoreDataFlow(
         firestore: FirebaseFirestore,
         authInteractor: AuthInteractor,
@@ -103,6 +126,24 @@ object FirestoreModule {
             appLifecycle = appLifecycle,
             coroutineScopeIO = coroutineScopeIO,
             snapshotHandler = provideFirestorePathSnapshotHandler(
+                firestore = firestore,
+                authInteractor = authInteractor
+            )
+        )
+    }
+
+    @Provides
+    fun provideUserSensorEventsFirestoreDataFlow(
+        firestore: FirebaseFirestore,
+        authInteractor: AuthInteractor,
+        appLifecycle: Lifecycle,
+        @CoroutineScopeIO coroutineScopeIO: CoroutineScope
+    ): () -> UserSensorEventsFirestoreDataFlow = {
+        UserSensorEventsFirestoreDataFlow(
+            firestore = firestore,
+            appLifecycle = appLifecycle,
+            coroutineScopeIO = coroutineScopeIO,
+            snapshotHandler = provideFirestoreSensorEventsSnapshotHandler(
                 firestore = firestore,
                 authInteractor = authInteractor
             )

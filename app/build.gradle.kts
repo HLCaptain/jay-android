@@ -39,8 +39,8 @@ android {
         applicationId = "illyan.jay"
         minSdk = 21
         targetSdk = 34
-        versionCode = 17
-        versionName = "0.3.6-alpha"
+        versionCode = 18
+        versionName = "0.4.0-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -152,8 +152,14 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
 
+    // Day-Night Cycle in Theming
+    implementation(libs.solarized)
+
     // Item Swipe
     implementation(libs.saket.swipe)
+
+    // Math for interpolation
+    implementation(libs.apache.commons.math3)
 
     // Mapbox
     implementation(libs.mapbox.maps)

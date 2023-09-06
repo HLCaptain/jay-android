@@ -18,6 +18,11 @@
 
 package illyan.jay.data.resolver
 
+import android.net.ConnectivityManager
+import android.net.ConnectivityManager.NetworkCallback
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import illyan.jay.data.DataStatus
 import illyan.jay.data.datastore.datasource.AppSettingsDataSource
 import illyan.jay.data.firestore.datasource.PreferencesFirestoreDataSource
@@ -31,6 +36,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -44,10 +50,29 @@ class PreferencesResolver @Inject constructor(
     private val preferencesFirestoreDataSource: PreferencesFirestoreDataSource,
     private val preferencesRoomDataSource: PreferencesRoomDataSource,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
+    connectivityManager: ConnectivityManager,
 ) : DataResolver<DomainPreferences>(
     coroutineScopeIO = coroutineScopeIO
 ) {
-    override val enableSyncedData = authInteractor.isUserSignedInStateFlow
+    val isConnectedToInternet = MutableStateFlow(false)
+    private val networkRequest: NetworkRequest = NetworkRequest.Builder()
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        .build()
+    private val networkCallback = object : NetworkCallback() {
+        override fun onAvailable(network: Network) { isConnectedToInternet.update { true } }
+        override fun onLost(network: Network) { isConnectedToInternet.update { false } }
+    }
+    init {
+        connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
+    }
+
+    override val enableSyncedData = combine(
+        authInteractor.isUserSignedInStateFlow,
+        isConnectedToInternet,
+    ) { isUserSignedIn, isConnectedToInternet ->
+        isUserSignedIn && isConnectedToInternet
+    }
+
     override val cloudDataStatus = preferencesFirestoreDataSource.cloudPreferencesStatus
 
     override val localDataStatus: StateFlow<DataStatus<DomainPreferences>> by lazy {
