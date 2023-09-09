@@ -18,6 +18,7 @@
 
 package illyan.jay.data.sensor
 
+import androidx.compose.ui.util.lerp
 import illyan.jay.domain.model.AdvancedImuSensorData
 import illyan.jay.domain.model.DomainSensorEvent
 import org.apache.commons.math3.linear.DecompositionSolver
@@ -54,7 +55,7 @@ object SensorFusion {
         val interpolatedAngAccel = interpolateValues(angAccel, allTimestamps)
 
         return allTimestamps.mapIndexed { index, timestamp ->
-            Timber.v("Fusing sensor data for timestamp $timestamp (${index + 1}/${allTimestamps.size})")
+//            Timber.v("Fusing sensor data for timestamp $timestamp (${index + 1}/${allTimestamps.size})")
             // Interpolate values for each timestamp
             AdvancedImuSensorData(
                 dirX = interpolatedDirX[index],
@@ -70,21 +71,49 @@ object SensorFusion {
     }
 
     private fun interpolateValues(events: List<DomainSensorEvent>, timestamps: List<Long>): List<Triple<Double, Double, Double>> {
-        Timber.v("Interpolating values for ${timestamps.size} timestamp")
-        val degree = events.size // Degree of polynomial regression
-        val xValues = events.map { it.zonedDateTime.toInstant().toEpochMilli().toDouble() }
-
-        // Create design matrix
-        val designMatrix = Array(events.size) { i -> DoubleArray(degree + 1) { j -> xValues[i].pow(j) } }
-
-        // Calculating polynomial regression for each component (X, Y, Z)
-        val xReg = polynomialRegression(designMatrix, events.map { it.x.toDouble() }, degree)
-        val yReg = polynomialRegression(designMatrix, events.map { it.y.toDouble() }, degree)
-        val zReg = polynomialRegression(designMatrix, events.map { it.z.toDouble() }, degree)
-
-        return timestamps.map { timestamp ->
-            Triple(xReg(timestamp), yReg(timestamp), zReg(timestamp))
+//        Timber.v("Interpolating values for ${timestamps.size} timestamp")
+        // Linear-like interpolation
+        if (events.isEmpty()) return timestamps.map { Triple(0.0, 0.0, 0.0) }
+        val firstEvent = events.first()
+        val lastEvent = events.last()
+        return timestamps.map {  timestamp ->
+            val beforeEvent = events.firstOrNull { it.zonedDateTime.toInstant().toEpochMilli() <= timestamp } ?: firstEvent
+            val afterEvent = events.firstOrNull { it.zonedDateTime.toInstant().toEpochMilli() >= timestamp } ?: lastEvent
+            if (beforeEvent == afterEvent) return@map Triple(beforeEvent.x.toDouble(), beforeEvent.y.toDouble(), beforeEvent.z.toDouble())
+            val fraction = (timestamp - beforeEvent.zonedDateTime.toInstant().toEpochMilli()).toFloat() /
+                    (afterEvent.zonedDateTime.toInstant().toEpochMilli() - beforeEvent.zonedDateTime.toInstant().toEpochMilli()).toFloat()
+            val interpolatedEventY = lerp(
+                beforeEvent.y,
+                afterEvent.y,
+                fraction
+            ).toDouble()
+            val interpolatedEventX = lerp(
+                beforeEvent.x,
+                afterEvent.x,
+                fraction
+            ).toDouble()
+            val interpolatedEventZ = lerp(
+                beforeEvent.z,
+                afterEvent.z,
+                fraction
+            ).toDouble()
+            Triple(interpolatedEventX, interpolatedEventY, interpolatedEventZ)
         }
+
+//        val degree = events.size // Degree of polynomial regression
+//        val xValues = events.map { it.zonedDateTime.toInstant().toEpochMilli().toDouble() }
+//
+//        // Create design matrix
+//        val designMatrix = Array(events.size) { i -> DoubleArray(degree + 1) { j -> xValues[i].pow(j) } }
+//
+//        // Calculating polynomial regression for each component (X, Y, Z)
+//        val xReg = polynomialRegression(designMatrix, events.map { it.x.toDouble() }, degree)
+//        val yReg = polynomialRegression(designMatrix, events.map { it.y.toDouble() }, degree)
+//        val zReg = polynomialRegression(designMatrix, events.map { it.z.toDouble() }, degree)
+//
+//        return timestamps.map { timestamp ->
+//            Triple(xReg(timestamp), yReg(timestamp), zReg(timestamp))
+//        }
     }
 
     private fun polynomialRegression(designMatrix: Array<DoubleArray>, yValues: List<Double>, degree: Int): (Long) -> Double {

@@ -4,7 +4,7 @@ compose = "1.6.0-alpha02"
 compose-compiler = "1.5.1"
 kotlin = "1.9.0"
 ksp = "1.9.0-1.0.13"
-agp = "8.3.0-alpha02"
+agp = "8.3.0-alpha03"
 accompanist = "0.31.6-rc"
 room = "2.5.2"
 

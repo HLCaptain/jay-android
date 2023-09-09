@@ -28,9 +28,10 @@ import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.util.toZonedDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.update
 import org.tensorflow.lite.Interpreter
 import timber.log.Timber
 import java.nio.ByteBuffer
@@ -75,78 +76,101 @@ class ModelInteractor @Inject constructor(
         sessionUUID: String
     ): Flow<Map<ZonedDateTime, Double>> {
         Timber.d("Filtering aggression values for session ${sessionUUID.take(4)}")
-        val flow = MutableSharedFlow<Map<ZonedDateTime, Double>>(extraBufferCapacity = 1)
+        val flow = MutableStateFlow<Map<ZonedDateTime, Double>>(emptyMap())
         val outputMap = mutableMapOf<ZonedDateTime, Double>()
         downloadedModels.first().firstOrNull { it.name == modelName }?.let { model ->
             val modelFile = model.file
             if (modelFile != null) {
-                val sensorEvents = sensorEventInteractor.getSensorEvents(sessionUUID).first()
-                val advancedImuSensorData = SensorFusion.fuseSensors(
-                    accRaw = sensorEvents.filter {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                            it.type.toInt() == Sensor.TYPE_LINEAR_ACCELERATION
-                        else
-                            false
-                    },
-                    accSmooth = sensorEvents.filter { it.type.toInt() == Sensor.TYPE_ACCELEROMETER },
-                    dirX = emptyList(),
-                    dirY = emptyList(),
-                    dirZ = emptyList(),
-                    angVel = emptyList(),
-                    angAccel = emptyList(),
-                )
-                val interpreter = Interpreter(modelFile)
-                interpreter.allocateTensors()
-                advancedImuSensorData.chunked(400) { chunk ->
-                    // FIXME: transform input to model shape
-                    Timber.v("Running model with input shape ${interpreter.getInputTensor(0).shape().joinToString()} on chunk of size ${chunk.size}")
-                    Timber.v("Running model with output shape ${interpreter.getOutputTensor(0).shape().joinToString()} on chunk of size ${chunk.size}")
-                    if (chunk.size < 400) {
-                        Timber.d("Chunk size is less than 400, skipping...")
-                        return@chunked chunk
-                    }
-                    val startTimestamp = chunk.first().timestamp
-                    chunk.map {
-                        listOf((it.timestamp - startTimestamp) / 1000.0).toTypedArray() +
-                            it.accRaw.toList().toTypedArray() +
-                            it.accSmooth.toList().toTypedArray() +
-                            it.dirX.toList().toTypedArray() +
-                            it.dirY.toList().toTypedArray() +
-                            it.dirZ.toList().toTypedArray()
+                sensorEventInteractor.getSyncedEvents(sessionUUID).first { sensorEvents ->
+                    sensorEvents?.let {
+                        val advancedImuSensorData = SensorFusion.fuseSensors(
+                            accRaw = sensorEvents.filter {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                                    it.type.toInt() == Sensor.TYPE_LINEAR_ACCELERATION
+                                else
+                                    false
+                            },
+                            accSmooth = sensorEvents.filter { it.type.toInt() == Sensor.TYPE_ACCELEROMETER },
+                            dirX = emptyList(),
+                            dirY = emptyList(),
+                            dirZ = emptyList(),
+                            angVel = emptyList(),
+                            angAccel = emptyList(),
+                        )
+                        val interpreter = Interpreter(modelFile)
+                        interpreter.allocateTensors()
+                        advancedImuSensorData.chunked(400) { chunk ->
+                            // FIXME: transform input to model shape
+                            Timber.v(
+                                "Running model with input shape ${
+                                    interpreter.getInputTensor(0).shape().joinToString()
+                                } on chunk of size ${chunk.size}"
+                            )
+                            Timber.v(
+                                "Running model with output shape ${
+                                    interpreter.getOutputTensor(
+                                        0
+                                    ).shape().joinToString()
+                                } on chunk of size ${chunk.size}"
+                            )
+                            if (chunk.size < 400) {
+                                Timber.d("Chunk size is less than 400, skipping...")
+                                return@chunked chunk
+                            }
+                            val startTimestamp = chunk.first().timestamp
+                            chunk.map {
+                                listOf((it.timestamp - startTimestamp) / 1000.0).toTypedArray() +
+                                        it.accRaw.toList().toTypedArray() +
+                                        it.accSmooth.toList().toTypedArray() +
+                                        it.dirX.toList().toTypedArray() +
+                                        it.dirY.toList().toTypedArray() +
+                                        it.dirZ.toList().toTypedArray()
 //                            it.angVel.toList().toTypedArray() +
 //                            it.angAccel.toList().toTypedArray()
-                    }.map { array -> array.map { it.toFloat() } }.toTypedArray().let { events ->
-                        val input = ByteBuffer.allocateDirect(8070 * 400 * 16 * java.lang.Float.SIZE / 8).order(ByteOrder.nativeOrder())
-                        for (i in 0 until 8070) {
-                            events.forEach { sensorValues -> sensorValues.forEach { input.putFloat(it) }}
+                            }.map { array -> array.map { it.toFloat() } }.toTypedArray()
+                                .let { events ->
+                                    val input =
+                                        ByteBuffer.allocate(8070 * 400 * 16 * java.lang.Float.SIZE / 8)
+                                            .order(ByteOrder.nativeOrder())
+                                    for (i in 0 until 8070) {
+                                        events.forEach { sensorValues ->
+                                            sensorValues.forEach {
+                                                input.putFloat(
+                                                    it
+                                                )
+                                            }
+                                        }
+                                    }
+                                    val outputSize = 8070 * java.lang.Float.SIZE / 8
+                                    val output = ByteBuffer.allocate(outputSize)
+                                        .order(ByteOrder.nativeOrder())
+                                    interpreter.run(input, output)
+                                    output.rewind()
+                                    val outputs = mutableListOf<Float>()
+                                    for (i in 0 until output.asFloatBuffer().capacity()) {
+                                        outputs.add(output.asFloatBuffer()[i])
+                                    }
+                                    Timber.v("Model output: ${outputs[0]}")
+                                    chunk.forEach { advancedImuSensorData ->
+                                        outputMap[Instant.ofEpochMilli(advancedImuSensorData.timestamp)
+                                            .toZonedDateTime()] = outputs[0].toDouble()
+                                    }
+                                    flow.update { outputMap }
+                                }
                         }
-                        val outputSize = 8070 * java.lang.Float.SIZE / 8
-                        val output = ByteBuffer.allocateDirect(outputSize).order(ByteOrder.nativeOrder())
-                        interpreter.run(input, output)
-                        output.rewind()
-                        val outputs = mutableListOf<Float>()
-                        for (i in 0 until output.asFloatBuffer().capacity()) {
-                            outputs.add(output.asFloatBuffer()[i])
-                        }
-                        Timber.v("Model output: ${outputs[0]}")
-                        chunk.forEach { advancedImuSensorData ->
-                            outputMap[Instant.ofEpochMilli(advancedImuSensorData.timestamp).toZonedDateTime()] = outputs[0].toDouble()
-                        }
-                        coroutineScopeIO.launch {
-                            flow.emit(outputMap)
-                        }
-                    }
-                }
-                // TODO: Use advancedImuSensorData and get filtered driver aggression
+                        // TODO: Use advancedImuSensorData and get filtered driver aggression
 
-                // TODO: emit model outputs
-                //  val aggressions = mutableMapOf<ZonedDateTime, Double>()
-                //  // ...Run Model on Chunk
-                //  // ...Add Model output to aggressions (zonedDateTime to modelOutput)
-                //  // ...emit(aggressions)
+                        // TODO: emit model outputs
+                        //  val aggressions = mutableMapOf<ZonedDateTime, Double>()
+                        //  // ...Run Model on Chunk
+                        //  // ...Add Model output to aggressions (zonedDateTime to modelOutput)
+                        //  // ...emit(aggressions)
+                    }
+                    sensorEvents != null
+                }
             }
             modelFile != null // The model is downloaded
         }
-        return flow
+        return flow.asStateFlow()
     }
 }

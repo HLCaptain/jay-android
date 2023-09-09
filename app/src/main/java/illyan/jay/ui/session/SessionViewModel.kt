@@ -25,6 +25,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.ModelInteractor
+import illyan.jay.domain.interactor.SensorEventInteractor
 import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.session.model.GradientFilter
 import illyan.jay.ui.session.model.UiLocation
@@ -50,6 +51,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class SessionViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
     private val locationInteractor: LocationInteractor,
+    private val sensorEventInteractor: SensorEventInteractor,
     private val modelInteractor: ModelInteractor,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
@@ -121,11 +123,13 @@ class SessionViewModel @Inject constructor(
             Timber.d("Loading aggression for session with ID: ${sessionUUID.take(4)}")
             modelInteractor.downloadedModels.first().firstOrNull()?.let { model ->
                 viewModelScope.launch(dispatcherIO) {
-                    val filteredAggressions = modelInteractor.getFilteredDriverAggression(
+                    modelInteractor.getFilteredDriverAggression(
                         model.name,
                         sessionUUID
-                    ).first()
-                    aggressions.update { filteredAggressions }
+                    ).collectLatest { filteredAggressions ->
+                        Timber.d("Loaded ${filteredAggressions.size} aggressions for session with ID: ${sessionUUID.take(4)}")
+                        aggressions.update { filteredAggressions }
+                    }
                 }
             }
         }
