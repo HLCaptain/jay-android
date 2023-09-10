@@ -40,19 +40,25 @@ object SensorFusion {
             .map { it.zonedDateTime.toInstant().toEpochMilli() }
             .distinct()
             .sorted()
-        val minTimestamp = allTimestamps.min()
-        val maxTimestamp = allTimestamps.max()
-        val intervals = (minTimestamp until maxTimestamp step interval.inWholeMilliseconds).toList()
-        return fuseSensors(
-            accRaw = accRaw,
-            accSmooth = accSmooth,
-            dirX = dirX,
-            dirY = dirY,
-            dirZ = dirZ,
-            angVel = angVel,
-            angAccel = angAccel,
-            intervals = intervals
-        )
+
+        return if (allTimestamps.isEmpty()) {
+            Timber.d("No sensor data to fuse")
+            emptyList()
+        } else {
+            val minTimestamp = allTimestamps.min()
+            val maxTimestamp = allTimestamps.max()
+            val intervals = (minTimestamp until maxTimestamp step interval.inWholeMilliseconds).toList()
+            return fuseSensors(
+                accRaw = accRaw,
+                accSmooth = accSmooth,
+                dirX = dirX,
+                dirY = dirY,
+                dirZ = dirZ,
+                angVel = angVel,
+                angAccel = angAccel,
+                intervals = intervals
+            )
+        }
     }
 
     fun fuseSensors(
