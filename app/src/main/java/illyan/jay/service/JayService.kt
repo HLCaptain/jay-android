@@ -96,37 +96,44 @@ class JayService @Inject constructor() : BaseService() {
         }")
 
         // 2. Select preferred sensors if found
-        val accelerationSensorType = if (sensorTypes.contains(Sensor.TYPE_LINEAR_ACCELERATION)) {
-            Sensor.TYPE_LINEAR_ACCELERATION to Sensor.STRING_TYPE_LINEAR_ACCELERATION
+        val accelerationSensorOptions = if (sensorTypes.contains(Sensor.TYPE_LINEAR_ACCELERATION)) {
+            SensorOptions(
+                Sensor.TYPE_LINEAR_ACCELERATION,
+                Sensor.STRING_TYPE_LINEAR_ACCELERATION,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         } else {
-            Sensor.TYPE_ACCELEROMETER to Sensor.STRING_TYPE_ACCELEROMETER
+            SensorOptions(
+                Sensor.TYPE_ACCELEROMETER,
+                Sensor.STRING_TYPE_ACCELEROMETER,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         }
-        val rotationSensorType = if (sensorTypes.contains(Sensor.TYPE_ROTATION_VECTOR)) {
-            Sensor.TYPE_ROTATION_VECTOR to Sensor.STRING_TYPE_ROTATION_VECTOR
+        val rotationSensorOptions = if (sensorTypes.contains(Sensor.TYPE_ROTATION_VECTOR)) {
+            SensorOptions(
+                Sensor.TYPE_ROTATION_VECTOR,
+                Sensor.STRING_TYPE_ROTATION_VECTOR,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         } else {
-            Sensor.TYPE_ORIENTATION to Sensor.STRING_TYPE_ORIENTATION
+            SensorOptions(
+                Sensor.TYPE_ORIENTATION,
+                Sensor.STRING_TYPE_ORIENTATION,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         }
-        val magneticFieldSensorType =
-            Sensor.TYPE_MAGNETIC_FIELD to Sensor.STRING_TYPE_MAGNETIC_FIELD
+        val magneticFieldSensorType = SensorOptions(
+            Sensor.TYPE_MAGNETIC_FIELD,
+            Sensor.STRING_TYPE_MAGNETIC_FIELD,
+            SensorManager.SENSOR_DELAY_NORMAL
+        )
 
         // 3. Register listeners
         // TODO: Use set delay from user preferences in the future, default is NORMAL
         listOf(
-            SensorOptions(
-                accelerationSensorType.first,
-                accelerationSensorType.second,
-                SensorManager.SENSOR_DELAY_NORMAL
-            ),
-            SensorOptions(
-                rotationSensorType.first,
-                rotationSensorType.second,
-                SensorManager.SENSOR_DELAY_NORMAL
-            ),
-            SensorOptions(
-                magneticFieldSensorType.first,
-                magneticFieldSensorType.second,
-                SensorManager.SENSOR_DELAY_NORMAL
-            )
+            accelerationSensorOptions,
+            rotationSensorOptions,
+            magneticFieldSensorType
         ).forEach {
             if (sensorTypes.contains(it.sensorType)) {
                 Timber.d("Registering listener to sensor type: ${it.sensorTypeString}")

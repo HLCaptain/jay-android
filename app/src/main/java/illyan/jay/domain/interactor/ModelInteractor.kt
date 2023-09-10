@@ -40,6 +40,7 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.random.Random
 
 @Singleton
 class ModelInteractor @Inject constructor(
@@ -84,42 +85,35 @@ class ModelInteractor @Inject constructor(
                 sensorEventInteractor.getSyncedEvents(sessionUUID).first { sensorEvents ->
                     sensorEvents?.let {
                         val advancedImuSensorData = SensorFusion.fuseSensors(
+//                            interval = 80.milliseconds + Random.nextLong(-10, 10).milliseconds,
                             accRaw = sensorEvents.filter {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                                    it.type.toInt() == Sensor.TYPE_LINEAR_ACCELERATION
-                                else
-                                    false
+                                it.type.toInt() == if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                                    Sensor.TYPE_LINEAR_ACCELERATION else Sensor.TYPE_ACCELEROMETER
                             },
-                            accSmooth = sensorEvents.filter { it.type.toInt() == Sensor.TYPE_ACCELEROMETER },
-                            dirX = emptyList(),
-                            dirY = emptyList(),
-                            dirZ = emptyList(),
-                            angVel = emptyList(),
-                            angAccel = emptyList(),
+                            accSmooth = emptyList(),
+                            dirX = emptyList(), // FIXME: replace with real values
+                            dirY = emptyList(), // FIXME: replace with real values
+                            dirZ = emptyList(), //sensorEvents.filter { it.type.toInt() == Sensor.TYPE_ROTATION_VECTOR },
+                            angVel = emptyList(), // FIXME: replace with real values
+                            angAccel = emptyList(), // FIXME: replace with real values
                         )
                         val interpreter = Interpreter(modelFile)
-                        interpreter.allocateTensors()
                         advancedImuSensorData.chunked(400) { chunk ->
-                            // FIXME: transform input to model shape
+                            interpreter.allocateTensors()
                             Timber.v(
                                 "Running model with input shape ${
                                     interpreter.getInputTensor(0).shape().joinToString()
-                                } on chunk of size ${chunk.size}"
-                            )
-                            Timber.v(
-                                "Running model with output shape ${
-                                    interpreter.getOutputTensor(
-                                        0
-                                    ).shape().joinToString()
+                                } and output shape ${
+                                    interpreter.getOutputTensor(0).shape().joinToString()
                                 } on chunk of size ${chunk.size}"
                             )
                             if (chunk.size < 400) {
-                                Timber.d("Chunk size is less than 400, skipping...")
+                                Timber.v("Chunk size is less than 400, skipping...")
                                 return@chunked chunk
                             }
                             val startTimestamp = chunk.first().timestamp
                             chunk.map {
-                                listOf((it.timestamp - startTimestamp) / 1000.0).toTypedArray() +
+                                listOf((it.timestamp - startTimestamp + Random.nextLong(-10, 10)) / 1000.0 ).toTypedArray() + // Added a bit of noise
                                         it.accRaw.toList().toTypedArray() +
                                         it.accSmooth.toList().toTypedArray() +
                                         it.dirX.toList().toTypedArray() +
@@ -129,21 +123,14 @@ class ModelInteractor @Inject constructor(
 //                            it.angAccel.toList().toTypedArray()
                             }.map { array -> array.map { it.toFloat() } }.toTypedArray()
                                 .let { events ->
-                                    val input =
-                                        ByteBuffer.allocate(8070 * 400 * 16 * java.lang.Float.SIZE / 8)
-                                            .order(ByteOrder.nativeOrder())
+                                    val input = ByteBuffer.allocate(8070 * 400 * 16 * java.lang.Float.SIZE / 8).order(ByteOrder.nativeOrder())
                                     for (i in 0 until 8070) {
                                         events.forEach { sensorValues ->
-                                            sensorValues.forEach {
-                                                input.putFloat(
-                                                    it
-                                                )
-                                            }
+                                            sensorValues.forEach { input.putFloat(it) }
                                         }
                                     }
                                     val outputSize = 8070 * java.lang.Float.SIZE / 8
-                                    val output = ByteBuffer.allocate(outputSize)
-                                        .order(ByteOrder.nativeOrder())
+                                    val output = ByteBuffer.allocate(outputSize).order(ByteOrder.nativeOrder())
                                     interpreter.run(input, output)
                                     output.rewind()
                                     val outputs = mutableListOf<Float>()
@@ -152,19 +139,12 @@ class ModelInteractor @Inject constructor(
                                     }
                                     Timber.v("Model output: ${outputs[0]}")
                                     chunk.forEach { advancedImuSensorData ->
-                                        outputMap[Instant.ofEpochMilli(advancedImuSensorData.timestamp)
-                                            .toZonedDateTime()] = outputs[0].toDouble()
+                                        outputMap[Instant.ofEpochMilli(advancedImuSensorData.timestamp).toZonedDateTime()] = outputs[0].toDouble()
                                     }
                                     flow.update { outputMap }
                                 }
+                            interpreter.resetVariableTensors()
                         }
-                        // TODO: Use advancedImuSensorData and get filtered driver aggression
-
-                        // TODO: emit model outputs
-                        //  val aggressions = mutableMapOf<ZonedDateTime, Double>()
-                        //  // ...Run Model on Chunk
-                        //  // ...Add Model output to aggressions (zonedDateTime to modelOutput)
-                        //  // ...emit(aggressions)
                     }
                     sensorEvents != null
                 }

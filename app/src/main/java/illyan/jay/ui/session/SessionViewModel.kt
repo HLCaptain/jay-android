@@ -46,6 +46,7 @@ import timber.log.Timber
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.abs
 
 @HiltViewModel
 class SessionViewModel @Inject constructor(
@@ -62,7 +63,12 @@ class SessionViewModel @Inject constructor(
     private val _path = MutableStateFlow<List<UiLocation>?>(null)
     val path = _path.combine(aggressions) { path, aggressions ->
         path?.map { location ->
-            location.copy(aggression = aggressions[location.zonedDateTime]?.toFloat())
+            // Find closest zonedDateTime of a location for each aggression
+            val closestAggressionToLocationTimestamp = aggressions.minOfOrNull {
+                // Time difference
+                abs(it.key.toInstant().toEpochMilli() - location.zonedDateTime.toInstant().toEpochMilli())
+            }
+            location.copy(aggression = closestAggressionToLocationTimestamp?.toFloat())
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, _path.value)
 

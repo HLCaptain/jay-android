@@ -21,14 +21,13 @@ package illyan.jay.data.sensor
 import androidx.compose.ui.util.lerp
 import illyan.jay.domain.model.AdvancedImuSensorData
 import illyan.jay.domain.model.DomainSensorEvent
-import org.apache.commons.math3.linear.DecompositionSolver
-import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.linear.QRDecomposition
 import timber.log.Timber
-import kotlin.math.pow
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 object SensorFusion {
-    fun fuseSensors(
+    fun fuseSensorsWithInterval(
+        interval: Duration = 10.milliseconds,
         accRaw: List<DomainSensorEvent>,
         accSmooth: List<DomainSensorEvent>,
         dirX: List<DomainSensorEvent>,
@@ -37,25 +36,53 @@ object SensorFusion {
         angVel: List<DomainSensorEvent>,
         angAccel: List<DomainSensorEvent>,
     ): List<AdvancedImuSensorData> {
-        Timber.d("Fusing sensor data")
-        // Merge all timestamps
         val allTimestamps = (accRaw + accSmooth + dirX + dirY + dirZ + angVel + angAccel)
             .map { it.zonedDateTime.toInstant().toEpochMilli() }
             .distinct()
-            .sorted() // 400 is the chunk size for the ML model
+            .sorted()
+        val minTimestamp = allTimestamps.min()
+        val maxTimestamp = allTimestamps.max()
+        val intervals = (minTimestamp until maxTimestamp step interval.inWholeMilliseconds).toList()
+        return fuseSensors(
+            accRaw = accRaw,
+            accSmooth = accSmooth,
+            dirX = dirX,
+            dirY = dirY,
+            dirZ = dirZ,
+            angVel = angVel,
+            angAccel = angAccel,
+            intervals = intervals
+        )
+    }
 
-        if (allTimestamps.isEmpty()) Timber.d("No sensor data to fuse")
+    fun fuseSensors(
+        accRaw: List<DomainSensorEvent>,
+        accSmooth: List<DomainSensorEvent>,
+        dirX: List<DomainSensorEvent>,
+        dirY: List<DomainSensorEvent>,
+        dirZ: List<DomainSensorEvent>,
+        angVel: List<DomainSensorEvent>,
+        angAccel: List<DomainSensorEvent>,
+        intervals: List<Long> = (accRaw + accSmooth + dirX + dirY + dirZ + angVel + angAccel)
+            .map { it.zonedDateTime.toInstant().toEpochMilli() }
+            .distinct()
+            .sorted()
+    ): List<AdvancedImuSensorData> {
+        Timber.d("Fusing sensor data")
+        // Merge all timestamps
 
-        val interpolatedDirX = interpolateValues(dirX, allTimestamps)
-        val interpolatedDirY = interpolateValues(dirY, allTimestamps)
-        val interpolatedDirZ = interpolateValues(dirZ, allTimestamps)
-        val interpolatedAccRaw = interpolateValues(accRaw, allTimestamps)
-        val interpolatedAccSmooth = interpolateValues(accSmooth, allTimestamps)
-        val interpolatedAngVel = interpolateValues(angVel, allTimestamps)
-        val interpolatedAngAccel = interpolateValues(angAccel, allTimestamps)
+        if (intervals.isEmpty()) Timber.d("No sensor data to fuse")
 
-        return allTimestamps.mapIndexed { index, timestamp ->
-//            Timber.v("Fusing sensor data for timestamp $timestamp (${index + 1}/${allTimestamps.size})")
+        val interpolatedDirX = interpolateValues(dirX, intervals)
+        val interpolatedDirY = interpolateValues(dirY, intervals)
+        val interpolatedDirZ = interpolateValues(dirZ, intervals)
+        val interpolatedAccRaw = interpolateValues(accRaw, intervals)
+        val interpolatedAccSmooth = interpolateValues(accSmooth, intervals)
+        val interpolatedAngVel = interpolateValues(angVel, intervals)
+        val interpolatedAngAccel = interpolateValues(angAccel, intervals)
+
+        return intervals.mapIndexed { index, timestamp ->
+            Timber.v("Fusing sensor data for timestamp $timestamp (${index + 1}/${intervals.size})")
             // Interpolate values for each timestamp
             AdvancedImuSensorData(
                 dirX = interpolatedDirX[index],
@@ -71,7 +98,6 @@ object SensorFusion {
     }
 
     private fun interpolateValues(events: List<DomainSensorEvent>, timestamps: List<Long>): List<Triple<Double, Double, Double>> {
-//        Timber.v("Interpolating values for ${timestamps.size} timestamp")
         // Linear-like interpolation
         if (events.isEmpty()) return timestamps.map { Triple(0.0, 0.0, 0.0) }
         val firstEvent = events.first()
@@ -82,14 +108,14 @@ object SensorFusion {
             if (beforeEvent == afterEvent) return@map Triple(beforeEvent.x.toDouble(), beforeEvent.y.toDouble(), beforeEvent.z.toDouble())
             val fraction = (timestamp - beforeEvent.zonedDateTime.toInstant().toEpochMilli()).toFloat() /
                     (afterEvent.zonedDateTime.toInstant().toEpochMilli() - beforeEvent.zonedDateTime.toInstant().toEpochMilli()).toFloat()
-            val interpolatedEventY = lerp(
-                beforeEvent.y,
-                afterEvent.y,
-                fraction
-            ).toDouble()
             val interpolatedEventX = lerp(
                 beforeEvent.x,
                 afterEvent.x,
+                fraction
+            ).toDouble()
+            val interpolatedEventY = lerp(
+                beforeEvent.y,
+                afterEvent.y,
                 fraction
             ).toDouble()
             val interpolatedEventZ = lerp(
@@ -99,31 +125,5 @@ object SensorFusion {
             ).toDouble()
             Triple(interpolatedEventX, interpolatedEventY, interpolatedEventZ)
         }
-
-//        val degree = events.size // Degree of polynomial regression
-//        val xValues = events.map { it.zonedDateTime.toInstant().toEpochMilli().toDouble() }
-//
-//        // Create design matrix
-//        val designMatrix = Array(events.size) { i -> DoubleArray(degree + 1) { j -> xValues[i].pow(j) } }
-//
-//        // Calculating polynomial regression for each component (X, Y, Z)
-//        val xReg = polynomialRegression(designMatrix, events.map { it.x.toDouble() }, degree)
-//        val yReg = polynomialRegression(designMatrix, events.map { it.y.toDouble() }, degree)
-//        val zReg = polynomialRegression(designMatrix, events.map { it.z.toDouble() }, degree)
-//
-//        return timestamps.map { timestamp ->
-//            Triple(xReg(timestamp), yReg(timestamp), zReg(timestamp))
-//        }
-    }
-
-    private fun polynomialRegression(designMatrix: Array<DoubleArray>, yValues: List<Double>, degree: Int): (Long) -> Double {
-//        Timber.v("Calculating polynomial regression for degree $degree")
-        val yVector = MatrixUtils.createRealVector(yValues.toDoubleArray())
-        if (designMatrix.isEmpty()) return { 0.0 }
-        val xMatrix = MatrixUtils.createRealMatrix(designMatrix)
-        val solver: DecompositionSolver = QRDecomposition(xMatrix).solver
-        val coefficients = solver.solve(yVector)
-
-        return { x: Long -> (0..degree).toList().sumOf { i -> coefficients.getEntry(i) * x.toDouble().pow(i) } }
     }
 }
