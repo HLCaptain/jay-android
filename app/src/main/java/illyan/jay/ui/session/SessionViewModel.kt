@@ -64,10 +64,11 @@ class SessionViewModel @Inject constructor(
     val path = _path.combine(aggressions) { path, aggressions ->
         path?.map { location ->
             // Find closest zonedDateTime of a location for each aggression
-            val closestAggressionToLocationTimestamp = aggressions.minOfOrNull {
+            val closestAggressionToLocationTimestamp = aggressions.minByOrNull {
                 // Time difference
                 abs(it.key.toInstant().toEpochMilli() - location.zonedDateTime.toInstant().toEpochMilli())
-            }
+            }?.value
+//            Timber.d("Aggression difference: $closestAggressionToLocationTimestamp")
             location.copy(aggression = closestAggressionToLocationTimestamp?.toFloat())
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, _path.value)

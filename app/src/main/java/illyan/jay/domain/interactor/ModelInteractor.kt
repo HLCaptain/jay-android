@@ -40,7 +40,6 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.random.Random
 
 @Singleton
 class ModelInteractor @Inject constructor(
@@ -113,7 +112,7 @@ class ModelInteractor @Inject constructor(
                             }
                             val startTimestamp = chunk.first().timestamp
                             chunk.map {
-                                listOf((it.timestamp - startTimestamp + Random.nextLong(-10, 10)) / 1000.0 ).toTypedArray() + // Added a bit of noise
+                                listOf((it.timestamp - startTimestamp) / 1000.0).toTypedArray() + // Added a bit of noise
                                         it.accRaw.toList().toTypedArray() +
                                         it.accSmooth.toList().toTypedArray() +
                                         it.dirX.toList().toTypedArray() +
@@ -137,7 +136,7 @@ class ModelInteractor @Inject constructor(
                                     for (i in 0 until output.asFloatBuffer().capacity()) {
                                         outputs.add(output.asFloatBuffer()[i])
                                     }
-                                    Timber.v("Model output: ${outputs[0]}")
+                                    Timber.v("Model outputs: ${outputs.distinct().joinToString()}")
                                     chunk.forEach { advancedImuSensorData ->
                                         outputMap[Instant.ofEpochMilli(advancedImuSensorData.timestamp).toZonedDateTime()] = outputs[0].toDouble()
                                     }
