@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2024 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import com.google.android.libraries.mapsplatform.secrets_gradle_plugin.loadPropertiesFile
+
+/*
  * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
@@ -68,10 +88,30 @@ android {
                 "proguard-rules.pro"
             )
         }
-        create("benchmark") {
-            initWith(getByName("release"))
-            signingConfig = signingConfigs.getByName("debug")
-            matchingFallbacks += listOf("release")
+    }
+
+    signingConfigs {
+        val properties = loadPropertiesFile("../local.properties").toMap()
+
+        val debugStorePath = properties["DEBUG_KEY_PATH"].toString()
+        val debugKeyAlias = properties["DEBUG_KEY_ALIAS"].toString()
+        val debugStorePassword = properties["DEBUG_KEYSTORE_PASSWORD"].toString()
+        val debugKeyPassword = properties["DEBUG_KEY_PASSWORD"].toString()
+        getByName("debug") {
+            storeFile = file(debugStorePath)
+            keyAlias = debugKeyAlias
+            storePassword = debugStorePassword
+            keyPassword = debugKeyPassword
+        }
+        val releaseStorePath = properties["RELEASE_KEY_PATH"].toString()
+        val releaseKeyAlias = properties["RELEASE_KEY_ALIAS"].toString()
+        val releaseStorePassword = properties["RELEASE_KEYSTORE_PASSWORD"].toString()
+        val releaseKeyPassword = properties["RELEASE_KEY_PASSWORD"].toString()
+        create("release") {
+            storeFile = file(releaseStorePath)
+            keyAlias = releaseKeyAlias
+            storePassword = releaseStorePassword
+            keyPassword = releaseKeyPassword
         }
     }
 
