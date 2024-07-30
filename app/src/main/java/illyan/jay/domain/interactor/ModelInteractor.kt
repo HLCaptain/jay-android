@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -110,9 +110,9 @@ class ModelInteractor @Inject constructor(
                                 Timber.v("Chunk size is less than 400, skipping...")
                                 return@chunked chunk
                             }
-                            val startTimestamp = chunk.first().timestamp
+                            val startMilli = chunk.first().timestamp
                             chunk.map {
-                                listOf((it.timestamp - startTimestamp) / 1000.0).toTypedArray() + // Added a bit of noise
+                                listOf((it.timestamp - startMilli) / 1000.0).toTypedArray() + // Added a bit of noise
                                         it.accRaw.toList().toTypedArray() +
                                         it.accSmooth.toList().toTypedArray() +
                                         it.dirX.toList().toTypedArray() +
