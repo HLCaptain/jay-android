@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -34,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -548,14 +549,16 @@ fun SessionDetailsScreen(
             },
             edgePadding = 8.dp
         ) {
-            GradientFilter.values().forEach {
+            GradientFilter.entries.forEach {
+                val isEnabled = it != GradientFilter.Aggression || isModelAvailable
                 Tab(
                     modifier = Modifier
                         .padding(horizontal = MenuItemPadding)
                         .clip(RoundedCornerShape(MenuItemPadding)),
                     selected = it == gradientFilter,
                     onClick = { setGradientFilter(it) },
-                    enabled = it != GradientFilter.Aggression || isModelAvailable,
+                    enabled = isEnabled,
+                    unselectedContentColor = LocalContentColor.current.copy(if (isEnabled) 1f else 0.5f),
                     text = {
                         Text(
                             text = stringResource(
