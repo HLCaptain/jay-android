@@ -155,7 +155,7 @@ class SessionViewModel @Inject constructor(
                             DomainAggression(sessionUUID, it.key.toInstant().toEpochMilli(), it.value.toFloat())
                         }
                         locationInteractor.saveAggressions(aggressions)
-                        sessionInteractor.syncedSessions.first()?.first { it.uuid == sessionUUID }?.let { session ->
+                        if (sessionInteractor.syncedSessions.first()?.map { it.uuid }?.contains(sessionUUID) == true) {
                             sessionInteractor.uploadSessionAggressions(aggressions)
                         }
                         _aggressions.update { filteredAggressions }

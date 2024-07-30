@@ -605,6 +605,10 @@ class SessionInteractor @Inject constructor(
             Timber.i("User is not signed in, not uploading aggressions")
             return
         }
+        if (aggressions.isEmpty()) {
+            Timber.i("No aggressions to upload")
+            return
+        }
         val sessionUUID = aggressions.first().sessionUUID
         if (syncedSessions.value?.map { it.uuid }?.contains(sessionUUID) == true) {
             Timber.i("Uploading ${aggressions.size} aggressions to the cloud")
