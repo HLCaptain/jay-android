@@ -48,17 +48,18 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.junit5)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 35
 
     namespace = "illyan.jay"
 
     defaultConfig {
         applicationId = "illyan.jay"
-        minSdk = 21
-        targetSdk = 34
+        minSdk = 23
+        targetSdk = 35
         versionCode = 18
         versionName = "0.4.0-alpha"
 
@@ -128,10 +129,6 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.orNull
     }
 
     packaging {

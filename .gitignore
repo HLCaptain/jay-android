@@ -13,6 +13,10 @@
 .gradle
 /build
 /app/build
+/app/benchmark/build
+
+# Kotlin K2
+/.kotlin
 
 # Android Studio
 # Needed for configuration only

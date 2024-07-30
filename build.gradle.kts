@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -32,6 +32,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.junit5) apply false
+    alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.sonarqube)
 }
 
