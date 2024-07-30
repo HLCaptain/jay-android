@@ -106,13 +106,13 @@ google-maps-utils = { module = "com.google.maps.android:android-maps-utils", ver
 google-maps-utils-ktx = { module = "com.google.maps.android:maps-utils-ktx", version = "5.1.1" }
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
-firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
-firebase-config-ktx = { module = "com.google.firebase:firebase-config-ktx" }
-firebase-analytics-ktx = { module = "com.google.firebase:firebase-analytics-ktx" }
-firebase-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics-ktx" }
-firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
-firebase-perf-ktx = { module = "com.google.firebase:firebase-perf-ktx" }
-firebase-ml-modeldownloader = { module = "com.google.firebase:firebase-ml-modeldownloader-ktx" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-config = { module = "com.google.firebase:firebase-config" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+firebase-perf = { module = "com.google.firebase:firebase-perf" }
+firebase-ml-modeldownloader = { module = "com.google.firebase:firebase-ml-modeldownloader" }
 tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflow-lite" }
 
 hlcaptain-compose-scrollbar = { module = "com.github.HLCaptain:compose-scrollbar", version.ref = "hlcaptain-compose-scrollbar" }

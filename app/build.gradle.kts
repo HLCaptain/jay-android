@@ -252,12 +252,12 @@ dependencies {
 
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.config.ktx)
-    implementation(libs.firebase.analytics.ktx)
-    implementation(libs.firebase.crashlytics.ktx)
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.perf.ktx)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.config)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.perf)
 
     // Firebase ML
     implementation(libs.firebase.ml.modeldownloader)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -27,7 +27,6 @@ import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.ModelInteractor
 import illyan.jay.domain.interactor.SensorEventInteractor
 import illyan.jay.domain.interactor.SessionInteractor
-import illyan.jay.ui.session.model.GradientFilter
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
@@ -39,6 +38,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -59,12 +59,16 @@ class SessionViewModel @Inject constructor(
 
     private val _isModelAvailable = MutableStateFlow(false)
     val isModelAvailable = _isModelAvailable.asStateFlow()
-    private val aggressions = MutableStateFlow<Map<ZonedDateTime, Double>>(emptyMap())
+    private val _aggressions = MutableStateFlow<Map<ZonedDateTime, Double>?>(null)
+    val aggressions = _aggressions
+        .asStateFlow()
+        .map { aggressions -> aggressions?.map { it.value.toFloat() } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     private val _path = MutableStateFlow<List<UiLocation>?>(null)
-    val path = _path.combine(aggressions) { path, aggressions ->
+    val path = _path.combine(_aggressions) { path, aggressions ->
         path?.map { location ->
             // Find closest zonedDateTime of a location for each aggression
-            val closestAggressionToLocationTimestamp = aggressions.minByOrNull {
+            val closestAggressionToLocationTimestamp = aggressions?.minByOrNull {
                 // Time difference
                 abs(it.key.toInstant().toEpochMilli() - location.zonedDateTime.toInstant().toEpochMilli())
             }?.value
@@ -82,9 +86,6 @@ class SessionViewModel @Inject constructor(
             totalDistance = path?.map { it.latLng }?.sphericalPathLength() ?: session.totalDistance
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, _session.value)
-
-    private val _gradientFilter = MutableStateFlow(GradientFilter.Default)
-    val gradientFilter = _gradientFilter.asStateFlow()
 
     private val jobs = mutableListOf<Job>()
 
@@ -135,15 +136,10 @@ class SessionViewModel @Inject constructor(
                         sessionUUID
                     ).collectLatest { filteredAggressions ->
                         Timber.d("Loaded ${filteredAggressions.size} aggressions for session with ID: ${sessionUUID.take(4)}")
-                        aggressions.update { filteredAggressions }
+                        _aggressions.update { filteredAggressions }
                     }
                 }
             }
         }
-    }
-
-    fun setGradientFilter(filter: GradientFilter) {
-        Timber.d("Setting gradient filter to: $filter")
-        _gradientFilter.update { filter }
     }
 }

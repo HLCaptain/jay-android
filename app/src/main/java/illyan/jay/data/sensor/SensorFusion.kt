@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -88,7 +88,7 @@ object SensorFusion {
         val interpolatedAngAccel = interpolateValues(angAccel, intervals)
 
         return intervals.mapIndexed { index, timestamp ->
-            Timber.v("Fusing sensor data for timestamp $timestamp (${index + 1}/${intervals.size})")
+            if (index % 25 == 0) Timber.v("Fusing sensor data for timestamp $timestamp (${index + 1}/${intervals.size})")
             // Interpolate values for each timestamp
             AdvancedImuSensorData(
                 dirX = interpolatedDirX[index],
