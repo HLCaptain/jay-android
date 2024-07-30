@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -1102,5 +1102,5 @@ private fun SearchNavHost(
 }
 
 fun BottomSheetState.getOffsetAsDp(density: Float): Dp {
-    return (requireOffset() / density).dp
+    return (try { requireOffset() } catch (e: Exception) { 0f } / density).dp
 }
