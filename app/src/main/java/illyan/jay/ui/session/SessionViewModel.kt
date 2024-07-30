@@ -30,6 +30,7 @@ import illyan.jay.domain.interactor.SessionInteractor
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
+import illyan.jay.util.toZonedDateTime
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +44,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.Instant
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -120,9 +122,17 @@ class SessionViewModel @Inject constructor(
                 }
             }
         }
+        jobs += viewModelScope.launch(dispatcherIO) {
+            locationInteractor.getSyncedPathAggressions(sessionUUID).collectLatest { aggressions ->
+                Timber.d("Loaded ${aggressions?.size} aggressions for session with ID: $sessionUUID")
+                _aggressions.update { aggressions?.associate {
+                    Instant.ofEpochMilli(it.timestamp).toZonedDateTime() to it.aggression.toDouble()
+                } }
+            }
+        }
     }
 
-    fun loadAggression(sessionUUID: String) {
+    fun generateAggressionByModel(sessionUUID: String) {
         viewModelScope.launch(dispatcherIO) {
             if (modelInteractor.downloadedModels.first().isEmpty()) {
                 Timber.d("No downloaded models found")

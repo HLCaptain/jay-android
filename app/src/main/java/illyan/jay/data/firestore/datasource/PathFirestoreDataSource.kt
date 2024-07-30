@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -27,10 +27,12 @@ import com.google.firebase.firestore.ktx.snapshots
 import com.google.firebase.firestore.ktx.toObjects
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.data.firestore.model.FirestorePath
+import illyan.jay.data.firestore.toDomainAggressions
 import illyan.jay.data.firestore.toDomainLocations
 import illyan.jay.data.firestore.toPaths
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.awaitOperations
@@ -66,6 +68,27 @@ class PathFirestoreDataSource @Inject constructor(
             firestore = firestore,
             coroutineScopeIO = coroutineScopeIO,
             toDomainModel = { it?.toDomainLocations() },
+            appLifecycle = appLifecycle,
+            snapshotHandler = FirestoreQuerySnapshotHandler(
+                snapshotToObject = { it.toObjects() },
+                snapshotSourceFlow = authInteractor.userUUIDStateFlow.map { uuid ->
+                    if (uuid != null) {
+                        firestore
+                            .collection(FirestorePath.CollectionName)
+                            .whereEqualTo(FirestorePath.FieldSessionUUID, sessionUUID)
+                            .snapshots(MetadataChanges.INCLUDE)
+                    } else {
+                        null
+                    }
+                }
+            )
+        ) {}.data
+
+    fun getAggressionsBySession(sessionUUID: String) =
+        object : FirestoreDataFlow<List<FirestorePath>, List<DomainAggression>>(
+            firestore = firestore,
+            coroutineScopeIO = coroutineScopeIO,
+            toDomainModel = { it?.toDomainAggressions() },
             appLifecycle = appLifecycle,
             snapshotHandler = FirestoreQuerySnapshotHandler(
                 snapshotToObject = { it.toObjects() },

@@ -358,7 +358,7 @@ fun SessionScreen(
                                 leastAggressiveColor = Color.Green,
                                 mostAggressiveColor = Color.Red,
                                 aggressions = aggressions,
-                                loadAggressions = { viewModel.loadAggression(sessionUUID) }
+                                loadAggressions = { viewModel.generateAggressionByModel(sessionUUID) }
                             )
                         }
                     )

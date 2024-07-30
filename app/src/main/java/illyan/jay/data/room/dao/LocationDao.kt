@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -23,8 +23,8 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import androidx.room.Update
+import illyan.jay.data.room.model.RoomAggression
 import illyan.jay.data.room.model.RoomLocation
 import kotlinx.coroutines.flow.Flow
 
@@ -41,6 +41,12 @@ interface LocationDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsertLocations(locations: List<RoomLocation>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertAggression(aggression: RoomAggression): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertAggressions(aggressions: List<RoomAggression>)
 
     @Update
     fun updateLocation(location: RoomLocation): Int
@@ -60,19 +66,24 @@ interface LocationDao {
     @Query("DELETE FROM locations WHERE sessionUUID = :sessionUUID")
     fun deleteLocations(sessionUUID: String)
 
-    @Transaction
+    @Query("DELETE FROM aggressions")
+    fun deleteAggressions()
+
+    @Query("DELETE FROM aggressions WHERE sessionUUID = :sessionUUID")
+    fun deleteAggressions(sessionUUID: String)
+
     @Query("SELECT * FROM locations WHERE sessionUUID = :sessionUUID")
     fun getLocations(sessionUUID: String): Flow<List<RoomLocation>>
 
-    @Transaction
     @Query("SELECT * FROM locations WHERE sessionUUID IN(:sessionUUIDs)")
     fun getLocations(sessionUUIDs: List<String>): Flow<List<RoomLocation>>
 
-    @Transaction
+    @Query("SELECT * FROM aggressions WHERE sessionUUID = :sessionUUID")
+    fun getAggressions(sessionUUID: String): Flow<List<RoomAggression>>
+
     @Query("SELECT * FROM locations ORDER BY time DESC LIMIT :limit")
     fun getLatestLocations(limit: Long): Flow<List<RoomLocation>>
 
-    @Transaction
     @Query("SELECT * FROM locations WHERE sessionUUID = :sessionUUID ORDER BY time DESC LIMIT :limit")
     fun getLatestLocations(sessionUUID: String, limit: Long): Flow<List<RoomLocation>>
 }

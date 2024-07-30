@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,12 +18,14 @@
 
 package illyan.jay.data.room
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import illyan.jay.data.room.dao.LocationDao
 import illyan.jay.data.room.dao.PreferencesDao
 import illyan.jay.data.room.dao.SensorEventDao
 import illyan.jay.data.room.dao.SessionDao
+import illyan.jay.data.room.model.RoomAggression
 import illyan.jay.data.room.model.RoomLocation
 import illyan.jay.data.room.model.RoomPreferences
 import illyan.jay.data.room.model.RoomSensorEvent
@@ -41,9 +43,12 @@ import illyan.jay.data.room.model.RoomSession
         RoomLocation::class,
         RoomSensorEvent::class,
         RoomPreferences::class,
+        RoomAggression::class
     ],
-    version = 35,
-    exportSchema = false
+    version = 36,
+    autoMigrations = [
+        AutoMigration (from = 35, to = 36)
+    ]
 )
 abstract class JayDatabase : RoomDatabase() {
     /**

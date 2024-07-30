@@ -45,6 +45,7 @@ import javax.inject.Singleton
 class ModelInteractor @Inject constructor(
     private val firebaseMLDataSource: FirebaseMLDataSource,
     private val sensorEventInteractor: SensorEventInteractor,
+    private val locationInteractor: LocationInteractor,
     @CoroutineScopeIO private val coroutineScopeIO: CoroutineScope,
 ) {
     val downloadingModels = firebaseMLDataSource.downloadingModels

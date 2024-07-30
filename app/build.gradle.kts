@@ -38,6 +38,7 @@ import com.google.android.libraries.mapsplatform.secrets_gradle_plugin.loadPrope
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.androidx.room)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.jetbrains.kotlin.parcelize)
     alias(libs.plugins.jetbrains.kotlin.serialization)
@@ -285,4 +286,8 @@ dependencies {
 
 hilt {
     enableAggregatingTask = true
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }

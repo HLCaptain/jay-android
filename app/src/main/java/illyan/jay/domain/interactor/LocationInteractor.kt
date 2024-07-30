@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -23,6 +23,7 @@ import illyan.jay.data.firestore.datasource.SessionFirestoreDataSource
 import illyan.jay.data.room.datasource.LocationRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.di.CoroutineScopeMain
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -93,6 +94,10 @@ class LocationInteractor @Inject constructor(
         return locationRoomDataSource.getLocations(sessionUUIDs)
     }
 
+    fun getAggressions(sessionUUID: String): Flow<List<DomainAggression>> {
+        Timber.d("Trying to load path for session with ID from disk: ${sessionUUID.take(4)}")
+        return locationRoomDataSource.getAggressions(sessionUUID)
+    }
 
     val syncedPathCollectionJobs = hashMapOf<String, Job>()
 
@@ -160,6 +165,72 @@ class LocationInteractor @Inject constructor(
         return syncedPaths.asStateFlow()
     }
 
+    val syncedPathAggressionCollectionJobs = hashMapOf<String, Job>()
+
+    /**
+     * Get the path for a session, either it being in the cloud or in the local database.
+     * Cannot react to user/session/location state changes, if the location was found in
+     * the local database, gets uploaded, then gets deleted from the local database, the listener
+     * would still listen to the local database's data.
+     */
+    suspend fun getSyncedPathAggressions(sessionUUID: String): StateFlow<List<DomainAggression>?> {
+        Timber.i("Trying to load path aggressions for session with ID: $sessionUUID")
+        if (syncedPathAggressionCollectionJobs[sessionUUID] != null) {
+            Timber.v("Cancelling current data collection job regarding the path aggressions of $sessionUUID")
+            syncedPathAggressionCollectionJobs[sessionUUID]?.cancel(CancellationException("New data collection job requested"))
+            syncedPathAggressionCollectionJobs.remove(sessionUUID)
+        }
+        val syncedPathAggressions = MutableStateFlow<List<DomainAggression>?>(null)
+        syncedPathAggressionCollectionJobs[sessionUUID] = coroutineScopeMain.launch(start = CoroutineStart.LAZY) {
+            pathFirestoreDataSource.getAggressionsBySession(sessionUUID).collectLatest { remoteAggressions ->
+                coroutineScopeIO.launch {
+                    Timber.v("Found aggressions for session, caching it on disk")
+                    remoteAggressions?.let { saveAggressions(it) }
+                }
+                syncedPathAggressions.update { remoteAggressions }
+            }
+        }
+        val session = sessionInteractor.getSession(sessionUUID).first()
+        if (session != null) {
+            Timber.v("Found session on disk")
+            coroutineScopeIO.launch {
+                val aggressions = getAggressions(sessionUUID).first()
+                if (aggressions.isEmpty()) {
+                    Timber.v("Not found path aggressions for session on disk, checking cloud")
+                    if (!authInteractor.isUserSignedIn) {
+                        Timber.i("Not authenticated to access cloud, return an empty list")
+                        syncedPathAggressions.update { emptyList() }
+                    } else {
+                        syncedPathAggressionCollectionJobs[sessionUUID]?.start()
+                    }
+                } else {
+                    Timber.i("Found path aggressions on disk")
+                    syncedPathAggressions.update { aggressions }
+                }
+            }
+        } else {
+            Timber.v("Not found session on disk, checking cloud")
+            if (!authInteractor.isUserSignedIn) {
+                Timber.i("Not authenticated to access cloud, return an empty list")
+                syncedPathAggressions.update { emptyList() }
+            } else {
+                coroutineScopeIO.launch {
+                    sessionFirestoreDataSource.sessions.first { sessions ->
+                        if (sessions != null && sessions.any { it.uuid == sessionUUID }) {
+                            Timber.v("Found session in cloud, caching it on disk")
+                            coroutineScopeIO.launch {
+                                sessionInteractor.saveSession(sessions.first { it.uuid == sessionUUID })
+                                syncedPathAggressionCollectionJobs[sessionUUID]?.start()
+                            }
+                        }
+                        sessions != null
+                    }
+                }
+            }
+        }
+        return syncedPathAggressions.asStateFlow()
+    }
+
     /**
      * Save location's data to Room database.
      * Should be linked to a session to be accessible later on.
@@ -178,6 +249,14 @@ class LocationInteractor @Inject constructor(
      */
     fun saveLocations(locations: List<DomainLocation>) {
         locationRoomDataSource.saveLocations(locations)
+    }
+
+    fun saveAggressions(aggressions: List<DomainAggression>) {
+        if (aggressions.isEmpty()) {
+            Timber.v("No aggressions to save")
+            return
+        }
+        locationRoomDataSource.saveAggressionsForSession(aggressions.first().sessionUUID, aggressions)
     }
 
     fun isPathStoredForSession(sessionUUID: String): Flow<Boolean> {

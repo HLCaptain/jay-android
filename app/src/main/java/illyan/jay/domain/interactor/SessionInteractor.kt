@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -534,6 +534,7 @@ class SessionInteractor @Inject constructor(
         stoppedSessions.forEach { session ->
             sensorEventRoomDataSource.deleteSensorEventsForSession(session.uuid)
             locationRoomDataSource.deleteLocationForSession(session.uuid)
+            locationRoomDataSource.deleteAggressionsForSession(session.uuid)
         }
         sessionRoomDataSource.deleteSessions(stoppedSessions)
     }

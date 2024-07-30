@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -33,6 +33,7 @@ import illyan.jay.data.firestore.model.FirestoreSession
 import illyan.jay.data.firestore.model.FirestoreUser
 import illyan.jay.data.firestore.model.FirestoreUserPreferences
 import illyan.jay.data.firestore.serializers.TimestampSerializer
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSensorEvent
@@ -464,6 +465,18 @@ fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
     }
 
     return domainLocations.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+fun List<FirestorePath>.toDomainAggressions(): List<DomainAggression> {
+    val domainAggressions = mutableListOf<DomainAggression>()
+
+    forEach { path ->
+        val aggressions = ProtoBuf.decodeFromByteArray<List<DomainAggression>>(Zstd.decompress(path.aggressions.toBytes(), 1_000_000))
+        domainAggressions.addAll(aggressions)
+    }
+
+    return domainAggressions.sortedBy { it.timestamp }
 }
 
 fun List<FirestoreSensorEvents>.toDomainSensorEvents(): List<DomainSensorEvent> {
