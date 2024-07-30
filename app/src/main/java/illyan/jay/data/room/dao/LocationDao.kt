@@ -81,6 +81,9 @@ interface LocationDao {
     @Query("SELECT * FROM aggressions WHERE sessionUUID = :sessionUUID")
     fun getAggressions(sessionUUID: String): Flow<List<RoomAggression>>
 
+    @Query("SELECT * FROM aggressions WHERE sessionUUID IN(:sessionUUIDs)")
+    fun getAggressions(sessionUUIDs: List<String>): Flow<List<RoomAggression>>
+
     @Query("SELECT * FROM locations ORDER BY time DESC LIMIT :limit")
     fun getLatestLocations(limit: Long): Flow<List<RoomLocation>>
 

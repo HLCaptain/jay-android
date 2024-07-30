@@ -76,6 +76,9 @@ class LocationRoomDataSource @Inject constructor(
     fun getAggressions(sessionUUID: String) = locationDao.getAggressions(sessionUUID)
         .map { it.map(RoomAggression::toDomainModel) }
 
+    fun getAggressions(sessionUUIDs: List<String>) = locationDao.getAggressions(sessionUUIDs)
+        .map { it.map(RoomAggression::toDomainModel) }
+
     /**
      * Save location's data to Room database.
      * Should be linked to a session to be accessible later on.

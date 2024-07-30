@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -268,7 +268,8 @@ class SessionsViewModel @Inject constructor(
             sessionInteractor.getSession(uuid).first()?.let { session ->
                 val locations = locationInteractor.getLocations(uuid).first()
                 val events = sensorEventInteractor.getSensorEvents(uuid).first()
-                sessionInteractor.uploadSession(session, locations, events)
+                val aggressions = locationInteractor.getAggressions(uuid).first()
+                sessionInteractor.uploadSession(session, locations, events, aggressions)
             }
         }
     }

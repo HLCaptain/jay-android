@@ -28,7 +28,7 @@ data class FirestorePath(
     @PropertyName(FieldSessionUUID) val sessionUUID: String = "", // reference of the session this path is part of
     @PropertyName(FieldOwnerUUID) val ownerUUID: String = "",
     @PropertyName(FieldLocations) val locations: Blob = Blob.fromBytes(ByteArray(0)),
-    @PropertyName(FieldAggressions) val aggressions: Blob = Blob.fromBytes(ByteArray(0))
+    @PropertyName(FieldAggressions) val aggressions: Blob? = null
 ) {
     companion object {
         const val CollectionName = "paths"

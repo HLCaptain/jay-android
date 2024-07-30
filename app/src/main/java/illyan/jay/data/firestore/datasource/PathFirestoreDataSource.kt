@@ -29,7 +29,7 @@ import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.data.firestore.model.FirestorePath
 import illyan.jay.data.firestore.toDomainAggressions
 import illyan.jay.data.firestore.toDomainLocations
-import illyan.jay.data.firestore.toPaths
+import illyan.jay.data.firestore.toPath
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.model.DomainAggression
@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.minutes
 
 @Singleton
 class PathFirestoreDataSource @Inject constructor(
@@ -108,12 +109,13 @@ class PathFirestoreDataSource @Inject constructor(
     fun insertLocations(
         domainSessions: List<DomainSession>,
         domainLocations: List<DomainLocation>,
+        domainAggressions: List<DomainAggression>,
         onFailure: (Exception) -> Unit = { Timber.e(it, "Error while inserting locations for ${domainSessions.size} sessions: ${it.message}") },
         onCancel: () -> Unit = { Timber.i("Operation canceled") },
         onSuccess: () -> Unit = { Timber.d("Successfully inserted locations for ${domainSessions.size} sessions") }
     ) {
         setData(
-            data = getPathsFromSessions(domainSessions, domainLocations),
+            data = getPathsFromSessions(domainSessions, domainLocations, domainAggressions),
             onFailure = onFailure,
             onCancel = onCancel,
             onSuccess = onSuccess,
@@ -123,10 +125,11 @@ class PathFirestoreDataSource @Inject constructor(
     fun insertLocations(
         domainSessions: List<DomainSession>,
         domainLocations: List<DomainLocation>,
+        domainAggressions: List<DomainAggression>,
         batch: WriteBatch,
     ) {
         setData(
-            data = getPathsFromSessions(domainSessions, domainLocations),
+            data = getPathsFromSessions(domainSessions, domainLocations, domainAggressions),
             batch = batch,
         )
     }
@@ -134,16 +137,36 @@ class PathFirestoreDataSource @Inject constructor(
     private fun getPathsFromSessions(
         domainSessions: List<DomainSession>,
         domainLocations: List<DomainLocation>,
+        domainAggressions: List<DomainAggression>
     ): List<FirestorePath> {
         val paths = mutableListOf<FirestorePath>()
         domainSessions.forEach { session ->
             val locationsForThisSession = domainLocations.filter { it.sessionUUID.contentEquals(session.uuid) }
+            val aggressionsForThisSession = domainAggressions.filter { it.sessionUUID.contentEquals(session.uuid) }
             if (session.distance == null) {
                 session.distance = locationsForThisSession
                     .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
                     .map { it.latLng }.sphericalPathLength().toFloat()
             }
-            paths.addAll(locationsForThisSession.toPaths(session.uuid, session.ownerUUID!!))
+            val thresholdInMinutes = 300
+            if (locationsForThisSession.isEmpty()) return emptyList()
+            val startMilli = locationsForThisSession.minOf { it.zonedDateTime.toInstant().toEpochMilli() }
+            val groupedByTime = locationsForThisSession.groupBy {
+                (it.zonedDateTime.toInstant().toEpochMilli() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds
+            }
+            paths.addAll(groupedByTime.map { groups ->
+                groups.value
+                    .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+                    .toPath(session.uuid, session.ownerUUID!!)
+            })
+            val aggressionsGroupedByTime = aggressionsForThisSession.groupBy {
+                (it.timestamp - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds
+            }.map { it.value }
+            aggressionsGroupedByTime.forEachIndexed { index, aggressions ->
+                if (index < paths.size) {
+                    paths[index] = paths[index].copy(aggressions = aggressions.toPath(session.uuid, session.ownerUUID!!).aggressions)
+                }
+            }
         }
         return paths
     }

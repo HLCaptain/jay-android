@@ -111,6 +111,7 @@ fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
     lastUpdateToAnalytics = lastUpdateToAnalytics?.toTimestamp(),
 )
 
+@JvmName("locationsToFirestorePath")
 fun List<DomainLocation>.toPath(
     sessionUUID: String,
     ownerUUID: String
@@ -129,7 +130,6 @@ fun List<DomainLocation>.toPath(
             verticalAccuracy = it.verticalAccuracy.toInt()
         )
     }
-
     val locationsBlob = Blob.fromBytes(Zstd.compress(ProtoBuf.encodeToByteArray(pathLocations)))
     val path = FirestorePath(
         uuid = UUID.nameUUIDFromBytes(locationsBlob.toBytes()).toString(),
@@ -137,12 +137,23 @@ fun List<DomainLocation>.toPath(
         ownerUUID = ownerUUID,
         locations = locationsBlob
     )
-
-    if (BuildConfig.DEBUG) {
-        testCompressions(this)
-    }
-
+    if (BuildConfig.DEBUG) { testCompressions(this) }
     return path
+}
+
+@JvmName("aggressionsToFirestorePath")
+fun List<DomainAggression>.toPath(
+    sessionUUID: String,
+    ownerUUID: String
+): FirestorePath {
+    val aggressionsBlob = Blob.fromBytes(Zstd.compress(ProtoBuf.encodeToByteArray(this)))
+    return FirestorePath(
+        uuid = "", // This should be an incomplete path, so no UUID (UUID is based only on locations)
+        sessionUUID = sessionUUID,
+        ownerUUID = ownerUUID,
+        locations = Blob.fromBytes(ByteArray(0)),
+        aggressions = aggressionsBlob
+    )
 }
 
 fun List<DomainSensorEvent>.toFirebaseSensorEvents(
@@ -419,24 +430,6 @@ data class LocationWithoutSessionIdUnoptimized(
     var verticalAccuracy: Long = Long.MIN_VALUE, // in meters
 ) : Parcelable
 
-fun List<DomainLocation>.toPaths(
-    sessionUUID: String,
-    ownerUUID: String,
-    thresholdInMinutes: Int = 300
-): List<FirestorePath> {
-    if (isEmpty()) return emptyList()
-    val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
-    val groupedByTime = groupBy {
-        (it.zonedDateTime.toInstant().toEpochMilli() - startMilli) /
-                thresholdInMinutes.minutes.inWholeMilliseconds
-    }
-    return groupedByTime.map { groups ->
-        groups.value
-            .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
-            .toPath(sessionUUID, ownerUUID)
-    }
-}
-
 fun List<DomainSensorEvent>.toChunkedFirebaseSensorEvents(
     sessionUUID: String,
     ownerUUID: String,
@@ -460,6 +453,7 @@ fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
 
     forEach { path ->
+        if (path.locations.toBytes().isEmpty()) return@forEach
         val locations = ProtoBuf.decodeFromByteArray<List<FirestoreLocation>>(Zstd.decompress(path.locations.toBytes(), 1_000_000))
         domainLocations.addAll(locations.map { it.toDomainModel(path.sessionUUID) })
     }
@@ -468,10 +462,12 @@ fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-fun List<FirestorePath>.toDomainAggressions(): List<DomainAggression> {
+fun List<FirestorePath>.toDomainAggressions(): List<DomainAggression>? {
+    if (all { it.aggressions?.toBytes() == null }) return null // No aggressions at all
     val domainAggressions = mutableListOf<DomainAggression>()
 
     forEach { path ->
+        if (path.aggressions?.toBytes() == null || path.aggressions.toBytes().isEmpty()) return@forEach
         val aggressions = ProtoBuf.decodeFromByteArray<List<DomainAggression>>(Zstd.decompress(path.aggressions.toBytes(), 1_000_000))
         domainAggressions.addAll(aggressions)
     }
@@ -483,6 +479,7 @@ fun List<FirestoreSensorEvents>.toDomainSensorEvents(): List<DomainSensorEvent> 
     val domainSensorEvents = mutableListOf<DomainSensorEvent>()
 
     forEach { events ->
+        if (events.events.toBytes().isEmpty()) return@forEach
         val sensorEvents = ProtoBuf.decodeFromByteArray<List<FirestoreSensorEvent>>(Zstd.decompress(events.events.toBytes(), 1_000_000))
         domainSensorEvents.addAll(sensorEvents.map { it.toDomainModel(events.sessionUUID) })
     }

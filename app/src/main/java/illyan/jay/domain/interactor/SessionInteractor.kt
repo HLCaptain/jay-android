@@ -30,6 +30,7 @@ import illyan.jay.data.room.datasource.LocationRoomDataSource
 import illyan.jay.data.room.datasource.SensorEventRoomDataSource
 import illyan.jay.data.room.datasource.SessionRoomDataSource
 import illyan.jay.di.CoroutineScopeIO
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
@@ -143,11 +144,13 @@ class SessionInteractor @Inject constructor(
             }
             Timber.i("${localOnlySessions.size} sessions are not synced with IDs: ${localOnlySessions.map { it.uuid.take(4) }}")
             val locations = locationRoomDataSource.getLocations(localOnlySessions.map { it.uuid }).first()
+            val aggressions = locationRoomDataSource.getAggressions(localOnlySessions.map { it.uuid }).first()
             val sensorEvents = sensorEventRoomDataSource.getSensorEvents(localOnlySessions.map { it.uuid }).first()
             uploadSessions(
                 localOnlySessions,
                 locations,
-                sensorEvents
+                sensorEvents,
+                aggressions
             )
             true
         }
@@ -208,6 +211,7 @@ class SessionInteractor @Inject constructor(
         sessions: List<DomainSession>,
         locations: List<DomainLocation>,
         sensorEvents: List<DomainSensorEvent>,
+        aggressions: List<DomainAggression>,
         onSuccess: (List<DomainSession>) -> Unit = { Timber.i("Uploaded locations for ${sessions.size} sessions") },
     ) {
         if (!authInteractor.isUserSignedIn || sessions.isEmpty()) return
@@ -220,7 +224,8 @@ class SessionInteractor @Inject constructor(
             pathFirestoreDataSource.insertLocations(
                 batch = batch,
                 domainSessions = sessions,
-                domainLocations = locations
+                domainLocations = locations,
+                domainAggressions = aggressions
             )
             sensorEventsFirestoreDataSource.insertEvents(
                 batch = batch,
@@ -236,8 +241,9 @@ class SessionInteractor @Inject constructor(
         session: DomainSession,
         locations: List<DomainLocation>,
         sensorEvents: List<DomainSensorEvent>,
+        aggressions: List<DomainAggression>,
         onSuccess: (List<DomainSession>) -> Unit = { Timber.i("Uploaded locations session ${session.uuid}") },
-    ) = uploadSessions(listOf(session), locations, sensorEvents, onSuccess)
+    ) = uploadSessions(listOf(session), locations, sensorEvents, aggressions, onSuccess)
 
     /**
      * Get all session as a Flow.
@@ -591,6 +597,29 @@ class SessionInteractor @Inject constructor(
             Timber.i("Deleting all not owned sessions: ${sessions.map { it.uuid.take(4) }}")
             deleteSessionsLocally(sessions)
             true
+        }
+    }
+
+    suspend fun uploadSessionAggressions(aggressions: List<DomainAggression>) {
+        if (!authInteractor.isUserSignedIn) {
+            Timber.i("User is not signed in, not uploading aggressions")
+            return
+        }
+        val sessionUUID = aggressions.first().sessionUUID
+        if (syncedSessions.value?.map { it.uuid }?.contains(sessionUUID) == true) {
+            Timber.i("Uploading ${aggressions.size} aggressions to the cloud")
+            val location = locationRoomDataSource.getLocations(sessionUUID).first()
+            val sessions = listOf(getSession(sessionUUID).first()!!)
+            firestore.runBatch { batch ->
+                pathFirestoreDataSource.insertLocations(
+                    batch = batch,
+                    domainSessions = sessions,
+                    domainLocations = location,
+                    domainAggressions = aggressions
+                )
+            }
+        } else {
+            Timber.i("Session $sessionUUID is not synced, not uploading aggressions")
         }
     }
 }

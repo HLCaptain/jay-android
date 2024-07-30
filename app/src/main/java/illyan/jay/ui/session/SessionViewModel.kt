@@ -27,6 +27,7 @@ import illyan.jay.domain.interactor.LocationInteractor
 import illyan.jay.domain.interactor.ModelInteractor
 import illyan.jay.domain.interactor.SensorEventInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
@@ -134,6 +135,10 @@ class SessionViewModel @Inject constructor(
 
     fun generateAggressionByModel(sessionUUID: String) {
         viewModelScope.launch(dispatcherIO) {
+            if (!aggressions.first().isNullOrEmpty()) {
+                Timber.d("Aggressions already generated for session with ID ${sessionUUID.take(4)}, not generating new ones")
+                return@launch
+            }
             if (modelInteractor.downloadedModels.first().isEmpty()) {
                 Timber.d("No downloaded models found")
                 return@launch
@@ -146,6 +151,13 @@ class SessionViewModel @Inject constructor(
                         sessionUUID
                     ).collectLatest { filteredAggressions ->
                         Timber.d("Loaded ${filteredAggressions.size} aggressions for session with ID: ${sessionUUID.take(4)}")
+                        val aggressions = filteredAggressions.map {
+                            DomainAggression(sessionUUID, it.key.toInstant().toEpochMilli(), it.value.toFloat())
+                        }
+                        locationInteractor.saveAggressions(aggressions)
+                        sessionInteractor.syncedSessions.first()?.first { it.uuid == sessionUUID }?.let { session ->
+                            sessionInteractor.uploadSessionAggressions(aggressions)
+                        }
                         _aggressions.update { filteredAggressions }
                     }
                 }

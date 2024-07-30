@@ -264,7 +264,6 @@ class LocationInteractor @Inject constructor(
         return locationRoomDataSource.getLatestLocations(sessionUUID, 1).map { it.isNotEmpty() }
     }
 
-
     companion object {
         const val LOCATION_REQUEST_INTERVAL_REALTIME = 200L
         const val LOCATION_REQUEST_INTERVAL_FREQUENT = 500L

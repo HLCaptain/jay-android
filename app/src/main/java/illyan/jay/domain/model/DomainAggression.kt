@@ -18,6 +18,9 @@
 
 package illyan.jay.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class DomainAggression(
     val sessionUUID: String,
     val timestamp: Long, // in millis
