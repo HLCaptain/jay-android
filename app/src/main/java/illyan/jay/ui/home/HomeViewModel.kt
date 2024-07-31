@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -21,9 +21,9 @@ package illyan.jay.ui.home
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import com.google.firebase.perf.FirebasePerformance
-import com.mapbox.android.core.location.LocationEngineCallback
-import com.mapbox.android.core.location.LocationEngineResult
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -69,16 +69,15 @@ class HomeViewModel @Inject constructor(
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
     val userPhotoUrl = authInteractor.userPhotoUrlStateFlow
 
-    private val callback = object : LocationEngineCallback<LocationEngineResult> {
-        override fun onSuccess(result: LocationEngineResult?) {
-            result?.let {
+    private val callback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            result.lastLocation?.let {
                 if (_initialLocation.value == null) {
-                    _initialLocation.value = it.lastLocation
+                    _initialLocation.value = it
                     disposeLocationUpdates(this)
                 }
             }
         }
-        override fun onFailure(exception: Exception) { exception.printStackTrace() }
     }
 
     fun stopDanglingOngoingSessions() {
@@ -108,10 +107,10 @@ class HomeViewModel @Inject constructor(
     }
 
     fun requestLocationUpdates() {
-        mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
+        mapboxInteractor.requestLocationUpdates(callback)
     }
 
-    private fun disposeLocationUpdates(callback: LocationEngineCallback<LocationEngineResult>) {
+    private fun disposeLocationUpdates(callback: LocationCallback) {
         mapboxInteractor.removeLocationUpdates(callback)
     }
 

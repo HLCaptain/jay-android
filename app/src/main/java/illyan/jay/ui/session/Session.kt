@@ -295,14 +295,14 @@ fun SessionScreen(
     }
     val context = LocalContext.current
     val aggressions by viewModel.aggressions.collectAsStateWithLifecycle()
+    val isModelAvailable by viewModel.isModelAvailable.collectAsStateWithLifecycle()
     LaunchedEffect(aggressions) {
-        if (aggressions?.isEmpty() == true) {
+        if (aggressions?.isEmpty() == true && isModelAvailable) {
             Toast.makeText(context, context.getText(R.string.aggression_load_failed_no_sensor_data), Toast.LENGTH_SHORT).show()
         }
     }
     val density = LocalDensity.current.density
     val mapMarkers by mapMarkers.collectAsStateWithLifecycle()
-
     DisposableEffect(
         path,
         selectedGradientFilter,
@@ -395,7 +395,6 @@ fun SessionScreen(
         }
     }
     val session by viewModel.session.collectAsStateWithLifecycle()
-    val isModelAvailable by viewModel.isModelAvailable.collectAsStateWithLifecycle()
     SessionDetailsScreen(
         modifier = Modifier
             .fillMaxWidth()

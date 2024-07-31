@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -35,7 +35,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -98,7 +97,6 @@ fun FreeDrive(
         AppSettings.default.preferences.freeDriveAutoStart
     )
     val cameraPadding by cameraPadding.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     LaunchedEffect(cameraPadding) {
         viewModel.followingPaddingOffset =
             (cameraPadding + calculatePaddingOffset()).toEdgeInsets(density.value)
@@ -116,7 +114,7 @@ fun FreeDrive(
                         cameraPadding + calculatePaddingOffset()
                     )
                 }
-                mapView.value?.location?.turnOnWithDefaultPuck(context)
+                mapView.value?.location?.turnOnWithDefaultPuck()
                 onDispose {
                     viewModel.disposeViewport()
                     viewModel.lastLocation.value?.let { location ->

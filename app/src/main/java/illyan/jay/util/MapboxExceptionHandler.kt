@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,23 +16,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.data.sensor
+package illyan.jay.util
 
-import android.content.Context
-import com.mapbox.android.core.location.LocationEngineProvider
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import timber.log.Timber
 
-@Module
-@InstallIn(SingletonComponent::class)
-object MapboxModule {
+class MapboxExceptionHandler : Thread.UncaughtExceptionHandler {
 
-    @Provides
-    @Singleton
-    fun provideLocationEngine(@ApplicationContext context: Context) =
-        LocationEngineProvider.getBestLocationEngine(context)
+    var openGlNotSupportedCallback: () -> Unit = {}
+
+    override fun uncaughtException(t: Thread, e: Throwable) {
+        if (e is IllegalStateException &&
+            e.message?.contains("OpenGL ES 3.0 context could not be created") == true) {
+            // Older emulated Android devices may not support OpenGL ES 3.0 properly
+            openGlNotSupportedCallback()
+        }
+        Timber.e(e)
+    }
 }

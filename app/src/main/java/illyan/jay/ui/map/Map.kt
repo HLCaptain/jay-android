@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -19,10 +19,24 @@
 package illyan.jay.ui.map
 
 import android.content.Context
-import androidx.appcompat.content.res.AppCompatResources
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.BrokenImage
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,22 +45,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.mapbox.common.Cancelable
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.CameraState
 import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.MapInitOptions
+import com.mapbox.maps.MapLoaded
 import com.mapbox.maps.MapOptions
 import com.mapbox.maps.MapView
-import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
-import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.attribution.attribution
@@ -55,7 +74,9 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
+import illyan.jay.LocalMapboxNotSupported
 import illyan.jay.R
+import illyan.jay.ui.components.PreviewAll
 import illyan.jay.ui.poi.model.Place
 
 val BmeK = Place(
@@ -83,7 +104,6 @@ fun MapboxMap(
     initialStyleUri: String = Style.OUTDOORS,
     onMapFullyLoaded: (MapView) -> Unit = {},
     onMapInitialized: (MapView) -> Unit = {},
-    resourceOptions: ResourceOptions = MapInitOptions.getDefaultResourceOptions(context),
     mapOptions: MapOptions = MapInitOptions.getDefaultMapOptions(context),
     cameraOptionsBuilder: CameraOptions.Builder = CameraOptions.Builder()
         .center(
@@ -103,7 +123,6 @@ fun MapboxMap(
 
     val options = MapInitOptions(
         context = context,
-        resourceOptions = resourceOptions,
         styleUri = initialStyleUri,
         mapOptions = mapOptions,
         cameraOptions = CameraOptions.Builder()
@@ -125,7 +144,7 @@ fun MapboxMap(
     }
 
     LaunchedEffect(initialStyleUri) {
-        map.getMapboxMap().loadStyleUri(initialStyleUri)
+        map.mapboxMap.loadStyleUri(initialStyleUri)
     }
 
     MapboxMapContainer(
@@ -150,37 +169,106 @@ private fun MapboxMapContainer(
     onCameraChanged: (CameraState) -> Unit = {}
 ) {
     DisposableEffect(Unit) {
-        val onMapLoadedListener = { _: MapLoadedEventData -> onMapFullyLoaded(map) }
-        map.getMapboxMap().addOnMapLoadedListener(onMapLoadedListener)
-        map.getMapboxMap().addOnCameraChangeListener { onCameraChanged(map.getMapboxMap().cameraState) }
-        onDispose { map.getMapboxMap().removeOnMapLoadedListener(onMapLoadedListener) }
+        val onMapLoadedListener = { _: MapLoaded -> onMapFullyLoaded(map) }
+        val cancelable = mutableListOf<Cancelable>()
+        map.mapboxMap.subscribeMapLoaded(onMapLoadedListener)
+        map.mapboxMap.subscribeCameraChanged { onCameraChanged(map.mapboxMap.cameraState) }
+        onDispose { cancelable.forEach { it.cancel() } }
     }
     val statusBarHeight = LocalDensity.current.run { WindowInsets.statusBars.getTop(this) }
-    val fixedStatusBarHeight = rememberSaveable { statusBarHeight }
-    AndroidView(
+    val fixedStatusBarHeight = rememberSaveable(statusBarHeight) { statusBarHeight }
+    val isMapNotSupported = LocalMapboxNotSupported.current
+    Crossfade(
         modifier = modifier,
-        factory = { map }
-    ) {
-        it.logo.position = 0
-        it.logo.marginTop = fixedStatusBarHeight.toFloat()
-        it.attribution.position = 0
-        it.attribution.marginTop = fixedStatusBarHeight.toFloat()
-        it.attribution.marginLeft = 240f
-        it.compass.marginTop = fixedStatusBarHeight.toFloat()
-        it.gestures.scrollEnabled = true
-        it.scalebar.isMetricUnits = true // TODO: set this in settings or based on location, etc.
-        it.scalebar.enabled = false // TODO: enable it later if needed (though pay attention to ugly design)
+        targetState = isMapNotSupported,
+        label = "MapboxMap"
+    ) { notSupported ->
+        if (notSupported) {
+            LaunchedEffect(Unit) { onMapFullyLoaded(map) }
+            MapsNotSupportedCard(modifier = modifier)
+        } else {
+            AndroidView(
+                modifier = modifier,
+                factory = { map }
+            ) {
+                it.logo.position = 0
+                it.logo.marginTop = fixedStatusBarHeight.toFloat()
+                it.attribution.position = 0
+                it.attribution.marginTop = fixedStatusBarHeight.toFloat()
+                it.attribution.marginLeft = 240f
+                it.compass.marginTop = fixedStatusBarHeight.toFloat()
+                it.gestures.scrollEnabled = true
+                it.scalebar.isMetricUnits = true // TODO: set this in settings or based on location, etc.
+                it.scalebar.enabled = false // TODO: enable it later if needed (though pay attention to ugly design)
+            }
+        }
     }
 }
 
-fun LocationComponentPlugin.turnOnWithDefaultPuck(
-    context: Context,
+@Composable
+fun MapsNotSupportedCard(
+    modifier: Modifier = Modifier
 ) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Card(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp))
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.size(64.dp),
+                    imageVector = Icons.Rounded.BrokenImage,
+                    contentDescription = "Mapbox Map Error Icon",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(R.string.mapbox_map_initialization_problem),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                Icon(
+                    modifier = Modifier.size(32.dp),
+                    imageVector = Icons.Rounded.ArrowDownward,
+                    contentDescription = "Mapbox Map Error Icon",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(R.string.mapbox_map_unsupported_opengl),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    modifier = Modifier.padding(top = 8.dp),
+                    text = stringResource(R.string.mapbox_map_problem_not_affecting_jay),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+@PreviewAll
+@Composable
+fun PreviewMapsNotSupportedCard() {
+    MapsNotSupportedCard()
+}
+
+fun LocationComponentPlugin.turnOnWithDefaultPuck() {
     if (!enabled) {
-        val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)
         enabled = true
         locationPuck = LocationPuck2D(
-            topImage = drawable,
+            topImage = ImageHolder.Companion.from(R.drawable.jay_puck_transparent_background),
             scaleExpression = puckScaleExpression
         )
     }

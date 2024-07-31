@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,25 +16,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-import com.google.android.libraries.mapsplatform.secrets_gradle_plugin.loadPropertiesFile
-
-/*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
- *
- * Jay is a driver behaviour analytics app.
- *
- * This file is part of Jay.
- *
- * Jay is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later version.
- * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with Jay.
- * If not, see <https://www.gnu.org/licenses/>.
- */
+import org.jetbrains.kotlin.konan.properties.loadProperties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -52,6 +34,8 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val localProperties = loadProperties("$projectDir/../local.properties")
+
 android {
     compileSdk = 35
 
@@ -61,8 +45,8 @@ android {
         applicationId = "illyan.jay"
         minSdk = 23
         targetSdk = 35
-        versionCode = 18
-        versionName = "0.4.0-alpha"
+        versionCode = 19
+        versionName = "0.4.1-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -70,50 +54,52 @@ android {
         }
     }
 
-    buildTypes {
-        val mapboxAccessToken = properties["MAPBOX_ACCESS_TOKEN"].toString()
-        val mapboxDownloadsToken = properties["MAPBOX_DOWNLOADS_TOKEN"].toString()
-        val mapboxSdkRegistryToken = properties["SDK_REGISTRY_TOKEN"].toString()
-        getByName("debug") {
-            isDebuggable = true
-            buildConfigField("String", "MapboxAccessToken", "\"$mapboxAccessToken\"")
-            buildConfigField("String", "MapboxDownloadsToken", "\"$mapboxDownloadsToken\"")
-            buildConfigField("String", "MapboxSdkRegistryToken", "\"$mapboxSdkRegistryToken\"")
-        }
-        getByName("release") {
-            initWith(getByName("debug"))
-            isDebuggable = false
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-
     signingConfigs {
-        val properties = loadPropertiesFile("../local.properties").toMap()
-
-        val debugStorePath = properties["DEBUG_KEY_PATH"].toString()
-        val debugKeyAlias = properties["DEBUG_KEY_ALIAS"].toString()
-        val debugStorePassword = properties["DEBUG_KEYSTORE_PASSWORD"].toString()
-        val debugKeyPassword = properties["DEBUG_KEY_PASSWORD"].toString()
+        val debugStorePath = localProperties["DEBUG_KEY_PATH"].toString()
+        val debugKeyAlias = localProperties["DEBUG_KEY_ALIAS"].toString()
+        val debugStorePassword = localProperties["DEBUG_KEYSTORE_PASSWORD"].toString()
+        val debugKeyPassword = localProperties["DEBUG_KEY_PASSWORD"].toString()
         getByName("debug") {
             storeFile = file(debugStorePath)
             keyAlias = debugKeyAlias
             storePassword = debugStorePassword
             keyPassword = debugKeyPassword
         }
-        val releaseStorePath = properties["RELEASE_KEY_PATH"].toString()
-        val releaseKeyAlias = properties["RELEASE_KEY_ALIAS"].toString()
-        val releaseStorePassword = properties["RELEASE_KEYSTORE_PASSWORD"].toString()
-        val releaseKeyPassword = properties["RELEASE_KEY_PASSWORD"].toString()
+        val releaseStorePath = localProperties["RELEASE_KEY_PATH"].toString()
+        val releaseKeyAlias = localProperties["RELEASE_KEY_ALIAS"].toString()
+        val releaseStorePassword = localProperties["RELEASE_KEYSTORE_PASSWORD"].toString()
+        val releaseKeyPassword = localProperties["RELEASE_KEY_PASSWORD"].toString()
         create("release") {
             storeFile = file(releaseStorePath)
             keyAlias = releaseKeyAlias
             storePassword = releaseStorePassword
             keyPassword = releaseKeyPassword
+        }
+    }
+
+    buildTypes {
+        val mapboxAccessToken = localProperties["MAPBOX_ACCESS_TOKEN"].toString()
+        val mapboxDownloadsToken = localProperties["MAPBOX_DOWNLOADS_TOKEN"].toString()
+        val mapboxSdkRegistryToken = localProperties["SDK_REGISTRY_TOKEN"].toString()
+        val admobAppId = localProperties["ADMOB_APPLICATION_ID"].toString()
+        getByName("debug") {
+            isDebuggable = true
+            buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxAccessToken\"")
+            buildConfigField("String", "MAPBOX_DOWNLOADS_TOKEN", "\"$mapboxDownloadsToken\"")
+            buildConfigField("String", "SDK_REGISTRY_TOKEN", "\"$mapboxSdkRegistryToken\"")
+            buildConfigField("String", "ADMOB_APPLICATION_ID", "\"$admobAppId\"")
+        }
+        getByName("release") {
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxAccessToken\"")
+            buildConfigField("String", "ADMOB_APPLICATION_ID", "\"$admobAppId\"")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -290,4 +276,23 @@ hilt {
 
 room {
     schemaDirectory("$projectDir/schemas")
+}
+
+secrets {
+    // Ignore everything, except ADMOB_APPLICATION_ID for AndroidManifest.xml
+    ignoreList.addAll(
+        listOf(
+            "RELEASE_KEYSTORE_PASSWORD*",
+            "RELEASE_KEY_PASSWORD*",
+            "RELEASE_KEY_ALIAS*",
+            "RELEASE_KEY_PATH*",
+            "DEBUG_KEYSTORE_PASSWORD*",
+            "DEBUG_KEY_PASSWORD*",
+            "DEBUG_KEY_ALIAS*",
+            "DEBUG_KEY_PATH*",
+            "MAPBOX_DOWNLOADS_TOKEN*",
+            "SDK_REGISTRY_TOKEN*",
+            "MAPBOX_ACCESS_TOKEN*"
+        )
+    )
 }

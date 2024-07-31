@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -22,13 +22,15 @@ import android.location.Location
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mapbox.android.core.location.LocationEngineCallback
-import com.mapbox.android.core.location.LocationEngineResult
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import com.mapbox.common.location.toCommonLocation
 import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesObserver
+import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
 import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
@@ -47,7 +49,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -104,24 +105,18 @@ class FreeDriveViewModel @Inject constructor(
         viewportDataSource.value?.evaluate()
     }
 
-    private val callback = object : LocationEngineCallback<LocationEngineResult> {
-        override fun onSuccess(result: LocationEngineResult?) {
-            result?.let {
-                it.lastLocation?.let { lastLocation ->
-                    viewportDataSource.value?.onLocationChanged(lastLocation)
-                    viewportDataSource.value?.evaluate()
-                    _lastLocation.value = lastLocation
-                    if (!firstLocationReceived.value) {
-                        _firstLocationReceived.value = true
-                        navigationCamera.value?.requestNavigationCameraToFollowing()
-                    }
-                    Unit
+    private val callback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            result.lastLocation?.let { lastLocation ->
+                viewportDataSource.value?.onLocationChanged(lastLocation.toCommonLocation())
+                viewportDataSource.value?.evaluate()
+                _lastLocation.value = lastLocation
+                if (!firstLocationReceived.value) {
+                    _firstLocationReceived.value = true
+                    navigationCamera.value?.requestNavigationCameraToFollowing()
                 }
+                Unit
             }
-        }
-
-        override fun onFailure(exception: Exception) {
-            Timber.e(exception, "Failure while getting locations from Mapbox: ${exception.message}")
         }
     }
 
@@ -139,9 +134,7 @@ class FreeDriveViewModel @Inject constructor(
         camera: CameraAnimationsPlugin,
         padding: EdgeInsets,
     ) {
-        _mapboxNavigation.value = MapboxNavigation(
-            navigationOptions = mapboxInteractor.defaultNavigationOptions
-        )
+        _mapboxNavigation.value = MapboxNavigationApp.current()
         mapboxNavigation.value?.let {
             it.registerRoutesObserver(routesObserver)
             it.registerRouteProgressObserver(routeProgressObserver)
@@ -155,7 +148,7 @@ class FreeDriveViewModel @Inject constructor(
             cameraPlugin = camera,
             viewportDataSource = _viewportDataSource.value!!,
         )
-        mapboxInteractor.requestLocationUpdates(mapboxInteractor.defaultRequest, callback)
+        mapboxInteractor.requestLocationUpdates(callback)
     }
 
     fun loadViewport(
@@ -178,7 +171,6 @@ class FreeDriveViewModel @Inject constructor(
             it.unregisterRoutesObserver(routesObserver)
             it.unregisterRouteProgressObserver(routeProgressObserver)
         }
-        _mapboxNavigation.value?.onDestroy()
         _firstLocationReceived.value = false
     }
 

@@ -139,8 +139,6 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
-import com.mapbox.maps.ResourceOptions
-import com.mapbox.maps.applyDefaultParams
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -149,7 +147,6 @@ import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
-import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.NavGraphs
@@ -311,9 +308,9 @@ fun tryFlyToPath(
     if (canFly) {
         onFly()
         flyToLocation {
-            val cameraOptions = mapView.value?.getMapboxMap()?.cameraForCoordinates(
+            val cameraOptions = mapView.value?.mapboxMap?.cameraForCoordinates(
                 coordinates = path,
-                padding = cameraPadding.value.toEdgeInsets(density.value)
+                coordinatesPadding = cameraPadding.value.toEdgeInsets(density.value)
             )
             it
                 .zoom(cameraOptions?.zoom?.times(0.95f))
@@ -429,7 +426,7 @@ fun HomeScreen(
     DisposableEffect(locationPermissionState.status.isGranted) {
         if (locationPermissionState.status.isGranted) {
             viewModel.requestLocationUpdates()
-            mapView.value?.location?.turnOnWithDefaultPuck(context)
+            mapView.value?.location?.turnOnWithDefaultPuck()
         } else {
             mapView.value?.location?.enabled = false
         }
@@ -710,9 +707,6 @@ fun HomeScreen(
                                     )
                                 )
                                 .zoom(4.0),
-                            resourceOptions = ResourceOptions.Builder().applyDefaultParams(context)
-                                .accessToken(BuildConfig.MapboxAccessToken)
-                                .build(),
                             onMapFullyLoaded = {
                                 isMapVisible = true
                                 coroutineScope.launch { sheetState.expand() }
@@ -723,7 +717,7 @@ fun HomeScreen(
 
                                 when (locationPermissionState.status) {
                                     is PermissionStatus.Granted -> {
-                                        view.location.turnOnWithDefaultPuck(context)
+                                        view.location.turnOnWithDefaultPuck()
                                     }
                                     is PermissionStatus.Denied -> {
                                         view.location.enabled = false

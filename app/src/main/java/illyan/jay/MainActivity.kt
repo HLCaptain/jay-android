@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -26,16 +26,28 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.tasks.Task
+import com.mapbox.navigation.base.options.NavigationOptions
+import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
 import com.ramcosta.composedestinations.DestinationsNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.theme.JayThemeWithViewModel
+import illyan.jay.util.MapboxExceptionHandler
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -45,6 +57,19 @@ class MainActivity : AppCompatActivity() {
     lateinit var authInteractor: AuthInteractor
 
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+
+    init {
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onResume(owner: LifecycleOwner) {
+                MapboxNavigationApp.attach(owner)
+            }
+
+            override fun onPause(owner: LifecycleOwner) {
+                MapboxNavigationApp.detach(owner)
+            }
+        })
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -55,15 +80,32 @@ class MainActivity : AppCompatActivity() {
             authInteractor.handleGoogleSignInResult(this, task)
         }
 
+        if (!MapboxNavigationApp.isSetup()) {
+            MapboxNavigationApp.setup {
+                NavigationOptions.Builder(applicationContext).build()
+            }
+        }
+
+        val mapboxExceptionHandler = MapboxExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler(mapboxExceptionHandler)
+
         setContent {
+            var mapboxMapViewNotSupported by rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                mapboxExceptionHandler.openGlNotSupportedCallback = {
+                    mapboxMapViewNotSupported = true
+                }
+            }
             JayThemeWithViewModel {
-                MainScreen(
-                    modifier = Modifier.fillMaxSize()
-                )
+                CompositionLocalProvider(LocalMapboxNotSupported provides mapboxMapViewNotSupported) {
+                    MainScreen(modifier = Modifier.fillMaxSize())
+                }
             }
         }
     }
 }
+
+val LocalMapboxNotSupported = compositionLocalOf { false }
 
 @PreviewAccessibility
 @Composable

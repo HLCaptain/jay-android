@@ -36,9 +36,9 @@ compose-destinations = "1.10.2"
 coil-compose = "2.7.0"
 apache-commons-math3 = "3.6.1"
 
-mapbox-maps = "10.15.0"
-mapbox-search = "1.0.0-rc.7"
-mapbox-navigation = "2.15.0-rc.1"
+mapbox-maps = "11.5.1"
+mapbox-search = "2.3.1"
+mapbox-navigation = "3.3.0-beta.1"
 
 google-secrets = "2.0.1"
 google-gms-services = "4.4.2"
@@ -125,7 +125,7 @@ apache-commons-math3 = { module = "org.apache.commons:commons-math3", version.re
 
 mapbox-maps = { module = "com.mapbox.maps:android", version.ref = "mapbox-maps" }
 mapbox-search = { module = "com.mapbox.search:mapbox-search-android-ui", version.ref = "mapbox-search" }
-mapbox-navigation = { module = "com.mapbox.navigation:android", version.ref = "mapbox-navigation" }
+mapbox-navigation = { module = "com.mapbox.navigationcore:android", version.ref = "mapbox-navigation" }
 
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
