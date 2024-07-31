@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -25,7 +25,6 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import illyan.jay.BuildConfig
 import javax.inject.Singleton
 
 @Module
@@ -34,10 +33,7 @@ object MapboxModule {
 
     @Provides
     @Singleton
-    fun provideSearchEngine() =
-        SearchEngine.createSearchEngineWithBuiltInDataProviders(
-            SearchEngineSettings(accessToken = BuildConfig.MapboxSdkRegistryToken)
-        )
+    fun provideSearchEngine() = SearchEngine.createSearchEngineWithBuiltInDataProviders(SearchEngineSettings())
 
     @Provides
     @Singleton

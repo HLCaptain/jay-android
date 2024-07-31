@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -20,28 +20,25 @@ package illyan.jay.data.sensor
 
 import android.annotation.SuppressLint
 import android.os.Looper
-import com.mapbox.android.core.location.LocationEngine
-import com.mapbox.android.core.location.LocationEngineCallback
-import com.mapbox.android.core.location.LocationEngineRequest
-import com.mapbox.android.core.location.LocationEngineResult
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MapboxDataSource @Inject constructor(
-    private val locationEngine: LocationEngine
+    private val fusedLocationProviderClient: FusedLocationProviderClient
 ) {
     @SuppressLint("MissingPermission")
     fun requestLocationUpdates(
-        request: LocationEngineRequest,
-        callback: LocationEngineCallback<LocationEngineResult>
+        request: LocationRequest,
+        callback: LocationCallback
     ) {
-        locationEngine.requestLocationUpdates(request, callback, Looper.getMainLooper())
+        fusedLocationProviderClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
     }
 
-    fun removeLocationUpdates(
-        callback: LocationEngineCallback<LocationEngineResult>
-    ) {
-        locationEngine.removeLocationUpdates(callback)
+    fun removeLocationUpdates(callback: LocationCallback) {
+        fusedLocationProviderClient.removeLocationUpdates(callback)
     }
 }

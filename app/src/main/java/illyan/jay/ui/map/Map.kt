@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -19,7 +19,6 @@
 package illyan.jay.ui.map
 
 import android.content.Context
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
@@ -41,10 +40,10 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.CameraState
 import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapOptions
 import com.mapbox.maps.MapView
-import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
@@ -83,7 +82,6 @@ fun MapboxMap(
     initialStyleUri: String = Style.OUTDOORS,
     onMapFullyLoaded: (MapView) -> Unit = {},
     onMapInitialized: (MapView) -> Unit = {},
-    resourceOptions: ResourceOptions = MapInitOptions.getDefaultResourceOptions(context),
     mapOptions: MapOptions = MapInitOptions.getDefaultMapOptions(context),
     cameraOptionsBuilder: CameraOptions.Builder = CameraOptions.Builder()
         .center(
@@ -103,7 +101,6 @@ fun MapboxMap(
 
     val options = MapInitOptions(
         context = context,
-        resourceOptions = resourceOptions,
         styleUri = initialStyleUri,
         mapOptions = mapOptions,
         cameraOptions = CameraOptions.Builder()
@@ -173,14 +170,11 @@ private fun MapboxMapContainer(
     }
 }
 
-fun LocationComponentPlugin.turnOnWithDefaultPuck(
-    context: Context,
-) {
+fun LocationComponentPlugin.turnOnWithDefaultPuck() {
     if (!enabled) {
-        val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)
         enabled = true
         locationPuck = LocationPuck2D(
-            topImage = drawable,
+            topImage = ImageHolder.Companion.from(R.drawable.jay_puck_transparent_background),
             scaleExpression = puckScaleExpression
         )
     }

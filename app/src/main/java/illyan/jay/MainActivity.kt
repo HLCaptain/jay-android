@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -27,9 +27,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.tasks.Task
+import com.mapbox.navigation.base.options.NavigationOptions
+import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
 import com.ramcosta.composedestinations.DestinationsNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.domain.interactor.AuthInteractor
@@ -45,6 +49,19 @@ class MainActivity : AppCompatActivity() {
     lateinit var authInteractor: AuthInteractor
 
     lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+
+    init {
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onResume(owner: LifecycleOwner) {
+                MapboxNavigationApp.attach(owner)
+            }
+
+            override fun onPause(owner: LifecycleOwner) {
+                MapboxNavigationApp.detach(owner)
+            }
+        })
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -55,11 +72,15 @@ class MainActivity : AppCompatActivity() {
             authInteractor.handleGoogleSignInResult(this, task)
         }
 
+        if (!MapboxNavigationApp.isSetup()) {
+            MapboxNavigationApp.setup {
+                NavigationOptions.Builder(applicationContext).build()
+            }
+        }
+
         setContent {
             JayThemeWithViewModel {
-                MainScreen(
-                    modifier = Modifier.fillMaxSize()
-                )
+                MainScreen(modifier = Modifier.fillMaxSize())
             }
         }
     }

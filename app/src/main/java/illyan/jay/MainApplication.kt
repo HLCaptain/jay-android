@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -23,6 +23,7 @@ import com.google.android.gms.ads.MobileAds
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
+import com.mapbox.common.MapboxOptions
 import dagger.hilt.android.HiltAndroidApp
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.domain.interactor.AuthInteractor
@@ -52,6 +53,7 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        MapboxOptions.accessToken = BuildConfig.MapboxAccessToken
         initLogging()
         initAds()
     }

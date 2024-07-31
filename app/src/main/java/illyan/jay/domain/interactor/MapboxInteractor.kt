@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -19,41 +19,23 @@
 package illyan.jay.domain.interactor
 
 import android.annotation.SuppressLint
-import android.content.Context
-import com.mapbox.android.core.location.LocationEngineCallback
-import com.mapbox.android.core.location.LocationEngineRequest
-import com.mapbox.android.core.location.LocationEngineResult
-import com.mapbox.navigation.base.options.NavigationOptions
-import illyan.jay.BuildConfig
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.Priority
 import illyan.jay.data.sensor.MapboxDataSource
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MapboxInteractor @Inject constructor(
-    private val mapboxDataSource: MapboxDataSource,
-    context: Context
+    private val mapboxDataSource: MapboxDataSource
 ) {
-    val defaultRequest: LocationEngineRequest = LocationEngineRequest
+    private val defaultRequest = LocationRequest
         .Builder(LocationInteractor.LOCATION_REQUEST_INTERVAL_REALTIME)
-        .setPriority(LocationEngineRequest.PRIORITY_HIGH_ACCURACY)
-        .build()
-
-    val defaultNavigationOptions: NavigationOptions = NavigationOptions.Builder(context)
-        .accessToken(BuildConfig.MapboxAccessToken)
+        .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
         .build()
 
     @SuppressLint("MissingPermission")
-    fun requestLocationUpdates(
-        request: LocationEngineRequest,
-        callback: LocationEngineCallback<LocationEngineResult>
-    ) {
-        mapboxDataSource.requestLocationUpdates(request, callback)
-    }
-
-    fun removeLocationUpdates(
-        callback: LocationEngineCallback<LocationEngineResult>
-    ) {
-        mapboxDataSource.removeLocationUpdates(callback)
-    }
+    fun requestLocationUpdates(callback: LocationCallback) =  mapboxDataSource.requestLocationUpdates(defaultRequest, callback)
+    fun removeLocationUpdates(callback: LocationCallback) = mapboxDataSource.removeLocationUpdates(callback)
 }
