@@ -31,5 +31,10 @@
     const val NativeAdvancedVideo = "ca-app-pub-3940256099942544/1044960115"
     -->
 
+    <entry>
+        <key>ml_available_models</key>
+        <value>[]</value>
+    </entry>
+
 </defaultsMap>
 <!-- END xml_defaults -->

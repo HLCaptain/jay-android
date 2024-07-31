@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,18 +16,26 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.di
+package illyan.jay.data.room.model
 
-import javax.inject.Qualifier
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserPathsSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSensorEventsSnapshotHandler
+@Entity(
+    tableName = "aggressions",
+    foreignKeys = [
+        ForeignKey(
+            entity = RoomSession::class,
+            parentColumns = ["uuid"],
+            childColumns = ["sessionUUID"]
+        )
+    ],
+    indices = [Index(value = ["sessionUUID"])],
+    primaryKeys = ["sessionUUID", "timestamp"]
+)
+data class RoomAggression(
+    val sessionUUID: String,
+    val timestamp: Long, // in millis
+    val aggression: Float
+)

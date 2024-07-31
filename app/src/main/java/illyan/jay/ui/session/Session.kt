@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.session
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -31,12 +32,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowRightAlt
+import androidx.compose.material.icons.automirrored.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
@@ -88,6 +90,7 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
 import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewAccessibility
+import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.mapView
 import illyan.jay.ui.home.sheetState
@@ -210,6 +213,33 @@ fun gpsAccuracyGradient(
     }
 )
 
+fun aggressionGradient(
+    locations: List<UiLocation>,
+    leastAggressiveColor: Color = Color.Green,
+    mostAggressiveColor: Color = Color.Red,
+    aggressions: List<Float?>? = null,
+    minAggression: Float = 0.2f,
+    maxAggression: Float = 1f,
+    loadAggressions: () -> Unit = {},
+): Expression {
+
+    if (aggressions == null) {
+        loadAggressions()
+        return defaultGradient()
+    }
+    val aggressionAtLocation = locations.zip(aggressions).toMap()
+    return createGradientFromLocations(
+        locations = locations,
+        start = leastAggressiveColor,
+        stop = mostAggressiveColor,
+        getColorFraction = { location ->
+            val aggression = aggressionAtLocation[location]?.coerceIn(minAggression, maxAggression)
+                ?: ((minAggression + maxAggression) / 2)
+            (aggression - minAggression) / (maxAggression - minAggression)
+        }
+    )
+}
+
 @OptIn(ExperimentalMaterialApi::class)
 @MenuNavGraph
 @Destination
@@ -223,7 +253,7 @@ fun SessionScreen(
     LaunchedEffect(Unit) {
         viewModel.load(sessionUUID)
     }
-    val gradientFilter by viewModel.gradientFilter.collectAsStateWithLifecycle()
+    var selectedGradientFilter by rememberSaveable { mutableStateOf(GradientFilter.Default) }
     var previousOffset by rememberSaveable { mutableFloatStateOf(0f) }
     var currentOffset by rememberSaveable { mutableFloatStateOf(sheetState.requireOffset()) }
     var noMoreOffsetChanges by rememberSaveable { mutableStateOf(false) }
@@ -251,7 +281,7 @@ fun SessionScreen(
             if (!flownToPath) {
                 Timber.d("Try to fly")
                 tryFlyToPath(
-                    path = path!!.map { location ->
+                    path = it.map { location ->
                         Point.fromLngLat(
                             location.latLng.longitude,
                             location.latLng.latitude
@@ -264,11 +294,19 @@ fun SessionScreen(
         }
     }
     val context = LocalContext.current
+    val aggressions by viewModel.aggressions.collectAsStateWithLifecycle()
+    LaunchedEffect(aggressions) {
+        if (aggressions?.isEmpty() == true) {
+            Toast.makeText(context, context.getText(R.string.aggression_load_failed_no_sensor_data), Toast.LENGTH_SHORT).show()
+        }
+    }
     val density = LocalDensity.current.density
     val mapMarkers by mapMarkers.collectAsStateWithLifecycle()
+
     DisposableEffect(
         path,
-        gradientFilter
+        selectedGradientFilter,
+        aggressions
     ) {
         val sortedLocations = path?.sortedBy { it.zonedDateTime }?.map { it.latLng }
         val startPoint = sortedLocations?.first()
@@ -298,7 +336,7 @@ fun SessionScreen(
                     lineJoin(LineJoin.ROUND)
                     lineWidth(lineWidth)
                     lineGradient(
-                        when(gradientFilter) {
+                        when (selectedGradientFilter) {
                             GradientFilter.Default -> defaultGradient()
                             GradientFilter.Velocity -> velocityGradient(
                                 locations = path ?: emptyList(),
@@ -314,6 +352,13 @@ fun SessionScreen(
                                 locations = path ?: emptyList(),
                                 leastAccurateColor = Color.Red,
                                 mostAccurateColor = Color.Green
+                            )
+                            GradientFilter.Aggression -> aggressionGradient(
+                                locations = path ?: emptyList(),
+                                leastAggressiveColor = Color.Green,
+                                mostAggressiveColor = Color.Red,
+                                aggressions = aggressions,
+                                loadAggressions = { viewModel.generateAggressionByModel(sessionUUID) }
                             )
                         }
                     )
@@ -350,14 +395,17 @@ fun SessionScreen(
         }
     }
     val session by viewModel.session.collectAsStateWithLifecycle()
+    val isModelAvailable by viewModel.isModelAvailable.collectAsStateWithLifecycle()
     SessionDetailsScreen(
         modifier = Modifier
             .fillMaxWidth()
             .padding(DefaultScreenOnSheetPadding),
         session = session,
         path = path,
-        gradientFilter = gradientFilter,
-        setGradientFilter = viewModel::setGradientFilter,
+        aggressions = aggressions,
+        isModelAvailable = isModelAvailable,
+        selectedGradientFilter = selectedGradientFilter,
+        setGradientFilter = { selectedGradientFilter = it },
     )
 }
 
@@ -366,7 +414,9 @@ fun SessionDetailsScreen(
     modifier: Modifier = Modifier,
     session: UiSession? = null,
     path: List<UiLocation>? = null,
-    gradientFilter: GradientFilter = GradientFilter.Default,
+    aggressions: List<Float?>? = null,
+    isModelAvailable: Boolean = false,
+    selectedGradientFilter: GradientFilter = GradientFilter.Default,
     setGradientFilter: (GradientFilter) -> Unit = {}
 ) {
     Column(
@@ -394,7 +444,7 @@ fun SessionDetailsScreen(
                     )
                 }
                 Icon(
-                    imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowRightAlt, contentDescription = "",
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
                 Crossfade(
@@ -498,10 +548,8 @@ fun SessionDetailsScreen(
                 stringResource(R.string.session_id) to session?.uuid
             ),
         )
-        val selectedTabIndex = gradientFilter.ordinal
-        TabRow(
-            modifier = Modifier
-                .padding(horizontal = MenuItemPadding),
+        val selectedTabIndex = selectedGradientFilter.ordinal
+        ScrollableTabRow(
             divider = {},
             selectedTabIndex = selectedTabIndex,
             indicator = {
@@ -511,24 +559,39 @@ fun SessionDetailsScreen(
                         .padding(horizontal = MenuItemPadding)
                         .clip(RoundedCornerShape(percent = 100))
                 )
-            }
+            },
+            edgePadding = 8.dp
         ) {
-            GradientFilter.values().forEach {
+            GradientFilter.entries.forEach { filter ->
+                val isEnabled = filter != GradientFilter.Aggression || isModelAvailable
                 Tab(
-                    modifier = Modifier.clip(RoundedCornerShape(MenuItemPadding)),
-                    selected = it == gradientFilter,
-                    onClick = { setGradientFilter(it) },
+                    modifier = Modifier
+                        .padding(horizontal = MenuItemPadding)
+                        .clip(RoundedCornerShape(MenuItemPadding)),
+                    selected = filter == selectedGradientFilter,
+                    onClick = { setGradientFilter(filter) },
+                    enabled = isEnabled,
+                    unselectedContentColor = LocalContentColor.current.copy(if (isEnabled) 1f else 0.5f),
                     text = {
-                        Text(
-                            text = stringResource(
-                                when(it) {
-                                    GradientFilter.Default -> R.string.gradient_filter_default
-                                    GradientFilter.Velocity -> R.string.gradient_filter_velocity
-                                    GradientFilter.Elevation -> R.string.gradient_filter_elevation
-                                    GradientFilter.GpsAccuracy -> R.string.gradient_filter_gps_accuracy
-                                }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            AnimatedVisibility(visible = aggressions == null && selectedGradientFilter == GradientFilter.Aggression && filter == selectedGradientFilter) {
+                                SmallCircularProgressIndicator()
+                            }
+                            Text(
+                                text = stringResource(
+                                    when (filter) {
+                                        GradientFilter.Default -> R.string.gradient_filter_default
+                                        GradientFilter.Velocity -> R.string.gradient_filter_velocity
+                                        GradientFilter.Elevation -> R.string.gradient_filter_elevation
+                                        GradientFilter.GpsAccuracy -> R.string.gradient_filter_gps_accuracy
+                                        GradientFilter.Aggression -> R.string.gradient_filter_aggression
+                                    }
+                                )
                             )
-                        )
+                        }
                     }
                 )
             }

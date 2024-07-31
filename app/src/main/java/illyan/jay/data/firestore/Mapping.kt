@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -27,15 +27,18 @@ import illyan.jay.BuildConfig
 import illyan.jay.data.DataStatus
 import illyan.jay.data.firestore.model.FirestoreLocation
 import illyan.jay.data.firestore.model.FirestorePath
+import illyan.jay.data.firestore.model.FirestoreSensorEvent
+import illyan.jay.data.firestore.model.FirestoreSensorEvents
 import illyan.jay.data.firestore.model.FirestoreSession
 import illyan.jay.data.firestore.model.FirestoreUser
 import illyan.jay.data.firestore.model.FirestoreUserPreferences
 import illyan.jay.data.firestore.serializers.TimestampSerializer
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainPreferences
+import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.toGeoPoint
-import illyan.jay.util.toInstant
 import illyan.jay.util.toTimestamp
 import illyan.jay.util.toZonedDateTime
 import kotlinx.parcelize.Parcelize
@@ -108,6 +111,7 @@ fun DomainPreferences.toFirestoreModel() = FirestoreUserPreferences(
     lastUpdateToAnalytics = lastUpdateToAnalytics?.toTimestamp(),
 )
 
+@JvmName("locationsToFirestorePath")
 fun List<DomainLocation>.toPath(
     sessionUUID: String,
     ownerUUID: String
@@ -126,7 +130,6 @@ fun List<DomainLocation>.toPath(
             verticalAccuracy = it.verticalAccuracy.toInt()
         )
     }
-
     val locationsBlob = Blob.fromBytes(Zstd.compress(ProtoBuf.encodeToByteArray(pathLocations)))
     val path = FirestorePath(
         uuid = UUID.nameUUIDFromBytes(locationsBlob.toBytes()).toString(),
@@ -134,12 +137,83 @@ fun List<DomainLocation>.toPath(
         ownerUUID = ownerUUID,
         locations = locationsBlob
     )
+    if (BuildConfig.DEBUG) { testCompressions(this) }
+    return path
+}
 
-    if (BuildConfig.DEBUG) {
-        testCompressions(this)
+@JvmName("aggressionsToFirestorePath")
+fun List<DomainAggression>.toPath(
+    sessionUUID: String,
+    ownerUUID: String
+): FirestorePath {
+    val aggressionsBlob = Blob.fromBytes(Zstd.compress(ProtoBuf.encodeToByteArray(this)))
+    return FirestorePath(
+        uuid = "", // This should be an incomplete path, so no UUID (UUID is based only on locations)
+        sessionUUID = sessionUUID,
+        ownerUUID = ownerUUID,
+        locations = Blob.fromBytes(ByteArray(0)),
+        aggressions = aggressionsBlob
+    )
+}
+
+fun List<DomainSensorEvent>.toFirebaseSensorEvents(
+    sessionUUID: String,
+    ownerUUID: String
+): FirestoreSensorEvents {
+    val events = map {
+        FirestoreSensorEvent(
+            timestamp = it.zonedDateTime.toTimestamp(),
+            accuracy = it.accuracy.toInt(),
+            type = it.type.toInt(),
+            x = it.x,
+            y = it.y,
+            z = it.z
+        )
     }
 
-    return path
+    val eventsBlob = Blob.fromBytes(Zstd.compress(ProtoBuf.encodeToByteArray(events)))
+
+    if (BuildConfig.DEBUG) {
+        testCompressions(
+            rawData = this,
+            compressors = listOf(
+                { array: ByteArray ->
+                    Zstd.compress(array, Zstd.maxCompressionLevel())
+                } to "Zstd"
+            ),
+            translators = listOf { data ->
+                ProtoBuf.encodeToByteArray(
+                    data.map {
+                        FirestoreSensorEvent(
+                            timestamp = it.zonedDateTime.toTimestamp(),
+                            accuracy = it.accuracy.toInt(),
+                            type = it.type.toInt(),
+                            x = it.x,
+                            y = it.y,
+                            z = it.z
+                        )
+                    }
+                ) to "Default Sensor Events"
+            },
+            dataSizeHeuristic = { data ->
+                val startMilli = data
+                    .minBy { it.zonedDateTime.toInstant().toEpochMilli() }
+                    .zonedDateTime.toInstant().toEpochMilli()
+                val endMilli = data
+                    .maxBy { it.zonedDateTime.toInstant().toEpochMilli() }
+                    .zonedDateTime.toInstant().toEpochMilli()
+                val durationInMinutes = (endMilli - startMilli).milliseconds.inWholeMinutes
+                "$durationInMinutes minutes of sensor data"
+            }
+        )
+    }
+
+    return FirestoreSensorEvents(
+        uuid = UUID.nameUUIDFromBytes(eventsBlob.toBytes()).toString(),
+        sessionUUID = sessionUUID,
+        ownerUUID = ownerUUID,
+        events = eventsBlob
+    )
 }
 
 private fun testCompressions(domainLocations: List<DomainLocation>) {
@@ -173,96 +247,116 @@ private fun testCompressions(domainLocations: List<DomainLocation>) {
     // This growth then accumulates with more data,
     // so it's actually around 25% growth in large datasets.
 
-    val optimizedLocations = domainLocations.map {
-        LocationWithoutSessionIdOptimized(
-            zonedDateTime = it.zonedDateTime.toTimestamp(),
-            latitude = it.latitude,
-            longitude = it.longitude,
-            speed = it.speed,
-            accuracy = it.accuracy,
-            bearing = it.bearing,
-            bearingAccuracy = it.bearingAccuracy,
-            altitude = it.altitude,
-            speedAccuracy = it.speedAccuracy,
-            verticalAccuracy = it.verticalAccuracy
-        )
-    }
-
-    val locations = domainLocations.map {
-        LocationWithoutSessionId(
-            zonedDateTime = it.zonedDateTime.toTimestamp(),
-            latitude = it.latitude,
-            longitude = it.longitude,
-            speed = it.speed,
-            accuracy = it.accuracy.toInt(),
-            bearing = it.bearing.toInt(),
-            bearingAccuracy = it.bearingAccuracy.toInt(),
-            altitude = it.altitude.toInt(),
-            speedAccuracy = it.speedAccuracy,
-            verticalAccuracy = it.verticalAccuracy.toInt()
-        )
-    }
-
-    val unoptimizedLocations = domainLocations.map {
-        LocationWithoutSessionIdUnoptimized(
-            zonedDateTime = it.zonedDateTime.toTimestamp(),
-            latitude = it.latitude.toDouble(),
-            longitude = it.longitude.toDouble(),
-            speed = it.speed.toDouble(),
-            accuracy = it.accuracy.toLong(),
-            bearing = it.bearing.toLong(),
-            bearingAccuracy = it.bearingAccuracy.toLong(),
-            altitude = it.altitude.toLong(),
-            speedAccuracy = it.speedAccuracy.toDouble(),
-            verticalAccuracy = it.verticalAccuracy.toLong()
-        )
-    }
-
-    val data = listOf(
-        ProtoBuf.encodeToByteArray(optimizedLocations) to "Optimized Locations",
-        ProtoBuf.encodeToByteArray(locations) to "Default Locations",
-        ProtoBuf.encodeToByteArray(unoptimizedLocations) to "Unoptimized Locations"
+    testCompressions(
+        rawData = domainLocations,
+        translators = listOf(
+            { data ->
+                ProtoBuf.encodeToByteArray(
+                    data.map {
+                        LocationWithoutSessionIdOptimized(
+                            zonedDateTime = it.zonedDateTime.toTimestamp(),
+                            latitude = it.latitude,
+                            longitude = it.longitude,
+                            speed = it.speed,
+                            accuracy = it.accuracy,
+                            bearing = it.bearing,
+                            bearingAccuracy = it.bearingAccuracy,
+                            altitude = it.altitude,
+                            speedAccuracy = it.speedAccuracy,
+                            verticalAccuracy = it.verticalAccuracy
+                        )
+                    }
+                ) to "Optimized Locations"
+            },
+            { data ->
+                ProtoBuf.encodeToByteArray(
+                    data.map {
+                        LocationWithoutSessionId(
+                            zonedDateTime = it.zonedDateTime.toTimestamp(),
+                            latitude = it.latitude,
+                            longitude = it.longitude,
+                            speed = it.speed,
+                            accuracy = it.accuracy.toInt(),
+                            bearing = it.bearing.toInt(),
+                            bearingAccuracy = it.bearingAccuracy.toInt(),
+                            altitude = it.altitude.toInt(),
+                            speedAccuracy = it.speedAccuracy,
+                            verticalAccuracy = it.verticalAccuracy.toInt()
+                        )
+                    }
+                ) to "Default Locations"
+            },
+            { data ->
+                ProtoBuf.encodeToByteArray(
+                    data.map {
+                        LocationWithoutSessionIdUnoptimized(
+                            zonedDateTime = it.zonedDateTime.toTimestamp(),
+                            latitude = it.latitude.toDouble(),
+                            longitude = it.longitude.toDouble(),
+                            speed = it.speed.toDouble(),
+                            accuracy = it.accuracy.toLong(),
+                            bearing = it.bearing.toLong(),
+                            bearingAccuracy = it.bearingAccuracy.toLong(),
+                            altitude = it.altitude.toLong(),
+                            speedAccuracy = it.speedAccuracy.toDouble(),
+                            verticalAccuracy = it.verticalAccuracy.toLong()
+                        )
+                    }
+                ) to "Unoptimized Locations"
+            }
+        ),
+        compressors = listOf(
+            { array: ByteArray ->
+                val locationsParcel = Parcel.obtain()
+                locationsParcel.writeByteArray(array)
+                val bytes = locationsParcel.marshall()
+                locationsParcel.recycle()
+                bytes
+            } to "Parcel marshall",
+            ::encodeWithGZIP to "GZIP",
+            { array: ByteArray ->
+                val zlibByteArrayOutputStream = ByteArrayOutputStream()
+                val deflater = Deflater(Deflater.BEST_COMPRESSION)
+                val deflaterOutputStream = DeflaterOutputStream(zlibByteArrayOutputStream, deflater)
+                deflaterOutputStream.write(array)
+                val compressedBytes = zlibByteArrayOutputStream.toByteArray()
+                deflaterOutputStream.close()
+                zlibByteArrayOutputStream.close()
+                compressedBytes
+            } to "ZLIB",
+            { array: ByteArray ->
+                Zstd.compress(array, Zstd.maxCompressionLevel())
+            } to "Zstd"
+        ),
+        dataSizeHeuristic = { locations ->
+            val startMilli = locations
+                .minBy { it.zonedDateTime.toInstant().toEpochMilli() }
+                .zonedDateTime.toInstant().toEpochMilli()
+            val endMilli = locations
+                .maxBy { it.zonedDateTime.toInstant().toEpochMilli() }
+                .zonedDateTime.toInstant().toEpochMilli()
+            val durationInMinutes = (endMilli - startMilli).milliseconds.inWholeMinutes
+            "$durationInMinutes minutes of location data"
+        }
     )
+}
 
-    val compressions = listOf<Pair<(ByteArray) -> ByteArray, String>>(
-        { array: ByteArray ->
-            val locationsParcel = Parcel.obtain()
-            locationsParcel.writeByteArray(array)
-            val bytes = locationsParcel.marshall()
-            locationsParcel.recycle()
-            bytes
-        } to "Parcel marshall",
-        ::encodeWithGZIP to "GZIP",
-        { array: ByteArray ->
-            val zlibByteArrayOutputStream = ByteArrayOutputStream()
-            val deflater = Deflater(Deflater.BEST_COMPRESSION)
-            val deflaterOutputStream = DeflaterOutputStream(zlibByteArrayOutputStream, deflater)
-            deflaterOutputStream.write(array)
-            val compressedBytes = zlibByteArrayOutputStream.toByteArray()
-            deflaterOutputStream.close()
-            zlibByteArrayOutputStream.close()
-            compressedBytes
-        } to "ZLIB",
-        { array: ByteArray ->
-            Zstd.compress(array, Zstd.maxCompressionLevel())
-        } to "Zstd"
-    )
+private fun <T> testCompressions(
+    rawData: T,
+    translators: List<(T) -> Pair<ByteArray, String>>, // Translated data and its name
+    compressors: List<Pair<(ByteArray) -> ByteArray, String>>, // Compressors and their name
+    dataSizeHeuristic: (T) -> String, // Heuristic to determine data size
+) {
+    val data = translators.map { it(rawData) }
 
     val stringBuilder = StringBuilder()
-    val startMilli = locations
-        .minBy { it.zonedDateTime.toInstant().toEpochMilli() }
-        .zonedDateTime.toInstant().toEpochMilli()
-    val endMilli = locations
-        .maxBy { it.zonedDateTime.toInstant().toEpochMilli() }
-        .zonedDateTime.toInstant().toEpochMilli()
-    val durationInMinutes = (endMilli - startMilli).milliseconds.inWholeMinutes
-    stringBuilder.append("Compressing $durationInMinutes minutes of Location data\n")
+    stringBuilder.append("Compressing ${dataSizeHeuristic(rawData)}\n")
 
     data.forEach {
         val byteArray = it.first
         stringBuilder.append("Data type: ${it.second}\n")
 
-        compressions.forEach { algo ->
+        compressors.forEach { algo ->
             val compressedBytes = algo.first(byteArray)
             val algoName = algo.second
             stringBuilder.append("$algoName: ${compressedBytes.size} bytes\n")
@@ -336,11 +430,11 @@ data class LocationWithoutSessionIdUnoptimized(
     var verticalAccuracy: Long = Long.MIN_VALUE, // in meters
 ) : Parcelable
 
-fun List<DomainLocation>.toPaths(
+fun List<DomainSensorEvent>.toChunkedFirebaseSensorEvents(
     sessionUUID: String,
     ownerUUID: String,
-    thresholdInMinutes: Int = 300
-): List<FirestorePath> {
+    thresholdInMinutes: Int = 5
+): List<FirestoreSensorEvents> {
     if (isEmpty()) return emptyList()
     val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
     val groupedByTime = groupBy {
@@ -350,7 +444,7 @@ fun List<DomainLocation>.toPaths(
     return groupedByTime.map { groups ->
         groups.value
             .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
-            .toPath(sessionUUID, ownerUUID)
+            .toFirebaseSensorEvents(sessionUUID, ownerUUID)
     }
 }
 
@@ -359,11 +453,38 @@ fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
     val domainLocations = mutableListOf<DomainLocation>()
 
     forEach { path ->
+        if (path.locations.toBytes().isEmpty()) return@forEach
         val locations = ProtoBuf.decodeFromByteArray<List<FirestoreLocation>>(Zstd.decompress(path.locations.toBytes(), 1_000_000))
         domainLocations.addAll(locations.map { it.toDomainModel(path.sessionUUID) })
     }
 
     return domainLocations.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+fun List<FirestorePath>.toDomainAggressions(): List<DomainAggression>? {
+    if (all { it.aggressions?.toBytes() == null }) return null // No aggressions at all
+    val domainAggressions = mutableListOf<DomainAggression>()
+
+    forEach { path ->
+        if (path.aggressions?.toBytes() == null || path.aggressions.toBytes().isEmpty()) return@forEach
+        val aggressions = ProtoBuf.decodeFromByteArray<List<DomainAggression>>(Zstd.decompress(path.aggressions.toBytes(), 1_000_000))
+        domainAggressions.addAll(aggressions)
+    }
+
+    return domainAggressions.sortedBy { it.timestamp }
+}
+
+fun List<FirestoreSensorEvents>.toDomainSensorEvents(): List<DomainSensorEvent> {
+    val domainSensorEvents = mutableListOf<DomainSensorEvent>()
+
+    forEach { events ->
+        if (events.events.toBytes().isEmpty()) return@forEach
+        val sensorEvents = ProtoBuf.decodeFromByteArray<List<FirestoreSensorEvent>>(Zstd.decompress(events.events.toBytes(), 1_000_000))
+        domainSensorEvents.addAll(sensorEvents.map { it.toDomainModel(events.sessionUUID) })
+    }
+
+    return domainSensorEvents.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
 }
 
 fun FirestoreLocation.toDomainModel(
@@ -380,6 +501,18 @@ fun FirestoreLocation.toDomainModel(
     altitude = altitude.toShort(),
     speedAccuracy = speedAccuracy,
     verticalAccuracy = verticalAccuracy.toShort()
+)
+
+fun FirestoreSensorEvent.toDomainModel(
+    sessionUUID: String
+) = DomainSensorEvent(
+    zonedDateTime = timestamp.toZonedDateTime(),
+    sessionUUID = sessionUUID,
+    accuracy = accuracy.toByte(),
+    type = type.toByte(),
+    x = x,
+    y = y,
+    z = z
 )
 
 fun DataStatus<FirestoreUser>.toDomainPreferencesStatus(): DataStatus<DomainPreferences> {

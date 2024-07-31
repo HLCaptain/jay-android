@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -19,9 +19,11 @@
 package illyan.jay.data.room.datasource
 
 import illyan.jay.data.room.dao.LocationDao
+import illyan.jay.data.room.model.RoomAggression
 import illyan.jay.data.room.model.RoomLocation
 import illyan.jay.data.room.toDomainModel
 import illyan.jay.data.room.toRoomModel
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.domain.model.DomainLocation
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
@@ -71,6 +73,12 @@ class LocationRoomDataSource @Inject constructor(
     fun getLocations(sessionUUIDs: List<String>) = locationDao.getLocations(sessionUUIDs)
         .map { it.map(RoomLocation::toDomainModel) }
 
+    fun getAggressions(sessionUUID: String) = locationDao.getAggressions(sessionUUID)
+        .map { it.map(RoomAggression::toDomainModel) }
+
+    fun getAggressions(sessionUUIDs: List<String>) = locationDao.getAggressions(sessionUUIDs)
+        .map { it.map(RoomAggression::toDomainModel) }
+
     /**
      * Save location's data to Room database.
      * Should be linked to a session to be accessible later on.
@@ -93,4 +101,11 @@ class LocationRoomDataSource @Inject constructor(
     }
 
     fun deleteLocationForSession(sessionUUID: String) = locationDao.deleteLocations(sessionUUID)
+
+    fun deleteAggressionsForSession(sessionUUID: String) = locationDao.deleteAggressions(sessionUUID)
+
+    fun saveAggressionsForSession(sessionUUID: String, aggressions: List<DomainAggression>) {
+        Timber.i("Saving ${aggressions.size} aggressions for session $sessionUUID")
+        locationDao.upsertAggressions(aggressions.map { it.toRoomModel() })
+    }
 }

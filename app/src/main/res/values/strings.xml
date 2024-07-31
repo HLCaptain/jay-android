@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+  ~ Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
   ~
   ~ Jay is a driver behaviour analytics app.
   ~
@@ -147,4 +147,17 @@
     <string name="system">System</string>
     <string name="dynamic_color">Dynamic Color</string>
     <string name="day_night_cycle">Day-Night Cycle</string>
+    <string name="ml_models">ML Models</string>
+    <string name="downloaded">Downloaded</string>
+    <string name="machine_learning">Machine Learning</string>
+    <string name="downloading">Downloading</string>
+    <string name="download">Download</string>
+    <string name="refresh">Refresh</string>
+    <string name="no_available_models_found">No Available Models Found</string>
+    <string name="delete_all">Delete All</string>
+    <string name="restart_required">Restart Required</string>
+    <string name="restart_required_description">Machine Learning functionality is in Beta. Restart is required after each action to take effect.</string>
+    <string name="ok">OK</string>
+    <string name="gradient_filter_aggression">Aggression</string>
+    <string name="aggression_load_failed_no_sensor_data">Aggression load failed. No sensor data available.</string>
 </resources>

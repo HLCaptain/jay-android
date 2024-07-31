@@ -18,15 +18,17 @@
 
 package illyan.jay.ui.libraries
 
+import android.content.res.Configuration
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -59,7 +61,7 @@ import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
-import illyan.jay.ui.components.PreviewAccessibility
+import illyan.jay.ui.components.PreviewAll
 import illyan.jay.ui.destinations.LibraryDialogScreenDestination
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.profile.ProfileNavGraph
@@ -86,10 +88,15 @@ fun LibrariesDialogContent(
     libraries: List<UiLibrary> = emptyList(),
     onSelectLibrary: (UiLibrary) -> Unit = {},
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val configuration = LocalConfiguration.current
+    val maxHeight = when (configuration.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+        else -> configuration.screenHeightDp
+    }
     JayDialogContent(
         modifier = modifier,
-        textModifier = Modifier.heightIn(max = (screenHeightDp * 0.55f).dp),
+        textModifier = Modifier.heightIn(max = (maxHeight * 0.55f).dp),
         title = { LibrariesTitle() },
         text = {
             LibrariesScreen(
@@ -97,6 +104,7 @@ fun LibrariesDialogContent(
                 onSelectLibrary = onSelectLibrary,
             )
         },
+        textPaddingValues = PaddingValues()
     )
 }
 
@@ -120,18 +128,11 @@ fun LibrariesScreen(
     LazyColumn(
         modifier = modifier
             .drawVerticalScrollbar(state = lazyListState)
-            .clip(RoundedCornerShape(verticalContentPadding)),
+            .clip(RoundedCornerShape(verticalContentPadding))
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
     ) {
-        itemsIndexed(libraries) { index, item ->
-            val cardColors = if (index.mod(2) == 0) {
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                )
-            } else {
-                CardDefaults.cardColors(
-                    containerColor = Color.Transparent
-                )
-            }
+        items(libraries) { item ->
+            val cardColors = CardDefaults.cardColors(containerColor = Color.Transparent)
             LibraryItem(
                 library = item,
                 onClick = { onSelectLibrary(item) },
@@ -159,7 +160,7 @@ fun LibraryItem(
         ConstraintLayout(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
         ) {
             val (item, icon) = createRefs()
             createHorizontalChain(
@@ -186,9 +187,7 @@ fun LibraryItem(
                 }
             ) {
                 item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                    Column {
                         Text(
                             text = library.name,
                             style = MaterialTheme.typography.titleSmall,
@@ -205,7 +204,7 @@ fun LibraryItem(
                             shownText?.let {
                                 Text(
                                     text = it,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = AlertDialogDefaults.textContentColor,
                                 )
                             }
@@ -217,7 +216,7 @@ fun LibraryItem(
     }
 }
 
-@PreviewAccessibility
+@PreviewAll
 @Composable
 private fun LibrariesDialogContentPreview() {
     val libraries = LibrariesViewModel.Libraries

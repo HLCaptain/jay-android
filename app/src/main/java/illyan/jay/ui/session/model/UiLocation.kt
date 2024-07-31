@@ -32,9 +32,10 @@ data class UiLocation(
     var altitude: Short,
     var speedAccuracy: Float, // in meters per second
     var verticalAccuracy: Short, // in meters
+    var aggression: Float? // Arbitrary unit, mostly in range [0.2, 1.0]
 )
 
-fun DomainLocation.toUiModel() = UiLocation(
+fun DomainLocation.toUiModel(aggression: Float? = null) = UiLocation(
     zonedDateTime = zonedDateTime,
     latLng = latLng,
     speed = speed,
@@ -44,4 +45,5 @@ fun DomainLocation.toUiModel() = UiLocation(
     altitude = altitude,
     speedAccuracy = speedAccuracy,
     verticalAccuracy = verticalAccuracy,
+    aggression = aggression
 )

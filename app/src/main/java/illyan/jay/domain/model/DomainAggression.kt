@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -16,18 +16,13 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.di
+package illyan.jay.domain.model
 
-import javax.inject.Qualifier
+import kotlinx.serialization.Serializable
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserPathsSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSensorEventsSnapshotHandler
+@Serializable
+data class DomainAggression(
+    val sessionUUID: String,
+    val timestamp: Long, // in millis
+    val aggression: Float
+)

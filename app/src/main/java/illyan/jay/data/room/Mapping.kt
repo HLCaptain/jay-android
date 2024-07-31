@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -22,10 +22,12 @@ import android.hardware.SensorEvent
 import android.location.Location
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
+import illyan.jay.data.room.model.RoomAggression
 import illyan.jay.data.room.model.RoomLocation
 import illyan.jay.data.room.model.RoomPreferences
 import illyan.jay.data.room.model.RoomSensorEvent
 import illyan.jay.data.room.model.RoomSession
+import illyan.jay.domain.model.DomainAggression
 import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSensorEvent
@@ -177,4 +179,16 @@ fun DomainPreferences.toRoomModel(
     lastUpdate = lastUpdate.toInstant().toEpochMilli(),
     lastUpdateToAnalytics = lastUpdateToAnalytics?.toInstant()?.toEpochMilli(),
     shouldSync = shouldSync,
+)
+
+fun RoomAggression.toDomainModel() = DomainAggression(
+    sessionUUID = sessionUUID,
+    timestamp = timestamp,
+    aggression = aggression
+)
+
+fun DomainAggression.toRoomModel() = RoomAggression(
+    sessionUUID = sessionUUID,
+    timestamp = timestamp,
+    aggression = aggression
 )

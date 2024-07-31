@@ -16,18 +16,23 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.di
+package illyan.jay.data.firestore.model
 
-import javax.inject.Qualifier
+import com.google.firebase.firestore.Blob
+import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserPathsSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSensorEventsSnapshotHandler
+data class FirestoreSensorEvents(
+    @DocumentId
+    val uuid: String = "",
+    @PropertyName(FieldSessionUUID) val sessionUUID: String = "",
+    @PropertyName(FieldOwnerUUID) val ownerUUID: String = "",
+    @PropertyName(FieldEvents) val events: Blob = Blob.fromBytes(ByteArray(0))
+) {
+    companion object {
+        const val CollectionName = "sensor"
+        const val FieldSessionUUID = "sessionUUID"
+        const val FieldOwnerUUID = "ownerUUID"
+        const val FieldEvents = "events"
+    }
+}

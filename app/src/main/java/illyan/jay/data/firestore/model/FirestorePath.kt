@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -27,13 +27,15 @@ data class FirestorePath(
     val uuid: String = "",
     @PropertyName(FieldSessionUUID) val sessionUUID: String = "", // reference of the session this path is part of
     @PropertyName(FieldOwnerUUID) val ownerUUID: String = "",
-    @PropertyName(FieldLocations) val locations: Blob = Blob.fromBytes(ByteArray(0))
+    @PropertyName(FieldLocations) val locations: Blob = Blob.fromBytes(ByteArray(0)),
+    @PropertyName(FieldAggressions) val aggressions: Blob? = null
 ) {
     companion object {
         const val CollectionName = "paths"
         const val FieldSessionUUID = "sessionUUID"
         const val FieldOwnerUUID = "ownerUUID"
         const val FieldLocations = "locations"
+        const val FieldAggressions = "aggressions"
     }
 }
 

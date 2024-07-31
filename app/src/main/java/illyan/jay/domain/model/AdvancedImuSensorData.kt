@@ -16,18 +16,16 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package illyan.jay.di
+package illyan.jay.domain.model
 
-import javax.inject.Qualifier
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserPathsSnapshotHandler
-
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class UserSensorEventsSnapshotHandler
+data class AdvancedImuSensorData(
+    val dirX: Triple<Double, Double, Double>, // XYZ
+    val dirY: Triple<Double, Double, Double>, // XYZ
+    val dirZ: Triple<Double, Double, Double>, // XYZ
+    val accRaw: Triple<Double, Double, Double>, // XYZ
+    val accSmooth: Triple<Double, Double, Double>, // XYZ
+    val angVel: Triple<Double, Double, Double>, // XYZ
+    val angAccel: Triple<Double, Double, Double>, // XYZ
+    val timestamp: Long, // Milliseconds
+    val sessionUUID: Long = 0L,
+)

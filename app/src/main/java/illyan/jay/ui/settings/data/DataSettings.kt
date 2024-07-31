@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.settings.data
 
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -108,7 +109,12 @@ fun DataSettingsDialogContent(
     onDeleteAll: () -> Unit = {},
     onNavigateUp: () -> Unit = {},
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val configuration = LocalConfiguration.current
+    val maxHeight = when (configuration.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+        else -> configuration.screenHeightDp
+    }
     JayDialogContent(
         modifier = modifier,
         icon = {
@@ -126,7 +132,7 @@ fun DataSettingsDialogContent(
         textPaddingValues = PaddingValues(),
         text = {
             DataSettingsScreen(
-                modifier = Modifier.heightIn(max = (screenHeightDp * 0.4f).dp),
+                modifier = Modifier.heightIn(max = (maxHeight * 0.5f).dp),
                 onDeleteCached = onDeleteCached,
                 onDeletePublic = onDeletePublic,
                 onDeleteSynced = onDeleteSynced,

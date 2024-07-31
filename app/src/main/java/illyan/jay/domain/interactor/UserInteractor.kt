@@ -34,6 +34,7 @@ class UserInteractor @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
     private val userFirestoreDataFlow: UserFirestoreDataFlow,
     private val sessionInteractor: SessionInteractor,
+    private val modelInteractor: ModelInteractor,
     private val firestore: FirebaseFirestore,
 ) {
     // TODO: estimate cache size in the future
@@ -73,6 +74,7 @@ class UserInteractor @Inject constructor(
         if (authInteractor.isUserSignedIn) {
             sessionInteractor.deleteOwnedSessions()
             settingsInteractor.deleteLocalUserPreferences()
+            modelInteractor.deleteAllModels()
         }
     }
 

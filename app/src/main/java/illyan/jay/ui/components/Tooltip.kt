@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2023-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -34,11 +34,12 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.PlainTooltipBox
-import androidx.compose.material3.PlainTooltipState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberPlainTooltipState
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider
+import androidx.compose.material3.TooltipState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -78,7 +79,7 @@ fun TooltipElevatedCard(
     onDismissTooltip: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    val tooltipState = rememberPlainTooltipState()
+    val tooltipState = rememberTooltipState()
     val coroutineScope = rememberCoroutineScope()
     val tryShowTooltip = {
         coroutineScope.launch {
@@ -134,7 +135,7 @@ fun TooltipButton(
     onDismissTooltip: () -> Unit = {},
     content: @Composable RowScope.() -> Unit
 ) {
-    val tooltipState = rememberPlainTooltipState()
+    val tooltipState = rememberTooltipState()
     val coroutineScope = rememberCoroutineScope()
     val tryShowTooltip = { coroutineScope.launch { tooltipState.show() } }
     ContentWithTooltip(
@@ -178,7 +179,7 @@ fun TooltipButton(
 @Composable
 fun ContentWithTooltip(
     modifier: Modifier = Modifier,
-    tooltipState: PlainTooltipState = rememberPlainTooltipState(),
+    tooltipState: TooltipState = rememberTooltipState(),
     tooltip: @Composable () -> Unit,
     disabledTooltip: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
@@ -199,12 +200,11 @@ fun ContentWithTooltip(
             currentTooltip = if (enabled || disabledTooltip == null) tooltip else disabledTooltip
         }
     }
-    PlainTooltipBox(
+    TooltipBox(
+        positionProvider = rememberPlainTooltipPositionProvider(),
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        tooltip = currentTooltip,
-        tooltipState = tooltipState,
+        state = tooltipState,
+        tooltip = { currentTooltip() },
     ) {
         content()
     }

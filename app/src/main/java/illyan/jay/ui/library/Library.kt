@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.library
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -73,10 +74,15 @@ fun LibraryDialogContent(
     modifier: Modifier = Modifier,
     library: UiLibrary,
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val configuration = LocalConfiguration.current
+    val maxHeight = when (configuration.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
+        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
+        else -> configuration.screenHeightDp
+    }
     JayDialogContent(
         modifier = modifier,
-        textModifier = Modifier.heightIn(max = (screenHeightDp * 0.5f).dp),
+        textModifier = Modifier.heightIn(max = (maxHeight * 0.55f).dp),
         title = {
             LibraryTitle(
                 name = library.name,

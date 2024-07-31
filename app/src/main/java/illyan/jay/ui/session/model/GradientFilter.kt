@@ -22,5 +22,6 @@ enum class GradientFilter {
     Default,
     Velocity,
     Elevation,
-    GpsAccuracy
+    GpsAccuracy,
+    Aggression,
 }

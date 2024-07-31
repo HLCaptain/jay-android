@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2024 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import com.google.android.libraries.mapsplatform.secrets_gradle_plugin.loadPropertiesFile
+
+/*
  * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
@@ -18,29 +38,31 @@
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.androidx.room)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.jetbrains.kotlin.kapt)
     alias(libs.plugins.jetbrains.kotlin.parcelize)
     alias(libs.plugins.jetbrains.kotlin.serialization)
+//    alias(libs.plugins.jetbrains.kotlin.jvm)
     alias(libs.plugins.google.gms.services)
     alias(libs.plugins.google.secrets)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.hilt)
     alias(libs.plugins.junit5)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 35
 
     namespace = "illyan.jay"
 
     defaultConfig {
         applicationId = "illyan.jay"
-        minSdk = 21
-        targetSdk = 34
-        versionCode = 17
-        versionName = "0.3.6-alpha"
+        minSdk = 23
+        targetSdk = 35
+        versionCode = 18
+        versionName = "0.4.0-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -68,10 +90,30 @@ android {
                 "proguard-rules.pro"
             )
         }
-        create("benchmark") {
-            initWith(getByName("release"))
-            signingConfig = signingConfigs.getByName("debug")
-            matchingFallbacks += listOf("release")
+    }
+
+    signingConfigs {
+        val properties = loadPropertiesFile("../local.properties").toMap()
+
+        val debugStorePath = properties["DEBUG_KEY_PATH"].toString()
+        val debugKeyAlias = properties["DEBUG_KEY_ALIAS"].toString()
+        val debugStorePassword = properties["DEBUG_KEYSTORE_PASSWORD"].toString()
+        val debugKeyPassword = properties["DEBUG_KEY_PASSWORD"].toString()
+        getByName("debug") {
+            storeFile = file(debugStorePath)
+            keyAlias = debugKeyAlias
+            storePassword = debugStorePassword
+            keyPassword = debugKeyPassword
+        }
+        val releaseStorePath = properties["RELEASE_KEY_PATH"].toString()
+        val releaseKeyAlias = properties["RELEASE_KEY_ALIAS"].toString()
+        val releaseStorePassword = properties["RELEASE_KEYSTORE_PASSWORD"].toString()
+        val releaseKeyPassword = properties["RELEASE_KEY_PASSWORD"].toString()
+        create("release") {
+            storeFile = file(releaseStorePath)
+            keyAlias = releaseKeyAlias
+            storePassword = releaseStorePassword
+            keyPassword = releaseKeyPassword
         }
     }
 
@@ -88,10 +130,6 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.orNull
     }
 
     packaging {
@@ -158,6 +196,9 @@ dependencies {
     // Item Swipe
     implementation(libs.saket.swipe)
 
+    // Math for interpolation
+    implementation(libs.apache.commons.math3)
+
     // Mapbox
     implementation(libs.mapbox.maps)
     implementation(libs.mapbox.search)
@@ -170,7 +211,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
     // Timber
@@ -212,12 +253,12 @@ dependencies {
 
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.config.ktx)
-    implementation(libs.firebase.analytics.ktx)
-    implementation(libs.firebase.crashlytics.ktx)
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.perf.ktx)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.config)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.perf)
 
     // Firebase ML
     implementation(libs.firebase.ml.modeldownloader)
@@ -243,10 +284,10 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
-kapt {
-    correctErrorTypes = true
-}
-
 hilt {
     enableAggregatingTask = true
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }

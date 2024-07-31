@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -76,6 +76,7 @@ import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.domain.model.Theme
@@ -162,12 +163,14 @@ fun MenuContent(
             .padding(DefaultScreenOnSheetPadding),
         state = gridState
     ) {
-        item {
-            MenuItemCard(
-                title = stringResource(R.string.navigate_to_bme),
-                icon = Icons.Rounded.TravelExplore,
-                onClick = onNavigateToBme,
-            )
+        if (BuildConfig.DEBUG) {
+            item {
+                MenuItemCard(
+                    title = stringResource(R.string.navigate_to_bme),
+                    icon = Icons.Rounded.TravelExplore,
+                    onClick = onNavigateToBme,
+                )
+            }
         }
         item {
             MenuItemCard(
