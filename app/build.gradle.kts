@@ -70,28 +70,6 @@ android {
         }
     }
 
-    buildTypes {
-        val mapboxAccessToken = properties["MAPBOX_ACCESS_TOKEN"].toString()
-        val mapboxDownloadsToken = properties["MAPBOX_DOWNLOADS_TOKEN"].toString()
-        val mapboxSdkRegistryToken = properties["SDK_REGISTRY_TOKEN"].toString()
-        getByName("debug") {
-            isDebuggable = true
-            buildConfigField("String", "MapboxAccessToken", "\"$mapboxAccessToken\"")
-            buildConfigField("String", "MapboxDownloadsToken", "\"$mapboxDownloadsToken\"")
-            buildConfigField("String", "MapboxSdkRegistryToken", "\"$mapboxSdkRegistryToken\"")
-        }
-        getByName("release") {
-            initWith(getByName("debug"))
-            isDebuggable = false
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-
     signingConfigs {
         val properties = loadPropertiesFile("../local.properties").toMap()
 
@@ -114,6 +92,29 @@ android {
             keyAlias = releaseKeyAlias
             storePassword = releaseStorePassword
             keyPassword = releaseKeyPassword
+        }
+    }
+
+    buildTypes {
+        val mapboxAccessToken = properties["MAPBOX_ACCESS_TOKEN"].toString()
+        val mapboxDownloadsToken = properties["MAPBOX_DOWNLOADS_TOKEN"].toString()
+        val mapboxSdkRegistryToken = properties["SDK_REGISTRY_TOKEN"].toString()
+        getByName("debug") {
+            isDebuggable = true
+            buildConfigField("String", "MapboxAccessToken", "\"$mapboxAccessToken\"")
+            buildConfigField("String", "MapboxDownloadsToken", "\"$mapboxDownloadsToken\"")
+            buildConfigField("String", "MapboxSdkRegistryToken", "\"$mapboxSdkRegistryToken\"")
+        }
+        getByName("release") {
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            buildConfigField("String", "MapboxAccessToken", "\"$mapboxAccessToken\"")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
