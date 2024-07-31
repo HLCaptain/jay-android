@@ -53,7 +53,7 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        MapboxOptions.accessToken = BuildConfig.MapboxAccessToken
+        MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
         initLogging()
         initAds()
     }
