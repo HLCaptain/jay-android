@@ -8,12 +8,17 @@
 
 In short, Jay is providing data to decide on local problems and in the transportation field. Jay should be easy to use and available to have as much impact as possible.
 
-<p align="center">
-<img alt="Sessions Screen" src="assets/SessionsScreen.png" width="40%"/>
-<img alt="Session Screen" src="assets/SessionScreen.png" width="40%"/>
-
-[//]: # (<img alt="Sessions Screen in Dark Mode" src="assets/SessionsScreenDark.png" width="30%"/>)
-</p>
+<!-- make the corners rounded -->
+<div style="display: flex; align-items: flex-start; gap: 20px;">
+    <div style="text-align: center;">
+        <img src="docs/static/img/func_2.png" alt="Collection" style="max-height: 50vh; border-radius: 20px;"/>
+        <div style="margin-top: 10px;">Session detail, free-drive and sessions  list screens.</div>
+    </div>
+    <div style="text-align: center;">
+        <img src="docs/static/img/default_session.png" alt="Sessions Screen" style="max-height: 50vh; border-radius: 20px;"/>
+        <div style="margin-top: 10px;">Data visualization.</div>
+    </div>
+</div>
 
 ### About the app
 
@@ -22,6 +27,11 @@ In short, Jay is providing data to decide on local problems and in the transport
 - Utilize its capabilities with multiple users on a single device
 - Show information about your session
 - UX/UI centered design, with dark mode theming
+
+<div style="text-align: center;">
+    <img src="docs/static/img/settings_2.png" alt="Sessions Screen" style="max-height: 50vh; border-radius: 20px;"/>
+    <div style="margin-top: 10px;">Profile, about and settings screens.</div>
+</div>
 
 ### A few technologies Jay implements
 
@@ -51,7 +61,7 @@ Follow the [Mapbox install] guide for further information. I placed both of my k
 
 ### Set up [SonarCloud] properly
 
-Don't forget to change your properties in the project level `build.gradle` file.
+Don't forget to change your properties in the project level `build.gradle.kts` file.
 
 ### AdMob setup (Experiment)
 
@@ -59,8 +69,8 @@ Set your application ID from `AdMob` in the `local.properties` file with the key
 
 ## Few tips for security
 
-- Never add `google-services.json` and `«USER_HOME»/.gradle/gradle.properties` into your forked repository.
-- I would recommend keeping your `string.xml` file squeaky clean 🧹🧽🧼 (don't place any keys, either public or private or confidential information there), use Firebase's [Remote Config] service or place keys in `local.properties`.
+- Never add `google-services.json`, `«USER_HOME»/.gradle/gradle.properties` and `local.properties` into your forked repository.
+- I would recommend keeping your `strings.xml` file squeaky clean 🧹🧽🧼 (don't place any keys, either public or private or confidential information there), use Firebase's [Remote Config] service or place keys in `local.properties`.
 
 ## License
 
