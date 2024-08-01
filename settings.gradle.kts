@@ -1,4 +1,24 @@
 /*
+ * Copyright (c) 2024 Balázs Püspök-Kiss (Illyan)
+ *
+ * Jay is a driver behaviour analytics app.
+ *
+ * This file is part of Jay.
+ *
+ * Jay is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ * Jay is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Jay.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import org.gradle.util.internal.GUtil.loadProperties
+
+/*
  * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
@@ -41,7 +61,8 @@ dependencyResolutionManagement {
                 // This should always be `mapbox` (not your username).
                 username = "mapbox"
                 // Use the secret token you stored in gradle.properties as the password
-                val mapboxDownloadsToken = settings.extra["MAPBOX_DOWNLOADS_TOKEN"].toString()
+                val localProperties = loadProperties(File("$rootDir/local.properties"))
+                val mapboxDownloadsToken = localProperties["MAPBOX_DOWNLOADS_TOKEN"].toString()
                 password = mapboxDownloadsToken
             }
         }
