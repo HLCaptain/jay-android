@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balázs Püspök-Kiss (Illyan)
+ * Copyright (c) 2022-2024 Balázs Püspök-Kiss (Illyan)
  *
  * Jay is a driver behaviour analytics app.
  *
@@ -25,15 +25,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -128,30 +124,30 @@ fun LoginScreen(
             )
         }
         // TODO: make login via email/password combo
-        var email by remember { mutableStateOf("") }
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = email,
-            enabled = false,
-            onValueChange = {
-                email = it
-            },
-            label = {
-                Text(text = stringResource(R.string.email))
-            }
-        )
-        var password by remember { mutableStateOf("") }
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = password,
-            enabled = false,
-            onValueChange = {
-                password = it
-            },
-            label = {
-                Text(text = stringResource(R.string.password))
-            }
-        )
+//        var email by remember { mutableStateOf("") }
+//        OutlinedTextField(
+//            modifier = Modifier.fillMaxWidth(),
+//            value = email,
+//            enabled = false,
+//            onValueChange = {
+//                email = it
+//            },
+//            label = {
+//                Text(text = stringResource(R.string.email))
+//            }
+//        )
+//        var password by remember { mutableStateOf("") }
+//        OutlinedTextField(
+//            modifier = Modifier.fillMaxWidth(),
+//            value = password,
+//            enabled = false,
+//            onValueChange = {
+//                password = it
+//            },
+//            label = {
+//                Text(text = stringResource(R.string.password))
+//            }
+//        )
     }
 }
 
@@ -169,14 +165,14 @@ fun LoginButtons(
         ) {
             Text(text = stringResource(R.string.cancel))
         }
-        Button(
-            onClick = {
-                // TODO: Login via email/password
-            },
-            enabled = false,
-        ) {
-            Text(text = stringResource(R.string.login))
-        }
+//        Button(
+//            onClick = {
+//                // TODO: Login via email/password
+//            },
+//            enabled = false,
+//        ) {
+//            Text(text = stringResource(R.string.login))
+//        }
     }
 }
 

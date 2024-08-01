@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.session
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -118,6 +119,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     bottom = RoundedCornerRadius + MenuItemPadding * 2
 )
 
+@SuppressLint("IncorrectNumberOfArgumentsInExpression")
 fun defaultGradient(
     start: Color = Color(red = 0x00, green = 0xFF, blue = 0x8c),
     end: Color = MaterialTheme.signatureBlue,
@@ -130,6 +132,7 @@ fun defaultGradient(
     }
 }
 
+@SuppressLint("IncorrectNumberOfArgumentsInExpression")
 fun createGradientFromLocations(
     locations: List<UiLocation>,
     start: Color = Color(red = 0x00, green = 0xFF, blue = 0x8c),
@@ -322,7 +325,7 @@ fun SessionScreen(
             )
         )
         // Used reference from https://github.com/mapbox/mapbox-maps-android/blob/e8becd34eede7049feeaa4a8d3cca1b72be9f1bb/app/src/main/java/com/mapbox/maps/testapp/examples/linesandpolygons/LineGradientActivity.kt#L32
-        mapView.value?.getMapboxMap()?.getStyle { style ->
+        mapView.value?.mapboxMap?.getStyle { style ->
             Timber.d("Adding source")
             style.addSource(
                 geoJsonSource(id = "ROUTE_LINE_SOURCE_ID") {
@@ -388,7 +391,7 @@ fun SessionScreen(
         }
         onDispose {
             annotationsPlugin?.removeAnnotationManager(pointAnnotationManager!!)
-            mapView.value?.getMapboxMap()?.getStyle {
+            mapView.value?.mapboxMap?.getStyle {
                 it.removeStyleLayer("ROUTE_LAYER_ID")
                 it.removeStyleSource("ROUTE_LINE_SOURCE_ID")
             }

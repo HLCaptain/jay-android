@@ -38,16 +38,13 @@ val localProperties = loadProperties("$projectDir/../local.properties")
 
 android {
     compileSdk = 35
-
     namespace = "illyan.jay"
-
     defaultConfig {
         applicationId = "illyan.jay"
         minSdk = 23
         targetSdk = 35
         versionCode = 19
         versionName = "0.4.1-alpha"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true

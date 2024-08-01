@@ -27,5 +27,3 @@ Jay is a data analytics solution, which aims to make data analytics more accessi
 - enable users to have supervisors for B2B applications
 - make an administration app/webpage to supervise users
 - make even more tools and solutions accessible, be as transparent as possible during development
-
-<!-- Jay aims to make data analytics more accessible, give it back to the hands of people. In this day and age, value's definition has been drastically changed, for the worse. People's attention and data is being *exploited*, just to say it lightly. -->
