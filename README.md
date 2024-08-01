@@ -47,7 +47,7 @@ After you added the Android project, then you should follow the instructions [Fi
 
 You will need a [Mapbox account] in order to get the private and public keys to get it up and running.
 
-Follow the [Mapbox install] guide for further information. I placed both of my keys in the `«USER_HOME»/.gradle/gradle.properties` file.
+Follow the [Mapbox install] guide for further information. I placed both of my keys in the `local.properties` file.
 
 ### Set up [SonarCloud] properly
 
