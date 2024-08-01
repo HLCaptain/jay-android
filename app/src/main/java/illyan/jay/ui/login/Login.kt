@@ -165,14 +165,14 @@ fun LoginButtons(
         ) {
             Text(text = stringResource(R.string.cancel))
         }
-        Button(
-            onClick = {
-                // TODO: Login via email/password
-            },
-            enabled = false,
-        ) {
-            Text(text = stringResource(R.string.login))
-        }
+//        Button(
+//            onClick = {
+//                // TODO: Login via email/password
+//            },
+//            enabled = false,
+//        ) {
+//            Text(text = stringResource(R.string.login))
+//        }
     }
 }
 
