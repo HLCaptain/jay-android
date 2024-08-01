@@ -86,6 +86,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Catches only OpenGL errors from MapboxRenderThread
         val mapboxExceptionHandler = MapboxExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(mapboxExceptionHandler)
 

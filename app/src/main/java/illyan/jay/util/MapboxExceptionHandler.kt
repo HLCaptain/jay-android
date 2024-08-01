@@ -25,11 +25,11 @@ class MapboxExceptionHandler : Thread.UncaughtExceptionHandler {
     var openGlNotSupportedCallback: () -> Unit = {}
 
     override fun uncaughtException(t: Thread, e: Throwable) {
+        Timber.e(e)
         if (e is IllegalStateException &&
             e.message?.contains("OpenGL ES 3.0 context could not be created") == true) {
             // Older emulated Android devices may not support OpenGL ES 3.0 properly
             openGlNotSupportedCallback()
         }
-        Timber.e(e)
     }
 }

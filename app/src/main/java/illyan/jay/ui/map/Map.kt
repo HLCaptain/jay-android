@@ -18,7 +18,9 @@
 
 package illyan.jay.ui.map
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.view.View
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -78,12 +80,14 @@ import illyan.jay.LocalMapboxNotSupported
 import illyan.jay.R
 import illyan.jay.ui.components.PreviewAll
 import illyan.jay.ui.poi.model.Place
+import timber.log.Timber
 
 val BmeK = Place(
     latitude = 47.481491,
     longitude = 19.056219
 )
 
+@SuppressLint("IncorrectNumberOfArgumentsInExpression")
 val puckScaleExpression = interpolate {
     linear()
     zoom()
@@ -178,13 +182,19 @@ private fun MapboxMapContainer(
     val statusBarHeight = LocalDensity.current.run { WindowInsets.statusBars.getTop(this) }
     val fixedStatusBarHeight = rememberSaveable(statusBarHeight) { statusBarHeight }
     val isMapNotSupported = LocalMapboxNotSupported.current
+    LaunchedEffect(isMapNotSupported) {
+        Timber.d("MapboxMapContainer: isMapNotSupported: $isMapNotSupported")
+    }
     Crossfade(
         modifier = modifier,
         targetState = isMapNotSupported,
         label = "MapboxMap"
     ) { notSupported ->
         if (notSupported) {
-            LaunchedEffect(Unit) { onMapFullyLoaded(map) }
+            LaunchedEffect(Unit) {
+                onMapFullyLoaded(map)
+                map.visibility = View.GONE
+            }
             MapsNotSupportedCard(modifier = modifier)
         } else {
             AndroidView(
