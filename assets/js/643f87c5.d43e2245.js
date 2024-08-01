@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[9],{29:a=>{a.exports=JSON.parse('[{"label":"Machine Learning","permalink":"/jay-android/blog/tags/machine-learning","count":1},{"label":"Road to 1.0","permalink":"/jay-android/blog/tags/road-to-1-0","count":1},{"label":"Hello World!","permalink":"/jay-android/blog/tags/hello-world","count":1}]')}}]);

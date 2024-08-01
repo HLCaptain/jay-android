@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[535],{5641:e=>{e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Machine Learning Update","permalink":"/jay-android/blog/ml-update"},{"title":"Welcome","permalink":"/jay-android/blog/welcome"}]}')}}]);

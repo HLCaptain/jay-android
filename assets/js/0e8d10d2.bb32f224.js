@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[697],{3773:a=>{a.exports=JSON.parse('{"label":"Road to 1.0","permalink":"/jay-android/blog/tags/road-to-1-0","allTagsPath":"/jay-android/blog/tags","count":1}')}}]);

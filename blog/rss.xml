@@ -4,10 +4,20 @@
         <title>Jay Blog</title>
         <link>https://hlcaptain.github.io/jay-android/blog</link>
         <description>Jay Blog</description>
-        <lastBuildDate>Wed, 22 Mar 2023 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 01 Aug 2024 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[Machine Learning Update]]></title>
+            <link>https://hlcaptain.github.io/jay-android/blog/ml-update</link>
+            <guid>https://hlcaptain.github.io/jay-android/blog/ml-update</guid>
+            <pubDate>Thu, 01 Aug 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[I finally had the time to finish this huge update, what I started developing more than a year ago: on-device machine learning. Users now can analyze device sensor data with an on-device machine learning algorithm to predict driver aggression.]]></description>
+            <content:encoded><![CDATA[<p>I finally had the time to finish this huge update, what I started developing more than a year ago: <strong>on-device machine learning</strong>. Users now can analyze device sensor data with an on-device machine learning algorithm to predict <strong>driver aggression</strong>.</p><p>The ML model can be downloaded via <a href="https://firebase.google.com/products/ml" target="_blank" rel="noopener noreferrer">Firebase ML service</a>. The development of the <strong>model</strong> is also fully <strong>open-sourced</strong> and available under the <a href="https://github.com/HLCaptain/hawk-ai" target="_blank" rel="noopener noreferrer">Hawk AI GitHub repository</a> with scripts to train and convert the model to the TensorFlow Lite format.</p><h2 class="anchor anchorWithStickyNavbar_LWe7" id="plans">Plans<a href="#plans" class="hash-link" aria-label="Direct link to Plans" title="Direct link to Plans">​</a></h2><ul><li>Rework session screen with better data visualization.</li></ul><p>For the foreseeable future, I don't plan to add more core features to the app, but when something comes up, I will resolve any issues.</p><p>I hope this will change in the future, but for now, enjoy what I consider a solid open-source base for Android application development.</p>]]></content:encoded>
+            <category>Machine Learning</category>
+            <category>Road to 1.0</category>
+        </item>
         <item>
             <title><![CDATA[Welcome]]></title>
             <link>https://hlcaptain.github.io/jay-android/blog/welcome</link>
