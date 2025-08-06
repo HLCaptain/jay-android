@@ -23,8 +23,8 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.WriteBatch
-import com.google.firebase.firestore.ktx.snapshots
-import com.google.firebase.firestore.ktx.toObjects
+import com.google.firebase.firestore.snapshots
+import com.google.firebase.firestore.toObjects
 import illyan.jay.data.firestore.model.FirestoreSensorEvents
 import illyan.jay.data.firestore.toChunkedFirebaseSensorEvents
 import illyan.jay.data.firestore.toDomainSensorEvents

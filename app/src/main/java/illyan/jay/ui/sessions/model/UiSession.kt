@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.sessions.model
 
 import com.google.android.gms.maps.model.LatLng
@@ -23,13 +25,17 @@ import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sphericalPathLength
 import java.time.ZonedDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 data class UiSession(
     val uuid: String,
-    val startDateTime: ZonedDateTime,
-    val endDateTime: ZonedDateTime?,
+    val startDateTime: Instant,
+    val endDateTime: Instant?,
     val startCoordinate: LatLng?,
     val endCoordinate: LatLng?,
     val totalDistance: Double?,
@@ -52,7 +58,7 @@ fun DomainSession.toUiModel(
     locations: List<DomainLocation>,
     currentClientUUID: String,
     isLocal: Boolean = clientUUID == currentClientUUID,
-    currentTime: ZonedDateTime = ZonedDateTime.now(),
+    currentTime: Instant = Clock.System.now(),
     isSynced: Boolean = false,
 ): UiSession {
     return toUiModel(
@@ -68,7 +74,7 @@ fun DomainSession.toUiModel(
     totalDistance: Double? = distance?.toDouble(),
     currentClientUUID: String,
     isLocal: Boolean = clientUUID == currentClientUUID,
-    currentTime: ZonedDateTime = ZonedDateTime.now(),
+    currentTime: Instant = Clock.System.now(),
     isSynced: Boolean = false,
 ): UiSession {
     return UiSession(
@@ -81,11 +87,9 @@ fun DomainSession.toUiModel(
         startLocationName = startLocationName,
         endLocationName = endLocationName,
         duration = if (endDateTime != null) {
-            (endDateTime!!.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
-                .milliseconds
+            (endDateTime!! - startDateTime)
         } else {
-            (currentTime.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
-                .milliseconds
+            (currentTime - startDateTime)
         },
         isSynced = isSynced,
         isLocal = isLocal,

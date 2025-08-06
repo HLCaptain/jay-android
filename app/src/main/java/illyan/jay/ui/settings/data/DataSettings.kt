@@ -75,8 +75,7 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun DataSettingsDialogScreen(
     viewModel: DataSettingsViewModel = hiltViewModel(),

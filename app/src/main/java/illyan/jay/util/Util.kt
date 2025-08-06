@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */ // ktlint-disable filename
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.util
 
 import android.os.SystemClock
@@ -31,9 +33,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material.placeholder
-import com.google.accompanist.placeholder.material.shimmer
+import com.eygraber.compose.placeholder.PlaceholderHighlight
+import com.eygraber.compose.placeholder.material3.placeholder
+import com.eygraber.compose.placeholder.material3.shimmer
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Timestamp
@@ -42,7 +44,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.WriteBatch
-import com.google.firebase.firestore.ktx.snapshots
+import com.google.firebase.firestore.snapshots
 import com.google.maps.android.SphericalUtil
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import com.mapbox.geojson.Point
@@ -54,11 +56,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Sensor timestamp to absolute time.
@@ -69,8 +71,8 @@ import kotlin.time.Duration.Companion.seconds
  * counted from Instant.EPOCH.
  * @return timestamp counted from Instant.EPOCH.
  */
-fun sensorTimestampToAbsoluteTime(timestamp: Long) = Instant.now()
-    .toEpochMilli() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1.seconds.inWholeMicroseconds
+fun sensorTimestampToAbsoluteTime(timestamp: Long) = Clock.System.now()
+    .toEpochMilliseconds() - (SystemClock.elapsedRealtimeNanos() - timestamp) / 1.seconds.inWholeMicroseconds
 
 fun Duration.format(
     separator: String = " ",
@@ -144,18 +146,12 @@ fun GeoPoint.toLatLng() = LatLng(latitude, longitude)
 
 fun Point.toLatLng() = LatLng(latitude(), longitude())
 
-fun Instant.toTimestamp() = Timestamp(epochSecond, nano)
+fun Instant.toTimestamp() = Timestamp(epochSeconds, nanosecondsOfSecond)
 
-fun Instant.toZonedDateTime(): ZonedDateTime = toTimestamp().toZonedDateTime()
-
-fun ZonedDateTime.toTimestamp() = toInstant().toTimestamp()
-
-fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
-
-fun Timestamp.toZonedDateTime(): ZonedDateTime = toInstant().atZone(ZoneOffset.UTC)
+fun Timestamp.toKotlinInstant() = Instant.fromEpochSeconds(seconds, nanoseconds)
 
 fun List<DomainLocation>.sphericalPathLength() = sortedBy {
-    it.zonedDateTime.toInstant().toEpochMilli()
+    it.timestamp.toEpochMilliseconds()
 }.map { it.latLng }.sphericalPathLength()
 
 fun Modifier.textPlaceholder(

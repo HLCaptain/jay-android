@@ -25,7 +25,6 @@ import com.google.firebase.ml.modeldownloader.DownloadType
 import illyan.jay.data.firebaseml.datasource.FirebaseMLDataSource
 import illyan.jay.data.sensor.SensorFusion
 import illyan.jay.di.CoroutineScopeIO
-import illyan.jay.util.toZonedDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,11 +35,12 @@ import org.tensorflow.lite.Interpreter
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.time.Instant
-import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 @Singleton
 class ModelInteractor @Inject constructor(
     private val firebaseMLDataSource: FirebaseMLDataSource,
@@ -75,10 +75,10 @@ class ModelInteractor @Inject constructor(
     suspend fun getFilteredDriverAggression(
         modelName: String,
         sessionUUID: String
-    ): Flow<Map<ZonedDateTime, Double>> {
+    ): Flow<Map<Instant, Double>> {
         Timber.d("Filtering aggression values for session ${sessionUUID.take(4)}")
-        val flow = MutableStateFlow<Map<ZonedDateTime, Double>>(emptyMap())
-        val outputMap = mutableMapOf<ZonedDateTime, Double>()
+        val flow = MutableStateFlow<Map<Instant, Double>>(emptyMap())
+        val outputMap = mutableMapOf<Instant, Double>()
         downloadedModels.first().firstOrNull { it.name == modelName }?.let { model ->
             val modelFile = model.file
             if (modelFile != null) {
@@ -139,7 +139,7 @@ class ModelInteractor @Inject constructor(
                                     }
                                     Timber.v("Model outputs: ${outputs.distinct().joinToString()}")
                                     chunk.forEach { advancedImuSensorData ->
-                                        outputMap[Instant.ofEpochMilli(advancedImuSensorData.timestamp).toZonedDateTime()] = outputs[0].toDouble()
+                                        outputMap[Instant.fromEpochMilliseconds(advancedImuSensorData.timestamp)] = outputs[0].toDouble()
                                     }
                                     flow.update { outputMap }
                                 }

@@ -17,7 +17,6 @@
  */
 
 @file:OptIn(
-    ExperimentalMaterialApi::class,
     ExperimentalMaterial3Api::class,
     ExperimentalPermissionsApi::class
 )
@@ -38,10 +37,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -70,24 +66,23 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.BottomSheetScaffold
-import androidx.compose.material.BottomSheetState
-import androidx.compose.material.BottomSheetValue
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.rememberBottomSheetScaffoldState
-import androidx.compose.material.rememberBottomSheetState
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -131,7 +126,6 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.isGranted
@@ -142,14 +136,13 @@ import com.mapbox.maps.MapView
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
-import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.generated.NavGraphs
+import com.ramcosta.composedestinations.rememberNavHostEngine
 import illyan.jay.MainActivity
 import illyan.jay.R
-import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.map.BmeK
@@ -173,11 +166,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@RootNavGraph(start = true)
-@NavGraph
-annotation class HomeNavGraph(
-    val start: Boolean = false,
-)
+@NavGraph<RootGraph>(start = true)
+annotation class HomeNavGraph
 
 val RoundedCornerRadius = 24.dp
 val SearchBarSpaceBetween = 8.dp
@@ -200,7 +190,7 @@ const val BottomSheetPartialMaxFraction = 1f
 
 private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
 val mapView = _mapView.asStateFlow()
-lateinit var sheetState: BottomSheetState
+lateinit var sheetState: SheetState
 var isSearching: Boolean = false
 
 private val _bottomSheetFraction = MutableStateFlow(0f)
@@ -276,7 +266,7 @@ fun tryFlyToLocation(
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
     onFly: () -> Unit = {},
 ) {
-    if (sheetState.progress == 1f && // animation is not running
+    if (sheetState.currentValue == sheetState.targetValue && // animation is not running
         sheetState.requireOffset() >= 10f &&
         extraCondition()
     ) {
@@ -302,7 +292,7 @@ fun tryFlyToPath(
         Timber.e(IllegalArgumentException("Path is empty, flying cancelled"))
         return
     }
-    val canFly = sheetState.progress == 1f &&
+    val canFly = sheetState.currentValue == sheetState.targetValue &&
             sheetState.requireOffset() >= 10f &&
             extraCondition()
     if (canFly) {
@@ -324,19 +314,19 @@ fun tryFlyToPath(
 
 fun onSearchBarDrag(
     coroutineScope: CoroutineScope,
-    bottomSheetState: BottomSheetState,
+    bottomSheetState: SheetState,
     enabled: Boolean = true,
     onEnabledChange: (Boolean) -> Unit = {},
 ) {
     // By dragging the search bar, we can toggle bottom sheet state
     if (enabled) {
         bottomSheetState.apply {
-            if (isCollapsed) {
+            if (!isVisible) {
                 onEnabledChange(false)
                 coroutineScope.launch { expand() }
-            } else if (isExpanded) {
+            } else if (hasExpandedState) {
                 onEnabledChange(false)
-                coroutineScope.launch { collapse() }
+                coroutineScope.launch { hide() }
             }
         }
         Timber.d("Search bar is dragged!")
@@ -344,13 +334,13 @@ fun onSearchBarDrag(
 }
 
 fun calculateCornerRadius(
-    bottomSheetState: BottomSheetState,
+    bottomSheetState: SheetState,
     maxCornerRadius: Dp = RoundedCornerRadius,
     minCornerRadius: Dp = 0.dp,
     threshold: Float = BottomSheetPartialExpendedFraction,
     fraction: Float = 0f,
 ): Dp {
-    return if (bottomSheetState.isCollapsed) {
+    return if (!bottomSheetState.isVisible) {
         maxCornerRadius
     } else {
         val max = BottomSheetPartialMaxFraction
@@ -407,8 +397,7 @@ fun refreshCameraPadding() {
     }
 }
 
-@HomeNavGraph(start = true)
-@Destination
+@Destination<HomeNavGraph>(start = true)
 @Composable
 fun HomeScreen(
     context: Context = LocalContext.current,
@@ -469,7 +458,7 @@ fun HomeScreen(
             }
     ) {
         val (searchBar, scaffold) = createRefs()
-        val bottomSheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Expanded)
+        val bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.Expanded)
         val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
         sheetState = bottomSheetState
         var isTextFieldFocused by remember { mutableStateOf(false) }
@@ -486,12 +475,12 @@ fun HomeScreen(
         }
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
         val softwareKeyboardController = LocalSoftwareKeyboardController.current
-        val sheetCollapsing = bottomSheetState.isCollapsed
+        val sheetCollapsing = bottomSheetState.targetValue == SheetValue.Hidden
         val focusManager = LocalFocusManager.current
         BackPressHandler {
             onHomeBackPress(isTextFieldFocused, focusManager, context)
         }
-        LaunchedEffect(bottomSheetState.progress) { refreshCameraPadding() }
+        LaunchedEffect(bottomSheetState.currentValue) { refreshCameraPadding() }
         LaunchedEffect(sheetCollapsing) {
             onSheetStateChanged(
                 isTextFieldFocused,
@@ -620,7 +609,7 @@ fun HomeScreen(
                 ) {
                     refreshCameraPadding()
                     // Permissions probably granted because there is a location to focus on
-                    if (bottomSheetState.isExpanded &&
+                    if (bottomSheetState.hasExpandedState &&
                         !didLoadInLocation &&
                         cameraOptionsBuilder != null &&
                         initialLocationLoaded &&
@@ -644,7 +633,7 @@ fun HomeScreen(
                         }
                     }
                     // Permissions not granted
-                    if (bottomSheetState.isExpanded &&
+                    if (bottomSheetState.hasExpandedState &&
                         !didLoadInLocationWithoutPermissions &&
                         !locationPermissionState.status.isGranted &&
                         isMapVisible &&
@@ -739,7 +728,7 @@ private fun onHomeBackPress(
     context: Context,
 ) {
     Timber.d("Handling back press from Home!")
-    if (sheetState.isCollapsed) (context as MainActivity).moveTaskToBack(false)
+    if (!sheetState.isVisible) (context as MainActivity).moveTaskToBack(false)
     if (isTextFieldFocused) {
         // Remove the focus from the textfield
         focusManager.clearFocus()
@@ -750,10 +739,10 @@ private fun onHomeBackPress(
 
 private suspend fun onSheetStateChanged(
     isTextFieldFocused: Boolean,
-    bottomSheetState: BottomSheetState,
+    bottomSheetState: SheetState,
     softwareKeyboardController: SoftwareKeyboardController?,
 ) {
-    if (bottomSheetState.isCollapsed) {
+    if (!bottomSheetState.isVisible) {
         // Close the keyboard when closing the bottom sheet
         if (isTextFieldFocused) {
             // If searching right now, expand bottom sheet
@@ -768,7 +757,7 @@ private suspend fun onSheetStateChanged(
 fun BottomSearchBar(
     modifier: Modifier = Modifier,
     onDrag: (Float) -> Unit = {},
-    bottomSheetState: BottomSheetState? = null,
+    bottomSheetState: SheetState? = null,
     onTextFieldFocusChanged: (FocusState) -> Unit = {},
     onSearchQueryChanged: (String) -> Unit = {},
     onSearchQueried: (String) -> Unit = {},
@@ -792,7 +781,7 @@ fun BottomSearchBar(
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    val sheetCollapsing by remember { derivedStateOf { bottomSheetState?.isCollapsed ?: false } }
+    val sheetCollapsing by remember { derivedStateOf { bottomSheetState?.isVisible == false } }
     LaunchedEffect(sheetCollapsing) {
         if (sheetCollapsing) {
             launch {
@@ -810,8 +799,7 @@ fun BottomSearchBar(
     var searchFieldFocusState by rememberSaveable { mutableStateOf<FocusState?>(null) }
     // We should help gestures when not searching
     // and bottomSheet is collapsed or collapsing
-    val shouldHelpGestures = searchFieldFocusState?.isFocused == false &&
-            bottomSheetState?.isCollapsed == true
+    val shouldHelpGestures = searchFieldFocusState?.isFocused == false && bottomSheetState?.isVisible == false
     ElevatedCard(
         modifier = modifier
             .then(if (shouldHelpGestures) draggable else Modifier)
@@ -969,7 +957,7 @@ fun BottomSheetScreen(
         }
         val screenHeight by _screenHeight.collectAsStateWithLifecycle()
         val density = LocalDensity.current
-        LaunchedEffect(sheetState.progress) {
+        LaunchedEffect(sheetState.currentValue) {
             val offset = sheetState.requireOffset()
             val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
             _bottomSheetFraction.update { bottomSheetFraction }
@@ -995,7 +983,7 @@ fun BottomSheetScreen(
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun SheetNavHost(
     modifier: Modifier = Modifier,
@@ -1023,7 +1011,7 @@ private fun SheetNavHost(
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
                 val height = placeable.measuredHeight.toDp()
-                if (sheetState.isExpanded &&
+                if (sheetState.hasExpandedState &&
                     height >= sheetMinHeight &&
                     height != sheetState.getOffsetAsDp(density)
                 ) {
@@ -1034,15 +1022,15 @@ private fun SheetNavHost(
                 }
             }
             .alpha(alpha = sheetAlpha),
-        engine = rememberAnimatedNavHostEngine(
-            rootDefaultAnimations = RootNavGraphDefaultAnimations(
-                enterTransition = {
-                    slideInVertically(tween(200)) + fadeIn(tween(200))
-                },
-                exitTransition = {
-                    slideOutVertically(tween(200)) + fadeOut(tween(200))
-                }
-            )
+        engine = rememberNavHostEngine(
+//            rootDefaultAnimations = RootNavGraphDefaultAnimations(
+//                enterTransition = {
+//                    slideInVertically(tween(200)) + fadeIn(tween(200))
+//                },
+//                exitTransition = {
+//                    slideOutVertically(tween(200)) + fadeOut(tween(200))
+//                }
+//            )
         )
     )
 }
@@ -1060,7 +1048,7 @@ private fun SearchNavHost(
     ) {
         if (isSearching) {
             coroutineScope.launch {
-                sheetState.collapse()
+                sheetState.hide()
             }
         }
     }
@@ -1095,6 +1083,6 @@ private fun SearchNavHost(
     )
 }
 
-fun BottomSheetState.getOffsetAsDp(density: Float): Dp {
+fun SheetState.getOffsetAsDp(density: Float): Dp {
     return (try { requireOffset() } catch (e: Exception) { 0f } / density).dp
 }

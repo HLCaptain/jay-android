@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.session.model
 
 import com.google.android.gms.maps.model.LatLng
@@ -23,13 +25,16 @@ import illyan.jay.domain.model.DomainLocation
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sphericalPathLength
 import java.time.ZonedDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 data class UiSession(
     val uuid: String,
-    val startDateTime: ZonedDateTime,
-    val endDateTime: ZonedDateTime?,
+    val startDateTime: Instant,
+    val endDateTime: Instant?,
     val startCoordinate: LatLng?,
     val endCoordinate: LatLng?,
     val totalDistance: Double?,
@@ -40,7 +45,7 @@ data class UiSession(
 
 fun DomainSession.toUiModel(
     locations: List<DomainLocation>? = null,
-    currentTime: ZonedDateTime = ZonedDateTime.now(),
+    currentTime: Instant = Clock.System.now(),
 ): UiSession {
     return toUiModel(
         locations?.sphericalPathLength(),
@@ -50,7 +55,7 @@ fun DomainSession.toUiModel(
 
 fun DomainSession.toUiModel(
     totalDistance: Double?,
-    currentTime: ZonedDateTime = ZonedDateTime.now(),
+    currentTime: Instant = Clock.System.now(),
 ): UiSession {
     return UiSession(
         uuid = uuid,
@@ -62,11 +67,9 @@ fun DomainSession.toUiModel(
         startLocationName = startLocationName,
         endLocationName = endLocationName,
         duration = if (endDateTime != null) {
-            (endDateTime!!.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
-                .milliseconds
+            (endDateTime!! - startDateTime)
         } else {
-            (currentTime.toInstant().toEpochMilli() - startDateTime.toInstant().toEpochMilli())
-                .milliseconds
+            (currentTime - startDateTime)
         }
     )
 }

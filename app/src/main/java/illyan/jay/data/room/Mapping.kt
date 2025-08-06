@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.data.room
 
 import android.hardware.SensorEvent
@@ -33,16 +35,14 @@ import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.sensorTimestampToAbsoluteTime
-import illyan.jay.util.toZonedDateTime
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 // Session
 fun RoomSession.toDomainModel() = DomainSession(
     uuid = uuid,
-    startDateTime = Instant.ofEpochMilli(startDateTime).atZone(ZoneOffset.UTC),
-    endDateTime = endDateTime?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC) },
+    startDateTime = Instant.fromEpochMilliseconds(startDateTime),
+    endDateTime = endDateTime?.let { Instant.fromEpochMilliseconds(it) },
     startLocationLatitude = startLocationLatitude,
     startLocationLongitude = startLocationLongitude,
     endLocationLatitude = endLocationLatitude,
@@ -54,10 +54,11 @@ fun RoomSession.toDomainModel() = DomainSession(
     clientUUID = clientUUID,
 )
 
+@OptIn(ExperimentalTime::class)
 fun DomainSession.toRoomModel() = RoomSession(
     uuid = uuid,
-    startDateTime = startDateTime.toInstant().toEpochMilli(),
-    endDateTime = endDateTime?.toInstant()?.toEpochMilli(),
+    startDateTime = startDateTime.toEpochMilliseconds(),
+    endDateTime = endDateTime?.toEpochMilliseconds(),
     startLocationLatitude = startLocationLatitude,
     startLocationLongitude = startLocationLongitude,
     endLocationLatitude = endLocationLatitude,
@@ -72,7 +73,7 @@ fun DomainSession.toRoomModel() = RoomSession(
 // Location
 fun RoomLocation.toDomainModel() = DomainLocation(
     latitude = latitude,
-    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
+    timestamp = Instant.fromEpochMilliseconds(time),
     longitude = longitude,
     speed = speed,
     sessionUUID = sessionUUID,
@@ -86,7 +87,7 @@ fun RoomLocation.toDomainModel() = DomainLocation(
 
 fun DomainLocation.toRoomModel() = RoomLocation(
     sessionUUID = sessionUUID,
-    time = zonedDateTime.toInstant().toEpochMilli(),
+    time = timestamp.toEpochMilliseconds(),
     latitude = latitude,
     longitude = longitude,
     speed = speed,
@@ -103,7 +104,7 @@ fun Location.toDomainModel(
 ): DomainLocation {
     val domainLocation = DomainLocation(
         sessionUUID = sessionUUID,
-        zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
+        timestamp = Instant.fromEpochMilliseconds(time),
         latitude = latitude.toFloat(),
         longitude = longitude.toFloat()
     )
@@ -123,7 +124,7 @@ fun Location.toDomainModel(
 
 // Rotation
 fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
-    zonedDateTime = Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC),
+    timestamp = Instant.fromEpochMilliseconds(time),
     sessionUUID = sessionUUID,
     accuracy = accuracy,
     x = x,
@@ -134,7 +135,7 @@ fun RoomSensorEvent.toDomainModel() = DomainSensorEvent(
 
 fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
     sessionUUID = sessionUUID,
-    time = zonedDateTime.toInstant().toEpochMilli(),
+    time = timestamp.toEpochMilliseconds(),
     type = type,
     accuracy = accuracy,
     x = x,
@@ -145,7 +146,7 @@ fun DomainSensorEvent.toRoomModel() = RoomSensorEvent(
 // Sensors
 fun SensorEvent.toDomainModel(sessionUUID: String) = DomainSensorEvent(
     sessionUUID = sessionUUID,
-    zonedDateTime = Instant.ofEpochMilli(sensorTimestampToAbsoluteTime(timestamp)).atZone(ZoneOffset.UTC),
+    timestamp = Instant.fromEpochMilliseconds(sensorTimestampToAbsoluteTime(timestamp)),
     type = sensor.type.toByte(),
     accuracy = accuracy.toByte(),
     x = values[0],
@@ -161,14 +162,14 @@ fun RoomPreferences.toDomainModel() = DomainPreferences(
     showAds = showAds,
     theme = theme,
     dynamicColorEnabled = dynamicColorEnabled,
-    lastUpdate = Instant.ofEpochMilli(lastUpdate).toZonedDateTime(),
-    lastUpdateToAnalytics = lastUpdateToAnalytics?.let { return@let Instant.ofEpochMilli(it).toZonedDateTime() },
+    lastUpdate = Instant.fromEpochMilliseconds(lastUpdate),
+    lastUpdateToAnalytics = lastUpdateToAnalytics?.let { return@let Instant.fromEpochMilliseconds(it) },
     shouldSync = shouldSync,
 )
 
 fun DomainPreferences.toRoomModel(
     userUUID: String,
-    lastUpdate: ZonedDateTime = this.lastUpdate
+    lastUpdate: Instant = this.lastUpdate
 ) = RoomPreferences(
     userUUID = userUUID,
     analyticsEnabled = analyticsEnabled,
@@ -176,8 +177,8 @@ fun DomainPreferences.toRoomModel(
     showAds = showAds,
     theme = theme,
     dynamicColorEnabled = dynamicColorEnabled,
-    lastUpdate = lastUpdate.toInstant().toEpochMilli(),
-    lastUpdateToAnalytics = lastUpdateToAnalytics?.toInstant()?.toEpochMilli(),
+    lastUpdate = lastUpdate.toEpochMilliseconds(),
+    lastUpdateToAnalytics = lastUpdateToAnalytics?.toEpochMilliseconds(),
     shouldSync = shouldSync,
 )
 

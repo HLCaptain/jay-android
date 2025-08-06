@@ -85,8 +85,7 @@ fun calculatePaddingOffset(): PaddingValues {
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
-@MenuNavGraph
-@Destination
+@Destination<MenuNavGraph>
 @Composable
 fun FreeDrive(
     viewModel: FreeDriveViewModel = hiltViewModel(),

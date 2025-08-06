@@ -25,6 +25,7 @@ import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.Crossfade
@@ -39,7 +40,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.LightMode
@@ -71,9 +71,13 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
-import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.annotation.NavHostGraph
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.generated.destinations.FreeDriveDestination
+import com.ramcosta.composedestinations.generated.destinations.SessionsDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.BuildConfig
@@ -81,19 +85,15 @@ import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.domain.model.Theme
 import illyan.jay.ui.components.PreviewAccessibility
-import illyan.jay.ui.destinations.FreeDriveDestination
-import illyan.jay.ui.destinations.SessionsDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.ui.theme.LocalTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@RootNavGraph
-@NavGraph
+@NavHostGraph
 annotation class MenuNavGraph(
     val start: Boolean = false,
 )
@@ -111,14 +111,14 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     bottom =  RoundedCornerRadius + MenuItemPadding * 2
 )
 
-@MenuNavGraph(start = true)
-@Destination
+@Destination<MenuNavGraph>(start = true)
 @Composable
 fun MenuScreen(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: MenuViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val theme by viewModel.theme.collectAsStateWithLifecycle()
     BackPressHandler {
         Timber.d("Intercepted back press!")
         (context as Activity).moveTaskToBack(false)
@@ -137,11 +137,13 @@ fun MenuScreen(
             destinationsNavigator.navigate(SessionsDestination)
         },
         onToggleTheme = viewModel::toggleTheme,
+        theme = theme,
     )
 }
 
 @Composable
 fun MenuContent(
+    theme: Theme = Theme.System,
     onNavigateToBme: () -> Unit = {},
     onFreeDrive: () -> Unit = {},
     onSessions: () -> Unit = {},
@@ -187,7 +189,6 @@ fun MenuContent(
             )
         }
         item {
-            val theme = LocalTheme.current
             MenuItemCard(
                 title = stringResource(R.string.toggle_theme),
                 icon = when (theme) {
@@ -277,7 +278,6 @@ fun BackPressHandler(
 ) {
     val currentOnBackPressed by rememberUpdatedState(newValue = onBackPressed)
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    val lifecycleOwner = LocalLifecycleOwner.current
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val backInvokedCallback = remember {
@@ -286,7 +286,7 @@ fun BackPressHandler(
                 currentOnBackPressed()
             }
         }
-        val activity = LocalContext.current as? Activity
+        val activity = LocalActivity.current
         val backInvokedDispatcher = activity?.onBackInvokedDispatcher
         DisposableEffect(backInvokedDispatcher, customDisposableEffectKey) {
             if (isEnabled()) {
@@ -310,7 +310,7 @@ fun BackPressHandler(
         }
         DisposableEffect(backPressedDispatcher, customDisposableEffectKey) {
             if (isEnabled()) {
-                backPressedDispatcher?.addCallback(lifecycleOwner, backCallback)
+                backPressedDispatcher?.addCallback(backCallback)
             }
             onDispose {
                 backCallback.remove()
@@ -319,7 +319,7 @@ fun BackPressHandler(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SheetScreenBackPressHandler(
     customDisposableEffectKey: Any? = null,
@@ -336,12 +336,12 @@ fun SheetScreenBackPressHandler(
         onBackPressed()
         Timber.d("Handling back press in Navigation!")
         // If searching and back is pressed, close the sheet instead of the app
-        if (sheetState.isCollapsed) (context as MainActivity).moveTaskToBack(false)
+        if (!sheetState.isVisible) (context as MainActivity).moveTaskToBack(false)
         if (isSearching) {
             coroutineScope.launch {
                 // This call will automatically unfocus the textfield
                 // because BottomSearchBar listens on sheet changes.
-                sheetState.collapse()
+                sheetState.hide()
             }
         } else {
             destinationsNavigator.navigateUp()

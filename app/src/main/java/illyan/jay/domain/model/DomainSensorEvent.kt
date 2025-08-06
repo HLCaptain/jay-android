@@ -18,11 +18,12 @@
 
 package illyan.jay.domain.model
 
-import java.time.ZonedDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-data class DomainSensorEvent(
+data class DomainSensorEvent @OptIn(ExperimentalTime::class) constructor(
     val sessionUUID: String,
-    val zonedDateTime: ZonedDateTime,
+    val timestamp: Instant,
     val type: Byte,
     val accuracy: Byte, // enum
     val x: Float,

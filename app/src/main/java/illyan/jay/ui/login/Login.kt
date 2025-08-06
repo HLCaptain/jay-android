@@ -48,8 +48,7 @@ import illyan.jay.ui.profile.LocalDialogDismissRequest
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun LoginDialogScreen(
     viewModel: LoginViewModel = hiltViewModel(),

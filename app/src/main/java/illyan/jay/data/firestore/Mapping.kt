@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class, ExperimentalSerializationApi::class)
+
 package illyan.jay.data.firestore
 
 import android.os.Parcel
@@ -39,8 +41,8 @@ import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.DomainSensorEvent
 import illyan.jay.domain.model.DomainSession
 import illyan.jay.util.toGeoPoint
+import illyan.jay.util.toKotlinInstant
 import illyan.jay.util.toTimestamp
-import illyan.jay.util.toZonedDateTime
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -57,7 +59,9 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 fun DomainSession.toFirestoreModel() = FirestoreSession(
     uuid = uuid,
     startDateTime = startDateTime.toTimestamp(),
@@ -74,8 +78,8 @@ fun FirestoreSession.toDomainModel(
     ownerUUID: String
 ) = DomainSession(
     uuid = uuid,
-    startDateTime = startDateTime.toZonedDateTime(),
-    endDateTime = endDateTime?.toZonedDateTime(),
+    startDateTime = startDateTime.toKotlinInstant(),
+    endDateTime = endDateTime?.toKotlinInstant(),
     startLocationName = startLocationName,
     endLocationName = endLocationName,
     clientUUID = clientUUID,
@@ -96,8 +100,8 @@ fun FirestoreUserPreferences.toDomainModel(
     showAds = showAds,
     theme = theme,
     dynamicColorEnabled = dynamicColorEnabled,
-    lastUpdate = lastUpdate.toZonedDateTime(),
-    lastUpdateToAnalytics = lastUpdateToAnalytics?.toZonedDateTime(),
+    lastUpdate = lastUpdate.toKotlinInstant(),
+    lastUpdateToAnalytics = lastUpdateToAnalytics?.toKotlinInstant(),
     shouldSync = true,
 )
 
@@ -118,7 +122,7 @@ fun List<DomainLocation>.toPath(
 ): FirestorePath {
     val pathLocations = map {
         FirestoreLocation(
-            timestamp = it.zonedDateTime.toTimestamp(),
+            timestamp = it.timestamp.toTimestamp(),
             latitude = it.latitude,
             longitude = it.longitude,
             speed = it.speed,
@@ -162,7 +166,7 @@ fun List<DomainSensorEvent>.toFirebaseSensorEvents(
 ): FirestoreSensorEvents {
     val events = map {
         FirestoreSensorEvent(
-            timestamp = it.zonedDateTime.toTimestamp(),
+            timestamp = it.timestamp.toTimestamp(),
             accuracy = it.accuracy.toInt(),
             type = it.type.toInt(),
             x = it.x,
@@ -185,7 +189,7 @@ fun List<DomainSensorEvent>.toFirebaseSensorEvents(
                 ProtoBuf.encodeToByteArray(
                     data.map {
                         FirestoreSensorEvent(
-                            timestamp = it.zonedDateTime.toTimestamp(),
+                            timestamp = it.timestamp.toTimestamp(),
                             accuracy = it.accuracy.toInt(),
                             type = it.type.toInt(),
                             x = it.x,
@@ -197,11 +201,9 @@ fun List<DomainSensorEvent>.toFirebaseSensorEvents(
             },
             dataSizeHeuristic = { data ->
                 val startMilli = data
-                    .minBy { it.zonedDateTime.toInstant().toEpochMilli() }
-                    .zonedDateTime.toInstant().toEpochMilli()
+                    .minOf { it.timestamp.toEpochMilliseconds() }
                 val endMilli = data
-                    .maxBy { it.zonedDateTime.toInstant().toEpochMilli() }
-                    .zonedDateTime.toInstant().toEpochMilli()
+                    .maxOf { it.timestamp.toEpochMilliseconds() }
                 val durationInMinutes = (endMilli - startMilli).milliseconds.inWholeMinutes
                 "$durationInMinutes minutes of sensor data"
             }
@@ -254,7 +256,7 @@ private fun testCompressions(domainLocations: List<DomainLocation>) {
                 ProtoBuf.encodeToByteArray(
                     data.map {
                         LocationWithoutSessionIdOptimized(
-                            zonedDateTime = it.zonedDateTime.toTimestamp(),
+                            zonedDateTime = it.timestamp.toTimestamp(),
                             latitude = it.latitude,
                             longitude = it.longitude,
                             speed = it.speed,
@@ -272,7 +274,7 @@ private fun testCompressions(domainLocations: List<DomainLocation>) {
                 ProtoBuf.encodeToByteArray(
                     data.map {
                         LocationWithoutSessionId(
-                            zonedDateTime = it.zonedDateTime.toTimestamp(),
+                            zonedDateTime = it.timestamp.toTimestamp(),
                             latitude = it.latitude,
                             longitude = it.longitude,
                             speed = it.speed,
@@ -290,7 +292,7 @@ private fun testCompressions(domainLocations: List<DomainLocation>) {
                 ProtoBuf.encodeToByteArray(
                     data.map {
                         LocationWithoutSessionIdUnoptimized(
-                            zonedDateTime = it.zonedDateTime.toTimestamp(),
+                            zonedDateTime = it.timestamp.toTimestamp(),
                             latitude = it.latitude.toDouble(),
                             longitude = it.longitude.toDouble(),
                             speed = it.speed.toDouble(),
@@ -330,11 +332,9 @@ private fun testCompressions(domainLocations: List<DomainLocation>) {
         ),
         dataSizeHeuristic = { locations ->
             val startMilli = locations
-                .minBy { it.zonedDateTime.toInstant().toEpochMilli() }
-                .zonedDateTime.toInstant().toEpochMilli()
+                .minOf { it.timestamp.toEpochMilliseconds() }
             val endMilli = locations
-                .maxBy { it.zonedDateTime.toInstant().toEpochMilli() }
-                .zonedDateTime.toInstant().toEpochMilli()
+                .maxOf { it.timestamp.toEpochMilliseconds() }
             val durationInMinutes = (endMilli - startMilli).milliseconds.inWholeMinutes
             "$durationInMinutes minutes of location data"
         }
@@ -436,14 +436,14 @@ fun List<DomainSensorEvent>.toChunkedFirebaseSensorEvents(
     thresholdInMinutes: Int = 5
 ): List<FirestoreSensorEvents> {
     if (isEmpty()) return emptyList()
-    val startMilli = minOf { it.zonedDateTime.toInstant().toEpochMilli() }
+    val startMilli = minOf { it.timestamp.toEpochMilliseconds() }
     val groupedByTime = groupBy {
-        (it.zonedDateTime.toInstant().toEpochMilli() - startMilli) /
+        (it.timestamp.toEpochMilliseconds() - startMilli) /
                 thresholdInMinutes.minutes.inWholeMilliseconds
     }
     return groupedByTime.map { groups ->
         groups.value
-            .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+            .sortedBy { it.timestamp.toEpochMilliseconds() }
             .toFirebaseSensorEvents(sessionUUID, ownerUUID)
     }
 }
@@ -458,7 +458,7 @@ fun List<FirestorePath>.toDomainLocations(): List<DomainLocation> {
         domainLocations.addAll(locations.map { it.toDomainModel(path.sessionUUID) })
     }
 
-    return domainLocations.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+    return domainLocations.sortedBy { it.timestamp.toEpochMilliseconds() }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -484,14 +484,14 @@ fun List<FirestoreSensorEvents>.toDomainSensorEvents(): List<DomainSensorEvent> 
         domainSensorEvents.addAll(sensorEvents.map { it.toDomainModel(events.sessionUUID) })
     }
 
-    return domainSensorEvents.sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+    return domainSensorEvents.sortedBy { it.timestamp.toEpochMilliseconds() }
 }
 
 fun FirestoreLocation.toDomainModel(
     sessionUUID: String
 ) = DomainLocation(
     latitude = latitude,
-    zonedDateTime = timestamp.toZonedDateTime(),
+    timestamp = timestamp.toKotlinInstant(),
     longitude = longitude,
     speed = speed,
     sessionUUID = sessionUUID,
@@ -506,7 +506,7 @@ fun FirestoreLocation.toDomainModel(
 fun FirestoreSensorEvent.toDomainModel(
     sessionUUID: String
 ) = DomainSensorEvent(
-    zonedDateTime = timestamp.toZonedDateTime(),
+    timestamp = timestamp.toKotlinInstant(),
     sessionUUID = sessionUUID,
     accuracy = accuracy.toByte(),
     type = type.toByte(),

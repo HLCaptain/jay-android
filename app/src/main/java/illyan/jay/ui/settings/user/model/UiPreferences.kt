@@ -16,12 +16,16 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.settings.user.model
 
 import android.os.Build
 import illyan.jay.domain.model.DomainPreferences
 import illyan.jay.domain.model.Theme
 import java.time.ZonedDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 data class UiPreferences(
     val userUUID: String? = null,
@@ -31,8 +35,8 @@ data class UiPreferences(
     val theme: Theme = DomainPreferences.Default.theme,
     val dynamicColorEnabled: Boolean = DomainPreferences.Default.dynamicColorEnabled,
     val canUseDynamicColor: Boolean = false,
-    val lastUpdate: ZonedDateTime = DomainPreferences.Default.lastUpdate,
-    val lastUpdateToAnalytics: ZonedDateTime? = null,
+    val lastUpdate: Instant = DomainPreferences.Default.lastUpdate,
+    val lastUpdateToAnalytics: Instant? = null,
     val clientUUID: String? = null,
     val downloadedModels: Int = 0,
 )

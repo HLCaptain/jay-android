@@ -65,6 +65,7 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.generated.destinations.LibrariesDialogScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.BuildConfig
@@ -74,15 +75,13 @@ import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogContentPadding
 import illyan.jay.ui.components.MenuButton
 import illyan.jay.ui.components.PreviewAccessibility
-import illyan.jay.ui.destinations.LibrariesDialogScreenDestination
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.BooleanSetting
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
 import illyan.jay.util.TestAdUnitIds
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun AboutDialogScreen(
     viewModel: AboutViewModel = hiltViewModel(),

@@ -37,12 +37,12 @@ plugins {
 val localProperties = loadProperties("$projectDir/../local.properties")
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "illyan.jay"
     defaultConfig {
         applicationId = "illyan.jay"
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 19
         versionName = "0.4.1-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -101,13 +101,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
         isCoreLibraryDesugaringEnabled = true
     }
 
     kotlin {
-        jvmToolchain(17)
+        jvmToolchain(21)
     }
 
     buildFeatures {
@@ -141,13 +141,14 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.google.material)
+    implementation(libs.google.material.icons)
+    implementation(libs.jetbrains.kotlinx.datetime)
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar", "*.jar"))))
 
     // Compose
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.ui.util)
@@ -169,10 +170,6 @@ dependencies {
     // Biometric Auth
     //implementation "androidx.biometric:biometric:1.2.0-alpha05"
 
-    // Material design icons
-    implementation(libs.androidx.compose.material.icons.core)
-    implementation(libs.androidx.compose.material.icons.extended)
-
     // Day-Night Cycle in Theming
     implementation(libs.solarized)
 
@@ -184,13 +181,13 @@ dependencies {
 
     // Mapbox
     implementation(libs.mapbox.maps)
+    implementation(libs.mapbox.maps.compose)
     implementation(libs.mapbox.search)
     implementation(libs.mapbox.navigation)
 
     // Accompanist
-    implementation(libs.accompanist.systemuicontroller)
     implementation(libs.accompanist.permissions)
-    implementation(libs.accompanist.placeholder.material)
+    implementation(libs.placeholder)
 
     // Hilt
     implementation(libs.hilt)
@@ -201,7 +198,8 @@ dependencies {
     implementation(libs.timber)
 
     // Navigation
-    implementation(libs.compose.destinations.animations.core)
+    implementation(libs.compose.destinations.core)
+    implementation(libs.compose.destinations.bottom.sheet)
     ksp(libs.compose.destinations.ksp)
 
     // Coil

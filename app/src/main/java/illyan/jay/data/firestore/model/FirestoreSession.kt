@@ -22,11 +22,14 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.PropertyName
 import illyan.jay.util.toTimestamp
-import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 data class FirestoreSession(
     @PropertyName(FieldUUID) val uuid: String = "",
-    @PropertyName(FieldStartDateTime) val startDateTime: Timestamp = Instant.EPOCH.toTimestamp(),
+    @PropertyName(FieldStartDateTime) val startDateTime: Timestamp = Clock.System.now().toTimestamp(),
     @PropertyName(FieldEndDateTime) val endDateTime: Timestamp? = null,
     @PropertyName(FieldStartLocation) val startLocation: GeoPoint? = null,
     @PropertyName(FieldEndLocation) val endLocation: GeoPoint? = null,

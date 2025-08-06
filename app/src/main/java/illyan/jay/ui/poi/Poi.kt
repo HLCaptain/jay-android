@@ -29,7 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,12 +97,10 @@ const val smallZoom = 8.0
 const val verySmallZoom = 6.0
 const val minZoom = 3.0
 
-
-@OptIn(ExperimentalMaterialApi::class)
-@SheetNavGraph
-@Destination
+@OptIn(ExperimentalMaterial3Api::class)
+@Destination<SheetNavGraph>
 @Composable
-fun Poi(
+fun PoiScreen(
     placeToNavigate: Place,
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
     viewModel: PoiViewModel = hiltViewModel(),
@@ -115,8 +113,8 @@ fun Poi(
     var sheetHeightNotSet by remember { mutableStateOf(true) }
     val place by viewModel.place.collectAsStateWithLifecycle()
     val placeMetadata by viewModel.placeInfo.collectAsStateWithLifecycle()
-    LaunchedEffect(sheetState.progress) {
-        sheetHeightNotSet = sheetState.progress != 1f
+    LaunchedEffect(sheetState.currentValue) {
+        sheetHeightNotSet = sheetState.currentValue != sheetState.targetValue
     }
     val context = LocalContext.current
     val mapMarkers by mapMarkers.collectAsStateWithLifecycle()

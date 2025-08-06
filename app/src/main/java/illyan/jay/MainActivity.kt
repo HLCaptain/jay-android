@@ -42,9 +42,9 @@ import com.google.android.gms.tasks.Task
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.generated.NavGraphs
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.domain.interactor.AuthInteractor
-import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.theme.JayThemeWithViewModel
 import illyan.jay.util.MapboxExceptionHandler
@@ -114,7 +114,7 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     DestinationsNavHost(
-        navGraph = NavGraphs.home,
+        navGraph = NavGraphs.root,
         modifier = modifier
     )
 }

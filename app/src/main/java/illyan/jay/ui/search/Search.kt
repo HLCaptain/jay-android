@@ -68,7 +68,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
-import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.annotation.NavHostGraph
+import com.ramcosta.composedestinations.annotation.RootGraph
 import illyan.jay.R
 import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewAccessibility
@@ -78,8 +79,7 @@ import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signaturePink
 import java.util.UUID
 
-@RootNavGraph
-@NavGraph
+@NavHostGraph
 annotation class SearchNavGraph(
     val start: Boolean = false,
 )
@@ -89,8 +89,7 @@ val SearchItemsCornerRadius = 24.dp
 val DividerStartPadding = 56.dp
 val DividerThickness = 1.dp
 
-@SearchNavGraph(start = true)
-@Destination
+@Destination<SearchNavGraph>(start = true)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),

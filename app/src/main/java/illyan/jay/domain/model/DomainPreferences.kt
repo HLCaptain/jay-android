@@ -18,32 +18,37 @@
 
 package illyan.jay.domain.model
 
+import illyan.jay.data.serializers.InstantSerializer
 import illyan.jay.data.serializers.ZonedDateTimeNullableSerializer
 import illyan.jay.data.serializers.ZonedDateTimeSerializer
 import kotlinx.serialization.Serializable
 import java.time.ZonedDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 
+@OptIn(ExperimentalTime::class)
 @Serializable
-data class DomainPreferences(
+data class DomainPreferences @OptIn(ExperimentalTime::class) constructor(
     val userUUID: String? = null,
     val analyticsEnabled: Boolean = false,
     val freeDriveAutoStart: Boolean = false,
     val showAds: Boolean = false,
     val theme: Theme = Theme.System,
     val dynamicColorEnabled: Boolean = true,
-    @Serializable(with = ZonedDateTimeSerializer::class)
-    val lastUpdate: ZonedDateTime = ZonedDateTime.now(),
-    @Serializable(with = ZonedDateTimeNullableSerializer::class)
-    val lastUpdateToAnalytics: ZonedDateTime? = null,
+    @Serializable(with = InstantSerializer::class)
+    val lastUpdate: Instant = Clock.System.now(),
+    @Serializable(with = InstantSerializer::class)
+    val lastUpdateToAnalytics: Instant? = null,
     val shouldSync: Boolean = false,
 ) {
     fun isBefore(other: DomainPreferences): Boolean {
-        return lastUpdate.toInstant().toEpochMilli() < other.lastUpdate.toInstant().toEpochMilli()
+        return lastUpdate < other.lastUpdate
     }
 
     fun isAfter(other: DomainPreferences): Boolean {
-        return lastUpdate.toInstant().toEpochMilli() > other.lastUpdate.toInstant().toEpochMilli()
+        return lastUpdate > other.lastUpdate
     }
 
     companion object {

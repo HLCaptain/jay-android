@@ -26,12 +26,13 @@ import illyan.jay.data.room.toRoomModel
 import illyan.jay.domain.model.DomainSession
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * Session disk data source using Room to communicate with the SQLite database.
@@ -39,6 +40,7 @@ import javax.inject.Singleton
  * @property sessionDao used to insert, update, delete and query commands using Room.
  * @constructor Create empty Session disk data source
  */
+@OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
 @Singleton
 class SessionRoomDataSource @Inject constructor(
     private val sessionDao: SessionDao,
@@ -119,13 +121,11 @@ class SessionRoomDataSource @Inject constructor(
         ownerUUID: String? = null,
         clientUUID: String? = null,
     ): String {
-        val uuid = UUID.randomUUID().toString()
+        val uuid = Uuid.random().toString()
         sessionDao.insertSession(
             RoomSession(
                 uuid = uuid,
-                startDateTime = Instant.now()
-                    .atZone(ZoneId.systemDefault())
-                    .toInstant().toEpochMilli(),
+                startDateTime = Clock.System.now().toEpochMilliseconds(),
                 endDateTime = null,
                 ownerUUID = ownerUUID,
                 clientUUID = clientUUID
@@ -168,7 +168,7 @@ class SessionRoomDataSource @Inject constructor(
      */
     fun stopSession(
         session: DomainSession,
-        endTime: ZonedDateTime = Instant.now().atZone(ZoneId.systemDefault())
+        endTime: Instant = Clock.System.now()
     ): Long {
         if (session.endDateTime == null) session.endDateTime = endTime
         return saveSession(session)
@@ -183,7 +183,7 @@ class SessionRoomDataSource @Inject constructor(
      */
     fun stopSessions(
         sessions: List<DomainSession>,
-        endTime: ZonedDateTime = Instant.now().atZone(ZoneId.systemDefault())
+        endTime: Instant = Clock.System.now()
     ) {
         sessions.forEach { if (it.endDateTime == null) it.endDateTime = endTime }
         saveSessions(sessions)
@@ -240,4 +240,3 @@ class SessionRoomDataSource @Inject constructor(
         sessionDao.saveDistanceForSession(sessionUUID, distance)
     }
 }
-

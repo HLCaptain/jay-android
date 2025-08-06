@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.sessions
 
 import androidx.compose.animation.AnimatedVisibility
@@ -84,6 +86,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.LatLng
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.generated.destinations.SessionScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.compose.scrollbar.drawVerticalScrollbar
@@ -92,7 +95,6 @@ import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipButton
-import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
@@ -109,7 +111,9 @@ import java.math.RoundingMode
 import java.time.ZonedDateTime
 import java.util.UUID
 import kotlin.random.Random
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 val DefaultContentPadding = PaddingValues(
     bottom = RoundedCornerRadius
@@ -119,8 +123,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding * 2
 )
 
-@MenuNavGraph
-@Destination
+@Destination<MenuNavGraph>
 @Composable
 fun Sessions(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
@@ -296,9 +299,9 @@ private fun SessionsScreenPreview() {
 
 private fun generateUiSessions(number: Int): List<UiSession> {
     return List(number) {
-        val now = ZonedDateTime.now()
-        val startTime = now.minusSeconds(Random.nextLong(5000, 10000))
-        val endTime = if (Random.nextInt(3) == 0) null else now.minusSeconds(Random.nextLong(1000, 4000))
+        val now = Clock.System.now()
+        val startTime = now.minus(Random.nextLong(5000, 10000).seconds)
+        val endTime = if (Random.nextInt(3) == 0) null else now.minus(Random.nextLong(1000, 4000).seconds)
         val ownerUUID = UUID.randomUUID().toString()
         UiSession(
             uuid = UUID.randomUUID().toString(),
@@ -311,7 +314,7 @@ private fun generateUiSessions(number: Int): List<UiSession> {
             startLocationName = "City number $it",
             endLocationName = "City number ${Random.nextInt(it + 1)}",
             totalDistance = Random.nextDouble(100.0, 10000.0),
-            duration = ((endTime?.toEpochSecond() ?: now.toEpochSecond()) - startTime.toEpochSecond()).seconds,
+            duration = (endTime ?: now) - startTime,
             endCoordinate = LatLng(Random.nextDouble(-90.0, 90.0), Random.nextDouble(-90.0, 90.0)),
             startCoordinate = LatLng(
                 Random.nextDouble(-90.0, 90.0),
@@ -502,7 +505,7 @@ fun SessionsList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .cardPlaceholder(isPlaceholderVisible)
-                        .animateItemPlacement(),
+                        .animateItem(),
                     session = session,
                     onClick = { onSessionSelected(it) },
                     onSync = { syncSession(it) },

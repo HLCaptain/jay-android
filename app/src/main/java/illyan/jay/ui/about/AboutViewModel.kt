@@ -21,7 +21,7 @@ package illyan.jay.ui.about
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.ktx.get
+import com.google.firebase.remoteconfig.get
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.SettingsInteractor
 import illyan.jay.domain.model.DomainPreferences

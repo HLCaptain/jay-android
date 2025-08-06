@@ -24,7 +24,9 @@ import illyan.jay.domain.model.DomainSensorEvent
 import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 object SensorFusion {
     fun fuseSensorsWithInterval(
         interval: Duration = 10.milliseconds,
@@ -37,7 +39,7 @@ object SensorFusion {
         angAccel: List<DomainSensorEvent>,
     ): List<AdvancedImuSensorData> {
         val allTimestamps = (accRaw + accSmooth + dirX + dirY + dirZ + angVel + angAccel)
-            .map { it.zonedDateTime.toInstant().toEpochMilli() }
+            .map { it.timestamp.toEpochMilliseconds() }
             .distinct()
             .sorted()
 
@@ -70,7 +72,7 @@ object SensorFusion {
         angVel: List<DomainSensorEvent>,
         angAccel: List<DomainSensorEvent>,
         intervals: List<Long> = (accRaw + accSmooth + dirX + dirY + dirZ + angVel + angAccel)
-            .map { it.zonedDateTime.toInstant().toEpochMilli() }
+            .map { it.timestamp.toEpochMilliseconds() }
             .distinct()
             .sorted()
     ): List<AdvancedImuSensorData> {
@@ -109,11 +111,11 @@ object SensorFusion {
         val firstEvent = events.first()
         val lastEvent = events.last()
         return timestamps.map {  timestamp ->
-            val beforeEvent = events.firstOrNull { it.zonedDateTime.toInstant().toEpochMilli() <= timestamp } ?: firstEvent
-            val afterEvent = events.firstOrNull { it.zonedDateTime.toInstant().toEpochMilli() >= timestamp } ?: lastEvent
+            val beforeEvent = events.firstOrNull { it.timestamp.toEpochMilliseconds() <= timestamp } ?: firstEvent
+            val afterEvent = events.firstOrNull { it.timestamp.toEpochMilliseconds() >= timestamp } ?: lastEvent
             if (beforeEvent == afterEvent) return@map Triple(beforeEvent.x.toDouble(), beforeEvent.y.toDouble(), beforeEvent.z.toDouble())
-            val fraction = (timestamp - beforeEvent.zonedDateTime.toInstant().toEpochMilli()).toFloat() /
-                    (afterEvent.zonedDateTime.toInstant().toEpochMilli() - beforeEvent.zonedDateTime.toInstant().toEpochMilli()).toFloat()
+            val fraction = (timestamp - beforeEvent.timestamp.toEpochMilliseconds()).toFloat() /
+                    (afterEvent.timestamp - beforeEvent.timestamp).inWholeMilliseconds
             val interpolatedEventX = lerp(
                 beforeEvent.x,
                 afterEvent.x,

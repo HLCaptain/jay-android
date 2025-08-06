@@ -20,7 +20,7 @@ package illyan.jay.ui.components
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -48,7 +48,7 @@ fun Modifier.horizontalFadingEdge(
         value = length
     }
 ) {
-    val color = edgeColor ?: MaterialTheme.colors.surface
+    val color = edgeColor ?: MaterialTheme.colorScheme.surface
 
     drawWithContent {
         val lengthValue = length.toPx()
@@ -102,7 +102,7 @@ fun Modifier.verticalFadingEdge(
         value = length
     }
 ) {
-    val color = edgeColor ?: MaterialTheme.colors.surface
+    val color = edgeColor ?: MaterialTheme.colorScheme.surface
 
     drawWithContent {
         val lengthValue = length.toPx()
@@ -156,7 +156,7 @@ fun Modifier.verticalFadingEdge(
         value = length
     }
 ) {
-    val color = edgeColor ?: MaterialTheme.colors.surface
+    val color = edgeColor ?: MaterialTheme.colorScheme.surface
 
     drawWithContent {
         val topFadingEdgeStrength by derivedStateOf {

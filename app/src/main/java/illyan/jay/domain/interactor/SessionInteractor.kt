@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.domain.interactor
 
 import com.google.firebase.firestore.FirebaseFirestore
@@ -48,9 +50,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.ExperimentalTime
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * Session interactor is a layer which aims to be the intermediary
@@ -59,6 +63,7 @@ import javax.inject.Singleton
  * @property sessionRoomDataSource local database
  * @constructor Create empty Session interactor
  */
+@OptIn(ExperimentalUuidApi::class)
 @Singleton
 class SessionInteractor @Inject constructor(
     private val sessionRoomDataSource: SessionRoomDataSource,
@@ -317,7 +322,7 @@ class SessionInteractor @Inject constructor(
                     appSettingsDataSource.appSettings.first { settings ->
                         Timber.d("Client UUID = ${settings.clientUUID}")
                         if (settings.clientUUID == null) {
-                            val clientUUID = UUID.randomUUID().toString()
+                            val clientUUID = Uuid.random().toString()
                             Timber.d("Generating new client UUID: $clientUUID")
                             appSettingsDataSource.updateAppSettings {
                                 it.copy(clientUUID = clientUUID)
@@ -377,7 +382,7 @@ class SessionInteractor @Inject constructor(
     ) {
         locationRoomDataSource.getLocations(session.uuid).first { locations ->
             val startLocationLatLng = locations.minByOrNull {
-                it.zonedDateTime.toInstant().toEpochMilli()
+                it.timestamp.toEpochMilliseconds()
             }?.latLng
             session.startLocation = startLocationLatLng
             startLocationLatLng?.let {
@@ -421,11 +426,11 @@ class SessionInteractor @Inject constructor(
     ) {
         locationRoomDataSource.getLocations(session.uuid).first { locations ->
             val endLocation = locations.maxByOrNull {
-                it.zonedDateTime.toInstant().toEpochMilli()
+                it.timestamp.toEpochMilliseconds()
             }
             val endLocationLatLng = endLocation?.latLng
             session.endLocation = endLocationLatLng
-            if (session.endDateTime == null) session.endDateTime = endLocation?.zonedDateTime
+            if (session.endDateTime == null) session.endDateTime = endLocation?.timestamp
             endLocationLatLng?.let {
                 coroutineScopeIO.launch {
                     sessionRoomDataSource.saveEndLocationForSession(

@@ -16,15 +16,14 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalUuidApi::class)
+
 package illyan.jay.ui.profile
 
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -73,20 +72,22 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
-import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.annotation.NavHostGraph
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.generated.NavGraphs
+import com.ramcosta.composedestinations.generated.destinations.AboutDialogScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.LoginDialogScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.UserSettingsDialogScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
+import com.ramcosta.composedestinations.rememberNavHostEngine
 import com.ramcosta.composedestinations.utils.currentDestinationAsState
 import com.ramcosta.composedestinations.utils.startDestination
 import illyan.jay.MainActivity
 import illyan.jay.R
-import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.CopiedToKeyboardTooltip
 import illyan.jay.ui.components.JayDialogContent
@@ -95,15 +96,12 @@ import illyan.jay.ui.components.MenuButton
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.components.dialogWidth
-import illyan.jay.ui.destinations.AboutDialogScreenDestination
-import illyan.jay.ui.destinations.LoginDialogScreenDestination
-import illyan.jay.ui.destinations.UserSettingsDialogScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.theme.JayTheme
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-@RootNavGraph
-@NavGraph
+@NavHostGraph
 annotation class ProfileNavGraph(
     val start: Boolean = false,
 )
@@ -111,7 +109,7 @@ annotation class ProfileNavGraph(
 val LocalDialogDismissRequest = compositionLocalOf { {} }
 val LocalDialogActivityProvider = compositionLocalOf<MainActivity?> { null }
 
-@OptIn(ExperimentalMaterialNavigationApi::class, ExperimentalMaterial3Api::class,
+@OptIn(ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class, ExperimentalAnimationApi::class
 )
 @Composable
@@ -123,15 +121,15 @@ fun ProfileDialog(
         val context = LocalContext.current
         // Don't use exit animations because
         // it looks choppy while Dialog resizes due to content change.
-        val engine = rememberAnimatedNavHostEngine(
-            rootDefaultAnimations = RootNavGraphDefaultAnimations(
-                enterTransition = {
-                    slideInHorizontally(tween(200)) { it / 8 } + fadeIn(tween(200))
-                },
-                popEnterTransition = {
-                    slideInHorizontally(tween(200)) { -it / 8 } + fadeIn(tween(200))
-                }
-            )
+        val engine = rememberNavHostEngine(
+//            rootDefaultAnimations = RootNavGraphDefaultAnimations(
+//                enterTransition = {
+//                    slideInHorizontally(tween(200)) { it / 8 } + fadeIn(tween(200))
+//                },
+//                popEnterTransition = {
+//                    slideInHorizontally(tween(200)) { -it / 8 } + fadeIn(tween(200))
+//                }
+//            )
         )
         val navController = engine.rememberNavController()
         val currentDestination by navController.currentDestinationAsState()
@@ -167,8 +165,7 @@ fun ProfileDialog(
     }
 }
 
-@ProfileNavGraph(start = true)
-@Destination
+@Destination<ProfileNavGraph>(start = true)
 @Composable
 fun ProfileDialogScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
@@ -331,7 +328,7 @@ private fun PreviewProfileDialogScreen(
             JayDialogSurface {
                 ProfileDialogContent(
                     modifier = Modifier.dialogWidth(),
-                    userUUID = UUID.randomUUID().toString(),
+                    userUUID = Uuid.random().toString(),
                     userPhotoUrl = null,
                     confidentialInfo = listOf(
                         stringResource(R.string.name) to name,
