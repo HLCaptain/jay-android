@@ -25,14 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.NavHostGraph
-import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.NavGraphs
 import com.ramcosta.composedestinations.generated.destinations.PoiScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
-import com.ramcosta.composedestinations.rememberNavHostEngine
+import illyan.jay.ui.theme.DefaultDestinationTransitions
 
 @NavHostGraph
 annotation class SheetNavGraph(
@@ -58,15 +56,6 @@ fun SheetScreen(
     DestinationsNavHost(
         modifier = modifier,
         navGraph = NavGraphs.menu,
-        engine = rememberNavHostEngine(
-//            rootDefaultAnimations = RootNavGraphDefaultAnimations(
-//                enterTransition = {
-//                    slideInVertically(tween(200)) + fadeIn(tween(200))
-//                },
-//                exitTransition = {
-//                    slideOutVertically(tween(200)) + fadeOut(tween(200))
-//                }
-//            )
-        )
+        defaultTransitions = DefaultDestinationTransitions
     )
 }

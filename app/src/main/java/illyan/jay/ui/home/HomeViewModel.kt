@@ -27,29 +27,63 @@ import com.google.firebase.perf.FirebasePerformance
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zotov.phototime.solarized.Solarized
 import illyan.jay.di.CoroutineDispatcherIO
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.domain.interactor.MapboxInteractor
 import illyan.jay.domain.interactor.SessionInteractor
+import illyan.jay.domain.interactor.SettingsInteractor
+import illyan.jay.domain.model.Theme
 import illyan.jay.ui.map.BmeK
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.util.TimeZone
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val mapboxInteractor: MapboxInteractor,
     private val sessionInteractor: SessionInteractor,
+    settingsInteractor: SettingsInteractor,
     authInteractor: AuthInteractor,
     performance: FirebasePerformance,
     @CoroutineDispatcherIO private val dispatcherIO: CoroutineDispatcher,
 ) : ViewModel() {
+
+    private val currentLocation = MutableStateFlow<Location?>(null)
+
+    val isNight = flow {
+        while (true) {
+            emit(Unit)
+            delay(1.seconds) // refreshing every second
+        }
+    }.combine(currentLocation) { _, location ->
+        location?.let {
+            val solarized = Solarized(
+                it.latitude,
+                it.longitude,
+                LocalDateTime.now(),
+                TimeZone.getDefault()
+            )
+            val now = LocalDateTime.now()
+            now.isBefore(solarized.day?.start) || now.isAfter(solarized.day?.end)
+        } ?: false
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val theme = settingsInteractor.userPreferences.map { it?.theme }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Theme.System)
 
     private val _initialLocation = MutableStateFlow<Location?>(null)
     val initialLocation = _initialLocation.asStateFlow()
@@ -71,6 +105,7 @@ class HomeViewModel @Inject constructor(
 
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
+            currentLocation.update { result.lastLocation }
             result.lastLocation?.let {
                 if (_initialLocation.value == null) {
                     _initialLocation.value = it

@@ -46,6 +46,7 @@ import com.ramcosta.composedestinations.generated.NavGraphs
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.domain.interactor.AuthInteractor
 import illyan.jay.ui.components.PreviewAccessibility
+import illyan.jay.ui.theme.DefaultDestinationTransitions
 import illyan.jay.ui.theme.JayThemeWithViewModel
 import illyan.jay.util.MapboxExceptionHandler
 import javax.inject.Inject
@@ -115,6 +116,7 @@ fun MainScreen(
 ) {
     DestinationsNavHost(
         navGraph = NavGraphs.root,
-        modifier = modifier
+        modifier = modifier,
+        defaultTransitions = DefaultDestinationTransitions
     )
 }

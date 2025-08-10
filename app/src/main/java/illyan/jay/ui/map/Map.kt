@@ -261,7 +261,8 @@ fun MapsNotSupportedCard(
                     modifier = Modifier.padding(top = 8.dp),
                     text = stringResource(R.string.mapbox_map_problem_not_affecting_jay),
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
                 )
             }
         }

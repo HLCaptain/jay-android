@@ -31,7 +31,10 @@ import kotlin.time.Instant
 @OptIn(ExperimentalTime::class)
 object InstantSerializer : KSerializer<Instant> {
     override val descriptor: SerialDescriptor
-        get() = PrimitiveSerialDescriptor("kotlin.time.Instant", PrimitiveKind.STRING)
+        get() = PrimitiveSerialDescriptor(
+            "illyan.jay.data.serializers.InstantSerializer",
+            PrimitiveKind.STRING
+        )
 
     override fun deserialize(decoder: Decoder): Instant {
         return Instant.parse(decoder.decodeString())

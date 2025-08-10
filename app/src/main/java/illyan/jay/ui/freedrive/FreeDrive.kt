@@ -35,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -96,9 +97,10 @@ fun FreeDrive(
         AppSettings.default.preferences.freeDriveAutoStart
     )
     val cameraPadding by cameraPadding.collectAsStateWithLifecycle()
+    val density = LocalDensity.current.density
     LaunchedEffect(cameraPadding) {
         viewModel.followingPaddingOffset =
-            (cameraPadding + calculatePaddingOffset()).toEdgeInsets(density.value)
+            (cameraPadding + calculatePaddingOffset()).toEdgeInsets(density)
     }
     SheetScreenBackPressHandler(destinationsNavigator = destinationsNavigator)
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)

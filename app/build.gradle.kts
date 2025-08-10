@@ -43,8 +43,8 @@ android {
         applicationId = "illyan.jay"
         minSdk = 23
         targetSdk = 36
-        versionCode = 19
-        versionName = "0.4.1-alpha"
+        versionCode = 20
+        versionName = "0.5.0-alpha"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -146,7 +146,6 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar", "*.jar"))))
 
     // Compose
-    implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)

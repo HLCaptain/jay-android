@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -80,8 +82,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.LatLng
@@ -203,20 +203,16 @@ fun SessionsScreen(
     val showButtons = isUserSignedIn &&
             (canSyncSessions || areThereSyncedSessions || areThereSessionsNotOwned) ||
             canDeleteSessions
-    ConstraintLayout(
+    Box(
         modifier = modifier.padding(
             DefaultContentPadding + if (!showButtons) {
                 DefaultScreenOnSheetPadding
             } else PaddingValues()
         )
     ) {
-        val (column, globalLoadingIndicator, buttons) = createRefs()
         AnimatedVisibility(
             modifier = Modifier
-                .constrainAs(globalLoadingIndicator) {
-                    top.linkTo(parent.top)
-                    end.linkTo(parent.end)
-                },
+                .fillMaxWidth(),
             visible = isLoading
         ) {
             MediumCircularProgressIndicator(modifier = Modifier.padding(end = MenuItemPadding * 2))
@@ -228,10 +224,7 @@ fun SessionsScreen(
                     start = MenuItemPadding,
                     bottom = MenuItemPadding,
                 )
-                .constrainAs(buttons) {
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                },
+                .fillMaxHeight(),
             showSyncButton = isUserSignedIn && canSyncSessions,
             showOwnAllSessionsButton = isUserSignedIn && areThereSessionsNotOwned,
             showDeleteSessionsFromCloudButton = isUserSignedIn && areThereSyncedSessions,
@@ -247,12 +240,7 @@ fun SessionsScreen(
                     top = MenuItemPadding,
                     bottom = MenuItemPadding + RoundedCornerRadius,
                 )
-                .constrainAs(column) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(buttons.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                }
+                .fillMaxSize()
         ) {
             SessionsList(
                 modifier = Modifier.fillMaxWidth(),
@@ -652,19 +640,12 @@ fun SessionCard(
                     .background(containerColor)
             ) {
                 Column {
-                    ConstraintLayout(
+                    Box(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        val (title, labels) = createRefs()
                         Box(
                             modifier = Modifier
-                                .constrainAs(title) {
-                                    start.linkTo(parent.start)
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    end.linkTo(labels.start)
-                                    width = Dimension.fillToConstraints
-                                }
+                                .fillMaxSize()
                         ) {
                             LazyRow(
                                 contentPadding = PaddingValues(horizontal = MenuItemPadding * 2)
@@ -721,10 +702,7 @@ fun SessionCard(
                             session?.isNotOwned == true
                         androidx.compose.animation.AnimatedVisibility(
                             modifier = Modifier
-                                .constrainAs(labels) {
-                                    end.linkTo(parent.end)
-                                    top.linkTo(parent.top)
-                                },
+                                .align(Alignment.TopEnd),
                             visible = areLabelsVisible
                         ) {
                             Row(

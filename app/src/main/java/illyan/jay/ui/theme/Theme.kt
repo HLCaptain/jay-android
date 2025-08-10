@@ -200,10 +200,8 @@ fun animateColorScheme(
     return remember { derivedStateOf { getCurrentColorScheme() } }
 }
 
-private const val LightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
-private const val DarkMapStyleUrl = "mapbox://styles/illyan/cl3kg2wpq001414muhgrpj15u"
-private val _mapStyleUrl = MutableStateFlow(LightMapStyleUrl)
-val mapStyleUrl = _mapStyleUrl.asStateFlow()
+const val LightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
+const val DarkMapStyleUrl = "mapbox://styles/illyan/cl3kg2wpq001414muhgrpj15u"
 
 private lateinit var darkMapMarkers: MapMarkers
 // val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)

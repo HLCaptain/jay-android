@@ -26,7 +26,6 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,16 +66,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import androidx.constraintlayout.compose.ChainStyle
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.NavHostGraph
-import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.NavGraphs
 import com.ramcosta.composedestinations.generated.destinations.AboutDialogScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.LoginDialogScreenDestination
@@ -97,6 +91,7 @@ import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.TooltipElevatedCard
 import illyan.jay.ui.components.dialogWidth
 import illyan.jay.ui.home.RoundedCornerRadius
+import illyan.jay.ui.theme.DefaultDestinationTransitions
 import illyan.jay.ui.theme.JayTheme
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -158,6 +153,7 @@ fun ProfileDialog(
                         navGraph = NavGraphs.profile,
                         engine = engine,
                         navController = navController,
+                        defaultTransitions = DefaultDestinationTransitions
                     )
                 }
             }
@@ -245,7 +241,7 @@ fun ProfileDialogContent(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ProfileButtons(
     onShowSettingsScreen: () -> Unit = {},
@@ -342,7 +338,7 @@ private fun PreviewProfileDialogScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ProfileTitleScreen(
     modifier: Modifier = Modifier,
@@ -422,39 +418,20 @@ fun ProfileDetailsScreen(
     Column(
         modifier = modifier
     ) {
-        ConstraintLayout(
+        Row(
             modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            val (confidentialInfoText, toggleButton) = createRefs()
-            createHorizontalChain(
-                confidentialInfoText,
-                toggleButton,
-                chainStyle = ChainStyle.SpreadInside
-            )
-            createStartBarrier()
-            ConfidentialInfoToggleButton(
-                modifier = Modifier
-                    .constrainAs(toggleButton) {
-                        end.linkTo(parent.end)
-                        top.linkTo(parent.top)
-                        bottom.linkTo(parent.bottom)
-                    },
-                showConfidentialInfo = showConfidentialInfo,
-                anyConfidentialInfo = confidentialInfo.isNotEmpty(),
-                onVisibilityChanged = onConfidentialInfoVisibilityChanged
-            )
             UserInfoList(
-                modifier = Modifier
-                    .constrainAs(confidentialInfoText) {
-                        start.linkTo(parent.start)
-                        end.linkTo(toggleButton.start)
-                        top.linkTo(parent.top)
-                        bottom.linkTo(parent.bottom)
-                        width = Dimension.fillToConstraints
-                    },
+                modifier = Modifier.weight(1f),
                 confidentialInfo = confidentialInfo,
                 info = info,
                 showConfidentialInfo = showConfidentialInfo
+            )
+            ConfidentialInfoToggleButton(
+                showConfidentialInfo = showConfidentialInfo,
+                anyConfidentialInfo = confidentialInfo.isNotEmpty(),
+                onVisibilityChanged = onConfidentialInfoVisibilityChanged
             )
         }
     }

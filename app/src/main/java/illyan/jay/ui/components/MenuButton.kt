@@ -36,7 +36,10 @@ fun MenuButton(
         modifier = modifier,
         onClick = onClick,
     ) {
-        Text(text = text)
+        Text(
+            modifier = Modifier.weight(1f, fill = false),
+            text = text
+        )
         Icon(
             imageVector = Icons.Rounded.ChevronRight, contentDescription = "",
         )

@@ -54,28 +54,25 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.NavGraph
 import com.ramcosta.composedestinations.annotation.NavHostGraph
-import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.FreeDriveDestination
 import com.ramcosta.composedestinations.generated.destinations.SessionsDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -86,11 +83,8 @@ import illyan.jay.R
 import illyan.jay.domain.model.Theme
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.home.RoundedCornerRadius
-import illyan.jay.ui.home.isSearching
 import illyan.jay.ui.home.sheetState
 import illyan.jay.ui.theme.JayTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @NavHostGraph
@@ -325,7 +319,6 @@ fun SheetScreenBackPressHandler(
     customDisposableEffectKey: Any? = null,
     isEnabled: () -> Boolean = { true },
     context: Context = LocalContext.current,
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
     destinationsNavigator: DestinationsNavigator,
     onBackPressed: () -> Unit = {},
 ) {
@@ -336,13 +329,8 @@ fun SheetScreenBackPressHandler(
         onBackPressed()
         Timber.d("Handling back press in Navigation!")
         // If searching and back is pressed, close the sheet instead of the app
-        if (!sheetState.isVisible) (context as MainActivity).moveTaskToBack(false)
-        if (isSearching) {
-            coroutineScope.launch {
-                // This call will automatically unfocus the textfield
-                // because BottomSearchBar listens on sheet changes.
-                sheetState.hide()
-            }
+        if (sheetState.currentValue != SheetValue.Expanded) {
+            (context as MainActivity).moveTaskToBack(false)
         } else {
             destinationsNavigator.navigateUp()
         }

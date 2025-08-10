@@ -22,7 +22,7 @@
 # Needed for configuration only
 *.iml
 # Comment if you like setup things
-/.idea
+.idea
 # Customize more directories if needed
 #/.idea/caches
 #/.idea/libraries
