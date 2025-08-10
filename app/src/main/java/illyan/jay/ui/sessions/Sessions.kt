@@ -742,6 +742,7 @@ fun SessionCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         SessionDetailsList(
+                            modifier = Modifier.weight(1f, fill = false),
                             details = listOf(
                                 stringResource(R.string.distance) to if (session?.totalDistance == null) {
                                     stringResource(R.string.unknown)
@@ -762,7 +763,9 @@ fun SessionCard(
                                 ) ?: stringResource(R.string.unknown))
                             ),
                         )
-                        content()
+                        Box(modifier = Modifier.padding(end = MenuItemPadding)) {
+                            content()
+                        }
                     }
                 }
             }
