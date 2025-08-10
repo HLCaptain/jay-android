@@ -18,6 +18,7 @@
 
 package illyan.jay.ui.login
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,12 +39,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
+import illyan.jay.MainActivity
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.JayDialogSurface
 import illyan.jay.ui.components.LoadingIndicator
 import illyan.jay.ui.components.PreviewAccessibility
-import illyan.jay.ui.profile.LocalDialogActivityProvider
 import illyan.jay.ui.profile.LocalDialogDismissRequest
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
@@ -55,7 +56,7 @@ fun LoginDialogScreen(
 ) {
     val isUserSignedIn by viewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val isUserSigningIn by viewModel.isSigningIn.collectAsStateWithLifecycle()
-    val activity = LocalDialogActivityProvider.current
+    val activity = LocalActivity.current
     val dismissDialog = LocalDialogDismissRequest.current
     LaunchedEffect(isUserSignedIn) {
         if (isUserSignedIn) dismissDialog()
@@ -63,7 +64,7 @@ fun LoginDialogScreen(
     LoginDialogContent(
         modifier = Modifier.fillMaxWidth(),
         isUserSigningIn = isUserSigningIn,
-        signInViaGoogle = { activity?.let { viewModel.signInViaGoogle(it) } }
+        signInViaGoogle = { (activity as? MainActivity)?.let { viewModel.signInViaGoogle(it) } }
     )
 }
 

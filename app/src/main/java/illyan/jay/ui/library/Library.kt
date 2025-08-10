@@ -164,7 +164,6 @@ fun LibraryScreen(
             )
         }
         Crossfade(
-            modifier = Modifier.animateContentSize(),
             targetState = library.license?.url,
             label = "License"
         ) {

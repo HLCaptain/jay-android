@@ -39,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -102,7 +103,6 @@ annotation class ProfileNavGraph(
 )
 
 val LocalDialogDismissRequest = compositionLocalOf { {} }
-val LocalDialogActivityProvider = compositionLocalOf<MainActivity?> { null }
 
 @OptIn(ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class, ExperimentalAnimationApi::class
@@ -116,48 +116,41 @@ fun ProfileDialog(
         val context = LocalContext.current
         // Don't use exit animations because
         // it looks choppy while Dialog resizes due to content change.
-        val engine = rememberNavHostEngine(
-//            rootDefaultAnimations = RootNavGraphDefaultAnimations(
-//                enterTransition = {
-//                    slideInHorizontally(tween(200)) { it / 8 } + fadeIn(tween(200))
-//                },
-//                popEnterTransition = {
-//                    slideInHorizontally(tween(200)) { -it / 8 } + fadeIn(tween(200))
-//                }
-//            )
-        )
+        val engine = rememberNavHostEngine()
         val navController = engine.rememberNavController()
         val currentDestination by navController.currentDestinationAsState()
-        val onDismissRequest: () -> Unit = {
-            if (currentDestination == NavGraphs.profile.startDestination) {
-                onDialogClosed()
-            } else {
-                navController.navigateUp()
-            }
-        }
-        AlertDialog(
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false
-            ),
-            onDismissRequest = onDismissRequest,
-        ) {
-            JayDialogContent(
-                surface = { JayDialogSurface(content = it) },
-            ) {
-                CompositionLocalProvider(
-                    LocalDialogDismissRequest provides onDismissRequest,
-                    LocalDialogActivityProvider provides context as MainActivity
-                ) {
-                    DestinationsNavHost(
-                        modifier = Modifier.fillMaxWidth(),
-                        navGraph = NavGraphs.profile,
-                        engine = engine,
-                        navController = navController,
-                        defaultTransitions = DefaultDestinationTransitions
-                    )
+        val onDismissRequest: () -> Unit = remember(currentDestination) {
+            {
+                if (currentDestination == NavGraphs.profile.startDestination) {
+                    onDialogClosed()
+                } else {
+                    navController.navigateUp()
                 }
             }
         }
+        BasicAlertDialog(
+            onDismissRequest = onDismissRequest,
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false
+            ),
+            content = {
+                JayDialogContent(
+                    surface = { JayDialogSurface(content = it) },
+                ) {
+                    CompositionLocalProvider(
+                        LocalDialogDismissRequest provides onDismissRequest,
+                    ) {
+                        DestinationsNavHost(
+                            modifier = Modifier.fillMaxWidth(),
+                            navGraph = NavGraphs.profile,
+                            engine = engine,
+                            navController = navController,
+                            defaultTransitions = DefaultDestinationTransitions
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 

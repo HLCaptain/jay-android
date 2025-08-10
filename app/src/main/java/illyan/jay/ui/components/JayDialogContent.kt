@@ -42,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -51,7 +53,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun JayDialogContent(
     modifier: Modifier = Modifier,
-    textModifier: Modifier = Modifier.heightIn(max = (LocalConfiguration.current.screenHeightDp * 0.66f).dp),
+    textModifier: Modifier = Modifier.heightIn(max = (with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } * 0.66f)),
     icon: @Composable (BoxScope.() -> Unit)? = null,
     title: @Composable (BoxScope.() -> Unit)? = null,
     text: @Composable (BoxScope.() -> Unit)? = null,
@@ -167,8 +169,7 @@ fun JayDialogSurface(
     tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
     content: @Composable () -> Unit
 ) {
-    val configuration = LocalConfiguration.current
-    val screenWidthDp by remember { derivedStateOf { configuration.screenWidthDp.dp } }
+    val screenWidthDp = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
     // Increase width to edge of the screen until reaching DialogMaxWidth
     Surface(
         modifier = modifier.dialogWidth(screenWidthDp),

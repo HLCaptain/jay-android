@@ -137,6 +137,7 @@ dependencies {
     // Core
     implementation(libs.jetbrains.kotlin.stdlib)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.splash)
     implementation(libs.androidx.collection.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.ktx)

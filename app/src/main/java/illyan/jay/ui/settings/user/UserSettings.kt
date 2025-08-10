@@ -177,7 +177,6 @@ fun UserSettingsDialogContent(
     navigateToMLSettings: () -> Unit = {},
 ) {
     Crossfade(
-        modifier = modifier.animateContentSize(),
         targetState = showAnalyticsRequestDialog,
         label = "User Settings Dialog Content",
     ) {
