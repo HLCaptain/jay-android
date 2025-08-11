@@ -23,7 +23,6 @@ package illyan.jay.ui.sessions
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,7 +34,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -100,7 +98,6 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
 import illyan.jay.ui.menu.SheetScreenBackPressHandler
-import illyan.jay.ui.session.SessionDetailsList
 import illyan.jay.ui.sessions.model.UiSession
 import illyan.jay.ui.theme.JayTheme
 import illyan.jay.ui.theme.signatureBlue
@@ -206,9 +203,7 @@ fun SessionsScreen(
             canDeleteSessions
     Column(
         modifier = modifier.padding(
-            DefaultContentPadding + if (!showButtons) {
-                DefaultScreenOnSheetPadding
-            } else PaddingValues()
+            DefaultScreenOnSheetPadding
         )
     ) {
         SessionsInteractorButtonList(

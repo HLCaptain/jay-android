@@ -20,12 +20,12 @@ package illyan.jay.domain.interactor
 
 import android.app.Activity
 import androidx.compose.runtime.mutableStateListOf
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.Task
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
 import com.google.firebase.auth.AuthCredential
@@ -33,6 +33,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.get
+import illyan.jay.BuildConfig
 import illyan.jay.MainActivity
 import illyan.jay.di.CoroutineScopeIO
 import illyan.jay.util.awaitOperations
@@ -74,9 +75,6 @@ class AuthInteractor @Inject constructor(
     private val _userDisplayNameStateFlow = MutableStateFlow(auth.currentUser?.displayName)
     val userDisplayNameStateFlow = _userDisplayNameStateFlow.asStateFlow()
 
-    private val _googleSignInClient = MutableStateFlow<GoogleSignInClient?>(null)
-    private val googleSignInClient = _googleSignInClient.asStateFlow()
-
     private val googleAuthStateListeners = mutableStateListOf<(Int) -> Unit>()
 
     val isUserSignedIn get() = auth.currentUser != null
@@ -109,6 +107,8 @@ class AuthInteractor @Inject constructor(
         val size = onSignOutListeners.size
         if (size == 0) {
             Timber.i("No sign out listeners detected, signing out user ${userUUID?.take(4)}")
+            auth.signOut()
+            _isSigningOut.update { false }
         } else {
             Timber.i("Notifying sign out listeners")
             coroutineScopeIO.launch {
@@ -120,71 +120,71 @@ class AuthInteractor @Inject constructor(
                     }
                 }
                 Timber.i("All listeners notified, signing out user ${userUUID?.take(4)}")
+                auth.signOut()
+                _isSigningOut.update { false }
             }
-            auth.signOut()
-            googleSignInClient.value?.signOut()
-            _isSigningOut.update { false }
         }
     }
 
     fun signInViaGoogle(activity: MainActivity) {
         if (isUserSignedIn) return
-        if (_googleSignInClient.value == null) {
-            remoteConfig.fetchAndActivate().addOnSuccessListener {
-                remoteConfig.ensureInitialized().addOnSuccessListener {
-                    val defaultWebClientId = remoteConfig["default_web_client_id"].asString()
-                    if (defaultWebClientId.isEmpty()) {
-                        // TODO: throw error or show error message (use local broadcast manager to send a broadcast to UI?)
-                    } else {
-                        _googleSignInClient.update {
-                            GoogleSignIn.getClient(
-                                activity,
-                                GoogleSignInOptions
-                                    .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                                    .requestIdToken(defaultWebClientId)
-                                    .requestEmail()
-                                    .build()
-                            )
+        remoteConfig.fetchAndActivate().addOnSuccessListener {
+            remoteConfig.ensureInitialized().addOnSuccessListener {
+                val serverClientId = remoteConfig["default_web_client_id"].asString()
+                if (serverClientId.isBlank()) {
+                    Timber.e("Server client ID is blank in Remote Config")
+                    googleAuthStateListeners.forEach { it(-1) }
+                    googleAuthStateListeners.clear()
+                    analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
+                        param(FirebaseAnalytics.Param.METHOD, "Google")
+                    }
+                } else {
+                    coroutineScopeIO.launch {
+                        try {
+                            val credentialManager = CredentialManager.create(activity)
+                            val googleIdOption = GetGoogleIdOption.Builder()
+                                .setFilterByAuthorizedAccounts(false)
+                                .setServerClientId(serverClientId)
+                                .setAutoSelectEnabled(true)
+                                .build()
+                            val request = GetCredentialRequest.Builder()
+                                .addCredentialOption(googleIdOption)
+                                .build()
+                            val result = credentialManager.getCredential(activity, request)
+                            val credential = result.credential
+                            if (credential is CustomCredential &&
+                                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                            ) {
+                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                val idToken = googleIdTokenCredential.idToken
+                                signInWithCredential(
+                                    activity,
+                                    GoogleAuthProvider.getCredential(idToken, null)
+                                )
+                            } else {
+                                Timber.e("Unexpected credential type: ${'$'}{credential.javaClass.name}")
+                            }
+                        } catch (e: GetCredentialException) {
+                            Timber.e(e, "Credential retrieval failed")
+                            googleAuthStateListeners.forEach { it(-1) }
+                            googleAuthStateListeners.clear()
+                            analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
+                                param(FirebaseAnalytics.Param.METHOD, "Google")
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Credential retrieval error")
+                            googleAuthStateListeners.forEach { it(-1) }
+                            googleAuthStateListeners.clear()
+                            analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
+                                param(FirebaseAnalytics.Param.METHOD, "Google")
+                            }
                         }
-                        activity.googleSignInLauncher.launch(googleSignInClient.value!!.signInIntent)
                     }
                 }
             }
-        } else {
-            activity.googleSignInLauncher.launch(googleSignInClient.value!!.signInIntent)
         }
     }
 
-    fun handleGoogleSignInResult(
-        activity: Activity,
-        completedTask: Task<GoogleSignInAccount>
-    ) {
-        try {
-            val account = completedTask.getResult(ApiException::class.java)
-            account.idToken?.let {
-                signInWithCredential(
-                    activity,
-                    GoogleAuthProvider.getCredential(it, null)
-                )
-            }
-        } catch (e: ApiException) {
-            // The ApiException status code indicates the detailed failure reason.
-            // Please refer to the GoogleSignInStatusCodes class reference for more information.
-            googleAuthStateListeners.forEach { it(e.statusCode) }
-            googleAuthStateListeners.clear()
-            Timber.e(
-                e,
-                "signInResult:failed code = ${e.statusCode}\n" +
-                        "Used api key: " +
-                        remoteConfig["default_web_client_id"].asString()
-                            .take(4) + "..." +
-                        "\n${e.message}"
-            )
-            analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
-                param(FirebaseAnalytics.Param.METHOD, "Google")
-            }
-        }
-    }
 
     private fun signInWithCredential(
         activity: Activity,
@@ -196,7 +196,7 @@ class AuthInteractor @Inject constructor(
                 Timber.i("Firebase authentication successful")
             } else {
                 // If sign in fails, display a message to the user.
-                Timber.e(task.exception, task.exception?.message)
+                Timber.e(task.exception)
             }
         }
     }
