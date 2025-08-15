@@ -18,11 +18,8 @@
 
 package illyan.jay
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -34,18 +31,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.tasks.Task
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.generated.NavGraphs
 import dagger.hilt.android.AndroidEntryPoint
 import illyan.jay.domain.interactor.AuthInteractor
-import illyan.jay.ui.NavGraphs
 import illyan.jay.ui.components.PreviewAccessibility
+import illyan.jay.ui.theme.DefaultDestinationTransitions
 import illyan.jay.ui.theme.JayThemeWithViewModel
 import illyan.jay.util.MapboxExceptionHandler
 import javax.inject.Inject
@@ -55,8 +51,6 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var authInteractor: AuthInteractor
-
-    lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
 
     init {
         lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -73,12 +67,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        googleSignInLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) {
-            val task: Task<GoogleSignInAccount> = GoogleSignIn.getSignedInAccountFromIntent(it.data)
-            authInteractor.handleGoogleSignInResult(this, task)
-        }
+        installSplashScreen()
 
         if (!MapboxNavigationApp.isSetup()) {
             MapboxNavigationApp.setup {
@@ -114,7 +103,8 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     DestinationsNavHost(
-        navGraph = NavGraphs.home,
-        modifier = modifier
+        navGraph = NavGraphs.root,
+        modifier = modifier,
+        defaultTransitions = DefaultDestinationTransitions
     )
 }

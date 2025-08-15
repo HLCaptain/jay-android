@@ -23,9 +23,9 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.ktx.snapshots
-import com.google.firebase.firestore.ktx.toObject
-import com.google.firebase.firestore.ktx.toObjects
+import com.google.firebase.firestore.snapshots
+import com.google.firebase.firestore.toObject
+import com.google.firebase.firestore.toObjects
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

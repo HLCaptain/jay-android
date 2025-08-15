@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.session
 
 import android.annotation.SuppressLint
@@ -31,10 +33,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -110,9 +112,12 @@ import illyan.jay.util.format
 import kotlinx.coroutines.delay
 import timber.log.Timber
 import java.math.RoundingMode
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.TimeZone
 import kotlin.math.abs
+import kotlin.time.ExperimentalTime
+import kotlin.time.toJavaInstant
 
 val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding * 2,
@@ -140,13 +145,13 @@ fun createGradientFromLocations(
     getColorFraction: (UiLocation) -> Float,
 ): Expression {
     if (locations.size < 2) return defaultGradient()
-    val startMilli = locations.minOf { it.zonedDateTime.toInstant().toEpochMilli() }
-    val endMilli = locations.maxOf { it.zonedDateTime.toInstant().toEpochMilli() }
+    val startMilli = locations.minOf { it.timestamp.toEpochMilliseconds() }
+    val endMilli = locations.maxOf { it.timestamp.toEpochMilliseconds() }
     val durationMilli = (endMilli - startMilli)
     val colorsWithKeys = locations.sortedBy {
-        it.zonedDateTime.toInstant().toEpochMilli()
+        it.timestamp
     }.map {
-        val currentMilli = it.zonedDateTime.toInstant().toEpochMilli()
+        val currentMilli = it.timestamp.toEpochMilliseconds()
         lerp(start, stop, getColorFraction(it).coerceIn(0f, 1f)) to
                 (currentMilli - startMilli).toDouble() / durationMilli
     }
@@ -243,9 +248,8 @@ fun aggressionGradient(
     )
 }
 
-@OptIn(ExperimentalMaterialApi::class)
-@MenuNavGraph
-@Destination
+@OptIn(ExperimentalMaterial3Api::class)
+@Destination<MenuNavGraph>
 @Composable
 fun SessionScreen(
     sessionUUID: String,
@@ -268,7 +272,7 @@ fun SessionScreen(
     }
     val sheetHeightNotSet by remember {
         derivedStateOf {
-            val isAnimationRunning = sheetState.progress != 1f
+            val isAnimationRunning = sheetState.currentValue != sheetState.targetValue
             val almostReachedTargetHeight = abs(currentOffset - previousOffset) < 2f
             isAnimationRunning || !almostReachedTargetHeight || !noMoreOffsetChanges
         }
@@ -311,7 +315,7 @@ fun SessionScreen(
         selectedGradientFilter,
         aggressions
     ) {
-        val sortedLocations = path?.sortedBy { it.zonedDateTime }?.map { it.latLng }
+        val sortedLocations = path?.sortedBy { it.timestamp }?.map { it.latLng }
         val startPoint = sortedLocations?.first()
         val endPoint = sortedLocations?.last()
         val points = sortedLocations?.map { it.toMapboxPoint() } ?: emptyList()
@@ -503,14 +507,14 @@ fun SessionDetailsScreen(
                     hour = stringResource(R.string.hour_short),
                     day = stringResource(R.string.day_short)
                 ),
-                stringResource(R.string.start_date) to session?.startDateTime?.format(
+                stringResource(R.string.start_date) to session?.startDateTime?.toJavaInstant()?.atZone(ZoneOffset.systemDefault())?.format(
                     if (locale != null) {
                         dateTimeFormatter.withLocale(locale)
                     } else {
                         dateTimeFormatter
                     }
                 ),
-                stringResource(R.string.end_date) to (session?.endDateTime?.format(
+                stringResource(R.string.end_date) to (session?.endDateTime?.toJavaInstant()?.atZone(ZoneOffset.systemDefault())?.format(
                     if (locale != null) {
                         dateTimeFormatter.withLocale(locale)
                     } else {

@@ -23,6 +23,7 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -54,12 +55,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
@@ -75,8 +76,7 @@ import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun DataSettingsDialogScreen(
     viewModel: DataSettingsViewModel = hiltViewModel(),
@@ -279,31 +279,19 @@ fun MenuButtonWithDescription(
             text = description,
             showDescription = showDescription,
         ) {
-            ConstraintLayout(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val (button, toggle) = createRefs()
-                Row(
-                    modifier = Modifier
-                        .constrainAs(button) {
-                            end.linkTo(toggle.start)
-                            start.linkTo(parent.start)
-                            width = Dimension.fillToConstraints
-                        }
-                ) {
-                    MenuButton(
-                        onClick = onClick,
-                        text = text,
-                    )
-                }
+                MenuButton(
+                    modifier = Modifier.weight(1f, fill = false),
+                    onClick = onClick,
+                    text = text,
+                )
 
                 IconToggleButton(
                     checked = showDescription,
                     onCheckedChange = { showDescription = it },
-                    modifier = Modifier.constrainAs(toggle) {
-                        top.linkTo(parent.top)
-                        end.linkTo(parent.end)
-                    }
                 ) {
                     Icon(
                         imageVector = if (showDescription) {
@@ -359,7 +347,7 @@ fun DescriptionCard(
 @Composable
 fun PreviewDataSettingsDialogContent() {
     JayTheme {
-        val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+        val screenWidthDp = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
         DataSettingsDialogContent(modifier = Modifier.dialogWidth(screenWidthDp))
     }
 }

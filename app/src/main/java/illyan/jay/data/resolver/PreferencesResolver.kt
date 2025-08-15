@@ -43,7 +43,9 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class PreferencesResolver @Inject constructor(
     private val authInteractor: AuthInteractor,
     private val appSettingsDataSource: AppSettingsDataSource,

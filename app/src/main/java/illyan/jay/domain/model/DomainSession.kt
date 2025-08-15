@@ -20,11 +20,13 @@ package illyan.jay.domain.model
 
 import com.google.android.gms.maps.model.LatLng
 import java.time.ZonedDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-data class DomainSession(
+data class DomainSession @OptIn(ExperimentalTime::class) constructor(
     var uuid: String,
-    val startDateTime: ZonedDateTime,
-    var endDateTime: ZonedDateTime?,
+    val startDateTime: Instant,
+    var endDateTime: Instant?,
     var startLocationLatitude: Float? = null,
     var startLocationLongitude: Float? = null,
     var endLocationLatitude: Float? = null,

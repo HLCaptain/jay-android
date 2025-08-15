@@ -16,11 +16,13 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.sessions
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -41,8 +44,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.AddChart
-import androidx.compose.material.icons.rounded.ArrowRightAlt
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.CloudUpload
@@ -78,12 +81,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.LatLng
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.generated.destinations.SessionScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.compose.scrollbar.drawVerticalScrollbar
@@ -92,7 +94,6 @@ import illyan.jay.ui.components.MediumCircularProgressIndicator
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipButton
-import illyan.jay.ui.destinations.SessionScreenDestination
 import illyan.jay.ui.home.RoundedCornerRadius
 import illyan.jay.ui.menu.MenuItemPadding
 import illyan.jay.ui.menu.MenuNavGraph
@@ -106,10 +107,11 @@ import illyan.jay.util.plus
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 import java.math.RoundingMode
-import java.time.ZonedDateTime
 import java.util.UUID
 import kotlin.random.Random
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 val DefaultContentPadding = PaddingValues(
     bottom = RoundedCornerRadius
@@ -119,8 +121,7 @@ val DefaultScreenOnSheetPadding = PaddingValues(
     top = MenuItemPadding * 2
 )
 
-@MenuNavGraph
-@Destination
+@Destination<MenuNavGraph>
 @Composable
 fun Sessions(
     destinationsNavigator: DestinationsNavigator = EmptyDestinationsNavigator,
@@ -200,35 +201,14 @@ fun SessionsScreen(
     val showButtons = isUserSignedIn &&
             (canSyncSessions || areThereSyncedSessions || areThereSessionsNotOwned) ||
             canDeleteSessions
-    ConstraintLayout(
+    Column(
         modifier = modifier.padding(
-            DefaultContentPadding + if (!showButtons) {
-                DefaultScreenOnSheetPadding
-            } else PaddingValues()
+            DefaultScreenOnSheetPadding
         )
     ) {
-        val (column, globalLoadingIndicator, buttons) = createRefs()
-        AnimatedVisibility(
-            modifier = Modifier
-                .constrainAs(globalLoadingIndicator) {
-                    top.linkTo(parent.top)
-                    end.linkTo(parent.end)
-                },
-            visible = isLoading
-        ) {
-            MediumCircularProgressIndicator(modifier = Modifier.padding(end = MenuItemPadding * 2))
-        }
         SessionsInteractorButtonList(
             modifier = Modifier
-                .zIndex(2f)
-                .padding(
-                    start = MenuItemPadding,
-                    bottom = MenuItemPadding,
-                )
-                .constrainAs(buttons) {
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                },
+                .zIndex(2f),
             showSyncButton = isUserSignedIn && canSyncSessions,
             showOwnAllSessionsButton = isUserSignedIn && areThereSessionsNotOwned,
             showDeleteSessionsFromCloudButton = isUserSignedIn && areThereSyncedSessions,
@@ -238,18 +218,18 @@ fun SessionsScreen(
             onDeleteSessionsFromCloud = deleteAllSyncedData,
             onDeleteSessionsLocally = deleteSessionsLocally,
         )
+        AnimatedVisibility(
+            modifier = Modifier
+                .fillMaxWidth(),
+            visible = isLoading
+        ) {
+            MediumCircularProgressIndicator(modifier = Modifier.padding(end = MenuItemPadding * 2))
+        }
         Column(
             modifier = Modifier
                 .padding(
-                    top = MenuItemPadding,
                     bottom = MenuItemPadding + RoundedCornerRadius,
                 )
-                .constrainAs(column) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(buttons.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                }
         ) {
             SessionsList(
                 modifier = Modifier.fillMaxWidth(),
@@ -296,9 +276,9 @@ private fun SessionsScreenPreview() {
 
 private fun generateUiSessions(number: Int): List<UiSession> {
     return List(number) {
-        val now = ZonedDateTime.now()
-        val startTime = now.minusSeconds(Random.nextLong(5000, 10000))
-        val endTime = if (Random.nextInt(3) == 0) null else now.minusSeconds(Random.nextLong(1000, 4000))
+        val now = Clock.System.now()
+        val startTime = now.minus(Random.nextLong(5000, 10000).seconds)
+        val endTime = if (Random.nextInt(3) == 0) null else now.minus(Random.nextLong(1000, 4000).seconds)
         val ownerUUID = UUID.randomUUID().toString()
         UiSession(
             uuid = UUID.randomUUID().toString(),
@@ -311,7 +291,7 @@ private fun generateUiSessions(number: Int): List<UiSession> {
             startLocationName = "City number $it",
             endLocationName = "City number ${Random.nextInt(it + 1)}",
             totalDistance = Random.nextDouble(100.0, 10000.0),
-            duration = ((endTime?.toEpochSecond() ?: now.toEpochSecond()) - startTime.toEpochSecond()).seconds,
+            duration = (endTime ?: now) - startTime,
             endCoordinate = LatLng(Random.nextDouble(-90.0, 90.0), Random.nextDouble(-90.0, 90.0)),
             startCoordinate = LatLng(
                 Random.nextDouble(-90.0, 90.0),
@@ -335,6 +315,7 @@ fun SessionsInteractorButtonList(
 ) {
     LazyRow(
         modifier = modifier,
+        contentPadding = PaddingValues(start = MenuItemPadding)
     ) {
         item {
             SessionInteractionButton(
@@ -459,7 +440,7 @@ fun SessionsList(
                 .padding(
                     start = contentPadding.calculateStartPadding(layoutDirection),
                     end = contentPadding.calculateEndPadding(layoutDirection),
-                    top = DefaultContentPadding.calculateBottomPadding() + DefaultScreenOnSheetPadding.calculateTopPadding() / 2
+                    top = DefaultScreenOnSheetPadding.calculateTopPadding() / 2
                 )
                 .clip(RoundedCornerShape(12.dp)),
             contentPadding = PaddingValues(
@@ -502,7 +483,7 @@ fun SessionsList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .cardPlaceholder(isPlaceholderVisible)
-                        .animateItemPlacement(),
+                        .animateItem(),
                     session = session,
                     onClick = { onSessionSelected(it) },
                     onSync = { syncSession(it) },
@@ -594,7 +575,7 @@ private fun SessionLoadingIndicatorPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun SessionCard(
     modifier: Modifier = Modifier,
@@ -649,65 +630,66 @@ fun SessionCard(
                     .background(containerColor)
             ) {
                 Column {
-                    ConstraintLayout(
+                    Box(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        val (title, labels) = createRefs()
                         Box(
                             modifier = Modifier
-                                .constrainAs(title) {
-                                    start.linkTo(parent.start)
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    end.linkTo(labels.start)
-                                    width = Dimension.fillToConstraints
-                                }
+                                .fillMaxSize()
                         ) {
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = MenuItemPadding * 2)
+                            Row(
+                                modifier = Modifier
+                                    .padding(PaddingValues(horizontal = MenuItemPadding * 2))
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onClick() },
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                item {
-                                    Row(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .clickable { onClick() },
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Crossfade(
-                                            modifier = Modifier.animateContentSize(),
-                                            targetState = session?.startLocationName,
-                                            label = "Start location name",
-                                        ) {
-                                            Text(
-                                                text = it ?: stringResource(R.string.unknown),
-                                                style = MaterialTheme.typography.titleLarge,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                        }
+                                val startLocationText = session?.startLocationName
+                                    ?: stringResource(R.string.unknown)
+                                Crossfade(
+                                    modifier = Modifier
+                                        .weight(
+                                            startLocationText.length.toFloat(),
+                                            fill = false
+                                        ),
+                                    targetState = startLocationText,
+                                    label = "Start location name",
+                                ) { startLocationText ->
+                                    Text(
+                                        text = startLocationText,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowRightAlt,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                                val endLocationText = session?.endLocationName
+                                    ?: stringResource(R.string.unknown)
+                                Crossfade(
+                                    modifier = Modifier
+                                        .weight(
+                                            (if (session?.endDateTime == null) "..." else endLocationText).length.toFloat(),
+                                            fill = false
+                                        ),
+                                    targetState = (session?.endDateTime == null) to endLocationText,
+                                    label = "End location name",
+                                ) {
+                                    if (it.first) {
                                         Icon(
-                                            imageVector = Icons.Rounded.ArrowRightAlt, contentDescription = "",
+                                            imageVector = Icons.Rounded.MoreHoriz,
+                                            contentDescription = "",
                                             tint = MaterialTheme.colorScheme.onSurface,
                                         )
-                                        Crossfade(
-                                            modifier = Modifier.animateContentSize(),
-                                            targetState = (session?.endDateTime == null) to session?.endLocationName,
-                                            label = "End location name",
-                                        ) {
-                                            if (it.first) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.MoreHoriz,
-                                                    contentDescription = "",
-                                                    tint = MaterialTheme.colorScheme.onSurface,
-                                                )
-                                            } else {
-                                                Text(
-                                                    text = it.second ?: stringResource(R.string.unknown),
-                                                    style = MaterialTheme.typography.titleLarge,
-                                                    color = MaterialTheme.colorScheme.onSurface,
-                                                )
-                                            }
-                                        }
+                                    } else {
+                                        Text(
+                                            text = it.second,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
                                     }
                                 }
                             }
@@ -718,10 +700,7 @@ fun SessionCard(
                             session?.isNotOwned == true
                         androidx.compose.animation.AnimatedVisibility(
                             modifier = Modifier
-                                .constrainAs(labels) {
-                                    end.linkTo(parent.end)
-                                    top.linkTo(parent.top)
-                                },
+                                .align(Alignment.TopEnd),
                             visible = areLabelsVisible
                         ) {
                             Row(
@@ -730,13 +709,22 @@ fun SessionCard(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 AnimatedVisibility(visible = session?.isLocal == true) {
-                                    Icon(imageVector = Icons.Rounded.Save, contentDescription = "")
+                                    Icon(
+                                        imageVector = Icons.Rounded.Save,
+                                        contentDescription = ""
+                                    )
                                 }
                                 AnimatedVisibility(visible = session?.isSynced == true) {
-                                    Icon(imageVector = Icons.Rounded.CloudSync, contentDescription = "")
+                                    Icon(
+                                        imageVector = Icons.Rounded.CloudSync,
+                                        contentDescription = ""
+                                    )
                                 }
                                 AnimatedVisibility(visible = session?.isNotOwned == true) {
-                                    Icon(imageVector = Icons.Rounded.PersonOff, contentDescription = "")
+                                    Icon(
+                                        imageVector = Icons.Rounded.PersonOff,
+                                        contentDescription = ""
+                                    )
                                 }
                             }
                         }
@@ -749,6 +737,7 @@ fun SessionCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         SessionDetailsList(
+                            modifier = Modifier.weight(1f, fill = false),
                             details = listOf(
                                 stringResource(R.string.distance) to if (session?.totalDistance == null) {
                                     stringResource(R.string.unknown)
@@ -769,7 +758,9 @@ fun SessionCard(
                                 ) ?: stringResource(R.string.unknown))
                             ),
                         )
-                        content()
+                        Box(modifier = Modifier.padding(end = MenuItemPadding)) {
+                            content()
+                        }
                     }
                 }
             }

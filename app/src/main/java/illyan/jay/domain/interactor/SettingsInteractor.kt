@@ -30,7 +30,10 @@ import timber.log.Timber
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 @Singleton
 class SettingsInteractor @Inject constructor(
     private val appSettingsDataSource: AppSettingsDataSource,
@@ -70,7 +73,7 @@ class SettingsInteractor @Inject constructor(
                         appSettingsDataSource.updateAppPreferences {
                             it.copy(
                                 analyticsEnabled = value,
-                                lastUpdateToAnalytics = ZonedDateTime.now()
+                                lastUpdateToAnalytics = Clock.System.now()
                             )
                         }
                     }

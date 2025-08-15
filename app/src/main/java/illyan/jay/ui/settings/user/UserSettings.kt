@@ -16,6 +16,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.settings.user
 
 import android.content.res.Configuration
@@ -89,6 +91,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.generated.destinations.DataSettingsDialogScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.MLSettingsDialogScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.jay.R
@@ -102,20 +106,28 @@ import illyan.jay.ui.components.MenuButton
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.components.SmallCircularProgressIndicator
 import illyan.jay.ui.components.TooltipElevatedCard
-import illyan.jay.ui.destinations.DataSettingsDialogScreenDestination
-import illyan.jay.ui.destinations.MLSettingsDialogScreenDestination
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.settings.user.model.UiPreferences
 import illyan.jay.ui.theme.JayTheme
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format
+import kotlinx.datetime.format.DateTimeFormat
+import kotlinx.datetime.toLocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.random.Random
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun UserSettingsDialogScreen(
     viewModel: UserSettingsViewModel = hiltViewModel(),
@@ -140,7 +152,9 @@ fun UserSettingsDialogScreen(
         setFreeDriveAutoStart = viewModel::setFreeDriveAutoStart,
         setAdVisibility = viewModel::setAdVisibility,
         setDynamicColorEnabled = viewModel::setDynamicColorEnabled,
-        navigateToDataSettings = { destinationsNavigator.navigate(DataSettingsDialogScreenDestination) },
+        navigateToDataSettings = { destinationsNavigator.navigate(
+            DataSettingsDialogScreenDestination
+        ) },
         navigateToMLSettings = { destinationsNavigator.navigate(MLSettingsDialogScreenDestination) },
     )
 }
@@ -163,7 +177,6 @@ fun UserSettingsDialogContent(
     navigateToMLSettings: () -> Unit = {},
 ) {
     Crossfade(
-        modifier = modifier.animateContentSize(),
         targetState = showAnalyticsRequestDialog,
         label = "User Settings Dialog Content",
     ) {
@@ -427,20 +440,12 @@ private fun SyncPreferencesButton(
 
 @Composable
 private fun LastUpdateLabel(
-    lastUpdate: ZonedDateTime,
+    lastUpdate: Instant,
 ) {
-    val time = lastUpdate
-        .withZoneSameInstant(ZoneId.systemDefault())
-        .minusNanos(lastUpdate.nano.toLong()) // No millis in formatted time
-        .format(DateTimeFormatter.ISO_LOCAL_TIME)
-    val date = lastUpdate
-        .withZoneSameInstant(ZoneId.systemDefault())
-        .minusNanos(lastUpdate.nano.toLong()) // No millis in formatted time
-        .format(DateTimeFormatter.ISO_LOCAL_DATE)
     val isDateVisible by remember {
         derivedStateOf {
-            lastUpdate.toEpochSecond().seconds.inWholeDays !=
-                    ZonedDateTime.now().toEpochSecond().seconds.inWholeDays
+            lastUpdate.toEpochMilliseconds().milliseconds.inWholeDays !=
+                    Clock.System.now().toEpochMilliseconds().milliseconds.inWholeDays
         }
     }
     val textStyle = MaterialTheme.typography.bodyMedium
@@ -453,12 +458,16 @@ private fun LastUpdateLabel(
             ) {
                 AnimatedVisibility(visible = isDateVisible) {
                     Text(
-                        text = date,
+                        text = lastUpdate.toLocalDateTime(TimeZone.currentSystemDefault()).date.format(
+                            LocalDate.Formats.ISO
+                        ),
                         style = textStyle,
                     )
                 }
                 Text(
-                    text = time,
+                    text = lastUpdate.toLocalDateTime(TimeZone.currentSystemDefault()).time.format(
+                        LocalTime.Formats.ISO
+                    ),
                     style = textStyle
                 )
             }
@@ -917,7 +926,7 @@ private fun generateRandomUserPreferences(): UiPreferences {
     return UiPreferences(
         userUUID = UUID.randomUUID().toString(),
         clientUUID = UUID.randomUUID().toString(),
-        lastUpdate = ZonedDateTime.now().minusDays(if (Random.nextBoolean()) 1 else 0),
+        lastUpdate = Clock.System.now().minus((if (Random.nextBoolean()) 1 else 0).days),
         analyticsEnabled = Random.nextBoolean(),
         freeDriveAutoStart = Random.nextBoolean(),
         showAds = Random.nextBoolean(),

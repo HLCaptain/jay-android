@@ -23,11 +23,13 @@ import illyan.jay.data.datastore.model.AppSettings
 import illyan.jay.domain.model.DomainPreferences
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
-import java.time.ZonedDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 @Singleton
 class AppSettingsDataSource @Inject constructor(
     private val appSettingsDataStore: DataStore<AppSettings>
@@ -55,7 +57,7 @@ class AppSettingsDataSource @Inject constructor(
     suspend fun updateAppPreferences(transform: (DomainPreferences) -> DomainPreferences) {
         Timber.v("Updating App Preferences requested")
         updateAppSettings {
-            it.copy(preferences = transform(it.preferences).copy(lastUpdate = ZonedDateTime.now()))
+            it.copy(preferences = transform(it.preferences).copy(lastUpdate = Clock.System.now()))
         }
     }
 }

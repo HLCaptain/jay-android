@@ -31,7 +31,6 @@ import illyan.jay.domain.model.DomainAggression
 import illyan.jay.ui.session.model.UiLocation
 import illyan.jay.ui.session.model.UiSession
 import illyan.jay.ui.session.model.toUiModel
-import illyan.jay.util.toZonedDateTime
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,12 +44,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.time.Instant
-import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 @HiltViewModel
 class SessionViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
@@ -62,7 +62,7 @@ class SessionViewModel @Inject constructor(
 
     private val _isModelAvailable = MutableStateFlow(false)
     val isModelAvailable = _isModelAvailable.asStateFlow()
-    private val _aggressions = MutableStateFlow<Map<ZonedDateTime, Double>?>(null)
+    private val _aggressions = MutableStateFlow<Map<Instant, Double>?>(null)
     val aggressions = _aggressions
         .asStateFlow()
         .map { aggressions -> aggressions?.map { it.value.toFloat() } }
@@ -73,7 +73,7 @@ class SessionViewModel @Inject constructor(
             // Find closest zonedDateTime of a location for each aggression
             val closestAggressionToLocationTimestamp = aggressions?.minByOrNull {
                 // Time difference
-                abs(it.key.toInstant().toEpochMilli() - location.zonedDateTime.toInstant().toEpochMilli())
+                abs((it.key - location.timestamp).inWholeMilliseconds)
             }?.value
 //            Timber.d("Aggression difference: $closestAggressionToLocationTimestamp")
             location.copy(aggression = closestAggressionToLocationTimestamp?.toFloat())
@@ -118,7 +118,7 @@ class SessionViewModel @Inject constructor(
             locationInteractor.getSyncedPath(sessionUUID).collectLatest { locations ->
                 Timber.d("Loaded path with ${locations?.size} locations for session with ID: $sessionUUID")
                 if (!locations.isNullOrEmpty()) {
-                    val sortedPath = locations.sortedBy { it.zonedDateTime.toInstant() }
+                    val sortedPath = locations.sortedBy { it.timestamp }
                     _path.update { sortedPath.map { it.toUiModel() } }
                 }
             }
@@ -127,7 +127,7 @@ class SessionViewModel @Inject constructor(
             locationInteractor.getSyncedPathAggressions(sessionUUID).collectLatest { aggressions ->
                 Timber.d("Loaded ${aggressions?.size} aggressions for session with ID: $sessionUUID")
                 _aggressions.update { aggressions?.associate {
-                    Instant.ofEpochMilli(it.timestamp).toZonedDateTime() to it.aggression.toDouble()
+                    Instant.fromEpochMilliseconds(it.timestamp) to it.aggression.toDouble()
                 } }
             }
         }
@@ -152,7 +152,7 @@ class SessionViewModel @Inject constructor(
                     ).collectLatest { filteredAggressions ->
                         Timber.d("Loaded ${filteredAggressions.size} aggressions for session with ID: ${sessionUUID.take(4)}")
                         val aggressions = filteredAggressions.map {
-                            DomainAggression(sessionUUID, it.key.toInstant().toEpochMilli(), it.value.toFloat())
+                            DomainAggression(sessionUUID, it.key.toEpochMilliseconds(), it.value.toFloat())
                         }
                         locationInteractor.saveAggressions(aggressions)
                         if (sessionInteractor.syncedSessions.first()?.map { it.uuid }?.contains(sessionUUID) == true) {

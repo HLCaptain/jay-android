@@ -17,7 +17,6 @@
  */
 
 @file:OptIn(
-    ExperimentalMaterialApi::class,
     ExperimentalMaterial3Api::class,
     ExperimentalPermissionsApi::class
 )
@@ -28,7 +27,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Parcelable
 import androidx.compose.animation.AnimatedVisibility
@@ -38,61 +36,61 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.BottomSheetScaffold
-import androidx.compose.material.BottomSheetState
-import androidx.compose.material.BottomSheetValue
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.rememberBottomSheetScaffoldState
-import androidx.compose.material.rememberBottomSheetState
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -100,6 +98,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -112,11 +111,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -127,11 +126,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.zIndex
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.isGranted
@@ -142,14 +139,13 @@ import com.mapbox.maps.MapView
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.NavGraph
-import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.generated.NavGraphs
 import illyan.jay.MainActivity
 import illyan.jay.R
-import illyan.jay.ui.NavGraphs
+import illyan.jay.domain.model.Theme
 import illyan.jay.ui.components.AvatarAsyncImage
 import illyan.jay.ui.components.PreviewAccessibility
 import illyan.jay.ui.map.BmeK
@@ -162,8 +158,10 @@ import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.profile.ProfileDialog
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.search.SearchViewModel.Companion.KeySearchQuery
+import illyan.jay.ui.theme.DarkMapStyleUrl
+import illyan.jay.ui.theme.DefaultDestinationTransitions
 import illyan.jay.ui.theme.JayTheme
-import illyan.jay.ui.theme.mapStyleUrl
+import illyan.jay.ui.theme.LightMapStyleUrl
 import illyan.jay.util.extraOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -173,11 +171,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@RootNavGraph(start = true)
-@NavGraph
-annotation class HomeNavGraph(
-    val start: Boolean = false,
-)
+@NavGraph<RootGraph>(start = true)
+annotation class HomeNavGraph
 
 val RoundedCornerRadius = 24.dp
 val SearchBarSpaceBetween = 8.dp
@@ -200,8 +195,7 @@ const val BottomSheetPartialMaxFraction = 1f
 
 private val _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
 val mapView = _mapView.asStateFlow()
-lateinit var sheetState: BottomSheetState
-var isSearching: Boolean = false
+lateinit var sheetState: SheetState
 
 private val _bottomSheetFraction = MutableStateFlow(0f)
 val bottomSheetFraction = _bottomSheetFraction.asStateFlow()
@@ -276,7 +270,7 @@ fun tryFlyToLocation(
     extraCameraOptions: (CameraOptions.Builder) -> CameraOptions.Builder = { it },
     onFly: () -> Unit = {},
 ) {
-    if (sheetState.progress == 1f && // animation is not running
+    if (sheetState.currentValue == sheetState.targetValue && // animation is not running
         sheetState.requireOffset() >= 10f &&
         extraCondition()
     ) {
@@ -302,7 +296,7 @@ fun tryFlyToPath(
         Timber.e(IllegalArgumentException("Path is empty, flying cancelled"))
         return
     }
-    val canFly = sheetState.progress == 1f &&
+    val canFly = sheetState.currentValue == sheetState.targetValue &&
             sheetState.requireOffset() >= 10f &&
             extraCondition()
     if (canFly) {
@@ -324,33 +318,35 @@ fun tryFlyToPath(
 
 fun onSearchBarDrag(
     coroutineScope: CoroutineScope,
-    bottomSheetState: BottomSheetState,
+    bottomSheetState: SheetState,
     enabled: Boolean = true,
     onEnabledChange: (Boolean) -> Unit = {},
 ) {
     // By dragging the search bar, we can toggle bottom sheet state
     if (enabled) {
         bottomSheetState.apply {
-            if (isCollapsed) {
+            if (currentValue != SheetValue.Expanded) {
                 onEnabledChange(false)
                 coroutineScope.launch { expand() }
-            } else if (isExpanded) {
+            } else {
                 onEnabledChange(false)
-                coroutineScope.launch { collapse() }
+                coroutineScope.launch { hide() }
             }
         }
         Timber.d("Search bar is dragged!")
+    } else {
+        Timber.d("Search bar drag is disabled, not toggling bottom sheet state!")
     }
 }
 
 fun calculateCornerRadius(
-    bottomSheetState: BottomSheetState,
+    bottomSheetState: SheetState,
     maxCornerRadius: Dp = RoundedCornerRadius,
     minCornerRadius: Dp = 0.dp,
     threshold: Float = BottomSheetPartialExpendedFraction,
     fraction: Float = 0f,
 ): Dp {
-    return if (bottomSheetState.isCollapsed) {
+    return if (bottomSheetState.currentValue != SheetValue.Expanded) {
         maxCornerRadius
     } else {
         val max = BottomSheetPartialMaxFraction
@@ -407,8 +403,7 @@ fun refreshCameraPadding() {
     }
 }
 
-@HomeNavGraph(start = true)
-@Destination
+@Destination<HomeNavGraph>(start = true)
 @Composable
 fun HomeScreen(
     context: Context = LocalContext.current,
@@ -432,28 +427,23 @@ fun HomeScreen(
         }
         onDispose { viewModel.dispose() }
     }
-    val density = LocalDensity.current.density
-    val configuration = LocalConfiguration.current
-    val maxHeight = when (configuration.orientation) {
-        Configuration.ORIENTATION_PORTRAIT -> configuration.screenHeightDp
-        Configuration.ORIENTATION_LANDSCAPE -> configuration.screenWidthDp
-        else -> configuration.screenHeightDp
-    }.dp
-    LaunchedEffect(density) { _density.update { density } }
+    val density = LocalDensity.current
+    val maxHeight = with (density) { LocalWindowInfo.current.containerSize.height.toDp() }
+    LaunchedEffect(density) { _density.update { density.density } }
     LaunchedEffect(maxHeight) { _screenHeight.update { maxHeight } }
-    ConstraintLayout(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .onGloballyPositioned { coordinates ->
                 var topSet = false
-                val absoluteTopPosition = (coordinates.positionInWindow().y / density).dp
+                val absoluteTopPosition = with(density) { coordinates.positionInWindow().y.toDp() }
                 if (_absoluteTop.value != absoluteTopPosition) {
                     _absoluteTop.update { absoluteTopPosition }
                     topSet = true
                 }
                 var bottomSet = false
                 val absoluteBottomPosition =
-                    ((coordinates.positionInWindow().y + coordinates.size.height) / density).dp
+                    ((coordinates.positionInWindow().y + coordinates.size.height) / density.density).dp
                 if (_absoluteBottom.value != absoluteBottomPosition) {
                     bottomSet = true
                     _absoluteBottom.update { absoluteBottomPosition }
@@ -462,14 +452,20 @@ fun HomeScreen(
                     refreshCameraPadding()
                     Timber.d(
                         "Camera bottom padding: ${
-                            absoluteBottomPosition - sheetState.getOffsetAsDp(density)
+                            absoluteBottomPosition - sheetState.getOffsetAsDp(density.density)
                         }"
                     )
                 }
             }
     ) {
-        val (searchBar, scaffold) = createRefs()
-        val bottomSheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Expanded)
+        val bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.Expanded,
+            skipHiddenState = false,
+            confirmValueChange = {
+                Timber.v("Bottom sheet state changed to $it")
+                true
+            }
+        )
         val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
         sheetState = bottomSheetState
         var isTextFieldFocused by remember { mutableStateOf(false) }
@@ -486,12 +482,12 @@ fun HomeScreen(
         }
         var shouldTriggerBottomSheetOnDrag by remember { mutableStateOf(true) }
         val softwareKeyboardController = LocalSoftwareKeyboardController.current
-        val sheetCollapsing = bottomSheetState.isCollapsed
+        val sheetCollapsing = bottomSheetState.targetValue != SheetValue.Expanded
         val focusManager = LocalFocusManager.current
         BackPressHandler {
             onHomeBackPress(isTextFieldFocused, focusManager, context)
         }
-        LaunchedEffect(bottomSheetState.progress) { refreshCameraPadding() }
+        LaunchedEffect(bottomSheetState.currentValue) { refreshCameraPadding() }
         LaunchedEffect(sheetCollapsing) {
             onSheetStateChanged(
                 isTextFieldFocused,
@@ -524,56 +520,7 @@ fun HomeScreen(
                     Intent.ACTION_SEARCH
                 )
         }
-        BottomSearchBar(
-            modifier = Modifier
-                .zIndex(1f) // Search bar is in front of everything else
-                .constrainAs(searchBar) {
-                    bottom.linkTo(scaffold.bottom)
-                    centerHorizontallyTo(parent)
-                }
-                .widthIn(max = HomeBarMaxWidth)
-                .imePadding()
-                .navigationBarsPadding(),
-            isUserSignedIn = isUserSignedIn,
-            userPhotoUrl = userPhotoUrl,
-            onDrag = {
-                onSearchBarDrag(
-                    bottomSheetState = bottomSheetState,
-                    enabled = shouldTriggerBottomSheetOnDrag,
-                    onEnabledChange = { shouldTriggerBottomSheetOnDrag = it },
-                    coroutineScope = coroutineScope
-                )
-            },
-            bottomSheetState = bottomSheetState,
-            onTextFieldFocusChanged = {
-                isTextFieldFocused = it.hasFocus || it.isFocused
-                isSearching = isTextFieldFocused
-                if (isTextFieldFocused) {
-                    coroutineScope.launch {
-                        // When searching, show search results on bottom sheet
-                        bottomSheetState.expand()
-                    }
-                }
-            },
-            onSearchQueryChanged = { searchQuery = it },
-            onSearchQueried = {
-                LocalBroadcastManager.getInstance(context)
-                    .sendBroadcast(
-                        it,
-                        SearchViewModel.KeySearchSelected,
-                        SearchViewModel.ActionSearchSelected
-                    )
-            },
-            onShowProfile = { isProfileDialogShowing = true }
-        )
         BottomSheetScaffold(
-            modifier = Modifier
-                .constrainAs(scaffold) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                },
             sheetContent = {
                 BottomSheetScreen(
                     modifier = Modifier.imePadding(),
@@ -586,9 +533,14 @@ fun HomeScreen(
                             fraction = it,
                             threshold = BottomSheetPartialExpendedFraction
                         )
-                    }
+                    },
+                    searchChanged = {
+                        isTextFieldFocused = it
+                        focusManager.clearFocus()
+                    },
                 )
             },
+            sheetDragHandle = null,
             sheetPeekHeight = SearchBarHeight,
             scaffoldState = scaffoldState,
             sheetShape = RoundedCornerShape(
@@ -610,17 +562,16 @@ fun HomeScreen(
 
                 var didLoadInLocation by rememberSaveable { mutableStateOf(false) }
                 var didLoadInLocationWithoutPermissions by rememberSaveable { mutableStateOf(false) }
-                var isMapInitialized by rememberSaveable { mutableStateOf(false) }
                 var isMapVisible by rememberSaveable { mutableStateOf(false) }
                 val sheetContentHeight by sheetContentHeight.collectAsStateWithLifecycle()
                 LaunchedEffect(
-                    bottomSheetState.getOffsetAsDp(density),
+                    bottomSheetState.getOffsetAsDp(density.density),
                     isMapVisible,
                     initialLocationLoaded
                 ) {
                     refreshCameraPadding()
                     // Permissions probably granted because there is a location to focus on
-                    if (bottomSheetState.isExpanded &&
+                    if (bottomSheetState.hasExpandedState &&
                         !didLoadInLocation &&
                         cameraOptionsBuilder != null &&
                         initialLocationLoaded &&
@@ -630,7 +581,7 @@ fun HomeScreen(
                     ) {
                         Timber.d(
                             "Focusing camera to location\n" +
-                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
+                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density.density)}\n" +
                                     "Current sheetState:\n${sheetState}" +
                                     "Sheet content height = $sheetContentHeight"
                         )
@@ -644,7 +595,7 @@ fun HomeScreen(
                         }
                     }
                     // Permissions not granted
-                    if (bottomSheetState.isExpanded &&
+                    if (bottomSheetState.hasExpandedState &&
                         !didLoadInLocationWithoutPermissions &&
                         !locationPermissionState.status.isGranted &&
                         isMapVisible &&
@@ -653,30 +604,22 @@ fun HomeScreen(
                     ) {
                         Timber.d(
                             "Focusing camera to location" +
-                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density)}\n" +
+                                    "Current sheetHeight: ${bottomSheetState.getOffsetAsDp(density.density)}\n" +
                                     "Current sheetState:\n${sheetState}\n" +
                                     "Sheet content height = $sheetContentHeight"
                         )
                         didLoadInLocationWithoutPermissions = true
                         flyToLocation {
                             it.zoom(4.0)
-                            .center(Point.fromLngLat(BmeK.longitude, BmeK.latitude))
-                            .padding(cameraPadding.value, context)
+                                .center(Point.fromLngLat(BmeK.longitude, BmeK.latitude))
+                                .padding(cameraPadding.value, context)
                         }
                     }
                 }
                 if (initialLocationLoaded || cameraOptionsBuilder != null) {
-                    ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-                        val (foreground, map) = createRefs()
-                        androidx.compose.animation.AnimatedVisibility(
-                            modifier = Modifier
-                                .zIndex(1f)
-                                .constrainAs(foreground) {
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    start.linkTo(parent.start)
-                                    end.linkTo(parent.end)
-                                },
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        this@Column.AnimatedVisibility(
+                            modifier = Modifier.zIndex(1f),
                             visible = !isMapVisible,
                             exit = fadeOut(animationSpec = tween(800))
                         ) {
@@ -686,17 +629,20 @@ fun HomeScreen(
                                     .background(MaterialTheme.colorScheme.background)
                             )
                         }
-                        val styleUrl by mapStyleUrl.collectAsStateWithLifecycle()
+                        val isNight by viewModel.isNight.collectAsStateWithLifecycle()
+                        val theme by viewModel.theme.collectAsStateWithLifecycle()
+                        val systemInDarkMode = isSystemInDarkTheme()
+                        val styleUrl = remember(isNight, theme, systemInDarkMode) {
+                            when (theme ?: Theme.System) {
+                                Theme.Dark -> DarkMapStyleUrl
+                                Theme.Light -> LightMapStyleUrl
+                                Theme.DayNightCycle -> if (isNight) DarkMapStyleUrl else LightMapStyleUrl
+                                Theme.System -> if (systemInDarkMode) DarkMapStyleUrl else LightMapStyleUrl
+                            }
+                        }
                         MapboxMap(
                             // Budapest University of Technology and Economics
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .constrainAs(map) {
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    start.linkTo(parent.start)
-                                    end.linkTo(parent.end)
-                                },
+                            modifier = Modifier.fillMaxSize(),
                             cameraOptionsBuilder = cameraOptionsBuilder?.padding(
                                 cameraPaddingValues, context
                             ) ?: CameraOptions.Builder()
@@ -712,7 +658,6 @@ fun HomeScreen(
                                 coroutineScope.launch { sheetState.expand() }
                             },
                             onMapInitialized = { view ->
-                                isMapInitialized = true
                                 _mapView.update { view }
 
                                 when (locationPermissionState.status) {
@@ -730,6 +675,43 @@ fun HomeScreen(
                 }
             }
         }
+
+        BottomSearchBar(
+            modifier = Modifier
+                .zIndex(2f) // Search bar is in front of everything else
+                .align(Alignment.BottomCenter)
+                .widthIn(max = HomeBarMaxWidth),
+            isUserSignedIn = isUserSignedIn,
+            userPhotoUrl = userPhotoUrl,
+            onDrag = {
+                onSearchBarDrag(
+                    bottomSheetState = bottomSheetState,
+                    enabled = shouldTriggerBottomSheetOnDrag,
+                    onEnabledChange = { shouldTriggerBottomSheetOnDrag = it },
+                    coroutineScope = coroutineScope
+                )
+            },
+            bottomSheetState = bottomSheetState,
+            onTextFieldFocusChanged = {
+                isTextFieldFocused = it.hasFocus || it.isFocused
+                if (isTextFieldFocused) {
+                    coroutineScope.launch {
+                        // When searching, show search results on bottom sheet
+                        bottomSheetState.expand()
+                    }
+                }
+            },
+            onSearchQueryChanged = { searchQuery = it },
+            onSearchQueried = {
+                LocalBroadcastManager.getInstance(context)
+                    .sendBroadcast(
+                        it,
+                        SearchViewModel.KeySearchSelected,
+                        SearchViewModel.ActionSearchSelected
+                    )
+            },
+            onShowProfile = { isProfileDialogShowing = true }
+        )
     }
 }
 
@@ -739,7 +721,7 @@ private fun onHomeBackPress(
     context: Context,
 ) {
     Timber.d("Handling back press from Home!")
-    if (sheetState.isCollapsed) (context as MainActivity).moveTaskToBack(false)
+    if (sheetState.currentValue != SheetValue.Expanded) (context as MainActivity).moveTaskToBack(false)
     if (isTextFieldFocused) {
         // Remove the focus from the textfield
         focusManager.clearFocus()
@@ -750,10 +732,10 @@ private fun onHomeBackPress(
 
 private suspend fun onSheetStateChanged(
     isTextFieldFocused: Boolean,
-    bottomSheetState: BottomSheetState,
+    bottomSheetState: SheetState,
     softwareKeyboardController: SoftwareKeyboardController?,
 ) {
-    if (bottomSheetState.isCollapsed) {
+    if (bottomSheetState.currentValue != SheetValue.Expanded) {
         // Close the keyboard when closing the bottom sheet
         if (isTextFieldFocused) {
             // If searching right now, expand bottom sheet
@@ -768,14 +750,13 @@ private suspend fun onSheetStateChanged(
 fun BottomSearchBar(
     modifier: Modifier = Modifier,
     onDrag: (Float) -> Unit = {},
-    bottomSheetState: BottomSheetState? = null,
+    bottomSheetState: SheetState? = null,
     onTextFieldFocusChanged: (FocusState) -> Unit = {},
     onSearchQueryChanged: (String) -> Unit = {},
     onSearchQueried: (String) -> Unit = {},
     isUserSignedIn: Boolean = false,
     userPhotoUrl: Uri? = null,
     onShowProfile: () -> Unit = {},
-    onDragAreaOffset: Dp = 48.dp,
 ) {
     val elevation = 8.dp
     val cardElevation = CardDefaults.cardElevation(
@@ -792,9 +773,12 @@ fun BottomSearchBar(
     )
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    val sheetCollapsing by remember { derivedStateOf { bottomSheetState?.isCollapsed ?: false } }
-    LaunchedEffect(sheetCollapsing) {
-        if (sheetCollapsing) {
+    // We should help gestures when not searching
+    // and bottomSheet is collapsed or collapsing
+    val sheetHidden = remember(bottomSheetState?.currentValue) { bottomSheetState?.currentValue != SheetValue.Expanded }
+    LaunchedEffect(sheetHidden) {
+        Timber.v("BottomSearchBar LaunchedEffect: sheetHidden = $sheetHidden")
+        if (sheetHidden) {
             launch {
                 focusRequester.freeFocus()
                 focusManager.clearFocus()
@@ -802,20 +786,19 @@ fun BottomSearchBar(
         }
     }
     val interactionSource = remember { MutableInteractionSource() }
-    val draggable = Modifier.draggable(
-        interactionSource = interactionSource,
-        orientation = Orientation.Vertical,
-        state = rememberDraggableState { onDrag(it) }
-    )
     var searchFieldFocusState by rememberSaveable { mutableStateOf<FocusState?>(null) }
-    // We should help gestures when not searching
-    // and bottomSheet is collapsed or collapsing
-    val shouldHelpGestures = searchFieldFocusState?.isFocused == false &&
-            bottomSheetState?.isCollapsed == true
+
     ElevatedCard(
         modifier = modifier
-            .then(if (shouldHelpGestures) draggable else Modifier)
-            .offset(y = onDragAreaOffset),
+            .draggable(
+                enabled = sheetHidden && searchFieldFocusState?.isFocused == false,
+                interactionSource = interactionSource,
+                orientation = Orientation.Vertical,
+                state = rememberDraggableState {
+                    onDrag(it)
+                    Timber.v("Dragging search bar with offset: $it")
+                }
+            ),
         shape = RoundedCornerShape(
             topStart = RoundedCornerRadius,
             topEnd = RoundedCornerRadius
@@ -913,7 +896,9 @@ fun BottomSearchBar(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(onDragAreaOffset))
+            Spacer(modifier = Modifier.height(
+                (WindowInsets.navigationBars.union(WindowInsets.ime)).asPaddingValues().calculateBottomPadding()
+            ))
         }
     }
 }
@@ -933,8 +918,9 @@ fun BottomSheetScreen(
     modifier: Modifier = Modifier,
     isSearching: Boolean = false,
     onBottomSheetFractionChange: (Float) -> Unit = {},
+    searchChanged: (Boolean) -> Unit = {},
 ) {
-    ConstraintLayout(
+    Box(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp))
             .layout { measurable, constraints ->
@@ -969,33 +955,29 @@ fun BottomSheetScreen(
         }
         val screenHeight by _screenHeight.collectAsStateWithLifecycle()
         val density = LocalDensity.current
-        LaunchedEffect(sheetState.progress) {
+        LaunchedEffect(sheetState.currentValue) {
             val offset = sheetState.requireOffset()
             val bottomSheetFraction = 1 - offset / (screenHeight.value * density.density)
             _bottomSheetFraction.update { bottomSheetFraction }
             onBottomSheetFractionChange(bottomSheetFraction)
         }
-        ConstraintLayout(
+        Box(
             modifier = modifier
         ) {
-            val (menu, search) = createRefs()
             SheetNavHost(
-                modifier = Modifier.constrainAs(menu) {
-                    bottom.linkTo(parent.bottom)
-                },
+                modifier = Modifier.align(Alignment.BottomCenter),
                 isSearching = isSearching
             )
             SearchNavHost(
-                modifier = Modifier.constrainAs(search) {
-                    bottom.linkTo(parent.bottom)
-                },
-                isSearching = isSearching
+                modifier = Modifier.align(Alignment.BottomCenter),
+                isSearching = isSearching,
+                onClearFocusOnSearch = { searchChanged(false) }
             )
         }
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun SheetNavHost(
     modifier: Modifier = Modifier,
@@ -1023,7 +1005,7 @@ private fun SheetNavHost(
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
                 val height = placeable.measuredHeight.toDp()
-                if (sheetState.isExpanded &&
+                if (sheetState.hasExpandedState &&
                     height >= sheetMinHeight &&
                     height != sheetState.getOffsetAsDp(density)
                 ) {
@@ -1034,16 +1016,7 @@ private fun SheetNavHost(
                 }
             }
             .alpha(alpha = sheetAlpha),
-        engine = rememberAnimatedNavHostEngine(
-            rootDefaultAnimations = RootNavGraphDefaultAnimations(
-                enterTransition = {
-                    slideInVertically(tween(200)) + fadeIn(tween(200))
-                },
-                exitTransition = {
-                    slideOutVertically(tween(200)) + fadeOut(tween(200))
-                }
-            )
-        )
+        defaultTransitions = DefaultDestinationTransitions
     )
 }
 
@@ -1052,16 +1025,14 @@ private fun SearchNavHost(
     modifier: Modifier = Modifier,
     isSearching: Boolean,
     fullScreenFraction: Float = BottomSheetPartialMaxFraction,
+    onClearFocusOnSearch: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
     BackPressHandler(
         customDisposableEffectKey = isSearching,
         isEnabled = { isSearching }
     ) {
         if (isSearching) {
-            coroutineScope.launch {
-                sheetState.collapse()
-            }
+            onClearFocusOnSearch()
         }
     }
     val searchAlpha by animateFloatAsState(
@@ -1092,9 +1063,10 @@ private fun SearchNavHost(
             .alpha(alpha = searchAlpha)
             .padding(bottom = SearchBarHeight - RoundedCornerRadius)
             .navigationBarsPadding(),
+        defaultTransitions = DefaultDestinationTransitions
     )
 }
 
-fun BottomSheetState.getOffsetAsDp(density: Float): Dp {
+fun SheetState.getOffsetAsDp(density: Float): Dp {
     return (try { requireOffset() } catch (e: Exception) { 0f } / density).dp
 }

@@ -23,11 +23,13 @@ import com.google.android.gms.maps.model.LatLng
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import java.time.ZonedDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Parcelize
-data class DomainLocation(
+data class DomainLocation @OptIn(ExperimentalTime::class) constructor(
     var sessionUUID: String,
-    val zonedDateTime: ZonedDateTime,
+    val timestamp: Instant,
     val latitude: Float,
     val longitude: Float,
     var speed: Float = Float.MIN_VALUE,

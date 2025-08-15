@@ -23,9 +23,13 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -50,25 +54,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ChainStyle
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.generated.destinations.LibraryDialogScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.EmptyDestinationsNavigator
 import illyan.compose.scrollbar.drawVerticalScrollbar
 import illyan.jay.R
 import illyan.jay.ui.components.JayDialogContent
 import illyan.jay.ui.components.PreviewAll
-import illyan.jay.ui.destinations.LibraryDialogScreenDestination
 import illyan.jay.ui.libraries.model.UiLibrary
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun LibrariesDialogScreen(
     viewModel: LibrariesViewModel = hiltViewModel(),
@@ -157,61 +157,39 @@ fun LibraryItem(
         onClick = onClick,
         colors = cardColors,
     ) {
-        ConstraintLayout(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val (item, icon) = createRefs()
-            createHorizontalChain(
-                item,
-                icon,
-                chainStyle = ChainStyle.SpreadInside
-            )
-            createStartBarrier()
-            Icon(
-                modifier = Modifier.constrainAs(icon) {
-                    end.linkTo(parent.end)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                },
-                imageVector = Icons.Rounded.ChevronRight, contentDescription = ""
-            )
-            LazyRow(
-                modifier = Modifier.constrainAs(item) {
-                    start.linkTo(parent.start)
-                    end.linkTo(icon.start)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    width = Dimension.fillToConstraints
-                }
-            ) {
-                item {
-                    Column {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                Text(
+                    text = library.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = AlertDialogDefaults.titleContentColor,
+                )
+                Crossfade(
+                    targetState = library.repositoryUrl to library.moreInfoUrl,
+                    label = "Library URLs"
+                ) { repositoryAndMoreInfoUrls ->
+                    val shownText = repositoryAndMoreInfoUrls.run {
+                        // Show Repo URL, then More Info URL, then null
+                        if (first != null) first else if (second != null) second else null
+                    }
+                    shownText?.let {
                         Text(
-                            text = library.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = AlertDialogDefaults.titleContentColor,
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AlertDialogDefaults.textContentColor,
                         )
-                        Crossfade(
-                            targetState = library.repositoryUrl to library.moreInfoUrl,
-                            label = "Library URLs"
-                        ) { repositoryAndMoreInfoUrls ->
-                            val shownText = repositoryAndMoreInfoUrls.run {
-                                // Show Repo URL, then More Info URL, then null
-                                if (first != null) first else if (second != null) second else null
-                            }
-                            shownText?.let {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = AlertDialogDefaults.textContentColor,
-                                )
-                            }
-                        }
                     }
                 }
             }
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = ""
+            )
         }
     }
 }

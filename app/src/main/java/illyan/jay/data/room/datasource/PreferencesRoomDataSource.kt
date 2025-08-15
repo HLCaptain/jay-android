@@ -27,7 +27,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class PreferencesRoomDataSource @Inject constructor(
     private val preferencesDao: PreferencesDao
 ) {

@@ -36,7 +36,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class PreferencesFirestoreDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val authInteractor: AuthInteractor,

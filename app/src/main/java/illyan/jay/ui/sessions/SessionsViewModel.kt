@@ -50,7 +50,10 @@ import timber.log.Timber
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 @HiltViewModel
 class SessionsViewModel @Inject constructor(
     private val sessionInteractor: SessionInteractor,
@@ -67,7 +70,7 @@ class SessionsViewModel @Inject constructor(
     // FIXME: create a list with not yet synced sessions with the cloud (local cache vs fresh cloud data)
     private val deleteRequestedOnSessions = MutableStateFlow(persistentListOf<String>())
 
-    private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
+    private val _ownedLocalSessionUUIDs = MutableStateFlow(listOf<Pair<String, Instant>>())
     val ownedLocalSessionUUIDs = _ownedLocalSessionUUIDs.asStateFlow()
 
     val isUserSignedIn = authInteractor.isUserSignedInStateFlow
@@ -97,7 +100,7 @@ class SessionsViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val _notOwnedSessionUUIDs = MutableStateFlow(listOf<Pair<String, ZonedDateTime>>())
+    private val _notOwnedSessionUUIDs = MutableStateFlow(listOf<Pair<String, Instant>>())
 
     val isLoading = combine(
         localSessionsLoading,
@@ -127,13 +130,13 @@ class SessionsViewModel @Inject constructor(
         notOwnedSessionUUIDs,
         deleteRequestedOnSessions,
     ) { synced, ownedLocal, notOwnedLocal, deleting ->
-        val sessions = mutableListOf<Pair<String, ZonedDateTime>>()
+        val sessions = mutableListOf<Pair<String, Instant>>()
         sessions.addAll(synced.map { it.uuid to it.startDateTime })
         sessions.addAll(ownedLocal)
         sessions.addAll(notOwnedLocal)
         val distinctSessions = sessions.distinct()
         val sortedSessions = distinctSessions
-            .sortedByDescending { it.second.toInstant().toEpochMilli() }
+            .sortedByDescending { it.second }
             .map { it.first }
         sortedSessions.intersect(sessionStateFlows.keys).forEach { uuid ->
             val sessionFlow = sessionStateFlows[uuid]!!

@@ -23,8 +23,8 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.WriteBatch
-import com.google.firebase.firestore.ktx.snapshots
-import com.google.firebase.firestore.ktx.toObjects
+import com.google.firebase.firestore.snapshots
+import com.google.firebase.firestore.toObjects
 import com.google.maps.android.ktx.utils.sphericalPathLength
 import illyan.jay.data.firestore.model.FirestorePath
 import illyan.jay.data.firestore.toDomainAggressions
@@ -44,7 +44,9 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 @Singleton
 class PathFirestoreDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
@@ -145,18 +147,18 @@ class PathFirestoreDataSource @Inject constructor(
             val aggressionsForThisSession = domainAggressions.filter { it.sessionUUID.contentEquals(session.uuid) }
             if (session.distance == null) {
                 session.distance = locationsForThisSession
-                    .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+                    .sortedBy { it.timestamp }
                     .map { it.latLng }.sphericalPathLength().toFloat()
             }
             val thresholdInMinutes = 300
             if (locationsForThisSession.isEmpty()) return emptyList()
-            val startMilli = locationsForThisSession.minOf { it.zonedDateTime.toInstant().toEpochMilli() }
+            val startMilli = locationsForThisSession.minOf { it.timestamp.toEpochMilliseconds() }
             val groupedByTime = locationsForThisSession.groupBy {
-                (it.zonedDateTime.toInstant().toEpochMilli() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds
+                (it.timestamp.toEpochMilliseconds() - startMilli) / thresholdInMinutes.minutes.inWholeMilliseconds
             }
             paths.addAll(groupedByTime.map { groups ->
                 groups.value
-                    .sortedBy { it.zonedDateTime.toInstant().toEpochMilli() }
+                    .sortedBy { it.timestamp }
                     .toPath(session.uuid, session.ownerUUID!!)
             })
             val aggressionsGroupedByTime = aggressionsForThisSession.groupBy {

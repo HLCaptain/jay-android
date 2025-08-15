@@ -36,7 +36,11 @@ import kotlinx.coroutines.flow.update
 import timber.log.Timber
 import java.time.ZonedDateTime
 import javax.inject.Inject
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 @HiltViewModel
 class UserSettingsViewModel @Inject constructor(
     private val settingsInteractor: SettingsInteractor,
@@ -71,8 +75,8 @@ class UserSettingsViewModel @Inject constructor(
             // or it was turned off a while ago, show the dialog again
             val shouldShowAnalyticsRequest = uiPreferences?.let {
                 if (it.lastUpdateToAnalytics == null) return@let true
-                val thresholdTime = it.lastUpdateToAnalytics.plusDays(DaysToWaitForRequest)
-                val isAnalyticsSetLongTimeAgo = thresholdTime < ZonedDateTime.now()
+                val thresholdTime = it.lastUpdateToAnalytics.plus(DaysToWaitForRequest.days)
+                val isAnalyticsSetLongTimeAgo = thresholdTime < Clock.System.now()
                 isAnalyticsSetLongTimeAgo && !it.analyticsEnabled
             } ?: true
             Timber.v("Should show Analytics Request on User Settings Screen? $shouldShowAnalyticsRequest")

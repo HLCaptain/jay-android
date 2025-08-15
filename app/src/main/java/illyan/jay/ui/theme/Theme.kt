@@ -18,11 +18,15 @@
 
 package illyan.jay.ui.theme
 
-import android.app.Activity
+import android.annotation.SuppressLint
 import android.os.Build
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.LocalActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
@@ -32,29 +36,22 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import illyan.jay.R
 import illyan.jay.domain.model.Theme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlin.math.roundToInt
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -203,10 +200,8 @@ fun animateColorScheme(
     return remember { derivedStateOf { getCurrentColorScheme() } }
 }
 
-private const val LightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
-private const val DarkMapStyleUrl = "mapbox://styles/illyan/cl3kg2wpq001414muhgrpj15u"
-private val _mapStyleUrl = MutableStateFlow(LightMapStyleUrl)
-val mapStyleUrl = _mapStyleUrl.asStateFlow()
+const val LightMapStyleUrl = "mapbox://styles/illyan/cl3kgeewz004k15ldn7x091r2"
+const val DarkMapStyleUrl = "mapbox://styles/illyan/cl3kg2wpq001414muhgrpj15u"
 
 private lateinit var darkMapMarkers: MapMarkers
 // val drawable = AppCompatResources.getDrawable(context, R.drawable.jay_puck_transparent_background)
@@ -215,112 +210,126 @@ private lateinit var lightMapMarkers: MapMarkers
 private val _mapMarkers = MutableStateFlow<MapMarkers?>(null)
 val mapMarkers = _mapMarkers.asStateFlow()
 
-val LocalTheme = compositionLocalOf<Theme?> { null }
-
 @Composable
 fun JayThemeWithViewModel(
     viewModel: ThemeViewModel = hiltViewModel(),
     content: @Composable () -> Unit,
 ) {
+    val theme by viewModel.theme.collectAsStateWithLifecycle()
+    val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
+    val isNight by viewModel.isNight.collectAsStateWithLifecycle()
     JayTheme(
-        themeState = viewModel.theme.collectAsStateWithLifecycle(),
-        dynamicColorEnabledState = viewModel.dynamicColorEnabled.collectAsStateWithLifecycle(),
-        isNightState = viewModel.isNight.collectAsStateWithLifecycle(),
+        theme = theme ?: Theme.System,
+        dynamicColorEnabled = dynamicColorEnabled,
+        isNight = isNight,
+        content = content,
+    )
+}
+
+@SuppressLint("NewApi")
+@Composable
+fun JayTheme(
+    theme: Theme = Theme.System,
+    dynamicColorEnabled: Boolean = false,
+    isNight: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val isSystemInDarkTheme = isSystemInDarkTheme()
+    val isDark = remember(theme, isNight, isSystemInDarkTheme) {
+        when (theme) {
+            Theme.Light -> false
+            Theme.Dark -> true
+            Theme.System -> isSystemInDarkTheme
+            Theme.DayNightCycle -> isNight
+        }
+    }
+    val dynamicLightColorScheme = dynamicLightColorScheme()
+    val dynamicDarkColorScheme = dynamicDarkColorScheme()
+    val canUseDynamicColors = canUseDynamicColors()
+    val targetColorScheme = remember(theme, dynamicColorEnabled, isNight, isSystemInDarkTheme, isDark) {
+        if (dynamicColorEnabled && canUseDynamicColors) {
+            when (theme) {
+                Theme.Dark -> dynamicDarkColorScheme
+                Theme.Light -> dynamicLightColorScheme
+                Theme.System -> if (isSystemInDarkTheme) dynamicDarkColorScheme else dynamicLightColorScheme
+                Theme.DayNightCycle -> if (isNight) dynamicDarkColorScheme else dynamicLightColorScheme
+            }
+        } else {
+            when (theme) {
+                Theme.Dark -> DarkColors
+                Theme.Light -> LightColors
+                Theme.System -> if (isSystemInDarkTheme) DarkColors else LightColors
+                Theme.DayNightCycle -> if (isNight) DarkColors else LightColors
+            }
+        }
+    }
+
+    ThemeSystemWindow(isDark, dynamicColorEnabled)
+
+    MaterialTheme(
+        colorScheme = targetColorScheme,
+        typography = MaterialTheme.typography,
         content = content
     )
 }
 
 @Composable
-fun JayTheme(
-    themeState: State<Theme?> = mutableStateOf(Theme.System),
-    dynamicColorEnabledState: State<Boolean> = mutableStateOf(true),
-    isNightState: State<Boolean> = mutableStateOf(true),
-    content: @Composable () -> Unit,
-) {
-    val theme by themeState
-    val dynamicColorEnabled by dynamicColorEnabledState
-    val isNight by isNightState
-    val isSystemInDarkTheme: Boolean = isSystemInDarkTheme()
-    val isDark by remember {
-        derivedStateOf {
-            when (theme) {
-                Theme.Light -> false
-                Theme.Dark -> true
-                Theme.System -> isSystemInDarkTheme
-                Theme.DayNightCycle -> isNight
-                null -> null
-            }
-        }
-    }
-    val context = LocalContext.current
-    val targetColorScheme by remember {
-        derivedStateOf {
-            val canUseDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-            if (dynamicColorEnabled && canUseDynamicColor) {
-                when (theme) {
-                    Theme.Dark -> dynamicDarkColorScheme(context)
-                    Theme.Light -> dynamicLightColorScheme(context)
-                    Theme.System -> if (isSystemInDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-                    Theme.DayNightCycle -> if (isNight) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-                    null -> LightColors
-                }
-            } else {
-                when (theme) {
-                    Theme.Dark -> DarkColors
-                    Theme.Light -> LightColors
-                    Theme.System -> if (isSystemInDarkTheme) DarkColors else LightColors
-                    Theme.DayNightCycle -> if (isNight) DarkColors else LightColors
-                    null -> LightColors
-                }
-            }
-        }
-    }
-    val systemUiController = rememberSystemUiController()
-    val colorScheme by animateColorScheme(targetColorScheme, spring(stiffness = Spring.StiffnessLow))
-    val view = LocalView.current
-    val density = LocalDensity.current.density
-    val markerHeight = (36.dp * density).value.roundToInt()
-    lightMapMarkers = MapMarkers(
-        height = markerHeight,
-        locationPuckDrawableId = R.drawable.jay_puck_transparent_background,
-        poiDrawableId = R.drawable.jay_marker_icon_v3_round,
-        pathStartDrawableId = R.drawable.jay_begin_light_marker_icon,
-        pathEndDrawableId = R.drawable.jay_finish_light_marker_icon,
-    )
-    darkMapMarkers = MapMarkers(
-        height = markerHeight,
-        locationPuckDrawableId = R.drawable.jay_puck_transparent_background,
-        poiDrawableId = R.drawable.jay_marker_icon_v3_round,
-        pathStartDrawableId = R.drawable.jay_begin_dark_marker_icon,
-        pathEndDrawableId = R.drawable.jay_finish_dark_marker_icon,
-    )
-    if (!view.isInEditMode) {
-        LaunchedEffect(isDark) {
-            isDark?.let { isDark ->
-                val window = (view.context as Activity).window
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = isDark
-                WindowCompat.setDecorFitsSystemWindows(window, false)
+fun canUseDynamicColors(): Boolean {
+    return LocalInspectionMode.current || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+}
 
-                // Update all of the system bar colors to be transparent
-                // and use dark icons if we're in light theme
-                systemUiController.setSystemBarsColor(
-                    color = Color.Transparent,
-                    darkIcons = !isDark
-                )
-                _mapStyleUrl.update { if (isDark) DarkMapStyleUrl else LightMapStyleUrl }
-                _mapMarkers.update { if (isDark) darkMapMarkers else lightMapMarkers }
-            }
+@SuppressLint("NewApi")
+@Composable
+fun ThemeSystemWindow(isDark: Boolean, isDynamicColors: Boolean) {
+    val dynamicDarkColorScheme = dynamicDarkColorScheme()
+    val dynamicLightColorScheme = dynamicLightColorScheme()
+    val canUseDynamicColors = canUseDynamicColors()
+    val colorScheme = remember(isDark, isDynamicColors) {
+        if (isDynamicColors && canUseDynamicColors) {
+            if (isDark) dynamicDarkColorScheme else dynamicLightColorScheme
+        } else if (isDark) {
+            DarkColors
+        } else {
+            LightColors
         }
     }
+    if (!LocalInspectionMode.current) {
+        val activity = LocalActivity.current as ComponentActivity
+        SideEffect {
+            WindowCompat.getInsetsController(activity.window, activity.window.decorView).isAppearanceLightStatusBars = !isDark
+        }
+        LaunchedEffect(colorScheme) {
+            activity.enableEdgeToEdge(
+                statusBarStyle = SystemBarStyle.auto(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                ) { isDark },
+                navigationBarStyle = SystemBarStyle.auto(
+                    colorScheme.background.toArgb(),
+                    colorScheme.background.toArgb(),
+                ) { isDark },
+            )
+        }
+    }
+}
 
-    CompositionLocalProvider(
-        LocalTheme provides theme,
-    ) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = Typography,
-            content = content
-        )
+@RequiresApi(Build.VERSION_CODES.S)
+@Composable
+fun dynamicDarkColorScheme(): ColorScheme {
+    return if (canUseDynamicColors()) {
+        dynamicDarkColorScheme(LocalContext.current)
+    } else {
+        DarkColors
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+@Composable
+fun dynamicLightColorScheme(): ColorScheme {
+    return if (canUseDynamicColors()) {
+        dynamicLightColorScheme(LocalContext.current)
+    } else {
+        LightColors
     }
 }
 

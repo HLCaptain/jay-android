@@ -68,8 +68,7 @@ import illyan.jay.ui.settings.ml.model.UiModel
 import illyan.jay.ui.settings.user.BasicSetting
 import illyan.jay.ui.theme.JayTheme
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun MLSettingsDialogScreen(
     viewModel: MLSettingsViewModel = hiltViewModel(),

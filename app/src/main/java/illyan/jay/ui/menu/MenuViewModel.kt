@@ -22,7 +22,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.logEvent
+import com.google.firebase.analytics.logEvent
 import com.mapbox.search.result.SearchResultType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import illyan.jay.domain.interactor.SettingsInteractor
@@ -32,8 +32,10 @@ import illyan.jay.ui.map.BmeK
 import illyan.jay.ui.poi.model.Place
 import illyan.jay.ui.search.SearchViewModel
 import illyan.jay.ui.sheet.SheetViewModel
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -44,6 +46,12 @@ class MenuViewModel @Inject constructor(
     private val localBroadcastManager: LocalBroadcastManager,
     private val settingsInteractor: SettingsInteractor,
 ) : ViewModel() {
+    val theme = settingsInteractor.userPreferences.map { it?.theme ?: Theme.System }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = Theme.System,
+        )
     private fun onClickButton(buttonName: String) {
         Timber.i("Clicked \"$buttonName\" button")
         analytics.logEvent(FirebaseAnalytics.Event.SELECT_ITEM) {

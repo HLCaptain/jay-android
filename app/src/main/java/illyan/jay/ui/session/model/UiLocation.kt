@@ -16,14 +16,18 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package illyan.jay.ui.session.model
 
 import com.google.android.gms.maps.model.LatLng
 import illyan.jay.domain.model.DomainLocation
-import java.time.ZonedDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 data class UiLocation(
-    val zonedDateTime: ZonedDateTime,
+    val timestamp: Instant,
     val latLng: LatLng,
     var speed: Float,
     var accuracy: Byte,
@@ -36,7 +40,7 @@ data class UiLocation(
 )
 
 fun DomainLocation.toUiModel(aggression: Float? = null) = UiLocation(
-    zonedDateTime = zonedDateTime,
+    timestamp = timestamp,
     latLng = latLng,
     speed = speed,
     accuracy = accuracy,

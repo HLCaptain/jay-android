@@ -60,8 +60,7 @@ import illyan.jay.ui.libraries.model.toUiModel
 import illyan.jay.ui.profile.ProfileNavGraph
 import illyan.jay.ui.theme.JayTheme
 
-@ProfileNavGraph
-@Destination
+@Destination<ProfileNavGraph>
 @Composable
 fun LibraryDialogScreen(
     library: UiLibrary
@@ -165,7 +164,6 @@ fun LibraryScreen(
             )
         }
         Crossfade(
-            modifier = Modifier.animateContentSize(),
             targetState = library.license?.url,
             label = "License"
         ) {
